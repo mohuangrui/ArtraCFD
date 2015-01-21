@@ -1,6 +1,6 @@
 /****************************************************************************
  * Expression Calculator                                                    *
- * Last-modified: 20 Jan 2015 04:43:22 PM
+ * Last-modified: 20 Jan 2015 09:46:35 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide.                                 *
  * - This file defines a calculator for mathematical expressions            *
@@ -321,7 +321,7 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
     /* save the result to answer */
     parameter->answer = GetTopElementOfOperandStack(operandStack); 
     /* output the results */
-    printf("ans = %lf\n", parameter->answer);
+    printf("ans = %.6lg\n", parameter->answer);
     return 0;
 }
 /*
@@ -731,31 +731,13 @@ static int UnaryOperation(const Parameter *parameter,
             *currentOperandAddress = fabs(operandA);
             break;
         case 's':
-            if (fabs(sin(operandA * parameter->angleFactor)) <= 1e-30) {
-                *currentOperandAddress = 0;
-            } else {
-                *currentOperandAddress = sin(operandA * parameter->angleFactor);
-            }
+            *currentOperandAddress = sin(operandA * parameter->angleFactor);
             break;
         case 'c':
-            if (fabs(cos(operandA * parameter->angleFactor)) <= 1e-30) {
-                *currentOperandAddress = 0;
-            } else {
-                *currentOperandAddress = cos(operandA * parameter->angleFactor);
-            }
+            *currentOperandAddress = cos(operandA * parameter->angleFactor);
             break;
         case 't':
-            if (fabs(cos(operandA * parameter->angleFactor)) <= 1e-30) {
-                ShowInformation("Ilegal argument of tan(operandA)");
-                *currentOperandAddress = 0; 
-                return 1;
-            } else {
-                if (fabs(sin(operandA * parameter->angleFactor)) <= 1e-30) {
-                    *currentOperandAddress = 0;
-                } else {
-                    *currentOperandAddress = sin(operandA * parameter->angleFactor) / cos(operandA * parameter-> angleFactor);
-                }
-            }
+            *currentOperandAddress = sin(operandA * parameter->angleFactor) / cos(operandA * parameter-> angleFactor);
             break;
         default: 
             *currentOperandAddress = 0;
@@ -778,11 +760,6 @@ static int BinaryOperation(const double operandB,
             *currentOperandAddress = operandB * operandA;
             break;
         case '/':
-            if (fabs(operandA) <= 1e-30) {
-                ShowInformation("Zero denominator");
-                *currentOperandAddress = 0;
-                return 1;
-            }
             *currentOperandAddress = operandB / operandA;
             break;
         case '^':
