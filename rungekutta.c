@@ -1,6 +1,5 @@
 /****************************************************************************
  * Numeric Scheme in Time Doamin                                            *
- * Last-modified: 21 Jan 2015 11:05:57 AM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide.                                 *
  * - This file defines the numeric schemes of time domain.                  *
@@ -23,8 +22,15 @@ int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space,
         Particle *particle, Time *time, const Partition *part, const Flow *flow)
 {
     ShowInformation("Time marching...");
-    double exportTimeInterval = (time->totalTime - time->currentTime) / time->totalOutputTimes;
-    double accumulatedTime = 0;
+    double exportTimeInterval = (time->totalTime - time->currentTime);
+    /* check whether current time is equal to or larger than the total time */
+    if (exportTimeInterval <= 0) {
+        ShowInformation("current time is equal to or larger than total time...");
+        return 1;
+    }
+    /* obtain the desired export time interval */
+    exportTimeInterval = exportTimeInterval / time->totalOutputTimes;
+    double accumulatedTime = 0; /* used for control when to export data */
     /* time marching */
     for (time->stepCount += 1; time->currentTime < time->totalTime; ++time->stepCount) {
         /*
@@ -43,7 +49,7 @@ int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space,
         /*
          * Compute field data in current time step
          */
-        printf("\nStep=%d; Time=%lg; dt=%lg\n", time->stepCount, time->currentTime, time->dt);
+        printf("\nStep=%d; Time=%.6lg; dt=%.6lg\n", time->stepCount, time->currentTime, time->dt);
         /*
          * Export computed data. Use accumulatedTime as a flag, if
          * accumulatedTime increases to anticipated export interval,

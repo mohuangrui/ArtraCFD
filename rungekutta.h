@@ -1,6 +1,5 @@
 /****************************************************************************
  * Header File                                                              *
- * Last-modified: 17 Jan 2015 12:28:57 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide                                  *
  ****************************************************************************/
@@ -17,8 +16,14 @@
  * Data Structure Declarations
  ****************************************************************************/
 /****************************************************************************
- * Function declaration
+ * Public Functions Declaration
  ****************************************************************************/
+/*
+ * Time marching scheme
+ *
+ * Function
+ *      Apply runge-kutta method for explicit time marching solution
+ */
 int RungeKuttaTimeMarching(Field *, Flux *, Space *, Particle *, Time *, 
         const Partition *, const Flow *);
 #endif
