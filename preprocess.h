@@ -1,6 +1,5 @@
 /****************************************************************************
  * Header File                                                              *
- * Last-modified: 17 Jan 2015 12:01:25 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide                                  *
  ****************************************************************************/
@@ -17,8 +16,19 @@
  * Data Structure Declarations
  ****************************************************************************/
 /****************************************************************************
- * Function declaration
+ * Public Functions Declaration
  ****************************************************************************/
+/*
+ * Preprocessor
+ *
+ * Parameter
+ *      data structures
+ * Function
+ *      Call a series of functions to perform the preprocessing of
+ *      computatioal fluid dynamics.
+ * Returns
+ *      0 -- successful
+ */
 int Preprocess(Field *, Flux *, Space *, Particle *, Time *,
         Partition *, Fluid *, Flow *, Reference *);
 #endif

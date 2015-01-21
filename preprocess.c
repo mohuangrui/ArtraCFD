@@ -1,9 +1,8 @@
 /****************************************************************************
  * Preprocess                                                               *
- * Last-modified: 20 Jan 2015 12:47:52 AM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide.                                 *
- * - This file functions as a preprocessor                                  *
+ * - This file defines a functions as a preprocessor                        *
  ****************************************************************************/
 /****************************************************************************
  * Required Header Files
@@ -51,30 +50,30 @@ int Preprocess(Field *field, Flux *flux, Space *space, Particle *particle,
  */
 static int Preamble(void)
 {
-    printf("**********************************************************\n");
-    printf("*                        ArtraCFD                        *\n");
-    printf("*                     By Huangrui Mo                     *\n");
-    printf("**********************************************************\n\n");
-    printf("Enter 'help' for a brief user manual\n");
-    printf("**********************************************************\n\n");
+    fprintf(stdout, "**********************************************************\n");
+    fprintf(stdout, "*                        ArtraCFD                        *\n");
+    fprintf(stdout, "*                     By Huangrui Mo                     *\n");
+    fprintf(stdout, "**********************************************************\n\n");
+    fprintf(stdout, "Enter 'help' for a brief user manual\n");
+    fprintf(stdout, "**********************************************************\n\n");
     char currentLine[200] = {'\0'}; /* store the current read line */
     while (1) {
-        printf("\nArtraCFD << ");
+        fprintf(stdout, "\nArtraCFD << ");
         fgets(currentLine, sizeof currentLine, stdin); /* read a line */
         CommandLineProcessor(currentLine); /* process current line */
-        printf("\n");
+        fprintf(stdout, "\n");
         if (strncmp(currentLine, "help", sizeof currentLine) == 0) {
-            printf("Operation options:\n");
-            printf("[help]    show this information\n");
-            printf("[init]    generate case input files\n");
-            printf("[solve]   solve the case\n");
-            printf("[calc]    access expression calculator\n");
-            printf("[exit]    exit program\n");
+            fprintf(stdout, "Operation options:\n");
+            fprintf(stdout, "[help]    show this information\n");
+            fprintf(stdout, "[init]    generate case input files\n");
+            fprintf(stdout, "[solve]   solve the case\n");
+            fprintf(stdout, "[calc]    access expression calculator\n");
+            fprintf(stdout, "[exit]    exit program\n");
             continue;
         }
         if (strncmp(currentLine, "init", sizeof currentLine) == 0) {
             GenerateCaseSettingFiles();
-            printf("case files generated successfully\n");
+            fprintf(stdout, "case files generated successfully\n");
             continue;
         }
         if (strncmp(currentLine, "calc", sizeof currentLine) == 0) {
@@ -82,7 +81,7 @@ static int Preamble(void)
             continue;
         }
         if (currentLine[0] == '\0') { /* no useful information in the command */
-            printf("\n");
+            fprintf(stdout, "\n");
             continue;
         }
         if (strncmp(currentLine, "solve", sizeof currentLine) == 0) {
@@ -94,12 +93,13 @@ static int Preamble(void)
             exit(EXIT_SUCCESS);
         } 
         /* if non of above is true, then unknow commands */
-        printf("artracfd: %s: command not found\n", currentLine);
+        fprintf(stdout, "artracfd: %s: command not found\n", currentLine);
     }
 }
 /*
  * This function together with some subfuctions realize the dynamic
- * memory allocation for each global pointer.
+ * memory allocation for each global pointer. The storage retrieving
+ * need to be done in the postprocessor.
  */
 static int ProgramMemoryAllocate(Field *field, Flux *flux, Space *space)
 {

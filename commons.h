@@ -490,7 +490,7 @@ typedef struct {
     int nameLength; /* length of names */
 }Partition;
 /****************************************************************************
- * Public functions declaration
+ * Public Functions Declaration
  ****************************************************************************/
 /*
  * Command line processor
