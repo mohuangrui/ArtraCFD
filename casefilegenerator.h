@@ -1,6 +1,5 @@
 /****************************************************************************
  * Header File                                                              *
- * Last-modified: 18 Jan 2015 09:26:39 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide                                  *
  ****************************************************************************/
@@ -16,8 +15,18 @@
  * Data Structure Declarations
  ****************************************************************************/
 /****************************************************************************
- * Function declaration
+ * Public Functions Declaration
  ****************************************************************************/
+/*
+ * Case Setting File Generator
+ *
+ * Function
+ *      Generate the initial case setting file: artracfd.case and 
+ *      initial geometry input file: artracfd.geo for ArtraCFD.
+ * Outcome
+ *      artracfd.case -- the case setting file.
+ *      artracfd.geo -- the initial geometry input file.
+ */
 int GenerateCaseSettingFiles(void);
 #endif
 /* a good practice: end file with a newline */
