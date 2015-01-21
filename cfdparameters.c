@@ -1,6 +1,5 @@
 /****************************************************************************
  * Compute and Define CFD Numerical Parameters                              *
- * Last-modified: 18 Jan 2015 11:32:19 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide.                                 *
  * - This file computes the numeric parameters of CFD.                      *

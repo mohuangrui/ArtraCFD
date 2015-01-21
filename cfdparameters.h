@@ -1,6 +1,5 @@
 /****************************************************************************
  * Header File                                                              *
- * Last-modified: 18 Jan 2015 09:53:52 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide                                  *
  ****************************************************************************/
@@ -17,8 +16,16 @@
  * Data Structure Declarations
  ****************************************************************************/
 /****************************************************************************
- * Function declaration
+ * Public Functions Declaration
  ****************************************************************************/
+/*
+ * Compute CFD parameters
+ *
+ * Function
+ *      Compute parameters required for CFD, and perform nondimensionalize 
+ *      operations on fluid and flow variables to unify the dimensional 
+ *      form and nondimensional form of governing equations.
+ */
 int ComputeCFDParameters(Space *, Time *, const Fluid *, Flow *,
         const Reference *);
 #endif
