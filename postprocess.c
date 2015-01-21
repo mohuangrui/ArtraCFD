@@ -1,6 +1,5 @@
 /****************************************************************************
  * Preprocess                                                               *
- * Last-modified: 17 Jan 2015 12:49:44 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide.                                 *
  * - This file functions as a postprocessor                                 *
@@ -23,7 +22,7 @@ static int FinalInformation(void);
  * Function Definitions
  ****************************************************************************/
 /*
- * this is the overall postprocessing function
+ * This is the overall postprocessing function
  */
 int Postprocess(Field *field, Flux *flux, Space *space, Particle *particle,
         Partition *part)
@@ -33,7 +32,7 @@ int Postprocess(Field *field, Flux *flux, Space *space, Particle *particle,
     return 0;
 }
 /*
- * this function together with some subfuctions realize the dynamic
+ * This function together with some subfuctions realize the dynamic
  * memory release for each global pointer
  */
 static int ProgramMemoryRelease(Field *field, Flux *flux, Space *space,
@@ -70,7 +69,7 @@ static int ProgramMemoryRelease(Field *field, Flux *flux, Space *space,
     return 0;
 }
 /*
- * this function shows some final information
+ * This function shows some final information
  */
 static int FinalInformation(void)
 {

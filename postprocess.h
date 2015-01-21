@@ -1,6 +1,5 @@
 /****************************************************************************
  * Header File                                                              *
- * Last-modified: 17 Jan 2015 12:49:05 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide                                  *
  ****************************************************************************/
@@ -17,8 +16,14 @@
  * Data Structure Declarations
  ****************************************************************************/
 /****************************************************************************
- * Function declaration
+ * Public Functions Declaration
  ****************************************************************************/
+/*
+ * Postprocessor
+ *
+ * Function
+ *      Perform postprocessing for ArtraCFD program, such as memory release.
+ */
 int Postprocess(Field *, Flux *, Space *, Particle *, Partition *);
 #endif
 /* a good practice: end file with a newline */
