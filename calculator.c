@@ -1,6 +1,6 @@
 /****************************************************************************
  * Expression Calculator                                                    *
- * Last-modified: 20 Jan 2015 09:46:35 PM
+ * Last-modified: 20 Jan 2015 09:53:39 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide.                                 *
  * - This file defines a calculator for mathematical expressions            *
@@ -115,7 +115,7 @@ int ExpressionCalculator(void)
         }
     };
     Parameter theParameter = {
-        .pi = 3.14159265358979,
+        .pi = 3.14159265358979323846264338327950288419716939937510,
         .answer = 0,
         .radianMode = 1,
         .angleFactor = 1.0
