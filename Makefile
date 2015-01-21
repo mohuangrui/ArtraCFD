@@ -22,7 +22,7 @@
 #
 # Installer
 #
-INSTALL := install -c
+INSTALL := install
 INSTALLDATA := $(INSTALL) -m 644
 
 #
@@ -73,9 +73,12 @@ CC := gcc
 #    -g        Enable debugging
 #    -Wall     Turn on all warnings
 #    -Wextra   More restricted warnings
-#    -O        Enable optimization
+#    -O0       No optimization (the default); generates unoptimized code
+#              but has the fastest compilation time.
+#    -O2       Full optimization; generates highly optimized code and has
+#              the slowest compilation time. 
 #
-CFLAGS += -Wall -Wextra -O
+CFLAGS += -Wall -Wextra -O2
 
 #
 # Preprocessor options
@@ -152,7 +155,10 @@ all: $(BINNAME)
 # install
 #
 .PHONY: install
-install: all
+install:
+	@echo "Creating directories"
+	@mkdir -p $(bindir)
+	@mkdir -p $(infodir)
 	@echo "Installing to $(bindir)/$(BINNAME)"
 	@$(INSTALL) $(BINNAME) $(bindir)/$(BINNAME)
 	@$(INSTALLDATA) $(srcdir)/Makefile $(infodir)
@@ -182,10 +188,10 @@ $(DPND): %.d: %.c
 		sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 		rm -f $@.$$$$
 
-# include generated dependencies
-ifneq ($(MAKECMDGOALS),clean)
+# Include generated dependencies. Extra spaces are allowed and ignored
+# at the beginning of the include line, but the first character must 
+# NOT be a tab 
 -include ${DPND}
-endif
 
 # add dependency files to clean list
 CLEANLIST += $(DPND)
