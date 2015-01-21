@@ -1,6 +1,5 @@
 /****************************************************************************
  * Header File                                                              *
- * Last-modified: 17 Jan 2015 12:46:38 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide                                  *
  ****************************************************************************/
@@ -17,8 +16,14 @@
  * Data Structure Declarations
  ****************************************************************************/
 /****************************************************************************
- * Function declaration
+ * Public Functions Declaration
  ****************************************************************************/
+/*
+ * Numerical scheme of the space domain
+ *
+ * Function
+ *      Compute field data in the space domain by TVD approach.
+ */
 int TVD(Field *, Flux *, const Space *, const Partition *);
 #endif
 /* a good practice: end file with a newline */

@@ -1,9 +1,8 @@
 /****************************************************************************
  * Numeric Scheme for Space Domain                                          *
- * Last-modified: 17 Jan 2015 12:46:26 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide.                                 *
- * - This file defines the numeric schemes of space and time.               *
+ * - This file defines the numeric schemes of space domain.                 *
  ****************************************************************************/
 /****************************************************************************
  * Required Header Files
