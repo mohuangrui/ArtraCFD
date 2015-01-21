@@ -39,7 +39,7 @@ static int NonrestartGeometryLoader(Particle *particle)
     ShowInformation("Loading inputed geometry data ...");
     FILE *filePointer = fopen("artracfd.geo", "r");
     if (filePointer == NULL) {
-        FatalError("failed to open geometry file");
+        FatalError("failed to open geometry file: artracfd.geo...");
     }
     /* read and process file line by line */
     char currentLine[200] = {'\0'}; /* store the current read line */
@@ -72,7 +72,7 @@ static int RestartGeometryLoader(Particle *particle)
     /* restore geometry information from particle file. */
     FILE *filePointer = fopen("restart.particle", "r");
     if (filePointer == NULL) {
-        FatalError("failed to open restart particle file");
+        FatalError("failed to open restart particle file: restart.particle...");
     }
     /* read and process file line by line */
     char currentLine[200] = {'\0'}; /* store the current read line */

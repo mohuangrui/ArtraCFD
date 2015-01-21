@@ -69,7 +69,7 @@ static int RestartInitializer(Field *field, Space *space, Time *time,
     snprintf(restartFileName, sizeof restartFileName, "%s.case", restartBaseFileName);
     filePointer = fopen(restartFileName, "r");
     if (filePointer == NULL) {
-        FatalError("failed to open restart.case...");
+        FatalError("failed to open restart case file: restart.case...");
     }
     /* read information from file */
     char currentLine[200] = {'\0'}; /* store current line */
@@ -114,7 +114,7 @@ static int RestartInitializer(Field *field, Space *space, Time *time,
                 restartBaseFileName, nameSuffix[dimCount]);
         filePointer = fopen(restartFileName, "rb");
         if (filePointer == NULL) {
-            FatalError("failed to open restart data files...");
+            FatalError("failed to open restart data files: restart.***...");
         }
         fread(currentLine, sizeof(char), stringLength, filePointer);
         for (partCount = 0; partCount < part->totalN; ++partCount) {

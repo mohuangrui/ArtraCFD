@@ -66,7 +66,7 @@ static int ReadCaseSettingData(Space *space, Time *time, Fluid *fluid,
 {
     FILE *filePointer = fopen("artracfd.case", "r");
     if (filePointer == NULL) {
-        FatalError("failed to open case data file");
+        FatalError("failed to open case data file: artracfd.case...");
     }
     /*
      * Read file line by line to get case setting data
@@ -140,7 +140,7 @@ static int WriteVerifyData(const Space *space, const Time *time,
     ShowInformation("  Data outputted into artracfd.verify...");
     FILE *filePointer = fopen("artracfd.verify", "w");
     if (filePointer == NULL) {
-        FatalError("can not open file, write data failed");
+        FatalError("can not write data to file: artracfd.verify");
     }
     /* output information to file */
     fprintf(filePointer, "#--------------------------------------\n"); 
