@@ -1,9 +1,8 @@
 /****************************************************************************
  * Functions for Domain Decomposition                                       *
- * Last-modified: 17 Jan 2015 12:14:38 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide.                                 *
- * - This file defines the partitions of computational domain.              *
+ * - This file defines a function for partitioning computational domain.    *
  ****************************************************************************/
 /****************************************************************************
  * Required Header Files
@@ -50,7 +49,8 @@ int DomainPartition(Partition *part, const Space *space)
     };
     /*
      * Assign storages and values for name pointers according to 
-     * the total number of partitions and name length.
+     * the total number of partitions and name length. These assigned
+     * storage need to be received in the postprocessor.
      */
     /* the storage space for names */
     part->nameLength = 50; /* length of names */

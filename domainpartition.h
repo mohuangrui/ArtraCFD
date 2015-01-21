@@ -1,6 +1,5 @@
 /****************************************************************************
  * Header File                                                              *
- * Last-modified: 17 Jan 2015 12:13:59 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide                                  *
  ****************************************************************************/
@@ -17,8 +16,15 @@
  * Data Structure Declarations
  ****************************************************************************/
 /****************************************************************************
- * Function declaration
+ * Public Functions Declaration
  ****************************************************************************/
+/*
+ * Domain partition
+ *
+ * Function
+ *      Decomposite the computational domain, and provide the index range
+ *      for each partitions, as well as partition names.
+ */
 int DomainPartition(Partition *, const Space *);
 #endif
 /* a good practice: end file with a newline */
