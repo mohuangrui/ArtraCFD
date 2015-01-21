@@ -1,6 +1,5 @@
 /****************************************************************************
  * Header File                                                              *
- * Last-modified: 17 Jan 2015 12:22:47 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide                                  *
  ****************************************************************************/
@@ -17,8 +16,15 @@
  * Data Structure Declarations
  ****************************************************************************/
 /****************************************************************************
- * Function declaration
+ * Public Functions Declaration
  ****************************************************************************/
+/*
+ * Numerical solving
+ *
+ * Function
+ *      Call a series of function to perform numerical computation of the flow
+ *      case.
+ */
 int Solve(Field *, Flux *, Space *, Particle *, Time *, 
         const Partition *, const Fluid *, const Flow *, const Reference *);
 #endif

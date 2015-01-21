@@ -1,9 +1,8 @@
 /****************************************************************************
  * Flow Initialization                                                      *
- * Last-modified: 19 Jan 2015 04:37:19 AM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide.                                 *
- * - This file handles flow initialization.                                 *
+ * - This file defines a function that handles flow initialization.         *
  ****************************************************************************/
 /****************************************************************************
  * Required Header Files
@@ -56,8 +55,6 @@ static int FirstRunInitializer(Field *field, Space *space, const Partition *part
 /*
  * If this is a restart run, then initialize flow field by reading field data
  * from restart files.
- * NOTE: if memeory locations of input objects overlap, the behavior of
- * sscanf is undefined!
  */
 static int RestartInitializer(Field *field, Space *space, Time *time,
         const Partition *part)
@@ -72,11 +69,11 @@ static int RestartInitializer(Field *field, Space *space, Time *time,
     snprintf(restartFileName, sizeof restartFileName, "%s.case", restartBaseFileName);
     filePointer = fopen(restartFileName, "r");
     if (filePointer == NULL) {
-        FatalError("Failed to open restart case file...");
+        FatalError("failed to open restart.case...");
     }
     /* read information from file */
     char currentLine[200] = {'\0'}; /* store current line */
-    char garage[100] = {'\0'}; /* store redundant information */
+    char garbage[100] = {'\0'}; /* store redundant information */
     /* get rid of redundant lines */
     fgets(currentLine, sizeof currentLine, filePointer);
     fgets(currentLine, sizeof currentLine, filePointer);
@@ -87,16 +84,16 @@ static int RestartInitializer(Field *field, Space *space, Time *time,
     fgets(currentLine, sizeof currentLine, filePointer);
     /* get restart order number */
     fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, "%s %s %s %s %d\n", garage, garage,
-            garage, garage, &(time->outputCount)); 
+    sscanf(currentLine, "%s %s %s %s %d\n", garbage, garbage,
+            garbage, garbage, &(time->outputCount)); 
     /* get restart time */
     fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, "%s %s %s %s %lg\n", garage, garage,
-            garage, garage, &(time->currentTime)); 
+    sscanf(currentLine, "%s %s %s %s %lg\n", garbage, garbage,
+            garbage, garbage, &(time->currentTime)); 
     /* get current step number */
     fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, "%s %s %s %s %d\n", garage, garage,
-            garage, garage, &(time->stepCount)); 
+    sscanf(currentLine, "%s %s %s %s %d\n", garbage, garbage,
+            garbage, garbage, &(time->stepCount)); 
     fclose(filePointer); /* close current opened file */
     /*
      * Restore field data
@@ -117,7 +114,7 @@ static int RestartInitializer(Field *field, Space *space, Time *time,
                 restartBaseFileName, nameSuffix[dimCount]);
         filePointer = fopen(restartFileName, "rb");
         if (filePointer == NULL) {
-            FatalError("Failed to open file, read data failed...");
+            FatalError("failed to open restart data files...");
         }
         fread(currentLine, sizeof(char), stringLength, filePointer);
         for (partCount = 0; partCount < part->totalN; ++partCount) {

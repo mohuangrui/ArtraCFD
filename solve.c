@@ -1,6 +1,5 @@
 /****************************************************************************
  * Numerical Solving                                                        *
- * Last-modified: 17 Jan 2015 12:22:58 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide.                                 *
  * - This file defines the numerical solving procedures.                    *

@@ -1,6 +1,5 @@
 /****************************************************************************
  * Header File                                                              *
- * Last-modified: 17 Jan 2015 12:24:28 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide                                  *
  ****************************************************************************/
@@ -17,8 +16,16 @@
  * Data Structure Declarations
  ****************************************************************************/
 /****************************************************************************
- * Function declaration
+ * Public Functions Declaration
  ****************************************************************************/
+/*
+ * Flow field initializer
+ *
+ * Function
+ *      Initialize the flow field.
+ *      nonrestart -- initialize by specified data.
+ *      restart -- initialize by restart data.
+ */
 int InitializeFlowField(Field *, Space *, const Particle *, Time *,
         const Partition *);
 #endif
