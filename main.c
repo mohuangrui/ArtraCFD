@@ -1,6 +1,5 @@
 /****************************************************************************
  * ArtraCFD Main Function                                                   *
- * Last-modified: 17 Jan 2015 01:57:56 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide                                  *
  * - This is the main file of the CFD code, controls the overall program.   *
@@ -22,9 +21,9 @@
 int main(void)
 {
     /*
-     * declare and initialize variables
+     * Declare and initialize variables
      */    
-    Field theField = { /* flow variables */
+    Field theField = { /* flow field variables */
         .U = NULL,
         .Un = NULL,
         .Um = NULL,
@@ -109,23 +108,23 @@ int main(void)
         .nameLength = 0
     };
     /*
-     * preprocessing
+     * Preprocessing
      */
     Preprocess(&theField, &theFlux, &theSpace, &theParticle, &theTime, 
             &thePart, &theFluid, &theFlow, &theReference);
     /*
-     * solve
+     * Solve
      */
     Solve(&theField, &theFlux, &theSpace, &theParticle, &theTime, 
             &thePart, &theFluid, &theFlow, &theReference);
     /*
-     * postprocessing
+     * Postprocessing
      */
     Postprocess(&theField, &theFlux, &theSpace, &theParticle, &thePart);
     /*
-     * successfully return
+     * Successfully return
      */
-    return 0; /* return value is zero if runs successfully */ 
+    exit(EXIT_SUCCESS); /* exiting program */ 
 }
 /* a good practice: end file with a newline */
 

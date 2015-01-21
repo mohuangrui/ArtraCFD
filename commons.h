@@ -1,6 +1,5 @@
 /****************************************************************************
  * Header File                                                              *
- * Last-modified: 20 Jan 2015 10:55:03 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide                                  *
  * - Current file only includes structure type declarations and function    *
@@ -29,8 +28,8 @@
  * - #include <***.h> for system header files. It searches for a named file 
  *   in a standard list of system directories.
  * - #include "***.h" for header files of your own program. It searches for 
- *   a named file in the directory containing the current file, 
- *   such as #include "include/foo.h".
+ *   a named file in the directory containing the current file, such as 
+ *   #include "include/foo.h".
  * - Names and order of includes: use standard order for readability and 
  *   to avoid hidden dependencies: 
  *   Related header "foo.h" of the "foo.c" file
@@ -291,6 +290,9 @@
  *
  *                   Issues Related to  Numerical Computing
  *
+ * - Rise the concern about numerical accuracy and reliability whenever conduct
+ *   an algorithm or even an operation. Be aware of catastrophic cancellation
+ *   in operations, numerical stability of the algorithms.
  * - Recommend double rather than float type for floating point variables. 
  * - Don't test for exact equality between floating point numbers. Don't do
  *   this even if one was assigned to the other: y = x;...if ( x == y )...
@@ -300,6 +302,12 @@
  *   equal, you lose k digits of accuracy.
  * - Avoid using floating point numbers as loop counters if exact loop
  *   behaviors are required. Round off errors are unreliable.
+ * - Priorities in writing scientific software should be
+ *   * correctness,
+ *   * numerical stability,
+ *   * accurate discretization (including estimating accuracy),
+ *   * flexibility,
+ *   * efficiency (speed and memory).
  *
  ****************************************************************************/
 /****************************************************************************
@@ -327,12 +335,11 @@
  * Data Structure Declarations
  * - Use struct to pass a bunch of data at a time, it's simple and elegant.
  *   However, make sure about these:
- * - Try to use regular variables and pointers as struct members, don't use 
- *   extremely large arrays which may decrease performance.
  * - Always pass structures by reference. That is, use pointers to structures
  *   as function arguments even when nothing in the struct will be modified in
- *   the function. Should never do value passing to avoid copying the complete
- *   contents of the structure onto the stack.
+ *   the function (at this circumstance, const modifier should be used). 
+ *   Should never do value passing to avoid copying the complete contents
+ *   of the structure onto the stack.
  * - Make sure assigning a valid memory location to the pointer before
  *   dereferencing a pointer!
  ****************************************************************************/

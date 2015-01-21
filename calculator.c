@@ -1,6 +1,5 @@
 /****************************************************************************
  * Expression Calculator                                                    *
- * Last-modified: 20 Jan 2015 09:53:39 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide.                                 *
  * - This file defines a calculator for mathematical expressions            *
@@ -21,7 +20,7 @@
  * Operand
  */
 typedef struct {
-    double *base; /* pointer to stack bottom */
+    double * const base; /* pointer to stack bottom */
     double *top; /* pointer to stack top */
     const int stacksize;
 } OperandStack;
@@ -29,7 +28,7 @@ typedef struct {
  * Operator
  */
 typedef struct {
-    char *base; /* pointer to stack bottom */
+    char * const base; /* pointer to stack bottom */
     char *top; /* pointer to stack top */
     const int stacksize;
     const char priority[19][19]; /* store the priority of operators */
@@ -154,13 +153,15 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
 {
     /*
      *  Every call will define a new space to store the command to avoid
-     *  unclear interference between each inputted data. 
+     *  unclear interference between each inputted data which has different
+     *  content and lengths.
      */
     char expression[250] = {'\0'};
     /*
      * Use as a flag to judge whether '+' and '-' are unary operator based on 
      * the assumption that if "+" "-" appears as unary operator then it must
-     * after a "(" except at the beginning of expression.
+     * after a paratheses except at the beginning of an expression. By puting
+     * a "(" at the initial of the expression, then this rule is always true.
      */
     expression[0] = '(';
     /* target command begins at the second position of storage address */
@@ -201,7 +202,7 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
     while ((*pointer != '\0') || (GetTopElementOfOperatorStack(operatorStack) != '\0')) {
         if (IsDigit(*pointer) == 0) { /* find a operand */
             /* 
-             * read this float to current operand, note the read function will
+             * Read this float to current operand, note the read function will
              * update the pointer to the first character after the float data.
              */
             currentOperand = ReadFirstFloat(&pointer); 
@@ -212,7 +213,7 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
         }
         if (IsConstant(*pointer) == 0) { /* find a constant */
             /* 
-             * read this constant to current operand, note the read function will
+             * Read this constant to current operand, note the read function will
              * update the pointer to the first character after the constant.
              */
             currentOperand = ReadConstant(parameter, &pointer);
@@ -222,23 +223,23 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
             continue;
         }
         /*
-         * now, treat everything left as an operator
+         * Now, treat everything left as an operator
          */
         if (IsOperator(*pointer) != 0) {
-            ShowInformation("Undefined operator");
+            ShowInformation("undefined operator in expression");
             return 1;
         }
         currentOperator = *pointer;
         switch (QueryPriority(operatorStack, GetTopElementOfOperatorStack(operatorStack), currentOperator)) {
             case '<': 
                 /*
-                 * the priority of the head operator in the stack is lower
+                 * The priority of the head operator in the stack is lower
                  * than current operator in command, thus need to push
                  * current operator into stack.
                  */
                 if (IsDualOperatorActAsUnary(pointer) == 0) {
                     /*
-                     * dual operator (they can both be unary and binary )
+                     * Dual operator (they can both be unary and binary )
                      * '+' '-' show as a unary operator, then push a 0 to
                      * operand stack to make them become binary operator 
                      */
@@ -253,7 +254,7 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
                 break;
             case '=': 
                 /*
-                 * if the head operator in stack and current operator in
+                 * If the head operator in stack and current operator in
                  * command have the same priority, they both need to be
                  * dumped since they are control operators like parentheses
                  * and end tag.
@@ -265,7 +266,7 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
                 break;
             case '>': 
                 /*
-                 * if the head operator in stack has higher priority than
+                 * If the head operator in stack has higher priority than
                  * the current operator in command, then the current
                  * operator need to wait and can not go into the stack.
                  * At the same time, the head operator need to finish its
@@ -300,23 +301,23 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
                 }
                 break;
             default: 
-                ShowInformation("Can't match parenthesis");
+                ShowInformation("can not match parenthesis");
                 return 1;
         }
     }
     /*
-     * if the loop successfully exit, then it means the command,
+     * If the loop successfully exit, then it means the command,
      * and operator stack are all processed, now need to check the
      * operand stack, if there are more than one element left, 
      * it means something wrong happened.
      */
     if (operandStack->top - operandStack->base != 1) {
-        ShowInformation("Error, wrong expression");
+        ShowInformation("error, wrong expression");
         parameter->answer = 0; /* reset answer */
         return 1;
     }
     /*
-     * finally, get the final answer
+     * Finally, get the final answer
      */
     /* save the result to answer */
     parameter->answer = GetTopElementOfOperandStack(operandStack); 
@@ -381,7 +382,7 @@ static int QueryIndex(const char operator)
         case '\0':
             i = 18; break;
         default: 
-            ShowInformation("Unidentified operator"); 
+            ShowInformation("unidentified operator"); 
             break;
     }
     return i;
@@ -392,7 +393,7 @@ static int QueryIndex(const char operator)
 static int PushOperandToStack(OperandStack *operandStack, const double currentOperand)
 {
     if ((operandStack->top - operandStack->base) >= operandStack->stacksize) {
-        ShowInformation("Operand stack is overflowing...");
+        ShowInformation("operand stack is overflowing...");
         return 1;
     }
     *operandStack->top = currentOperand;
@@ -405,7 +406,7 @@ static int PushOperandToStack(OperandStack *operandStack, const double currentOp
 static int PopOperandFromStack(OperandStack *operandStack, double *operandAddress)
 {
     if (operandStack->top == operandStack->base) {
-        ShowInformation("Encountering an empty operand stack...");
+        ShowInformation("no sufficient operands in expression...");
         return 1;
     }
     --operandStack->top;
@@ -425,7 +426,7 @@ static double GetTopElementOfOperandStack(const OperandStack *operandStack)
 static int PushOperatorToStack(OperatorStack *operatorStack, const char currentOperator)
 {
     if ((operatorStack->top - operatorStack->base) >= operatorStack->stacksize) {
-        ShowInformation("Operator stack is overflowing...");
+        ShowInformation("operator stack is overflowing...");
         return 1;
     }
     *operatorStack->top = currentOperator;
@@ -438,7 +439,7 @@ static int PushOperatorToStack(OperatorStack *operatorStack, const char currentO
 static int PopOperatorFromStack(OperatorStack *operatorStack, char *operatorAddress)
 {
     if (operatorStack->top == operatorStack->base) {
-        ShowInformation("Encountering an empty operator stack...");
+        ShowInformation("no sufficient operators in expression...");
         return 1;
     }
     --operatorStack->top;
@@ -454,9 +455,7 @@ static char GetTopElementOfOperatorStack(const OperatorStack *operatorStack)
 }
 /*
  * Translate the input command to specific format that program can recognize
- * every operator correctly, such as use:
- * "e" "n" "g" stands for "exp" "ln" "lg" respectively.
- * Note: receiver always points to the newest receiving position.
+ * every operator correctly.
  */
 static int TranslateCommandToMathExpression(char *command)
 {
@@ -468,8 +467,8 @@ static int TranslateCommandToMathExpression(char *command)
             case 'e': 
                 if ((scanner[1] == 'x') && (scanner[2] == 'p')) { /* use "e" stands for "exp" */
                     receiver[0] = 'e';
-                    ++receiver;
-                    scanner = scanner + 3;
+                    ++receiver; /* update receiver to newest receiving position */
+                    scanner = scanner + 3; /* update scanner to newest scanning position */
                 } else {
                     ShowInformation("unknown operator: e..");
                     return 1;
@@ -562,7 +561,7 @@ static int TranslateCommandToMathExpression(char *command)
             default:
                 test = IsDigit(scanner[0]) * IsPureBinaryOperator(scanner[0]) * 
                     IsDualOperator(scanner[0]) * IsLeftParentheses(scanner[0]) * 
-                    IsRightParentheses(scanner[0]);
+                    IsRightParentheses(scanner[0]); /* if any one is true, it's true */
                 if (test == 0) { /* legal input single character */
                     receiver[0] = scanner[0];
                     ++receiver;
@@ -584,7 +583,7 @@ static int IsOperator(const char character)
     testCondition = IsPureUnaryOperator(character) *
         IsPureBinaryOperator(character) * IsDualOperator(character) *
         IsLeftParentheses(character) * IsRightParentheses(character) *
-        IsEndTag(character);
+        IsEndTag(character); /* if any one is true, it's true */
     if (testCondition == 0) {
         return 0;
     }
@@ -609,7 +608,7 @@ static int IsDualOperator(const char character)
 static int IsDualOperatorActAsUnary(const char *pointer)
 {
     int testCondition = IsDualOperator(*pointer) + 
-        IsLeftParentheses(*(pointer - 1));
+        IsLeftParentheses(*(pointer - 1)); /* if both are true, it's true */
     if (testCondition == 0) { /* it means is a unary operator */
         return 0;
     }
@@ -698,7 +697,7 @@ static double ReadConstant(const Parameter *parameter, char **pointerAddress)
             ++string;
             break;
         default: 
-            ShowInformation("Undefined constant value");
+            ShowInformation("undefined constant value");
             break;
     }
     *pointerAddress = string; /* get the updated address */
@@ -713,7 +712,7 @@ static int UnaryOperation(const Parameter *parameter,
             break;
         case 'n':
             if (operandA <= 0) {
-                ShowInformation("Negative argument of ln(x)");
+                ShowInformation("negative argument of ln(x)");
                 *currentOperandAddress = 0;
                 return 1;
             }
@@ -721,7 +720,7 @@ static int UnaryOperation(const Parameter *parameter,
             break;
         case 'g':
             if (operandA <= 0) {
-                ShowInformation("Negative argument of lg(x)");
+                ShowInformation("negative argument of lg(x)");
                 *currentOperandAddress = 0;
                 return 1;
             }
@@ -737,7 +736,12 @@ static int UnaryOperation(const Parameter *parameter,
             *currentOperandAddress = cos(operandA * parameter->angleFactor);
             break;
         case 't':
-            *currentOperandAddress = sin(operandA * parameter->angleFactor) / cos(operandA * parameter-> angleFactor);
+            if (cos(operandA * parameter->angleFactor) == 0) {
+                ShowInformation("negative argument of tangent");
+                *currentOperandAddress = 0;
+                return 1;
+            }
+            *currentOperandAddress = sin(operandA * parameter->angleFactor) / cos(operandA * parameter->angleFactor);
             break;
         default: 
             *currentOperandAddress = 0;
@@ -760,6 +764,11 @@ static int BinaryOperation(const double operandB,
             *currentOperandAddress = operandB * operandA;
             break;
         case '/':
+            if (operandA == 0) {
+                ShowInformation("negative argument of divide");
+                *currentOperandAddress = 0;
+                return 1;
+            }
             *currentOperandAddress = operandB / operandA;
             break;
         case '^':
@@ -787,7 +796,7 @@ static int SetAngleMode(Parameter *parameter)
             parameter->angleFactor = parameter->pi / 180;
             ShowInformation("*** Set mode: angle in degree ***");
         } else {
-            ShowInformation("Warning, unknown command...");
+            ShowInformation("warning, unknown command...");
             parameter->angleFactor = 1;
             ShowInformation("*** Reset to default mode: angle in radian ***");
         }
