@@ -25,7 +25,8 @@ int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space,
     double exportTimeInterval = (time->totalTime - time->currentTime);
     /* check whether current time is equal to or larger than the total time */
     if (exportTimeInterval <= 0) {
-        ShowInformation("current time is equal to or larger than total time...");
+        ShowInformation("  current time is equal to or larger than total time...");
+        ShowInformation("Session End");
         return 1;
     }
     /* obtain the desired export time interval */
