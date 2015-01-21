@@ -140,7 +140,7 @@ static int WriteVerifyData(const Space *space, const Time *time,
     ShowInformation("  Data outputted into artracfd.verify...");
     FILE *filePointer = fopen("artracfd.verify", "w");
     if (filePointer == NULL) {
-        FatalError("can not write data to file: artracfd.verify");
+        FatalError("failed to write data to file: artracfd.verify");
     }
     /* output information to file */
     fprintf(filePointer, "#--------------------------------------\n"); 
@@ -148,7 +148,7 @@ static int WriteVerifyData(const Space *space, const Time *time,
     fprintf(filePointer, "#--------------------------------------\n"); 
     fprintf(filePointer, "#       >> Space Domain << \n"); 
     fprintf(filePointer, "#--------------------------------------\n"); 
-    fprintf(filePointer, "x, y, z length: %lg, %lg, %lg\n", 
+    fprintf(filePointer, "x, y, z length: %.6lg, %.6lg, %.6lg\n", 
             space->dx, space->dy, space->dz); 
     fprintf(filePointer, "x, y, z mesh number: %d, %d, %d\n", 
             space->nx, space->ny, space->nz); 
@@ -157,22 +157,22 @@ static int WriteVerifyData(const Space *space, const Time *time,
     fprintf(filePointer, "#       >> Time Domain << \n"); 
     fprintf(filePointer, "#--------------------------------------\n"); 
     fprintf(filePointer, "restart flag: %d\n", time->restart); 
-    fprintf(filePointer, "total evolution time: %lg\n", time->totalTime); 
-    fprintf(filePointer, "CFL condition number: %lg\n", time->numCFL); 
+    fprintf(filePointer, "total evolution time: %.6lg\n", time->totalTime); 
+    fprintf(filePointer, "CFL condition number: %.6lg\n", time->numCFL); 
     fprintf(filePointer, "exporting data times: %d\n", time->totalOutputTimes); 
     fprintf(filePointer, "#--------------------------------------\n"); 
     fprintf(filePointer, "#     >> Fluid Properties << \n"); 
     fprintf(filePointer, "#--------------------------------------\n"); 
-    fprintf(filePointer, "fluid density: %lg\n", fluid->density); 
-    fprintf(filePointer, "kinematic viscosity: %lg\n", fluid->nu); 
-    fprintf(filePointer, "thermal diffusivity: %lg\n", fluid->alpha); 
+    fprintf(filePointer, "fluid density: %.6lg\n", fluid->density); 
+    fprintf(filePointer, "kinematic viscosity: %.6lg\n", fluid->nu); 
+    fprintf(filePointer, "thermal diffusivity: %.6lg\n", fluid->alpha); 
     fprintf(filePointer, "#--------------------------------------\n"); 
     fprintf(filePointer, "#    >> Characteristic Values << \n"); 
     fprintf(filePointer, "#--------------------------------------\n"); 
-    fprintf(filePointer, "length: %lg\n", reference->length); 
-    fprintf(filePointer, "density: %lg\n", reference->density); 
-    fprintf(filePointer, "velocity: %lg\n", reference->velocity); 
-    fprintf(filePointer, "temperature: %lg\n", reference->temperature); 
+    fprintf(filePointer, "length: %.6lg\n", reference->length); 
+    fprintf(filePointer, "density: %.6lg\n", reference->density); 
+    fprintf(filePointer, "velocity: %.6lg\n", reference->velocity); 
+    fprintf(filePointer, "temperature: %.6lg\n", reference->temperature); 
     fprintf(filePointer, "#--------------------------------------\n\n"); 
     fclose(filePointer); /* close current opened file */
     return 0;

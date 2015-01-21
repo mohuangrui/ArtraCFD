@@ -1,6 +1,5 @@
 /****************************************************************************
  * Functions for Ensight Data Format                                        *
- * Last-modified: 19 Jan 2015 04:39:53 AM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide.                                 *
  * - This file defines operations for Ensight gold data format.             *
@@ -49,7 +48,7 @@ int InitializeEnsightTransientCaseFile(const Time *time)
     ShowInformation("  Initialize Ensight transient case file...");
     FILE *filePointer = fopen("transient.case", "w");
     if (filePointer == NULL) {
-        FatalError("Failed to open file, write data failed...");
+        FatalError("failed to write data to ensight case file: transient.case...");
     }
     /* output information to file */
     const char baseName[50] = "ensight";
@@ -82,7 +81,7 @@ int InitializeEnsightTransientCaseFile(const Time *time)
  * including transient and steady output with file names consists of the 
  * default base file name and export step tag. 
  */
-int WriteComputedDataEnsight(const double *fielddata, const Space *space, 
+int WriteComputedDataEnsight(const double *fieldData, const Space *space, 
         const Particle *particle, const Time *time, const Partition *part)
 {
     ShowInformation("    Writing field data to file...");
@@ -96,7 +95,7 @@ int WriteComputedDataEnsight(const double *fielddata, const Space *space,
     };
     WriteEnsightCaseFile(&enSet, time);
     WriteEnsightGeometryFile(&enSet, space, part);
-    WriteEnsightVariableFile(fielddata, &enSet, space, part);
+    WriteEnsightVariableFile(fieldData, &enSet, space, part);
     WriteParticleFile(&enSet, particle);
     return 0;
 }
@@ -126,7 +125,7 @@ static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
     snprintf(enSet->fileName, enSet->nameLength, "%s.case", enSet->baseName); 
     FILE *filePointer = fopen(enSet->fileName, "w");
     if (filePointer == NULL) {
-        FatalError("Failed to open file, write data failed...");
+        FatalError("failed to write data to ensight case file: ensight.case***...");
     }
     /* output information to file */
     fprintf(filePointer, "FORMAT\n"); 
@@ -137,7 +136,7 @@ static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
     fprintf(filePointer, "\n"); 
     fprintf(filePointer, "VARIABLE\n"); 
     fprintf(filePointer, "constant per case:  Order %d\n", time->outputCount);
-    fprintf(filePointer, "constant per case:  Time  %g\n", time->currentTime);
+    fprintf(filePointer, "constant per case:  Time  %.6lg\n", time->currentTime);
     fprintf(filePointer, "constant per case:  Step  %d\n", time->stepCount);
     fprintf(filePointer, "scalar per node:    R     %s.den\n", enSet->baseName); 
     fprintf(filePointer, "scalar per node:    u     %s.u\n", enSet->baseName); 
@@ -153,12 +152,12 @@ static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
      */
     filePointer = fopen("transient.case", "a");
     if (filePointer == NULL) {
-        FatalError("Failed to open file, write data failed...");
+        FatalError("failed to add data to ensight case file: transient.case...");
     }
     if ((time->outputCount % 5) == 0) { /* print to a new line every x outputs */
         fprintf(filePointer, "\n"); 
     }
-    fprintf(filePointer, "%lg ", time->currentTime); 
+    fprintf(filePointer, "%.6lg ", time->currentTime); 
     fclose(filePointer); /* close current opened file */
     return 0;
 }
@@ -175,7 +174,7 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
     snprintf(enSet->fileName, enSet->nameLength, "%s.geo", enSet->baseName);
     FILE *filePointer = fopen(enSet->fileName, "wb");
     if (filePointer == NULL) {
-        FatalError("Failed to open file, write data failed...");
+        FatalError("failed to write data to ensight geometry file: ensight.geo***...");
     }
     /*
      * Output information to file, need to strictly follow the Ensight data format.
@@ -277,7 +276,7 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
  * the same IJK order as the coordinates. (The number of nodes in the
  * part are obtained from the corresponding EnSight Gold geometry file.)
  */
-static int WriteEnsightVariableFile(const double *fielddata, EnsightSet *enSet,
+static int WriteEnsightVariableFile(const double *fieldData, EnsightSet *enSet,
         const Space *space, const Partition *part)
 {
     ShowInformation("      Ensight variable files...");
@@ -292,7 +291,7 @@ static int WriteEnsightVariableFile(const double *fielddata, EnsightSet *enSet,
     /*
      * Write the scalar field (Binary Form)
      * There are six primitive variables in primitive variable
-     * vector(fielddata): density, u, v, w, pressure, temperature,
+     * vector(fieldData): density, u, v, w, pressure, temperature,
      * the writing sequence is the same with that.
      */
     const int dimU = 6; /* dimension of the primitive variable vector */
@@ -303,7 +302,7 @@ static int WriteEnsightVariableFile(const double *fielddata, EnsightSet *enSet,
                 nameSuffix[dimCount]);
         filePointer = fopen(enSet->fileName, "wb");
         if (filePointer == NULL) {
-            FatalError("Failed to open file, write data failed...");
+            FatalError("failed to write data to ensight data file: ensight.***...");
         }
         /* first line description per file */
         strncpy(enSet->stringData, "scalar variable", enSet->stringLength);
@@ -321,7 +320,7 @@ static int WriteEnsightVariableFile(const double *fielddata, EnsightSet *enSet,
                 for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                     for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
                         idx = ((dimCount * space->kMax + k) * space->jMax + j) * space->iMax + i;
-                        enSet->data = fielddata[idx];
+                        enSet->data = fieldData[idx];
                         fwrite(&enSet->data, sizeof enSet->data, 1, filePointer);
                     }
                 }
@@ -335,7 +334,7 @@ static int WriteEnsightVariableFile(const double *fielddata, EnsightSet *enSet,
     snprintf(enSet->fileName, enSet->nameLength, "%s.vel", enSet->baseName);
     filePointer = fopen(enSet->fileName, "wb");
     if (filePointer == NULL) {
-        FatalError("Failed to open file, write data failed...");
+        FatalError("failed to write ensight data file: ensight.vel***...");
     }
     /* binary file format */
     strncpy(enSet->stringData, "vector variable", enSet->stringLength);
@@ -349,7 +348,7 @@ static int WriteEnsightVariableFile(const double *fielddata, EnsightSet *enSet,
         fwrite(enSet->stringData, sizeof(char), enSet->stringLength, filePointer);
         /*
          * Now output the vector components at each node in current part
-         * dimension index of u, v, w is 1, 2, 3 in fielddata in each part, 
+         * dimension index of u, v, w is 1, 2, 3 in fieldData in each part, 
          * write u, v, w sequentially
          */
         for (dimCount = 1; dimCount < 4; ++dimCount) {
@@ -357,7 +356,7 @@ static int WriteEnsightVariableFile(const double *fielddata, EnsightSet *enSet,
                 for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                     for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
                         idx = ((dimCount * space->kMax + k) * space->jMax + j) * space->iMax + i;
-                        enSet->data = fielddata[idx];
+                        enSet->data = fieldData[idx];
                         fwrite(&enSet->data, sizeof enSet->data, 1, filePointer);
                     }
                 }
@@ -377,12 +376,12 @@ static int WriteParticleFile(EnsightSet *enSet, const Particle *particle)
     snprintf(enSet->fileName, enSet->nameLength, "%s.particle", enSet->baseName);
     FILE *filePointer = fopen(enSet->fileName, "w");
     if (filePointer == NULL) {
-        FatalError("Failed to open file, write data failed...");
+        FatalError("faild to write particle data file: ensight.particle***...");
     }
     fprintf(filePointer, "N: %d\n", particle->totalN); /* number of objects */
     int geoCount = 0;
     for (geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        fprintf(filePointer, "%lg, %lg, %lg, %lg, %lg, %lg, %lg\n", 
+        fprintf(filePointer, "%.6lg, %.6lg, %.6lg, %.6lg, %.6lg, %.6lg, %.6lg\n", 
                 particle->x[geoCount], particle->y[geoCount],
                 particle->z[geoCount], particle->r[geoCount],
                 particle->u[geoCount], particle->v[geoCount],

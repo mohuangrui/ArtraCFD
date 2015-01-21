@@ -23,7 +23,7 @@
  *
  * Function
  *      Load geometry data to program.
- *      -- nonrestart run, load from file artracfd.geo
+ *      -- non restart run, load from file artracfd.geo
  *      -- restart run, load from the restart particle file.
  */
 int LoadGeometryData(Particle *, const Time *);
