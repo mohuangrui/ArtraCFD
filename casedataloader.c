@@ -183,7 +183,7 @@ static int WriteVerifyData(const Space *space, const Time *time,
 static int CheckCaseSettingData(const Space *space, const Time *time, 
         const Fluid *fluid, const Reference *reference)
 {
-    ShowInformation("Preliminary case data checking ...");
+    ShowInformation("  Preliminary case data checking ...");
     /* space */
     if ((space->dz < 0) || (space->dy < 0) || (space->dx < 0)) {
         FatalError("negative length values in case settings");
