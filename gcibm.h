@@ -1,6 +1,5 @@
 /****************************************************************************
  * Header File                                                              *
- * Last-modified: 18 Jan 2015 10:06:14 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide                                  *
  ****************************************************************************/
@@ -17,9 +16,23 @@
  * Data Structure Declarations
  ****************************************************************************/
 /****************************************************************************
- * Function declaration
+ * Public Functions Declaration
  ****************************************************************************/
+/*
+ * Initialize domain geometry
+ *
+ * Function
+ *      Initialize domain geometry and call ComputeDomainGeometryGCIBM to
+ *      mesh the domain by GCIBM approach. It only needs to be call once.
+ */
 int InitializeDomainGeometryGCIBM(Space *, Particle *, const Partition *);
+/*
+ * Compute domain geometry
+ *
+ * Function
+ *      Employ GCIBM approach to handle complex geometry that locates in
+ *      the computational domain.
+ */
 int ComputeDomainGeometryGCIBM(Space *, Particle *, const Partition *);
 #endif
 /* a good practice: end file with a newline */

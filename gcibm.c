@@ -1,6 +1,5 @@
 /****************************************************************************
  * Space Domain Meshing                                                     *
- * Last-modified: 18 Jan 2015 10:08:54 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide.                                 *
  * - This file use ghost cell immersed boundary method to handle complex    *
@@ -44,7 +43,7 @@ int InitializeDomainGeometryGCIBM(Space *space, Particle *particle, const Partit
 {
     ShowInformation("Initialize domain geometry...");
     /*
-     * first initialize the entire domain to type "2"
+     * First initialize the entire domain to type "2"
      */
     /* linear array index math variable */
     int idx = 0; /* calculated index */
@@ -61,7 +60,7 @@ int InitializeDomainGeometryGCIBM(Space *space, Particle *particle, const Partit
         }
     }
     /*
-     * then call ComputeDomainGeometryGCIBM
+     * Then call ComputeDomainGeometryGCIBM
      */
     ComputeDomainGeometryGCIBM(space, particle, part); /* domain meshing */
     ShowInformation("Session End");
