@@ -1,6 +1,5 @@
 /****************************************************************************
  * Header File                                                              *
- * Last-modified: 19 Jan 2015 11:22:04 AM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide                                  *
  ****************************************************************************/
@@ -16,8 +15,15 @@
  * Data Structure Declarations
  ****************************************************************************/
 /****************************************************************************
- * Function declaration
+ * Public Functions Declaration
  ****************************************************************************/
+/*
+ * Expression calculator
+ *
+ * Function
+ *      Provide a expression calculator that can calculate complex mathematical
+ *      expressions.
+ */
 int ExpressionCalculator(void);
 #endif
 /* a good practice: end file with a newline */

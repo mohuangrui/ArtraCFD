@@ -121,14 +121,14 @@ int ExpressionCalculator(void)
     };
     char currentLine[250] = {'\0'}; /* store the input information */
     /* main loop */
-    printf("**********************************************************\n\n");
-    printf("Enter 'help' for a brief user manual of calculator\n");
-    printf("**********************************************************\n\n");
+    fprintf(stdout, "**********************************************************\n\n");
+    fprintf(stdout, "Enter 'help' for a brief user manual of calculator\n");
+    fprintf(stdout, "**********************************************************\n\n");
     while (1) {
-        printf("\nArtraCFD Calculator<< ");
+        fprintf(stdout, "\nArtraCFD Calculator<< ");
         fgets(currentLine, sizeof currentLine, stdin); /* read a line */
         CommandLineProcessor(currentLine); /* process current command */
-        printf("\n");
+        fprintf(stdout, "\n");
         if (strncmp(currentLine, "help", sizeof currentLine) == 0) {
             HelpCalculator();
             continue;
@@ -141,7 +141,7 @@ int ExpressionCalculator(void)
             return 0;
         } 
         if (currentLine[0] == '\0') { /* no useful information in the command */
-            printf("\n");
+            fprintf(stdout, "\n");
             continue;
         }
         /* if non of above is true, then compute the expression */
@@ -322,7 +322,7 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
     /* save the result to answer */
     parameter->answer = GetTopElementOfOperandStack(operandStack); 
     /* output the results */
-    printf("ans = %.6lg\n", parameter->answer);
+    fprintf(stdout, "ans = %.6lg\n", parameter->answer);
     return 0;
 }
 /*
@@ -782,12 +782,12 @@ static int BinaryOperation(const double operandB,
 }
 static int SetAngleMode(Parameter *parameter)
 {
-    printf("Set mode by order number\n");
-    printf("\n 1 Angle in radian\n 2 Angle in degree\n\nSet:");
+    fprintf(stdout, "Set mode by order number\n");
+    fprintf(stdout, "\n 1 Angle in radian\n 2 Angle in degree\n\nSet:");
     char currentLine[250] = {'\0'}; /* store current line */
     fgets(currentLine, sizeof currentLine, stdin); /* read a line */
     sscanf(currentLine, "%d", &(parameter->radianMode));
-    printf("\n");
+    fprintf(stdout, "\n");
     if (parameter->radianMode == 1) {
         parameter->angleFactor = 1;
         ShowInformation("*** Set mode: angle in radian ***");
@@ -805,19 +805,19 @@ static int SetAngleMode(Parameter *parameter)
 }
 static void HelpCalculator(void)
 {
-    printf("Operation options:\n");
-    printf("[help]              show this information\n");
-    printf("[set]               set angle mode in radian (default) or degree\n");
-    printf("math expression     calculator the inputted math expression\n");
-    printf("[quit]              return to ArtraCFD\n\n");
-    printf("                   Expression Calculator\n");
-    printf("Notice: Please avoid ambiguity expressions and use parenthesis:\n");
-    printf("        \'()\',\'[]\',\'{}\' to make semantic clear\n");
-    printf("Support: +, -, *, /, x^y, exp(x), ln(x), lg(x), abs(x), sin(a), cos(a), tan(a), pi\n");
-    printf("         where, x,y are numbers or expressions; a is a degree or radian;\n");
-    printf("         keyword \'ans\' is used to access the calculated value of last expression;\n");
-    printf("         space and tab are ignored in expression calculation;\n");
-    printf("Example: 1.5*sin(-pi/6)-[cos(pi/3)]^2+ln{exp[5*lg(abs(-100))]}\n\n");
+    fprintf(stdout, "Operation options:\n");
+    fprintf(stdout, "[help]              show this information\n");
+    fprintf(stdout, "[set]               set angle mode in radian (default) or degree\n");
+    fprintf(stdout, "math expression     calculator the inputted math expression\n");
+    fprintf(stdout, "[quit]              return to ArtraCFD\n\n");
+    fprintf(stdout, "                   Expression Calculator\n");
+    fprintf(stdout, "Notice: Please avoid ambiguity expressions and use parenthesis:\n");
+    fprintf(stdout, "        \'()\',\'[]\',\'{}\' to make semantic clear\n");
+    fprintf(stdout, "Support: +, -, *, /, x^y, exp(x), ln(x), lg(x), abs(x), sin(a), cos(a), tan(a), pi\n");
+    fprintf(stdout, "         where, x,y are numbers or expressions; a is a degree or radian;\n");
+    fprintf(stdout, "         keyword \'ans\' is used to access the calculated value of last expression;\n");
+    fprintf(stdout, "         space and tab are ignored in expression calculation;\n");
+    fprintf(stdout, "Example: 1.5*sin(-pi/6)-[cos(pi/3)]^2+ln{exp[5*lg(abs(-100))]}\n\n");
 }
 /* a good practice: end file with a newline */
 
