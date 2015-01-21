@@ -232,7 +232,7 @@
  *   stays in memory until the program ends. While this behaviour resembles
  *   that of global variables, static variables still obey scope rules and
  *   therefore cannot be accessed outside of their scope. Hence, you need to
- *   pass its adress out if access is needed outside its local scope.
+ *   pass its address out if access is needed outside its local scope.
  * - In C single quotes identify a single character, while double quotes 
  *   create a string literal. 'a' is a single a character literal, while "a" 
  *   is a string literal containing an 'a' and a null terminator (that is a
@@ -490,13 +490,76 @@ typedef struct {
     int nameLength; /* length of names */
 }Partition;
 /****************************************************************************
- * Function declaration
+ * Public functions declaration
  ****************************************************************************/
-int CommandLineProcessor(char *);
-void FatalError(const char *);
-int ShowInformation(const char *);
-void *AssignStorage(const int, const char *);
-int RetrieveStorage(void *);
+/*
+ * Command line processor
+ *
+ * Parameters
+ *      lineCommand -- the command to be processed
+ * Function
+ *      Get rid of end of line, and information after #.
+ *      Get rid of before and after tabs, replace between tabs with a space.
+ *      Get rid of before and after spaces, retain only one space in words.
+ *      If no other information exists, the lineCommand turns to a NULL string.
+ * Returns
+ *      0 -- successful
+ */
+int CommandLineProcessor(char *lineCommand);
+/*
+ * Fatal error control
+ *
+ * Parameters
+ *      statement -- the information to show
+ * Function
+ *      Print information and then exit. Once the process exits, the operating
+ *      system is able to free all dynamically allocated memory associated with
+ *      the process.
+ */
+void FatalError(const char *statement);
+/*
+ * Show information to terminal
+ *
+ * Parameters
+ *      statement -- the information to show. If statement is "Session End",
+ *      it prints a line asterisks.
+ * Function
+ *      Print information to standard out.
+ */
+int ShowInformation(const char *statement);
+/*
+ * Assign Storage
+ *
+ * Parameters
+ *      idxMax -- the maximum number of elements
+ *      dataType -- the data type of elements, can be "int", "double", "char"
+ * Function
+ *      Use malloc to assign a linear array of storage with specified data type.
+ * Returns
+ *      The head address of the assigned storage.
+ * Notice
+ *      malloc does not initialize the storage; this means that the assigned
+ *      memory may contain random or unexpected values!
+ * Returns
+ *      0 -- successful
+ */
+void *AssignStorage(const int idxMax, const char *dataType);
+/*
+ * Retrieve storage from a pointer.
+ *
+ * Parameter
+ *      pointer -- the pointer that contains the storage address
+ * Function
+ *      Use free to free the storage space of the pointer.
+ * Notice
+ *      Don't free pointer of storage that not allocated by dynamic allocation.
+ *      The original pointer becomes to be a wild pointer after being freed, be
+ *      aware of this situation. It's a better practice to set pointer back to NULL
+ *      after calling free.
+ * Returns
+ *      0 -- successful
+ */
+int RetrieveStorage(void *pointer);
 #endif
 /* a good practice: end file with a newline */
 
