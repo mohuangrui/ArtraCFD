@@ -1,6 +1,6 @@
 /****************************************************************************
  * Numeric Scheme in Time Doamin                                            *
- * Last-modified: 17 Jan 2015 12:32:49 PM
+ * Last-modified: 20 Jan 2015 11:38:57 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide.                                 *
  * - This file defines the numeric schemes of time domain.                  *
@@ -39,7 +39,8 @@ int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space,
         printf("\nStep=%d; Time=%lg; dt=%lg\n", time->stepCount, time->currentTime, time->dt);
         /* export computed data */
         accumulatedTime = accumulatedTime + time->dt;
-        if ((accumulatedTime >=  exportTimeInterval) || (time->currentTime == time->totalTime)) {
+        if ((accumulatedTime >=  exportTimeInterval) || 
+                (fabs(time->currentTime - time->totalTime) < 1e-15)) {
             ++time->outputCount; /* export count increase */
             WriteComputedDataEnsight(field->Uo, space, particle, time, part);
             accumulatedTime = 0; /* reset accumulated time */

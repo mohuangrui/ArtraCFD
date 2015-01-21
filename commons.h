@@ -1,6 +1,6 @@
 /****************************************************************************
  * Header File                                                              *
- * Last-modified: 19 Jan 2015 07:57:14 AM
+ * Last-modified: 20 Jan 2015 10:55:03 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide                                  *
  * - Current file only includes structure type declarations and function    *
@@ -282,6 +282,24 @@
  *   awkward code structure. Hand optimizations can create odd looking code
  *   that is harder for a compiler to match up to an optimization template.
  *   It is often better to resist the temptation to optimize the code. 
+ * - Code performance is not only about algorithms, but also is related to
+ *   CPU time and memory reading. To get close to CPU peak, codes should
+ *   designed to make best use of hardware, especially memory caches.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ *
+ *                   Issues Related to  Numerical Computing
+ *
+ * - Recommend double rather than float type for floating point variables. 
+ * - Don't test for exact equality between floating point numbers. Don't do
+ *   this even if one was assigned to the other: y = x;...if ( x == y )...
+ * - Don't subtract nearly equal quantities and then divide by something small.
+ *   This often results in catastrophic cancellation and all digits of accuracy
+ *   are lost. In general, if you subtract numbers where the first k digits are
+ *   equal, you lose k digits of accuracy.
+ * - Avoid using floating point numbers as loop counters if exact loop
+ *   behaviors are required. Round off errors are unreliable.
  *
  ****************************************************************************/
 /****************************************************************************
