@@ -1,9 +1,8 @@
 /****************************************************************************
  * Case Data Loader                                                         *
- * Last-modified: 19 Jan 2015 10:06:26 AM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide.                                 *
- * - This file defines a loader for the case settings                       *
+ * - This file defines a loader for the case setting file artracfd.case     *
  ****************************************************************************/
 /****************************************************************************
  * Required Header Files
@@ -17,15 +16,40 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
+static int ReadCaseSettingData(Space *, Time *, Fluid *, Reference *);
 static int WriteVerifyData(const Space *, const Time *, const Fluid *,
+        const Reference *);
+static int CheckCaseSettingData(const Space *, const Time *, const Fluid *,
         const Reference *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
 /*
  * This function load the case settings from the case file.
+ */
+int LoadCaseSettingData(Space *space, Time *time, Fluid *fluid, 
+        Reference *reference)
+{
+    ShowInformation("Loading case setting data ...");
+    /*
+     * Read data from case file
+     */
+    ReadCaseSettingData(space, time, fluid, reference);
+    /*
+     * Output loaded data for verification
+     */
+    WriteVerifyData(space, time, fluid, reference);
+    /*
+     * Do some preliminary checking
+     */
+    CheckCaseSettingData(space, time, fluid, reference);
+    ShowInformation("Session End");
+    return 0;
+}
+/*
+ * This function read the case settings from the case file.
  * The key is to read and process file line by line. Use "*** begin" 
- * in the case file to identify and control the loading. 
+ * in the case file to identify and control the reading. 
  * The function scanf is notorious for its poor end-of-line handling,
  * Instead, use fgets to read a line of input and sscanf to process it.
  * Note: use a large enough number when using fgets to ensure reading
@@ -37,13 +61,12 @@ static int WriteVerifyData(const Space *, const Time *, const Fluid *,
  * well as in the format specifier, therefore, no need to process those
  * lines that will be processed by sscanf.
  */
-int LoadCaseSettingData(Space *space, Time *time, Fluid *fluid, 
+static int ReadCaseSettingData(Space *space, Time *time, Fluid *fluid, 
         Reference *reference)
 {
-    ShowInformation("Loading case setting data ...");
     FILE *filePointer = fopen("artracfd.case", "r");
     if (filePointer == NULL) {
-        FatalError("Failed to open case data file");
+        FatalError("failed to open case data file");
     }
     /*
      * Read file line by line to get case setting data
@@ -104,13 +127,8 @@ int LoadCaseSettingData(Space *space, Time *time, Fluid *fluid,
      * Check missing information section in configuration
      */
     if (entryCount != 4) {
-        FatalError("Missing or repeated necessary information section");
+        FatalError("missing or repeated necessary information section");
     }
-    /*
-     * Output loaded data for verification
-     */
-    WriteVerifyData(space, time, fluid, reference);
-    ShowInformation("Session End");
     return 0;
 }
 /*
@@ -122,7 +140,7 @@ static int WriteVerifyData(const Space *space, const Time *time,
     ShowInformation("  Data outputted into artracfd.verify...");
     FILE *filePointer = fopen("artracfd.verify", "w");
     if (filePointer == NULL) {
-        FatalError("Can not open file, write data failed");
+        FatalError("can not open file, write data failed");
     }
     /* output information to file */
     fprintf(filePointer, "#--------------------------------------\n"); 
@@ -157,6 +175,38 @@ static int WriteVerifyData(const Space *space, const Time *time,
     fprintf(filePointer, "temperature: %lg\n", reference->temperature); 
     fprintf(filePointer, "#--------------------------------------\n\n"); 
     fclose(filePointer); /* close current opened file */
+    return 0;
+}
+/*
+ * This function do some parameter checking
+ */
+static int CheckCaseSettingData(const Space *space, const Time *time, 
+        const Fluid *fluid, const Reference *reference)
+{
+    ShowInformation("Preliminary case data checking ...");
+    /* space */
+    if ((space->dz < 0) || (space->dy < 0) || (space->dx < 0)) {
+        FatalError("negative length values in case settings");
+    }
+    if ((space->nz < 1) || (space->ny < 1) || (space->nx < 1)
+            || (space->ng < 1)) {
+        FatalError("too small mesh values in case settings");
+    }
+    /* time */
+    if ((time->restart < 0) || (time->restart > 1)|| (time->totalTime <= 0)
+            || (time->numCFL <= 0) || (time->totalOutputTimes < 1)) {
+        FatalError("wrong values in time section of case settings");
+    }
+    /* fluid */
+    if ((fluid->density <= 0) || (fluid->nu <= 0) || (fluid->alpha <= 0)) {
+        FatalError("wrong values in fluid section of case settings");
+    }
+    /* reference */
+    if ((reference->length <= 0) || (reference->density <= 0) || 
+            (reference->velocity <= 0) || reference->temperature <= 0) {
+        FatalError("wrong values in reference section of case settings");
+    }
+    ShowInformation("Session End");
     return 0;
 }
 /* a good practice: end file with a newline */

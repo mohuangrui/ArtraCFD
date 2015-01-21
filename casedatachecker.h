@@ -1,13 +1,14 @@
 /****************************************************************************
  * Header File                                                              *
+ * Last-modified: 18 Jan 2015 09:31:56 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide                                  *
  ****************************************************************************/
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_CASEDATALOADER_H_ /* if this is the first definition */
-#define ARTRACFD_CASEDATALOADER_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_CASEDATACHECKER_H_ /* if this is the first definition */
+#define ARTRACFD_CASEDATACHECKER_H_ /* a unique marker for this header file */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -16,19 +17,10 @@
  * Data Structure Declarations
  ****************************************************************************/
 /****************************************************************************
- * Public Functions Declaration
+ * Function declaration
  ****************************************************************************/
-/*
- * Case setting data loader
- *
- * Function
- *      Load case setting data from file artracfd.case, if file does not 
- *      exist or any illegal data exists in the file, it terminates the
- *      program.
- * Outcome
- *      Will write loaded data to file artracfd.verify for verification.
- */
-int LoadCaseSettingData(Space *, Time *, Fluid *, Reference *);
+int CheckCaseSettingData(const Space *, const Time *, const Fluid *,
+        const Reference *);
 #endif
 /* a good practice: end file with a newline */
 

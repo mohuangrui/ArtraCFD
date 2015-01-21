@@ -12,10 +12,9 @@
 #include <stdlib.h> /* dynamic memory allocation and exit */
 #include <math.h> /* common mathematical functions */
 #include <string.h> /* manipulating strings */
-#include "casefilegenerator.h"
 #include "calculator.h"
+#include "casefilegenerator.h"
 #include "casedataloader.h"
-#include "casedatachecker.h"
 #include "cfdparameters.h"
 #include "domainpartition.h"
 #include "geometryloader.h"
@@ -37,7 +36,6 @@ int Preprocess(Field *field, Flux *flux, Space *space, Particle *particle,
 {
     Preamble();
     LoadCaseSettingData(space, time, fluid, reference);
-    CheckCaseSettingData(space, time, fluid, reference);
     ComputeCFDParameters(space, time, fluid, flow, reference);
     DomainPartition(part, space);
     ProgramMemoryAllocate(field, flux, space);
