@@ -1,6 +1,5 @@
 /****************************************************************************
  * Header File                                                              *
- * Last-modified: 18 Jan 2015 08:22:44 PM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide                                  *
  ****************************************************************************/
@@ -17,8 +16,16 @@
  * Data Structure Declarations
  ****************************************************************************/
 /****************************************************************************
- * Function declaration
+ * Public Functions Declaration
  ****************************************************************************/
+/*
+ * Geometry data loader
+ *
+ * Function
+ *      Load geometry data to program.
+ *      -- nonrestart run, load from file artracfd.geo
+ *      -- restart run, load from the restart particle file.
+ */
 int LoadGeometryData(Particle *, const Time *);
 #endif
 /* a good practice: end file with a newline */

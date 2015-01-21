@@ -1,6 +1,5 @@
 /****************************************************************************
  * Geometry Data Loader                                                     *
- * Last-modified: 19 Jan 2015 10:07:06 AM
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide.                                 *
  * - This file defines a loader for geometry data                           *
@@ -19,7 +18,7 @@
  ****************************************************************************/
 static int NonrestartGeometryLoader(Particle *);
 static int RestartGeometryLoader(Particle *);
-static int ReadGeometryData(Particle *, FILE *);
+static int ReadGeometryData(FILE *, Particle *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -40,7 +39,7 @@ static int NonrestartGeometryLoader(Particle *particle)
     ShowInformation("Loading inputed geometry data ...");
     FILE *filePointer = fopen("artracfd.geo", "r");
     if (filePointer == NULL) {
-        FatalError("Failed to open geometry file");
+        FatalError("failed to open geometry file");
     }
     /* read and process file line by line */
     char currentLine[200] = {'\0'}; /* store the current read line */
@@ -55,14 +54,14 @@ static int NonrestartGeometryLoader(Particle *particle)
         }
         if (strncmp(currentLine, "circle begin", sizeof currentLine) == 0) {
             ++entryCount;
-            ReadGeometryData(particle, filePointer);
+            ReadGeometryData(filePointer, particle);
         }
         continue;
     }
     fclose(filePointer); /* close current opened file */
     /* Check missing information section in configuration */
     if (entryCount != 2) {
-        FatalError("Missing or repeated necessary information section");
+        FatalError("missing or repeated necessary information section");
     }
     ShowInformation("Session End");
     return 0;
@@ -73,18 +72,18 @@ static int RestartGeometryLoader(Particle *particle)
     /* restore geometry information from particle file. */
     FILE *filePointer = fopen("restart.particle", "r");
     if (filePointer == NULL) {
-        FatalError("Failed to open restart particle file");
+        FatalError("failed to open restart particle file");
     }
     /* read and process file line by line */
     char currentLine[200] = {'\0'}; /* store the current read line */
     fgets(currentLine, sizeof currentLine, filePointer);
     sscanf(currentLine, "N: %d", &(particle->totalN)); 
-    ReadGeometryData(particle, filePointer);
+    ReadGeometryData(filePointer, particle);
     fclose(filePointer); /* close current opened file */
     ShowInformation("Session End");
     return 0;
 }
-static int ReadGeometryData(Particle *particle, FILE *filePointer)
+static int ReadGeometryData(FILE *filePointer, Particle *particle)
 {
     if (particle->totalN == 0) { /* no internal geometries */
         return 0;
