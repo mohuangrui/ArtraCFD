@@ -206,7 +206,6 @@ static int CheckCaseSettingData(const Space *space, const Time *time,
             (reference->velocity <= 0) || reference->temperature <= 0) {
         FatalError("wrong values in reference section of case settings");
     }
-    ShowInformation("Session End");
     return 0;
 }
 /* a good practice: end file with a newline */
