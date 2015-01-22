@@ -284,6 +284,8 @@
  * - Code performance is not only about algorithms, but also is related to
  *   CPU time and memory reading. To get close to CPU peak, codes should
  *   designed to make best use of hardware, especially memory caches.
+ * - Google gperftools can do program performance checking including 
+ *   heap-checker, heap-profiler and cpu-profiler.
  *
  ****************************************************************************/
 /****************************************************************************

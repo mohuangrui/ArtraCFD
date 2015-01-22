@@ -14,6 +14,7 @@
 #include <string.h> /* manipulating strings */
 #include "gcibm.h"
 #include "ensight.h"
+#include "timer.h"
 #include "commons.h"
 /****************************************************************************
  * Function definitions
@@ -32,8 +33,12 @@ int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space,
     /* obtain the desired export time interval */
     exportTimeInterval = exportTimeInterval / time->totalOutputTimes;
     double accumulatedTime = 0; /* used for control when to export data */
+    /* set some timers for monitoring timeconsuming of process */
+    Timer operationTimer; /* timer for computing operations */
+    double operationTime = 0; /* record consuming time of operation */
     /* time marching */
     for (time->stepCount += 1; time->currentTime < time->totalTime; ++time->stepCount) {
+        fprintf(stdout, "\nStep=%d; Time=%.6lg\n", time->stepCount, time->currentTime);
         /*
          * Calculate dt for current time step
          */
@@ -50,7 +55,6 @@ int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space,
         /*
          * Compute field data in current time step
          */
-        printf("\nStep=%d; Time=%.6lg; dt=%.6lg\n", time->stepCount, time->currentTime, time->dt);
         /*
          * Export computed data. Use accumulatedTime as a flag, if
          * accumulatedTime increases to anticipated export interval,
@@ -63,8 +67,11 @@ int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space,
         if ((accumulatedTime >=  exportTimeInterval) || 
                 (fabs(time->currentTime - time->totalTime) < 1e-100)) {
             ++time->outputCount; /* export count increase */
+            TickTime(&operationTimer);
             WriteComputedDataEnsight(field->Uo, space, particle, time, part);
+            operationTime = TockTime(&operationTimer);
             accumulatedTime = 0; /* reset accumulated time */
+            fprintf(stdout, "  data export time consuming: %.6lgs\n", operationTime);
         }
         /* fluid solid coupling */
         /* particle dynamics */

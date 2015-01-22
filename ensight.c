@@ -84,7 +84,7 @@ int InitializeEnsightTransientCaseFile(const Time *time)
 int WriteComputedDataEnsight(const double *fieldData, const Space *space, 
         const Particle *particle, const Time *time, const Partition *part)
 {
-    ShowInformation("    Writing field data to file...");
+    ShowInformation("  Writing field data to file...");
     EnsightSet enSet = { /* initialize Ensight environment */
         .baseName = "ensight", /* data file base name */
         .fileName = {'\0'}, /* data file name */
@@ -104,7 +104,6 @@ int WriteComputedDataEnsight(const double *fieldData, const Space *space,
  */
 static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
 {
-    ShowInformation("      Ensight case file...");
     /*
      * Write the steady case file of current step.
      * To get the target file name, the function snprintf is used. It prints 
@@ -166,7 +165,6 @@ static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
  */
 static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const Partition *part)
 {
-    ShowInformation("      Ensight geometry file...");
     /*
      * Write the geometry file (Binary Form).
      * Ensight Maximums: maximum number of nodes in a part is 2GB.
@@ -279,7 +277,6 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
 static int WriteEnsightVariableFile(const double *fieldData, EnsightSet *enSet,
         const Space *space, const Partition *part)
 {
-    ShowInformation("      Ensight variable files...");
     FILE *filePointer = NULL;
     int partCount = 0; /* part count starts from 0 */
     int partNum = 1; /* part number starts from 1 */
@@ -372,7 +369,6 @@ static int WriteEnsightVariableFile(const double *fieldData, EnsightSet *enSet,
  */
 static int WriteParticleFile(EnsightSet *enSet, const Particle *particle)
 {
-    ShowInformation("      Particle file...");
     snprintf(enSet->fileName, enSet->nameLength, "%s.particle", enSet->baseName);
     FILE *filePointer = fopen(enSet->fileName, "w");
     if (filePointer == NULL) {
