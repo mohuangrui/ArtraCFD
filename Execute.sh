@@ -8,16 +8,22 @@
 # you wanted. This approach will provide you the most 
 # flexibility for running your case.
 #
+# This script can be executed with arguments, these arguments
+# will all be passed to the executable program in the form that
+# these arguments will show after the program name.
+#
 #************************************************************
+
 #! /bin/bash
 set -e
+
 #******************** Set Job Parameters ********************
 #
 # Delete characters between quotes to omit an unwanted item.
 #
 
 #* the command line for running your program
-Executable_Pragram="starccmplus name.sim"
+Executable_Pragram="mpirun starccmplus"
 
 #* job type: [mpi] or [serial] or [threaded]
 Job_Type="mpi"
@@ -26,7 +32,7 @@ Job_Type="mpi"
 Extra_Memory_Request="6g"
 
 #* number of processors need to use
-Number_Of_Processors="8"
+Number_Of_Processors="2"
 
 #* how long need to run: [h] for hours, [d] for days
 Time_To_Run="1h"
@@ -60,14 +66,32 @@ Link_Pool="NRAP_1213"
 
 # start MPI programs on nodes: mpirun <COMMAND>
 
-######################## execute part #######################
+# check system default MPI library: sqsub -vd ...
+
+# /home and /work directories on SHARCNET are remote to 
+# clusters, thus, to obtain the best file system throughput
+# should use the /scratch file system, but also notice that
+# /scratch does not have unified access and expiries for
+# each two months.
+
+# set the permissions on the base directory to only be 
+# accessible to yourself: chmod 700 ~/
+
+# How to archive my data? 
+# cp /scratch/$USER/$SIMULATION /archive/$USER/$SIMULATION
+
 #############################################################
-#      generally, following configures do not need to edit
+#    generally, following configures do not need to edit
 #############################################################
+
 #********** obtain the correct form of parameters **********
-#* set the job type, use serial as default. 
-# using the --nompirun flag when submitting parallel job
-# enables to encapsulate MPI jobs in a shell script.
+#
+# set the job type, use serial as default. 
+# using the --nompirun flag when submitting parallel jobs
+# will not auto trigger the mpirun of the job, therefore,
+# it enables to encapsulate MPI jobs in a shell script.
+#
+
 JobType=""
 if [[ $Job_Type == "thread" ]]; then
     JobType="-q thread"
@@ -121,7 +145,21 @@ if [[ -f $ScriptDir/$QsubFile ]]; then
 else
     echo "generate and use the scripts file: $QsubFile..."
 cat > $ScriptDir/$QsubFile <<EOF
+#************************************************************
+#
+#                Current Job Schedule
+#
+# Techniquely, you can do whatever you want with the allocated
+# resources as part of a job - multiple MPI subjobs, serial 
+# sections, etc. However,  the non-MPI portions of this script
+# will run serially. This wastes cycles on all but one of the
+# processors - a serious concern for long serial sections and
+# /or jobs with many cpus.
+#
+#************************************************************
+
 #! /bin/bash
+
 echo "start at  \`date +'%F %k:%M:%S'\`"
 
 # this part indicates any preprocessing.
@@ -129,18 +167,18 @@ echo "preprocessing..."
 
 # now run programs
 echo "running..."
-mpirun $Executable_Pragram
+$Executable_Pragram $@
 
 # this part indicases any postprocessing.
 echo "postprocessing..."
 
 echo "finish at  \`date +'%F %k:%M:%S'\`"
 EOF
-    chmod +x $ScriptDir/$QsubFile
+    chmod +x "$ScriptDir/$QsubFile"
 fi
-echo "******************************************************"
+echo "sqsub $JobType $NumberOfProcessors $ExtraMemoryRequest $TimeToRun $OutputFile $ErrorFile ./$QsubFile"
+echo "sqsub $JobType $NumberOfProcessors $ExtraMemoryRequest $TimeToRun $OutputFile $ErrorFile ./$QsubFile" > "$Output_File"
 sqsub $JobType $NumberOfProcessors $ExtraMemoryRequest $TimeToRun $OutputFile $ErrorFile ./$QsubFile
-echo "******************************************************"
 echo "Job submitted!"
 echo "******************************************************"
-#############################################################
+
