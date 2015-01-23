@@ -84,6 +84,7 @@ CC := gcc
 #    -O2	   Optimize for speed and enable some optimization (default)
 #	 -O3	   Enable all optimizations as O2, and intensive loop optimizations
 #	 -xP 	   Enables SSE3, SSE2 and SSE instruction sets optimizations
+#
 ifeq($(CC),gcc)
 CFLAGS += -Wall -Wextra -O2
 else
@@ -95,7 +96,7 @@ endif
 CPPFLAGS +=
 
 #
-# Unload intelcc and load gnu module
+# Switch intelcc and gnu module
 #
 #  When using gcc to compile, it is common to see an error related to
 #  <math.h>. This error occurs because the intelcc module is loaded 
@@ -104,9 +105,13 @@ CPPFLAGS +=
 #  workarounds to fix this problem:
 # 	 Exclusively use icc to compile your jobs.
 # 	 Unload intelcc and load gnu module
+#
 ifeq($(CC),gcc)
 module unload intel/12.1.3
 module load gcc
+else
+module unload gcc
+module load intel/12.1.3
 endif
 
 #
