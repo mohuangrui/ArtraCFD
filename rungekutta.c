@@ -38,7 +38,7 @@ int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space,
     Real operationTime = 0; /* record consuming time of operation */
     /* time marching */
     for (time->stepCount += 1; time->currentTime < time->totalTime; ++time->stepCount) {
-        fprintf(stdout, "\nStep=%d; Time=%.6lg\n", time->stepCount, time->currentTime);
+        fprintf(stdout, "\nStep=%d; Time=%.6g\n", time->stepCount, time->currentTime);
         /*
          * Calculate dt for current time step
          */

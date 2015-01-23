@@ -88,7 +88,7 @@ static int RestartInitializer(Field *field, Space *space, Time *time,
             garbage, garbage, &(time->outputCount)); 
     /* get restart time */
     fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, "%s %s %s %s %lg\n", garbage, garbage,
+    sscanf(currentLine, "%s %s %s %s %g\n", garbage, garbage,
             garbage, garbage, &(time->currentTime)); 
     /* get current step number */
     fgets(currentLine, sizeof currentLine, filePointer);
