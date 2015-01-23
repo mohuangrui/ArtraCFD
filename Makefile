@@ -92,12 +92,12 @@ CC := gcc
 #  ICC compiler flags
 #    -O2       Optimize for speed and enable some optimization (default)
 #    -O3       Enable all optimizations as O2, and intensive loop optimizations
-#    -xP       Enables SSE3, SSE2 and SSE instruction sets optimizations
+#    -fast     Enables SSE3, SSE2 and SSE instruction sets optimizations
 #
 ifeq ($(CC),gcc)
 CFLAGS += -Wall -Wextra -O2
 else
-CFLAGS += -Wall -Wextra -O3 -xP
+CFLAGS += -Wall -Wextra -fast
 endif
 
 #
@@ -115,6 +115,8 @@ CPPFLAGS +=
 #  workarounds to fix this problem:
 #    Exclusively use icc to compile your jobs.
 #    Unload intelcc and load gnu module
+#      module unload intelcc
+#      module load gnu
 #
 
 #
