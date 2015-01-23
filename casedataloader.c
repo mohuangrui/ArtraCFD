@@ -78,7 +78,7 @@ static int ReadCaseSettingData(Space *space, Time *time, Fluid *fluid,
         if (strncmp(currentLine, "space begin", sizeof currentLine) == 0) {
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%lg, %lg, %lg", 
+            sscanf(currentLine, "%g, %g, %g", 
                     &(space->dx), &(space->dy), &(space->dz)); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d, %d, %d", 
@@ -92,9 +92,9 @@ static int ReadCaseSettingData(Space *space, Time *time, Fluid *fluid,
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d", &(time->restart)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%lg", &(time->totalTime)); 
+            sscanf(currentLine, "%g", &(time->totalTime)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%lg", &(time->numCFL)); 
+            sscanf(currentLine, "%g", &(time->numCFL)); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d", &(time->totalOutputTimes)); 
             continue;
@@ -102,23 +102,23 @@ static int ReadCaseSettingData(Space *space, Time *time, Fluid *fluid,
         if (strncmp(currentLine, "fluid begin", sizeof currentLine) == 0) {
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%lg", &(fluid->density)); 
+            sscanf(currentLine, "%g", &(fluid->density)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%lg", &(fluid->nu)); 
+            sscanf(currentLine, "%g", &(fluid->nu)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%lg", &(fluid->alpha)); 
+            sscanf(currentLine, "%g", &(fluid->alpha)); 
             continue;
         }
         if (strncmp(currentLine, "reference begin", sizeof currentLine) == 0) {
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%lg", &(reference->length)); 
+            sscanf(currentLine, "%g", &(reference->length)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%lg", &(reference->density)); 
+            sscanf(currentLine, "%g", &(reference->density)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%lg", &(reference->velocity)); 
+            sscanf(currentLine, "%g", &(reference->velocity)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%lg", &(reference->temperature)); 
+            sscanf(currentLine, "%g", &(reference->temperature)); 
             continue;
         }
     }
@@ -148,7 +148,7 @@ static int WriteVerifyData(const Space *space, const Time *time,
     fprintf(filePointer, "#--------------------------------------\n"); 
     fprintf(filePointer, "#       >> Space Domain << \n"); 
     fprintf(filePointer, "#--------------------------------------\n"); 
-    fprintf(filePointer, "x, y, z length: %.6lg, %.6lg, %.6lg\n", 
+    fprintf(filePointer, "x, y, z length: %.6g, %.6g, %.6g\n", 
             space->dx, space->dy, space->dz); 
     fprintf(filePointer, "x, y, z mesh number: %d, %d, %d\n", 
             space->nx, space->ny, space->nz); 
@@ -157,22 +157,22 @@ static int WriteVerifyData(const Space *space, const Time *time,
     fprintf(filePointer, "#       >> Time Domain << \n"); 
     fprintf(filePointer, "#--------------------------------------\n"); 
     fprintf(filePointer, "restart flag: %d\n", time->restart); 
-    fprintf(filePointer, "total evolution time: %.6lg\n", time->totalTime); 
-    fprintf(filePointer, "CFL condition number: %.6lg\n", time->numCFL); 
+    fprintf(filePointer, "total evolution time: %.6g\n", time->totalTime); 
+    fprintf(filePointer, "CFL condition number: %.6g\n", time->numCFL); 
     fprintf(filePointer, "exporting data times: %d\n", time->totalOutputTimes); 
     fprintf(filePointer, "#--------------------------------------\n"); 
     fprintf(filePointer, "#     >> Fluid Properties << \n"); 
     fprintf(filePointer, "#--------------------------------------\n"); 
-    fprintf(filePointer, "fluid density: %.6lg\n", fluid->density); 
-    fprintf(filePointer, "kinematic viscosity: %.6lg\n", fluid->nu); 
-    fprintf(filePointer, "thermal diffusivity: %.6lg\n", fluid->alpha); 
+    fprintf(filePointer, "fluid density: %.6g\n", fluid->density); 
+    fprintf(filePointer, "kinematic viscosity: %.6g\n", fluid->nu); 
+    fprintf(filePointer, "thermal diffusivity: %.6g\n", fluid->alpha); 
     fprintf(filePointer, "#--------------------------------------\n"); 
     fprintf(filePointer, "#    >> Characteristic Values << \n"); 
     fprintf(filePointer, "#--------------------------------------\n"); 
-    fprintf(filePointer, "length: %.6lg\n", reference->length); 
-    fprintf(filePointer, "density: %.6lg\n", reference->density); 
-    fprintf(filePointer, "velocity: %.6lg\n", reference->velocity); 
-    fprintf(filePointer, "temperature: %.6lg\n", reference->temperature); 
+    fprintf(filePointer, "length: %.6g\n", reference->length); 
+    fprintf(filePointer, "density: %.6g\n", reference->density); 
+    fprintf(filePointer, "velocity: %.6g\n", reference->velocity); 
+    fprintf(filePointer, "temperature: %.6g\n", reference->temperature); 
     fprintf(filePointer, "#--------------------------------------\n\n"); 
     fclose(filePointer); /* close current opened file */
     return 0;

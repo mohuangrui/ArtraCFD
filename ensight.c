@@ -136,7 +136,7 @@ static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
     fprintf(filePointer, "\n"); 
     fprintf(filePointer, "VARIABLE\n"); 
     fprintf(filePointer, "constant per case:  Order %d\n", time->outputCount);
-    fprintf(filePointer, "constant per case:  Time  %.6lg\n", time->currentTime);
+    fprintf(filePointer, "constant per case:  Time  %.6g\n", time->currentTime);
     fprintf(filePointer, "constant per case:  Step  %d\n", time->stepCount);
     fprintf(filePointer, "scalar per node:    R     %s.den\n", enSet->baseName); 
     fprintf(filePointer, "scalar per node:    u     %s.u\n", enSet->baseName); 
@@ -157,7 +157,7 @@ static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
     if ((time->outputCount % 5) == 0) { /* print to a new line every x outputs */
         fprintf(filePointer, "\n"); 
     }
-    fprintf(filePointer, "%.6lg ", time->currentTime); 
+    fprintf(filePointer, "%.6g ", time->currentTime); 
     fclose(filePointer); /* close current opened file */
     return 0;
 }
@@ -375,7 +375,7 @@ static int WriteParticleFile(EnsightSet *enSet, const Particle *particle)
     fprintf(filePointer, "N: %d\n", particle->totalN); /* number of objects */
     int geoCount = 0;
     for (geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        fprintf(filePointer, "%.6lg, %.6lg, %.6lg, %.6lg, %.6lg, %.6lg, %.6lg\n", 
+        fprintf(filePointer, "%.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g\n", 
                 particle->x[geoCount], particle->y[geoCount],
                 particle->z[geoCount], particle->r[geoCount],
                 particle->u[geoCount], particle->v[geoCount],

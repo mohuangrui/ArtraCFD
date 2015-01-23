@@ -101,7 +101,7 @@ static int ReadGeometryData(FILE *filePointer, Particle *particle)
     int geoCount = 0; /* geometry object count */
     for (geoCount = 0; geoCount < particle->totalN; ++geoCount) {
         fgets(currentLine, sizeof currentLine, filePointer);
-        sscanf(currentLine, "%lg, %lg, %lg, %lg, %lg, %lg, %lg", 
+        sscanf(currentLine, "%g, %g, %g, %g, %g, %g, %g", 
                 &(particle->x[geoCount]), &(particle->y[geoCount]),
                 &(particle->z[geoCount]), &(particle->r[geoCount]),
                 &(particle->u[geoCount]), &(particle->v[geoCount]),
