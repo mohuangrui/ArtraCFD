@@ -114,6 +114,12 @@ void *AssignStorage(const int idxMax, const char *dataType)
     if (strcmp(dataType, "double") == 0) {
         pointer = malloc(idxMax * sizeof(double));
     }
+    if (strcmp(dataType, "Real") == 0) {
+        pointer = malloc(idxMax * sizeof(Real));
+    }
+    if (strcmp(dataType, "float") == 0) {
+        pointer = malloc(idxMax * sizeof(float));
+    }
     if (strcmp(dataType, "char") == 0) {
         pointer = malloc(idxMax * sizeof(char));
     }

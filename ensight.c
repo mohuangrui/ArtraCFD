@@ -35,7 +35,7 @@ typedef struct {
  ****************************************************************************/
 static int WriteEnsightCaseFile(EnsightSet *, const Time *);
 static int WriteEnsightGeometryFile(EnsightSet *, const Space *, const Partition *);
-static int WriteEnsightVariableFile(const double *, EnsightSet *, const Space *,
+static int WriteEnsightVariableFile(const Real *, EnsightSet *, const Space *,
         const Partition *);
 static int WriteParticleFile(EnsightSet *, const Particle *);
 /****************************************************************************
@@ -84,7 +84,7 @@ int InitializeEnsightTransientCaseFile(const Time *time)
  * including transient and steady output with file names consists of the 
  * default base file name and export step tag. 
  */
-int WriteComputedDataEnsight(const double *fieldData, const Space *space, 
+int WriteComputedDataEnsight(const Real *fieldData, const Space *space, 
         const Particle *particle, const Time *time, const Partition *part)
 {
     ShowInformation("  Writing field data to file...");
@@ -274,7 +274,7 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
  * the same IJK order as the coordinates. (The number of nodes in the
  * part are obtained from the corresponding EnSight Gold geometry file.)
  */
-static int WriteEnsightVariableFile(const double *fieldData, EnsightSet *enSet,
+static int WriteEnsightVariableFile(const Real *fieldData, EnsightSet *enSet,
         const Space *space, const Partition *part)
 {
     FILE *filePointer = NULL;

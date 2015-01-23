@@ -38,7 +38,7 @@ int InitializeEnsightTransientCaseFile(const Time *);
  *      primitive field variables. These data are in sequential state and can
  *      be accessed by linear index math.
  */
-int WriteComputedDataEnsight(const double * fieldData, const Space *, 
+int WriteComputedDataEnsight(const Real * fieldData, const Space *, 
         const Particle *, const Time *, const Partition *);
 #endif
 /* a good practice: end file with a newline */

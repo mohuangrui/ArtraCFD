@@ -346,6 +346,10 @@
  *   dereferencing a pointer!
  ****************************************************************************/
 /*
+ * Define some universe data type for portability and maintenance
+ */
+typedef double Real;
+/*
  * Field variables of flow
  *
  * Conservative variables are vectors with five elements(rho, rho_u, rho_v,
@@ -383,24 +387,24 @@
  * value = U[idx];
  */
 typedef struct {
-    double *U; /* conservative flow variables at n+1*/
-    double *Un; /* conservative flow variables at time n */
-    double *Um; /* conservative flow variables at time n-1 */
-    double *Uo; /* primitive flow variables */
+    Real *U; /* conservative flow variables at n+1*/
+    Real *Un; /* conservative flow variables at time n */
+    Real *Um; /* conservative flow variables at time n-1 */
+    Real *Uo; /* primitive flow variables */
 }Field;
 /*
  * Flux variables
  */
 typedef struct {
-    double *Fx; /* non-viscous flux vector at x direction */
-    double *Fy; /* non-viscous flux vector at y direction */
-    double *Fz; /* non-viscous flux vector at z direction */
-    double *Gx; /* viscous flux vector at x direction */
-    double *Gy; /* viscous flux vector at y direction */
-    double *Gz; /* viscous flux vector at z direction */
-    double *eigenValue; /* eigenvalue */
-    double *leftMatrix; /* left matrix */
-    double *rightMatrix; /* right matrix */
+    Real *Fx; /* non-viscous flux vector at x direction */
+    Real *Fy; /* non-viscous flux vector at y direction */
+    Real *Fz; /* non-viscous flux vector at z direction */
+    Real *Gx; /* viscous flux vector at x direction */
+    Real *Gy; /* viscous flux vector at y direction */
+    Real *Gz; /* viscous flux vector at z direction */
+    Real *eigenValue; /* eigenvalue */
+    Real *leftMatrix; /* left matrix */
+    Real *rightMatrix; /* right matrix */
 }Flux;
 /*
  * Space domain parameters
@@ -413,9 +417,9 @@ typedef struct {
     int iMax; /* total node number in x */
     int jMax; /* total node number in y */
     int kMax; /* total node number in z */
-    double dx; /* first use as x length, then update to mesh size in x */
-    double dy; /* first use as y length, then update to mesh size in y */
-    double dz; /* first use as z length, then update to mesh size in z */
+    Real dx; /* first use as x length, then update to mesh size in x */
+    Real dy; /* first use as y length, then update to mesh size in y */
+    Real dz; /* first use as z length, then update to mesh size in z */
     int *ghostFlag; /* node type integer flag: normal, ghost, solid, etc. */
     int *geoID; /* store the ID of geometry object for each ghost cell */
 }Space;
@@ -424,23 +428,23 @@ typedef struct {
  */
 typedef struct {
     int totalN; /* total number of particles */
-    double *x; /* x coordinates of the particle center */
-    double *y; /* y coordinates of the particle center */
-    double *z; /* z coordinates of the particle center */
-    double *r; /* radius of the particle */
-    double *u; /* x component of the velocity of particles */
-    double *v; /* y component of the velocity of particles */
-    double *w; /* z component of the velocity of particles */
+    Real *x; /* x coordinates of the particle center */
+    Real *y; /* y coordinates of the particle center */
+    Real *z; /* z coordinates of the particle center */
+    Real *r; /* radius of the particle */
+    Real *u; /* x component of the velocity of particles */
+    Real *v; /* y component of the velocity of particles */
+    Real *w; /* z component of the velocity of particles */
 }Particle;
 /*
  * Time domain parameters
  */
 typedef struct {
     int restart; /* restart flag */
-    double totalTime; /* total evolution time */
-    double currentTime; /* current time recorder */
-    double dt; /* time step size */
-    double numCFL; /* CFL number */
+    Real totalTime; /* total evolution time */
+    Real currentTime; /* current time recorder */
+    Real dt; /* time step size */
+    Real numCFL; /* CFL number */
     int totalStep; /* total number of steps */
     int stepCount; /* step number count */
     int totalOutputTimes; /* total times of exporting computed data */
@@ -450,31 +454,31 @@ typedef struct {
  * Fluid properties
  */
 typedef struct {
-    double density; /* fluid density */
-    double nu; /* kinematic viscosity */
-    double alpha; /* thermal diffusivity */
+    Real density; /* fluid density */
+    Real nu; /* kinematic viscosity */
+    Real alpha; /* thermal diffusivity */
 }Fluid;
 /*
  * Flow properties and physics parameters
  */
 typedef struct {
-    double mu; /* generalized normalized dynamic viscosity */
-    double heatK; /* generalized normalized thermal conductivity */
-    double numMa; /* Mach number */
-    double numRe; /* Reynolds number */
-    double numPr; /* Prandtl number */
-    double gamma; /* heat capacity ratio */
-    double gasR; /* the gas constant */
-    double cv; /* specific heat capacity at constant volume */
+    Real mu; /* generalized normalized dynamic viscosity */
+    Real heatK; /* generalized normalized thermal conductivity */
+    Real numMa; /* Mach number */
+    Real numRe; /* Reynolds number */
+    Real numPr; /* Prandtl number */
+    Real gamma; /* heat capacity ratio */
+    Real gasR; /* the gas constant */
+    Real cv; /* specific heat capacity at constant volume */
 }Flow;
 /*
  * Characteristic values for normalization
  */
 typedef struct {
-    double length; /* characteristic length */
-    double density; /* characteristic density */
-    double velocity;  /*characteristic velocity */
-    double temperature; /* characteristic temperature */
+    Real length; /* characteristic length */
+    Real density; /* characteristic density */
+    Real velocity;  /*characteristic velocity */
+    Real temperature; /* characteristic temperature */
 }Reference;
 /*
  * Domain partition structure
@@ -534,7 +538,8 @@ int ShowInformation(const char *statement);
  *
  * Parameters
  *      idxMax -- the maximum number of elements
- *      dataType -- the data type of elements, can be "int", "double", "char"
+ *      dataType -- the data type of elements, can be "int", "double", "char",
+ *      "Real", "float"
  * Function
  *      Use malloc to assign a linear array of storage with specified data type.
  * Returns
