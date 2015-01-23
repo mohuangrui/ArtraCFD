@@ -20,6 +20,11 @@
 #***************************************************************************#
 
 #
+# Shell
+#
+SHELL := /bin/bash
+
+#
 # Installer
 #
 INSTALL := install
@@ -62,7 +67,7 @@ srcdir = .
 # Define the compiler
 #
 #    gcc        GNU C compiler
-#    icc		Intel C compiler
+#    icc        Intel C compiler
 #
 CC := gcc
 
@@ -81,15 +86,16 @@ CC := gcc
 #    -O2       Full optimization; generates highly optimized code and has
 #              the slowest compilation time. 
 #   ICC compiler flags
-#    -O2	   Optimize for speed and enable some optimization (default)
-#	 -O3	   Enable all optimizations as O2, and intensive loop optimizations
-#	 -xP 	   Enables SSE3, SSE2 and SSE instruction sets optimizations
+#    -O2       Optimize for speed and enable some optimization (default)
+#    -O3       Enable all optimizations as O2, and intensive loop optimizations
+#    -xP       Enables SSE3, SSE2 and SSE instruction sets optimizations
 #
-ifeq($(CC),gcc)
+ifeq ($(CC),gcc)
 CFLAGS += -Wall -Wextra -O2
 else
 CFLAGS += -Wall -Wextra -O3 -xP
 endif
+
 #
 # Preprocessor options
 #
@@ -103,15 +109,15 @@ CPPFLAGS +=
 #  and is pointing to the intel version of math.h. The Intel version
 #  of math.h does not work with the gcc compiler. There are two simple
 #  workarounds to fix this problem:
-# 	 Exclusively use icc to compile your jobs.
-# 	 Unload intelcc and load gnu module
+#    Exclusively use icc to compile your jobs.
+#    Unload intelcc and load gnu module
 #
-ifeq($(CC),gcc)
-module unload intel/12.1.3
-module load gcc
+ifeq ($(CC),gcc)
+@module unload intel/12.1.3
+@module load gcc
 else
-module unload gcc
-module load intel/12.1.3
+@module unload gcc
+@module load intel/12.1.3
 endif
 
 #
@@ -213,7 +219,7 @@ DPND := $(SRCS:.c=.d)
 
 # Automatic prerequisites flag: -M for any compiler, -MM for GNU to 
 # omit system headers. But -MM usually work with ICC without problem.
-ifeq($(CC),gcc)
+ifeq ($(CC),gcc)
 AUTOPRE := -MM
 else
 AUTOPRE := -MM
