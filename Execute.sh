@@ -72,7 +72,8 @@ Link_Pool="NRAP_1213"
 # clusters, thus, to obtain the best file system throughput
 # should use the /scratch file system, but also notice that
 # /scratch does not have unified access and expiries for
-# each two months.
+# each two months. Use /tmp if possible as it's a filesystem
+# that is mounted from the node's local disk.
 
 # set the permissions on the base directory to only be 
 # accessible to yourself: chmod 700 ~/

@@ -62,6 +62,7 @@ srcdir = .
 # Define the compiler
 #
 #    gcc        GNU C compiler
+#    icc		Intel C compiler
 #
 CC := gcc
 
@@ -70,20 +71,43 @@ CC := gcc
 #   This flag will affect all C compilations uniformly,
 #   include implicit rules.
 #
+#	Shared compiler flags
 #    -g        Enable debugging
 #    -Wall     Turn on all warnings
 #    -Wextra   More restricted warnings
+#	GCC compiler flags
 #    -O0       No optimization (the default); generates unoptimized code
 #              but has the fastest compilation time.
 #    -O2       Full optimization; generates highly optimized code and has
 #              the slowest compilation time. 
-#
+#   ICC compiler flags
+#    -O2	   Optimize for speed and enable some optimization (default)
+#	 -O3	   Enable all optimizations as O2, and intensive loop optimizations
+#	 -xP 	   Enables SSE3, SSE2 and SSE instruction sets optimizations
+ifeq($(CC),gcc)
 CFLAGS += -Wall -Wextra -O2
-
+else
+CFLAGS += -Wall -Wextra -O3 -xP
+endif
 #
 # Preprocessor options
 #
 CPPFLAGS +=
+
+#
+# Unload intelcc and load gnu module
+#
+#  When using gcc to compile, it is common to see an error related to
+#  <math.h>. This error occurs because the intelcc module is loaded 
+#  and is pointing to the intel version of math.h. The Intel version
+#  of math.h does not work with the gcc compiler. There are two simple
+#  workarounds to fix this problem:
+# 	 Exclusively use icc to compile your jobs.
+# 	 Unload intelcc and load gnu module
+ifeq($(CC),gcc)
+module unload intel/12.1.3
+module load gcc
+endif
 
 #
 # Define any directories containing header files other than /usr/include
@@ -182,16 +206,26 @@ $(BINNAME): $(OBJS)
 #
 DPND := $(SRCS:.c=.d)
 
+# Automatic prerequisites flag: -M for any compiler, -MM for GNU to 
+# omit system headers. But -MM usually work with ICC without problem.
+ifeq($(CC),gcc)
+AUTOPRE := -MM
+else
+AUTOPRE := -MM
+endif
+
 $(DPND): %.d: %.c
 	@set -e; rm -f $@; \
-		$(CC) -MM $(CPPFLAGS) $< > $@.$$$$; \
+		$(CC) $(AUTOPRE) $(CPPFLAGS) $< > $@.$$$$; \
 		sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 		rm -f $@.$$$$
 
 # Include generated dependencies. Extra spaces are allowed and ignored
 # at the beginning of the include line, but the first character must 
 # NOT be a tab 
+ifneq ($(MAKECMDGOALS),clean)
 -include ${DPND}
+endif
 
 # add dependency files to clean list
 CLEANLIST += $(DPND)
