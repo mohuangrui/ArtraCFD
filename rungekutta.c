@@ -23,7 +23,7 @@ int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space,
         Particle *particle, Time *time, const Partition *part, const Flow *flow)
 {
     ShowInformation("Time marching...");
-    double exportTimeInterval = (time->totalTime - time->currentTime);
+    Real exportTimeInterval = (time->totalTime - time->currentTime);
     /* check whether current time is equal to or larger than the total time */
     if (exportTimeInterval <= 0) {
         ShowInformation("  current time is equal to or larger than total time...");
@@ -32,10 +32,10 @@ int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space,
     }
     /* obtain the desired export time interval */
     exportTimeInterval = exportTimeInterval / time->totalOutputTimes;
-    double accumulatedTime = 0; /* used for control when to export data */
+    Real accumulatedTime = 0; /* used for control when to export data */
     /* set some timers for monitoring timeconsuming of process */
     Timer operationTimer; /* timer for computing operations */
-    double operationTime = 0; /* record consuming time of operation */
+    Real operationTime = 0; /* record consuming time of operation */
     /* time marching */
     for (time->stepCount += 1; time->currentTime < time->totalTime; ++time->stepCount) {
         fprintf(stdout, "\nStep=%d; Time=%.6lg\n", time->stepCount, time->currentTime);
