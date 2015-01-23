@@ -107,20 +107,20 @@ static int ProgramMemoryAllocate(Field *field, Flux *flux, Space *space)
      */
     int dimU = 5; /* dimension of field variable U */
     int idxMax = dimU * space->kMax * space->jMax * space->iMax;
-    field->U = AssignStorage(idxMax, "double");
-    field->Un = AssignStorage(idxMax, "double");
-    field->Um = AssignStorage(idxMax, "double");
-    flux->Fx = AssignStorage(idxMax, "double");
-    flux->Fy = AssignStorage(idxMax, "double");
-    flux->Fz = AssignStorage(idxMax, "double");
-    flux->Gx = AssignStorage(idxMax, "double");
-    flux->Gy = AssignStorage(idxMax, "double");
-    flux->Gz = AssignStorage(idxMax, "double");
+    field->U = AssignStorage(idxMax, "Real");
+    field->Un = AssignStorage(idxMax, "Real");
+    field->Um = AssignStorage(idxMax, "Real");
+    flux->Fx = AssignStorage(idxMax, "Real");
+    flux->Fy = AssignStorage(idxMax, "Real");
+    flux->Fz = AssignStorage(idxMax, "Real");
+    flux->Gx = AssignStorage(idxMax, "Real");
+    flux->Gy = AssignStorage(idxMax, "Real");
+    flux->Gz = AssignStorage(idxMax, "Real");
     /*
      * Primitive flow variables: rho, u, v, w, p, T
      */
     idxMax = (dimU + 1) * space->kMax * space->jMax * space->iMax;
-    field->Uo = AssignStorage(idxMax, "double");
+    field->Uo = AssignStorage(idxMax, "Real");
     /*
      * Node type identifier
      */

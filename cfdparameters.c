@@ -92,7 +92,7 @@ static int InitializeCFDParameters(Space *space, Time *time,
         const Fluid *fluid, Flow *flow, const Reference * reference)
 {
     /* space */
-    double scale = (1 / reference->length); /* auxiliary variables */
+    Real scale = (1 / reference->length); /* auxiliary variables */
     space->dx = scale * space->dx / space->nx; /* update to normalized real dx */
     space->dy = scale * space->dy / space->ny; /* update to normalized real dy */
     space->dz = scale * space->dz / space->nz; /* update to normalized real dz */

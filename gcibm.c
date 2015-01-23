@@ -84,11 +84,11 @@ static int LocateSolidGeometry(Space *space, Particle *particle, const Partition
     int i = 0; /* count, i for x dimension */
     /* geometry computation */
     int geoCount = 0; /* geometry objects count */
-    double distance = 0;
-    double distX = 0;
-    double distY = 0;
-    double distZ = 0;
-    double radius = 0;
+    Real distance = 0;
+    Real distX = 0;
+    Real distY = 0;
+    Real distZ = 0;
+    Real radius = 0;
     for (k = part->kSub[12]; k < part->kSup[12]; ++k) {
         for (j = part->jSub[12]; j < part->jSup[12]; ++j) {
             for (i = part->iSub[12]; i < part->iSup[12]; ++i) {
