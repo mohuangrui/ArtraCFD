@@ -76,16 +76,16 @@ CC := gcc
 #   This flag will affect all C compilations uniformly,
 #   include implicit rules.
 #
-#	Shared compiler flags
+#  Shared compiler flags
 #    -g        Enable debugging
 #    -Wall     Turn on all warnings
 #    -Wextra   More restricted warnings
-#	GCC compiler flags
+#  GCC compiler flags
 #    -O0       No optimization (the default); generates unoptimized code
 #              but has the fastest compilation time.
 #    -O2       Full optimization; generates highly optimized code and has
 #              the slowest compilation time. 
-#   ICC compiler flags
+#  ICC compiler flags
 #    -O2       Optimize for speed and enable some optimization (default)
 #    -O3       Enable all optimizations as O2, and intensive loop optimizations
 #    -xP       Enables SSE3, SSE2 and SSE instruction sets optimizations
