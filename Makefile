@@ -11,6 +11,10 @@
 #
 # Written by Huangrui Mo, GNU General Public License
 #
+# Use the command cat -e -t -v Makefile to check makefiles, which shows the 
+# presence of tabs with ^I and line endings with $ that both are vital to
+# ensure that dependencies end properly and tabs mark the action for the rules. 
+#
 #---------------------------------------------------------------------------#
 
 #***************************************************************************#
@@ -112,13 +116,6 @@ CPPFLAGS +=
 #    Exclusively use icc to compile your jobs.
 #    Unload intelcc and load gnu module
 #
-ifeq ($(CC),gcc)
-@module unload intel/12.1.3
-@module load gcc
-else
-@module unload gcc
-@module load intel/12.1.3
-endif
 
 #
 # Define any directories containing header files other than /usr/include
