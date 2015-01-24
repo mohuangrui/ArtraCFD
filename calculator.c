@@ -52,8 +52,8 @@ static int PushOperatorToStack(OperatorStack *, const char);
 static int PushOperandToStack(OperandStack *, const double);
 static int PopOperatorFromStack(OperatorStack *, char *);
 static int PopOperandFromStack(OperandStack *, double *);
-static char GetTopElementOfOperatorStack(const OperatorStack *);
-static double GetTopElementOfOperandStack(const OperandStack *);
+static char PeakTopElementOfOperatorStack(const OperatorStack *);
+static double PeakTopElementOfOperandStack(const OperandStack *);
 static int IsOperator(const char);
 static int IsPureUnaryOperator(const char);
 static int IsPureBinaryOperator(const char);
@@ -198,7 +198,7 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
     /*
      * Calculation loop
      */
-    while ((*pointer != '\0') || (GetTopElementOfOperatorStack(operatorStack) != '\0')) {
+    while ((*pointer != '\0') || (PeakTopElementOfOperatorStack(operatorStack) != '\0')) {
         if (IsDigit(*pointer) == 0) { /* find a operand */
             /* 
              * Read this float to current operand, note the read function will
@@ -229,7 +229,7 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
             return 1;
         }
         currentOperator = *pointer;
-        switch (QueryPriority(operatorStack, GetTopElementOfOperatorStack(operatorStack), currentOperator)) {
+        switch (QueryPriority(operatorStack, PeakTopElementOfOperatorStack(operatorStack), currentOperator)) {
             case '<': 
                 /*
                  * The priority of the head operator in the stack is lower
@@ -319,7 +319,7 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
      * Finally, get the final answer
      */
     /* save the result to answer */
-    parameter->answer = GetTopElementOfOperandStack(operandStack); 
+    parameter->answer = PeakTopElementOfOperandStack(operandStack); 
     /* output the results */
     fprintf(stdout, "ans = %.6g\n", parameter->answer);
     return 0;
@@ -415,7 +415,7 @@ static int PopOperandFromStack(OperandStack *operandStack, double *operandAddres
 /*
  * Get the top element from operand stack
  */
-static double GetTopElementOfOperandStack(const OperandStack *operandStack)
+static double PeakTopElementOfOperandStack(const OperandStack *operandStack)
 {
     return (*(operandStack->top - 1));
 }
@@ -448,7 +448,7 @@ static int PopOperatorFromStack(OperatorStack *operatorStack, char *operatorAddr
 /*
  * Get the top element from the operator stack
  */
-static char GetTopElementOfOperatorStack(const OperatorStack *operatorStack)
+static char PeakTopElementOfOperatorStack(const OperatorStack *operatorStack)
 {
     return (*(operatorStack->top - 1));
 }
