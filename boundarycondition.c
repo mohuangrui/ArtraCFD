@@ -9,9 +9,7 @@
  ****************************************************************************/
 #include "boundarycondition.h"
 #include <stdio.h> /* standard library for input and output */
-#include <stdlib.h> /* dynamic memory allocation and exit */
 #include <math.h> /* common mathematical functions */
-#include <string.h> /* manipulating strings */
 #include "commons.h"
 /****************************************************************************
  * Function definitions

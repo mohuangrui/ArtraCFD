@@ -9,8 +9,6 @@
  ****************************************************************************/
 #include "casedataloader.h"
 #include <stdio.h> /* standard library for input and output */
-#include <stdlib.h> /* dynamic memory allocation and exit */
-#include <math.h> /* common mathematical functions */
 #include <string.h> /* manipulating strings */
 #include "commons.h"
 /****************************************************************************
@@ -50,7 +48,7 @@ int LoadCaseSettingData(Space *space, Time *time, Fluid *fluid,
  * This function read the case settings from the case file.
  * The key is to read and process file line by line. Use "*** begin" 
  * in the case file to identify and control the reading. 
- * The function scanf is notorious for its poor end-of-line handling,
+ * The function scanf is notorious for its poor end-of-line handling.
  * Instead, use fgets to read a line of input and sscanf to process it.
  * Note: use a large enough number when using fgets to ensure reading
  * a whole line at a time. fgets will get the entire line including
@@ -60,6 +58,15 @@ int LoadCaseSettingData(Space *space, Time *time, Fluid *fluid,
  * NOTE: sscanf can correctly handle any space in the target string as
  * well as in the format specifier, therefore, no need to process those
  * lines that will be processed by sscanf.
+ * Footnote: In fprintf(), the rvalue type promotions are expected. %f and 
+ * %g actually correspond to parameters of type double. Thus in fprintf()
+ * there is no difference between %f and %lf, or between %g and %lg. However, 
+ * in sscanf() what is passed is a pointer to the variable so no rvalue type 
+ * promotions occur or are expected. Thus %f and %lf are quite different in
+ * sscanf, but the same in fprintf. Consequently, we need to use %g for 
+ * double in fprintf and %lg for double in sscanf. It doesn't matter which
+ * you use for fprintf because the fprintf library function treats them as
+ * synonymous, but it's crucial to get it right for sscanf. 
  */
 static int ReadCaseSettingData(Space *space, Time *time, Fluid *fluid, 
         Reference *reference)
@@ -73,12 +80,19 @@ static int ReadCaseSettingData(Space *space, Time *time, Fluid *fluid,
      */
     char currentLine[200] = {'\0'}; /* store the current read line */
     int entryCount = 0; /* entry count */
+    /* set format specifier according to the type of Real */
+    char formatI[5] = "%lg"; /* default is double type */
+    char formatIII[15] = "%lg, %lg, %lg"; /* default is double type */
+    if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
+        strncpy(formatI, "%g", sizeof formatI); /* float type */
+        strncpy(formatIII, "%g, %g, %g", sizeof formatIII); /* float type */
+    }
     while (fgets(currentLine, sizeof currentLine, filePointer) != NULL) {
         CommandLineProcessor(currentLine); /* process current line */
         if (strncmp(currentLine, "space begin", sizeof currentLine) == 0) {
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%g, %g, %g", 
+            sscanf(currentLine, formatIII, 
                     &(space->dx), &(space->dy), &(space->dz)); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d, %d, %d", 
@@ -92,9 +106,9 @@ static int ReadCaseSettingData(Space *space, Time *time, Fluid *fluid,
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d", &(time->restart)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%g", &(time->totalTime)); 
+            sscanf(currentLine, formatI, &(time->totalTime)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%g", &(time->numCFL)); 
+            sscanf(currentLine, formatI, &(time->numCFL)); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d", &(time->totalOutputTimes)); 
             continue;
@@ -102,23 +116,23 @@ static int ReadCaseSettingData(Space *space, Time *time, Fluid *fluid,
         if (strncmp(currentLine, "fluid begin", sizeof currentLine) == 0) {
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%g", &(fluid->density)); 
+            sscanf(currentLine, formatI, &(fluid->density)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%g", &(fluid->nu)); 
+            sscanf(currentLine, formatI, &(fluid->nu)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%g", &(fluid->alpha)); 
+            sscanf(currentLine, formatI, &(fluid->alpha)); 
             continue;
         }
         if (strncmp(currentLine, "reference begin", sizeof currentLine) == 0) {
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%g", &(reference->length)); 
+            sscanf(currentLine, formatI, &(reference->length)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%g", &(reference->density)); 
+            sscanf(currentLine, formatI, &(reference->density)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%g", &(reference->velocity)); 
+            sscanf(currentLine, formatI, &(reference->velocity)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%g", &(reference->temperature)); 
+            sscanf(currentLine, formatI, &(reference->temperature)); 
             continue;
         }
     }

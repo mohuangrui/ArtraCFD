@@ -9,8 +9,6 @@
  ****************************************************************************/
 #include "geometryloader.h"
 #include <stdio.h> /* standard library for input and output */
-#include <stdlib.h> /* dynamic memory allocation and exit */
-#include <math.h> /* common mathematical functions */
 #include <string.h> /* manipulating strings */
 #include "commons.h"
 /****************************************************************************
@@ -99,9 +97,14 @@ static int ReadGeometryData(FILE *filePointer, Particle *particle)
     /* then read and store data per object*/
     char currentLine[200] = {'\0'}; /* store the current read line */
     int geoCount = 0; /* geometry object count */
+    /* set format specifier according to the type of Real */
+    char formatVII[40] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg"; /* default is double type */
+    if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
+        strncpy(formatVII, "%g, %g, %g, %g, %g, %g, %g", sizeof formatVII); /* float type */
+    }
     for (geoCount = 0; geoCount < particle->totalN; ++geoCount) {
         fgets(currentLine, sizeof currentLine, filePointer);
-        sscanf(currentLine, "%g, %g, %g, %g, %g, %g, %g", 
+        sscanf(currentLine, formatVII, 
                 &(particle->x[geoCount]), &(particle->y[geoCount]),
                 &(particle->z[geoCount]), &(particle->r[geoCount]),
                 &(particle->u[geoCount]), &(particle->v[geoCount]),

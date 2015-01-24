@@ -14,23 +14,6 @@
 #include <string.h> /* manipulating strings */
 #include "commons.h"
 /****************************************************************************
- * Local Data Structure
- ****************************************************************************/
-/*
- * Ensight data format and type control
- */
-typedef char EnsightString[80]; /* Ensight string data requires 80 chars */
-typedef float EnsightReal; /* Ensight requires real data to be float */
-/*
- * Ensight configuration structure
- */
-typedef struct {
-    EnsightString baseName; /* data file base name */
-    EnsightString fileName; /* store current open file name */
-    EnsightString stringData; /* Ensight string data */
-    EnsightReal data; /* Ensight real data */
-}EnsightSet;
-/****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
 static int WriteEnsightCaseFile(EnsightSet *, const Time *);

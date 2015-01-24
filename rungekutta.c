@@ -9,9 +9,7 @@
  ****************************************************************************/
 #include "rungekutta.h"
 #include <stdio.h> /* standard library for input and output */
-#include <stdlib.h> /* dynamic memory allocation and exit */
 #include <math.h> /* common mathematical functions */
-#include <string.h> /* manipulating strings */
 #include "gcibm.h"
 #include "ensight.h"
 #include "timer.h"
@@ -71,7 +69,7 @@ int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space,
             WriteComputedDataEnsight(field->Uo, space, particle, time, part);
             operationTime = TockTime(&operationTimer);
             accumulatedTime = 0; /* reset accumulated time */
-            fprintf(stdout, "  data export time consuming: %.6lgs\n", operationTime);
+            fprintf(stdout, "  data export time consuming: %.6gs\n", operationTime);
         }
         /* fluid solid coupling */
         /* particle dynamics */

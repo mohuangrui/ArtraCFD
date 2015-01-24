@@ -9,7 +9,6 @@
  ****************************************************************************/
 #include "calculator.h"
 #include <stdio.h> /* standard library for input and output */
-#include <stdlib.h> /* dynamic memory allocation and exit */
 #include <math.h> /* common mathematical functions */
 #include <string.h> /* manipulating strings */
 #include "commons.h"
@@ -322,7 +321,7 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
     /* save the result to answer */
     parameter->answer = GetTopElementOfOperandStack(operandStack); 
     /* output the results */
-    fprintf(stdout, "ans = %.6lg\n", parameter->answer);
+    fprintf(stdout, "ans = %.6g\n", parameter->answer);
     return 0;
 }
 /*
