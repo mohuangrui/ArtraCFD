@@ -49,8 +49,8 @@ Output_File="output"
 #* error file for standard error stream of the program
 Error_File="errfile"
 
-#* memory request, default is [2g]
-Extra_Memory_Request="2g"
+#* memory request per process
+Memory_Request="2g"
 
 #* test mode: [false], [true]
 Test_Mode="false"
@@ -166,9 +166,9 @@ if [[ -n $Error_File ]]; then
     ErrorFile="-e $Error_File"
 fi
 
-ExtraMemoryRequest=""
-if [[ -n $Extra_Memory_Request ]]; then
-    ExtraMemoryRequest="--mpp=$Extra_Memory_Request"
+MemoryRequest=""
+if [[ -n $Memory_Request ]]; then
+    MemoryRequest="--mpp=$Memory_Request"
 fi
 
 WaitFor=""
@@ -254,13 +254,13 @@ cat > $ScriptDir/$SubmitFile <<EOF
 
 #! /bin/bash
 
-sqsub $TestMode $QueueName $ExtraMemoryRequest $TimeToRun $OutputFile $ErrorFile $WaitFor $JobIDFile $JobName ./$JobScheduleFile
+sqsub $TestMode $QueueName $MemoryRequest $TimeToRun $OutputFile $ErrorFile $WaitFor $JobIDFile $JobName ./$JobScheduleFile
 
 EOF
 chmod +x "$ScriptDir/$SubmitFile"
 
 #********************* final information ********************
-echo "sqsub $TestMode $QueueName $ExtraMemoryRequest $TimeToRun $OutputFile $ErrorFile $WaitFor $JobIDFile $JobName ./$JobScheduleFile"
+echo "sqsub $TestMode $QueueName $MemoryRequest $TimeToRun $OutputFile $ErrorFile $WaitFor $JobIDFile $JobName ./$JobScheduleFile"
 echo "Please execute $SubmitFile to firmly submit job"
 echo "******************************************************"
 
