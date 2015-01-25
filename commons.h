@@ -358,6 +358,10 @@
  ****************************************************************************/
 /****************************************************************************
  * Data Structure Declarations
+ * - Data structures with heterogeneous elements (i.e., elements of different
+ *   types) can be defined as struct in C. Combining data used for a common
+ *   purpose into a single data structure can provide some level of 
+ *   abstraction which can simplify interfaces and other routines.
  * - Use struct to pass a bunch of data at a time, it's simple and elegant.
  *   However, make sure about these:
  * - Always pass structures by reference. That is, use pointers to structures

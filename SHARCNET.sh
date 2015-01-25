@@ -10,7 +10,7 @@
 #
 # This script can be executed with arguments, these arguments
 # will all be passed to the executable program in the form that
-# these arguments will show after the program name.
+# they show after the program name.
 #
 #************************************************************
 
@@ -23,19 +23,23 @@ set -e
 #
 
 #* the command line for running your program
-Executable_Pragram="mpirun starccmplus"
+Executable_Pragram="mpirun artracfd"
 
-#* job type: [mpi] or [serial] or [threaded]
-Job_Type="mpi"
+#* queue name: [serial], [threaded], [mpi], [nonstandard queues]
+Queue_Name="mpi"
 
-#* extra memory request
-Extra_Memory_Request="6g"
+#* specify certain flags to modify behavior. [mpi], [gpu],
+# [threaded] (these flags will be ignored for standard queues)
+Specify_Flags="mpi"
 
-#* number of processors need to use
-Number_Of_Processors="2"
-
-#* how long need to run: [h] for hours, [d] for days
+#* run time: [h] hours, [d] days, [runtime] unlimited
 Time_To_Run="1h"
+
+#* number of CPU processors (it will be ignored if [serial])
+Number_Of_CPU_Processors="2"
+
+#* number of GPU processors (works only if [gpu])
+Number_Of_GPU_Processors=""
 
 #* output file for standard output of the program
 Output_File="output"
@@ -43,8 +47,20 @@ Output_File="output"
 #* error file for standard error stream of the program
 Error_File="errfile"
 
-#* special pool to link
-Link_Pool="NRAP_1213"
+#* extra memory request, default is [2g]
+Extra_Memory_Request=""
+
+#* test mode: [false], [true]
+Test_Mode="false"
+
+#* wait for a list of jobs to complete. [JobID[,JobID...]]
+Wait_For=""
+
+#* record JobID of current job to file
+JobID_File="JobID"
+
+#* provides a name for the current job.
+Job_Name=`pwd`
 
 #******************* Extra Information *********************
 
@@ -86,33 +102,48 @@ Link_Pool="NRAP_1213"
 #############################################################
 
 #********** obtain the correct form of parameters **********
+
 #
-# set the job type, use serial as default. 
+# set the queue name and related flags 
+#
 # using the --nompirun flag when submitting parallel jobs
 # will not auto trigger the mpirun of the job, therefore,
 # it enables to encapsulate MPI jobs in a shell script.
 #
 
-JobType=""
-if [[ $Job_Type == "thread" ]]; then
-    JobType="-q thread"
-elif [[ $Job_Type == "mpi" ]]; then
-    JobType="-q mpi --nompirun"
+CPUProcessors=""
+if [[ -n `echo $Number_Of_CPU_Processors | grep "^[0-9]*$"` ]]; then
+    CPUProcessors="$Number_Of_CPU_Processors"
 else
-    JobType="-q serial"
+    if [[ $Specify_Flags != "gpu" ]]; then
+        echo "illegal number of CPU processors, exit..."
+        exit
+    fi
 fi
 
-ExtraMemoryRequest=""
-if [[ -n $Extra_Memory_Request ]]; then
-    ExtraMemoryRequest="--mpp=$Extra_Memory_Request"
+GPUProcessors=""
+if [[ $Specify_Flags == "gpu" ]]; then
+    if [[ -n `echo $Number_Of_GPU_Processors | grep "^[0-9]*$"` ]]; then
+        GPUProcessors="$Number_Of_GPU_Processors"
+    else
+        echo "illegal number of GPU processors, exit..."
+        exit
+    fi
 fi
 
-NumberOfProcessors=""
-if [[ -n `echo $Number_Of_Processors | grep "^[0-9]*$"` ]]; then
-    NumberOfProcessors="-n $Number_Of_Processors"
+QueueName=""
+if [[ $Queue_Name == "serial" ]]; then
+    QueueName="-q serial"
+elif [[ $Queue_Name == "threaded" ]]; then
+    QueueName="-q threaded -n $CPUProcessors"
+elif [[ $Queue_Name == "mpi" ]]; then
+    QueueName="-q mpi -n $CPUProcessors --nompirun"
 else
-    echo "illegal number of processors, exit..."
-    exit
+    if [[ $Specify_Flags != "gpu" ]]; then
+        QueueName="-q $Queue_Name -f $Specify_Flags -n $CPUProcessors --nompirun"
+    else
+        QueueName="-q $Queue_Name -f $Specify_Flags --gpp=$GPUProcessors"
+    fi
 fi
 
 TimeToRun=""
@@ -133,18 +164,38 @@ if [[ -n $Error_File ]]; then
     ErrorFile="-e $Error_File"
 fi
 
-if [[ -n $Link_Pool ]]; then
-    JobType="-q "$Link_Pool" -f mpi --nompirun"
+ExtraMemoryRequest=""
+if [[ -n $Extra_Memory_Request ]]; then
+    ExtraMemoryRequest="--mpp=$Extra_Memory_Request"
 fi
 
+WaitFor=""
+if [[ -n $Wait_For ]]; then
+    WaitFor="-w $Wait_For"
+fi
+
+TestMode=""
+if [[ $Test_Mode == "true" ]]; then
+    TestMode="--test"
+fi
+
+JobIDFile=""
+if [[ -n $JobID_File ]]; then
+    JobIDFile="--idfile=$JobID_File"
+fi
+
+JobName=""
+if [[ -n $Job_Name ]]; then
+    JobName="-j $Job_Name"
+fi
 #***************** generate the scripts file ****************
 ScriptDir="."
 QsubFile="execution.sh"
 echo "******************************************************"
 if [[ -f $ScriptDir/$QsubFile ]]; then
-    echo "use the existing scripts file: $QsubFile..."
+    echo "Submit the existing script file: $QsubFile..."
 else
-    echo "generate and use the scripts file: $QsubFile..."
+    echo "Generate and submit the script file: $QsubFile..."
 cat > $ScriptDir/$QsubFile <<EOF
 #************************************************************
 #
@@ -177,9 +228,9 @@ echo "finish at  \`date +'%F %k:%M:%S'\`"
 EOF
     chmod +x "$ScriptDir/$QsubFile"
 fi
-echo "sqsub $JobType $NumberOfProcessors $ExtraMemoryRequest $TimeToRun $OutputFile $ErrorFile ./$QsubFile"
-echo "sqsub $JobType $NumberOfProcessors $ExtraMemoryRequest $TimeToRun $OutputFile $ErrorFile ./$QsubFile" > "$Output_File"
-sqsub $JobType $NumberOfProcessors $ExtraMemoryRequest $TimeToRun $OutputFile $ErrorFile ./$QsubFile
+echo "sqsub $TestMode $QueueName $ExtraMemoryRequest $TimeToRun $OutputFile $ErrorFile $WaitFor $JobIDFile $JobName ./$QsubFile"
+echo "sqsub $TestMode $QueueName $ExtraMemoryRequest $TimeToRun $OutputFile $ErrorFile $WaitFor $JobIDFile $JobName ./$QsubFile" > "$Output_File"
+sqsub $TestMode $QueueName $ExtraMemoryRequest $TimeToRun $OutputFile $ErrorFile $WaitFor $JobIDFile $JobName ./$QsubFile
 echo "Job submitted!"
 echo "******************************************************"
 
