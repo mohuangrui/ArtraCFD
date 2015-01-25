@@ -198,8 +198,8 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
     /*
      * Calculation loop
      */
-    while ((*pointer != '\0') || (PeakTopElementOfOperatorStack(operatorStack) != '\0')) {
-        if (IsDigit(*pointer) == 0) { /* find a operand */
+    while ((pointer[0] != '\0') || (PeakTopElementOfOperatorStack(operatorStack) != '\0')) {
+        if (IsDigit(pointer[0]) == 0) { /* find a operand */
             /* 
              * Read this float to current operand, note the read function will
              * update the pointer to the first character after the float data.
@@ -210,7 +210,7 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
             }
             continue;
         }
-        if (IsConstant(*pointer) == 0) { /* find a constant */
+        if (IsConstant(pointer[0]) == 0) { /* find a constant */
             /* 
              * Read this constant to current operand, note the read function will
              * update the pointer to the first character after the constant.
@@ -224,11 +224,11 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
         /*
          * Now, treat everything left as an operator
          */
-        if (IsOperator(*pointer) != 0) {
+        if (IsOperator(pointer[0]) != 0) {
             ShowInformation("undefined operator in expression");
             return 1;
         }
-        currentOperator = *pointer;
+        currentOperator = pointer[0];
         switch (QueryPriority(operatorStack, PeakTopElementOfOperatorStack(operatorStack), currentOperator)) {
             case '<': 
                 /*
@@ -395,7 +395,7 @@ static int PushOperandToStack(OperandStack *operandStack, const double currentOp
         ShowInformation("operand stack is overflowing...");
         return 1;
     }
-    *operandStack->top = currentOperand;
+    operandStack->top[0] = currentOperand;
     ++operandStack->top;
     return 0;
 }
@@ -409,7 +409,7 @@ static int PopOperandFromStack(OperandStack *operandStack, double *operandAddres
         return 1;
     }
     --operandStack->top;
-    *operandAddress = *operandStack->top;
+    operandAddress[0] = operandStack->top[0];
     return 0;
 }
 /*
@@ -417,7 +417,7 @@ static int PopOperandFromStack(OperandStack *operandStack, double *operandAddres
  */
 static double PeakTopElementOfOperandStack(const OperandStack *operandStack)
 {
-    return (*(operandStack->top - 1));
+    return operandStack->top[-1];
 }
 /*
  * Push an element to the operator stack
@@ -428,7 +428,7 @@ static int PushOperatorToStack(OperatorStack *operatorStack, const char currentO
         ShowInformation("operator stack is overflowing...");
         return 1;
     }
-    *operatorStack->top = currentOperator;
+    operatorStack->top[0] = currentOperator;
     ++operatorStack->top;
     return 0;
 }
@@ -442,7 +442,7 @@ static int PopOperatorFromStack(OperatorStack *operatorStack, char *operatorAddr
         return 1;
     }
     --operatorStack->top;
-    *operatorAddress = *operatorStack->top;
+    operatorAddress[0] = operatorStack->top[0];
     return 0;
 }
 /*
@@ -450,7 +450,7 @@ static int PopOperatorFromStack(OperatorStack *operatorStack, char *operatorAddr
  */
 static char PeakTopElementOfOperatorStack(const OperatorStack *operatorStack)
 {
-    return (*(operatorStack->top - 1));
+    return operatorStack->top[-1];
 }
 /*
  * Translate the input command to specific format that program can recognize
@@ -606,8 +606,8 @@ static int IsDualOperator(const char character)
 }
 static int IsDualOperatorActAsUnary(const char *pointer)
 {
-    int testCondition = IsDualOperator(*pointer) + 
-        IsLeftParentheses(*(pointer - 1)); /* if both are true, it's true */
+    int testCondition = IsDualOperator(pointer[0]) + 
+        IsLeftParentheses(pointer[-1]); /* if both are true, it's true */
     if (testCondition == 0) { /* it means is a unary operator */
         return 0;
     }
@@ -670,13 +670,13 @@ static double ReadFirstFloat(char **pointerAddress)
     /* first, use sscanf read a float to operand */
     sscanf(string, "%lg", &operand);
     /* then update the pointer to latest position*/
-    while (IsDigit(*string) == 0) {
+    while (IsDigit(string[0]) == 0) {
         ++string;
     }
-    if (IsDot(*string) == 0) {
+    if (IsDot(string[0]) == 0) {
         ++string;
     }
-    while (IsDigit(*string) == 0) {
+    while (IsDigit(string[0]) == 0) {
         ++string;
     }
     *pointerAddress = string; /* get the updated address */
@@ -686,7 +686,7 @@ static double ReadConstant(const Parameter *parameter, char **pointerAddress)
 {
     char *string = *pointerAddress; /* copy the command address */
     double operand = 0;
-    switch (*string) {
+    switch (string[0]) {
         case 'p': 
             operand = parameter->pi;
             ++string;
@@ -707,43 +707,43 @@ static int UnaryOperation(const Parameter *parameter,
 {
     switch (headOperator) {
         case 'e':
-            *currentOperandAddress = exp(operandA);
+            currentOperandAddress[0] = exp(operandA);
             break;
         case 'n':
             if (operandA <= 0) {
                 ShowInformation("negative argument of ln(x)");
-                *currentOperandAddress = 0;
+                currentOperandAddress[0] = 0;
                 return 1;
             }
-            *currentOperandAddress = log(operandA);
+            currentOperandAddress[0] = log(operandA);
             break;
         case 'g':
             if (operandA <= 0) {
                 ShowInformation("negative argument of lg(x)");
-                *currentOperandAddress = 0;
+                currentOperandAddress[0] = 0;
                 return 1;
             }
-            *currentOperandAddress = log10(operandA);
+            currentOperandAddress[0] = log10(operandA);
             break;
         case 'a':
-            *currentOperandAddress = fabs(operandA);
+            currentOperandAddress[0] = fabs(operandA);
             break;
         case 's':
-            *currentOperandAddress = sin(operandA * parameter->angleFactor);
+            currentOperandAddress[0] = sin(operandA * parameter->angleFactor);
             break;
         case 'c':
-            *currentOperandAddress = cos(operandA * parameter->angleFactor);
+            currentOperandAddress[0] = cos(operandA * parameter->angleFactor);
             break;
         case 't':
             if (cos(operandA * parameter->angleFactor) == 0) {
                 ShowInformation("negative argument of tangent");
-                *currentOperandAddress = 0;
+                currentOperandAddress[0] = 0;
                 return 1;
             }
-            *currentOperandAddress = sin(operandA * parameter->angleFactor) / cos(operandA * parameter->angleFactor);
+            currentOperandAddress[0] = sin(operandA * parameter->angleFactor) / cos(operandA * parameter->angleFactor);
             break;
         default: 
-            *currentOperandAddress = 0;
+            currentOperandAddress[0] = 0;
             return 1;
     }
     return 0;
@@ -754,27 +754,27 @@ static int BinaryOperation(const double operandB,
     switch(headOperator)
     {
         case '+': 
-            *currentOperandAddress = operandB + operandA;
+            currentOperandAddress[0] = operandB + operandA;
             break;
         case '-':
-            *currentOperandAddress = operandB - operandA;
+            currentOperandAddress[0] = operandB - operandA;
             break;
         case '*':
-            *currentOperandAddress = operandB * operandA;
+            currentOperandAddress[0] = operandB * operandA;
             break;
         case '/':
             if (operandA == 0) {
                 ShowInformation("negative argument of divide");
-                *currentOperandAddress = 0;
+                currentOperandAddress[0] = 0;
                 return 1;
             }
-            *currentOperandAddress = operandB / operandA;
+            currentOperandAddress[0] = operandB / operandA;
             break;
         case '^':
-            *currentOperandAddress = pow(operandB, operandA);
+            currentOperandAddress[0] = pow(operandB, operandA);
             break;
         default: 
-            *currentOperandAddress = 0;
+            currentOperandAddress[0] = 0;
             return 1;
     }
     return 0;

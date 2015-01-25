@@ -273,6 +273,9 @@
  *   whether newly made or saved from previous compilations, must be linked 
  *   together to produce the new executable program.
  *
+ ****************************************************************************/
+/****************************************************************************
+ *
  *                     Code Performance and Optimization
  *
  * - Rule of thumb, let the compiler do the job. Code should compiled with 
@@ -286,6 +289,26 @@
  *   designed to make best use of hardware, especially memory caches.
  * - Google gperftools can do program performance checking including 
  *   heap-checker, heap-profiler and cpu-profiler.
+ * - Premature optimization is the root of all evil. By using modern compilers,
+ *   you do NOT need to concern about:
+ *   * Register allocation. Assign commonly used variables to registers for
+ *     rapid access.
+ *   * Common sub-expression elimination. If an expression appears several 
+ *     times, evaluate it once and store the result.
+ *   * Loop transformations. Re-order loops to avoid inefficiencies.
+ * - But, There are things that you should optimize at a low level:
+ *   * Temporal locality: Nearby memory accesses in time should be to nearby
+ *     locations in memory. Accessing far-apart memory locations means that 
+ *     each time a new memory location is accessed, memory within the CPU 
+ *     has to be filled with values at and around that memory location.
+ *     C stores its arrays in row-major order. That is, for array a[j][i],
+ *     consecutive memory locations hold a[0][0], a[0][1], a[0][2], . . . 
+ *     To keep our memory references close together, we should make: the later
+ *     position the index in the array, the inner position the index in the
+ *     loop. That is, i is the inner loop for a[j][i].
+ *   * Memory usage: Try to re-use dynamically allocated memory. This is not
+ *     only helpful for avoiding memory leaks, but also avoids time allocating
+ *     and freeing memory.
  *
  ****************************************************************************/
 /****************************************************************************

@@ -23,47 +23,48 @@ int CommandLineProcessor(char *lineCommand)
         return 0;
     }
     /* then get rid of before tabs and spaces */
-    while ((*scanner == ' ') || (*scanner == '\t')) {
-        *scanner = ' '; /* replace tab with space */
+    while ((scanner[0] == ' ') || (scanner[0] == '\t')) {
+        scanner[0] = ' '; /* replace tab with space */
         ++scanner; /* update scanner */
     }
-    while (*scanner != '\0') { /* until reach the end of original command */
-        if ((*scanner == '\r') || (*scanner == '\n')) {
+    while (scanner[0] != '\0') { /* until reach the end of original command */
+        if ((scanner[0] == '\r') || (scanner[0] == '\n')) {
             ++scanner; /* scan the next character */
             continue; /* go to next loop */
         }
-        if (*scanner == '#') {
+        if (scanner[0] == '#') {
             break; /* no more scan */
         }
-        if ((*scanner == ' ') || (*scanner == '\t')) { /* a space or tab */
-            if (*(scanner - 1) != ' ') { /* check space, tabs are all replaced */
+        if ((scanner[0] == ' ') || (scanner[0] == '\t')) { /* a space or tab */
+            if (scanner[-1] != ' ') { /* check space, tabs are all replaced */
                 /* now its a first space or tab between words */
-                *receiver = ' '; /* receive a space */
+                scanner[0] = ' '; /* replace tab with space */
+                receiver[0] = ' '; /* receive a space */
                 ++receiver; /* update the receiver address */
                 ++scanner; /* scan the next character */
                 continue;
             }
             /* otherwise, do not receive */
-            *scanner = ' '; /* replace tab with space */
+            scanner[0] = ' '; /* replace tab with space */
             ++scanner; /* scan the next character */
             continue;
         }
         /* now its a normal character */
-        *receiver = *scanner; /* receive the value of current scanner */
+        receiver[0] = scanner[0]; /* receive the value of current scanner */
         ++receiver; /* update the receiver address */
         ++scanner; /* scan the next character */
     }
     /* if no useful information in command, receiver didn't receive anything */
     if (receiver == lineCommand) {
-        *receiver = '\0';
+        receiver[0] = '\0';
         return 0;
     }
     /* if received something and also ended with a space */
-    if (*(receiver - 1) == ' ') {
-        *(receiver -1) = '\0';
+    if (receiver[-1] == ' ') {
+        receiver[-1] = '\0';
         return 0;
     }
-    *receiver = '\0'; /* add string terminator */
+    receiver[0] = '\0'; /* add string terminator */
     return 0;
 }
 void FatalError(const char *statement)
