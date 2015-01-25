@@ -2,6 +2,8 @@
 #
 #                     Run Job on PBS Systems
 #
+#                        By Huangrui Mo
+#
 # Methodology: Instead of submitting the program directly, 
 # submit a script as the initial job. The script launches
 # your program and many other operations and schedules that
