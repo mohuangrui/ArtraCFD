@@ -190,15 +190,17 @@ JobName=""
 if [[ -n $Job_Name ]]; then
     JobName="-j $Job_Name"
 fi
+
 #***************** generate the scripts file ****************
 ScriptDir="."
-QsubFile="execution.sh"
+JobScheduleFile="job.sh"
+SubmitFile="submit.sh"
 echo "******************************************************"
-if [[ -f $ScriptDir/$QsubFile ]]; then
-    echo "Submit the existing script file: $QsubFile..."
+if [[ -f $ScriptDir/$JobScheduleFile ]]; then
+    echo "Use the existing job schedule file: $JobScheduleFile"
 else
-    echo "Generate and submit the script file: $QsubFile..."
-cat > $ScriptDir/$QsubFile <<EOF
+    echo "Generate the job schedule file: $JobScheduleFile"
+cat > $ScriptDir/$JobScheduleFile <<EOF
 #************************************************************
 #
 #                Current Job Schedule
@@ -221,18 +223,34 @@ echo "preprocessing..."
 
 # now run programs
 echo "running..."
+
 $Executable_Pragram $@
 
 # this part indicases any postprocessing.
 echo "postprocessing..."
 
 echo "finish at  \`date +'%F %k:%M:%S'\`"
+
 EOF
-    chmod +x "$ScriptDir/$QsubFile"
+    chmod +x "$ScriptDir/$JobScheduleFile"
 fi
-echo "sqsub $TestMode $QueueName $ExtraMemoryRequest $TimeToRun $OutputFile $ErrorFile $WaitFor $JobIDFile $JobName ./$QsubFile"
-echo "sqsub $TestMode $QueueName $ExtraMemoryRequest $TimeToRun $OutputFile $ErrorFile $WaitFor $JobIDFile $JobName ./$QsubFile" > "$Output_File"
-sqsub $TestMode $QueueName $ExtraMemoryRequest $TimeToRun $OutputFile $ErrorFile $WaitFor $JobIDFile $JobName ./$QsubFile
-echo "Job submitted!"
+
+cat > $ScriptDir/$SubmitFile <<EOF
+#************************************************************
+#
+#                         Submit
+#
+#************************************************************
+
+#! /bin/bash
+
+sqsub $TestMode $QueueName $ExtraMemoryRequest $TimeToRun $OutputFile $ErrorFile $WaitFor $JobIDFile $JobName ./$JobScheduleFile
+
+EOF
+chmod +x "$ScriptDir/$SubmitFile"
+
+#********************* final information ********************
+echo "sqsub $TestMode $QueueName $ExtraMemoryRequest $TimeToRun $OutputFile $ErrorFile $WaitFor $JobIDFile $JobName ./$JobScheduleFile"
+echo "Please execute $SubmitFile to firmly submit job"
 echo "******************************************************"
 
