@@ -49,8 +49,8 @@ Output_File="output"
 #* error file for standard error stream of the program
 Error_File="errfile"
 
-#* extra memory request, default is [2g]
-Extra_Memory_Request=""
+#* memory request, default is [2g]
+Extra_Memory_Request="2g"
 
 #* test mode: [false], [true]
 Test_Mode="false"
@@ -195,6 +195,7 @@ fi
 ScriptDir="."
 JobScheduleFile="job.sh"
 SubmitFile="submit.sh"
+HostFile="hostfile"
 echo "******************************************************"
 if [[ -f $ScriptDir/$JobScheduleFile ]]; then
     echo "Use the existing job schedule file: $JobScheduleFile"
@@ -216,17 +217,26 @@ cat > $ScriptDir/$JobScheduleFile <<EOF
 
 #! /bin/bash
 
-echo "start at  \`date +'%F %k:%M:%S'\`"
+#**************** generate the hostfile *********************
 
-# this part indicates any preprocessing.
+hostarray=(\$LSB_MCPU_HOSTS)
+> $ScriptDir/$HostFile
+for (( i = 0 ; i < \${#hostarray[@]}-1 ; i=i+2 ))
+do
+    echo \${hostarray[\$i]} slots=\${hostarray[\$i+1]} >> $ScriptDir/$HostFile
+done
+
+#****************** preprocessing part **********************
 echo "preprocessing..."
 
-# now run programs
+echo "start at  \`date +'%F %k:%M:%S'\`"
+
+#******************* main schedule **************************
 echo "running..."
 
 $Executable_Pragram $@
 
-# this part indicases any postprocessing.
+#***************** postprocessing part **********************
 echo "postprocessing..."
 
 echo "finish at  \`date +'%F %k:%M:%S'\`"
