@@ -52,7 +52,7 @@ Error_File="errfile"
 #* memory request per process
 Memory_Request="2g"
 
-#* test mode: [false], [true]
+#* test mode (not recommended): [false], [true]
 Test_Mode="false"
 
 #* wait for a list of jobs to complete. [JobID[,JobID...]]
@@ -98,6 +98,9 @@ Job_Name=`pwd`
 
 # How to archive my data? 
 # cp /scratch/$USER/$SIMULATION /archive/$USER/$SIMULATION
+
+# Use development nodes in lieu of test mode
+# https://www.sharcnet.ca/help/index.php/Saw#Development_nodes
 
 #############################################################
 #    generally, following configures do not need to edit
@@ -159,13 +162,13 @@ fi
 OutputFile=""
 if [[ -n $Output_File ]]; then
     OutputFile="-o $Output_File"
-    > $OutputFile
+    > $Output_File
 fi
 
 ErrorFile=""
 if [[ -n $Error_File ]]; then
     ErrorFile="-e $Error_File"
-    > $ErrorFile
+    > $Error_File
 fi
 
 MemoryRequest=""
@@ -226,7 +229,7 @@ NPROCS=\`cat \$PBS_NODEFILE | wc -l\`
 # output the list of nodes and processors to host file
 cat \$PBS_NODEFILE > $ScriptDir/$HostFile
 # add a empty line to the host file
-echo "\n" >> $ScriptDir/$HostFile
+echo >> $ScriptDir/$HostFile
 
 #****************** preprocessing part **********************
 echo "start at  \`date +'%F %k:%M:%S'\`"
