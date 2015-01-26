@@ -364,6 +364,7 @@ static int WriteParticleFile(EnsightSet *enSet, const Particle *particle)
                 particle->u[geoCount], particle->v[geoCount],
                 particle->w[geoCount]);
     }
+    fclose(filePointer); /* close current opened file */
     return 0;
 }
 /* a good practice: end file with a newline */
