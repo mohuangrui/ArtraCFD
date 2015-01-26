@@ -131,6 +131,19 @@ void *AssignStorage(const int idxMax, const char *dataType)
     }
     return pointer;
 }
+/*
+ * There are a number of rules you should follow in de-allocating memory.
+ * - Prevent access to de-allocated memory. This can be done by setting the
+ *   pointer to null after de-allocating, which requires pass the reference
+ *   of the target pointer.
+ * - De-allocate memory in the reverse order it was allocated. This makes sure
+ *   that any dependencies between the allocated memory will not result in 
+ *   "dangling pointers". So if one allocated data structure has a pointer to 
+ *   another allocated data structure, the second should be de-allocated first.
+ * - For a temporary memory block, de-allocate the block before leaving the
+ *   routine. If the de-allocation is not done before the routine ends, access
+ *   to the memory is lost.
+ */
 int RetrieveStorage(void *pointer)
 {
     if (pointer != NULL) {

@@ -239,6 +239,22 @@
  *   2 char array). Note that in C, the type of a character literal is int,
  *   and not char, that is sizeof 'a' is 4 in an architecture where ints 
  *   are 32bit (and CHAR_BIT is 8), while sizeof(char) is 1 everywhere.
+ * - Keywords such as const are very useful for optimizing compilers to
+ *   produce efficient code. This is particularly true when used in combination
+ *   with the restrict keyword from the C99 standard. The const keyword
+ *   means that the indicated variable cannot be assigned to. This is 
+ *   particularly important for pointers and arrays: to pass an array so that
+ *   it cannot be changed by a routine. However, the const keyword cannot
+ *   prevent changes due to aliasing. That is, the same memory location can
+ *   be referred to through different pointers. This has an effect on
+ *   optimization of the code: since the compiler cannot be sure that whether
+ *   the const variable will be changed after aliasing, it has to assume that
+ *   it can be changed, which prevents the desired optimations. The restrict
+ *   keyword in the C99 standard for C is a way of telling a compiler
+ *   to assume that aliasing does not occur for a particular variable. That is,
+ *   if a variable is declared restrict, the compiler assumes that changes to
+ *   other variables cannot affect that variable. Whether aliasing does or 
+ *   does not occur is the responsibility of the programmer.
  *
  ****************************************************************************/
 /****************************************************************************
@@ -280,6 +296,11 @@
  *
  * - Rule of thumb, let the compiler do the job. Code should compiled with 
  *   compiler optimizations. ICC or GCC are the best.
+ * - High performance coding requires understanding modern computer hardware. 
+ *   The most crucial concept in all this is that of a memory hierarchy.
+ *   Optimizing compilers know more about the target architecture(s) than
+ *   most programmers, so we should write code that the compiler can make 
+ *   best use of.
  * - keep your code general instead of obsessively optimizing your code with 
  *   awkward code structure. Hand optimizations can create odd looking code
  *   that is harder for a compiler to match up to an optimization template.
@@ -287,8 +308,18 @@
  * - Code performance is not only about algorithms, but also is related to
  *   CPU time and memory reading. To get close to CPU peak, codes should
  *   designed to make best use of hardware, especially memory caches.
+ * - Note that it is usually not important to make every routine optimal. 
+ *   Often only a small fraction of the code in a large system has a 
+ *   significant impact on efficiency. This is sometimes expressed by the
+ *   slogan that 95% of the time is spent in 5% of the code. If there is a
+ *   bottleneck in your code, have a close look at it. Ask yourself:
+ *   could better algorithms be used? Could it be implemented more 
+ *   efficiently? Should a higher level of compiler optimization be used?
+ *   Should the data structures be re-designed? Repeat the process until 
+ *   the system is performing as expected.
  * - Google gperftools can do program performance checking including 
  *   heap-checker, heap-profiler and cpu-profiler.
+ * - Valgrind can be used for memory access check and debugging.
  * - Premature optimization is the root of all evil. By using modern compilers,
  *   you do NOT need to concern about:
  *   * Register allocation. Assign commonly used variables to registers for
