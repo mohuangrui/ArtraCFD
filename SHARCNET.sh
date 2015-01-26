@@ -227,9 +227,9 @@ do
 done
 
 #****************** preprocessing part **********************
-echo "preprocessing..."
-
 echo "start at  \`date +'%F %k:%M:%S'\`"
+
+echo "preprocessing..."
 
 #******************* main schedule **************************
 echo "running..."
