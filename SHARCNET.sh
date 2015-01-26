@@ -25,7 +25,9 @@ set -e
 #
 
 #* the command line for running your program
-Executable_Pragram="mpirun artracfd"
+#* \$NPROCS can be used to access the final allocated total
+#* number of processors
+Executable_Pragram="mpirun artracfd -m mpi -n \$NPROCS"
 
 #* queue name: [serial], [threaded], [mpi], [nonstandard queues]
 Queue_Name="mpi"
