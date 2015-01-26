@@ -8,17 +8,17 @@
  * Required Header Files
  ****************************************************************************/
 #include "commons.h"
+#include "entrance.h"
 #include "preprocess.h"
 #include "solve.h"
 #include "postprocess.h"
 #include <stdio.h> /* standard library for input and output */
 #include <stdlib.h> /* dynamic memory allocation and exit */
-#include <math.h> /* common mathematical functions */
 #include <string.h> /* manipulating strings */
 /****************************************************************************
  * The Main Function
  ****************************************************************************/
-int main(void)
+int main(int argc, char *argv[])
 {
     /*
      * Declare and initialize variables
@@ -107,6 +107,14 @@ int main(void)
         .nameHead = NULL,
         .nameLength = 0
     };
+    Command theCommand = { /* program command line */
+        .runMode = 'i',
+        .processorN = 1
+    };
+    /*
+     * Program Entrance
+     */
+    ProgramEntrance(argc, argv, &theCommand);
     /*
      * Preprocessing
      */

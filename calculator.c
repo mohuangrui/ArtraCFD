@@ -804,7 +804,7 @@ static int SetAngleMode(Parameter *parameter)
 }
 static void HelpCalculator(void)
 {
-    fprintf(stdout, "Operation options:\n");
+    fprintf(stdout, "Operation options:\n\n");
     fprintf(stdout, "[help]              show this information\n");
     fprintf(stdout, "[set]               set angle mode in radian (default) or degree\n");
     fprintf(stdout, "math expression     calculator the inputted math expression\n");

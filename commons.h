@@ -522,6 +522,13 @@ typedef struct {
     char *nameHead; /* store the malloc address of names */
     int nameLength; /* length of names */
 }Partition;
+/*
+ * Program command line arguments
+ */
+typedef struct {
+    char runMode; /* mode: [s] serial, [i] interact, [t] threaded, [m] mpi, [g] gpu */
+    int processorN; /* number of processors */
+}Command;
 /****************************************************************************
  * Public Functions Declaration
  ****************************************************************************/

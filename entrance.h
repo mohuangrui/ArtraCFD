@@ -6,8 +6,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_PREPROCESS_H_ /* if this is the first definition */
-#define ARTRACFD_PREPROCESS_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_ENTRANCE_H_ /* if this is the first definition */
+#define ARTRACFD_ENTRANCE_H_ /* a unique marker for this header file */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -19,18 +19,17 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Preprocessor
+ * Program entrance
  *
  * Parameter
- *      data structures
+ *      argc -- main arguments
+ *      argv -- main arguments
  * Function
- *      Call a series of functions to perform the preprocessing of
- *      computational fluid dynamics.
+ *      Call a series of functions to handle the entering of the program.
  * Returns
  *      0 -- successful
  */
-int Preprocess(Field *, Flux *, Space *, Particle *, Time *,
-        Partition *, Fluid *, Flow *, Reference *);
+int ProgramEntrance(int argc, char *argv[], Command *);
 #endif
 /* a good practice: end file with a newline */
 
