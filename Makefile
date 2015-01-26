@@ -95,7 +95,7 @@ CC := gcc
 #    -fast     Enables SSE3, SSE2 and SSE instruction sets optimizations
 #  Use Valgrind for memory access check
 #    -g -O0    Use this flag to compile the program, then run command line
-#    valgrind --leak-check=yes artracfd arg1 arg2
+#    valgrind --leak-check=full --track-origins=yes artracfd arg1 arg2
 #
 ifeq ($(CC),gcc)
 CFLAGS += -Wall -Wextra -O2
