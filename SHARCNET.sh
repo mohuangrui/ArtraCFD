@@ -8,7 +8,8 @@
 # submit a script as the initial job. The script launches
 # your program and many other operations and schedules that
 # you wanted. This approach will provide you the most 
-# flexibility for running your case.
+# flexibility for running your case. 
+# (Reference: https://www.sharcnet.ca/help/index.php/Knowledge_Base)
 #
 # This script can be executed with arguments, these arguments
 # will all be passed to the executable program in the form that
