@@ -159,11 +159,13 @@ fi
 OutputFile=""
 if [[ -n $Output_File ]]; then
     OutputFile="-o $Output_File"
+    > $OutputFile
 fi
 
 ErrorFile=""
 if [[ -n $Error_File ]]; then
     ErrorFile="-e $Error_File"
+    > $ErrorFile
 fi
 
 MemoryRequest=""
@@ -219,12 +221,12 @@ cat > $ScriptDir/$JobScheduleFile <<EOF
 
 #**************** generate the hostfile *********************
 
-hostarray=(\$LSB_MCPU_HOSTS)
-> $ScriptDir/$HostFile
-for (( i = 0 ; i < \${#hostarray[@]}-1 ; i=i+2 ))
-do
-    echo \${hostarray[\$i]} slots=\${hostarray[\$i+1]} >> $ScriptDir/$HostFile
-done
+# total number of processors can be accessed by using \$NPROCS
+NPROCS=\`cat \$PBS_NODEFILE | wc -l\`
+# output the list of nodes and processors to host file
+cat \$PBS_NODEFILE > $ScriptDir/$HostFile
+# add a empty line to the host file
+echo "\n" >> $ScriptDir/$HostFile
 
 #****************** preprocessing part **********************
 echo "start at  \`date +'%F %k:%M:%S'\`"
