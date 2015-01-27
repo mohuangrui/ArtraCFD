@@ -89,6 +89,7 @@ CC := gcc
 #              but has the fastest compilation time.
 #    -O2       Full optimization; generates highly optimized code and has
 #              the slowest compilation time. 
+#    -std=c99 -pedantic  Use ANSI C standard
 #  ICC compiler flags
 #    -O2       Optimize for speed and enable some optimization (default)
 #    -O3       Enable all optimizations as O2, and intensive loop optimizations
@@ -98,7 +99,7 @@ CC := gcc
 #    valgrind --leak-check=full --track-origins=yes artracfd arg1 arg2
 #
 ifeq ($(CC),gcc)
-CFLAGS += -Wall -Wextra -O2
+CFLAGS += -Wall -Wextra -O2 -std=c99 -pedantic
 else
 CFLAGS += -Wall -Wextra -fast
 endif
