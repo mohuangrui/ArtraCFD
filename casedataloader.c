@@ -29,17 +29,8 @@ int LoadCaseSettingData(Space *space, Time *time, Fluid *fluid,
         Reference *reference)
 {
     ShowInformation("Loading case setting data ...");
-    /*
-     * Read data from case file
-     */
     ReadCaseSettingData(space, time, fluid, reference);
-    /*
-     * Output loaded data for verification
-     */
     WriteVerifyData(space, time, fluid, reference);
-    /*
-     * Do some preliminary checking
-     */
     CheckCaseSettingData(space, time, fluid, reference);
     ShowInformation("Session End");
     return 0;

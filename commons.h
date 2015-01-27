@@ -68,6 +68,9 @@
  *   condition, should use ++ and -- on lines by themselves.
  * - Always use the prefix version of ++ and -- (++x, --x) instead of the
  *   postfix version (x++, x--).
+ * - Remember that there are only two precedence levels to remember in 
+ *   C: multiplication and division come before addition and subtraction.
+ *   Everything else should be in parentheses. 
  * - Avoid complex logic like multiply nested ifs. Consider splitting your 
  *   code into multiple procedures, to decrease the level of complexity.
  * - Variables should be declared as locally as possible.

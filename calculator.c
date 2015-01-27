@@ -171,7 +171,7 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
      * command to math expression, reduce and limit the available space for
      * copy is a safety choice.
      */
-    strncpy(command, currentLine, sizeof expression - 5);
+    strncpy(command, currentLine, (int)(sizeof expression) - 5);
     /*
      * The flow control of this program is important, thus, every function
      * call which may result an important error will be monitored.
@@ -310,7 +310,7 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
      * operand stack, if there are more than one element left, 
      * it means something wrong happened.
      */
-    if (operandStack->top - operandStack->base != 1) {
+    if ((operandStack->top - operandStack->base) != 1) {
         ShowInformation("error, wrong expression");
         parameter->answer = 0; /* reset answer */
         return 1;
@@ -396,7 +396,7 @@ static int PushOperandToStack(OperandStack *operandStack, const double currentOp
         return 1;
     }
     operandStack->top[0] = currentOperand;
-    ++operandStack->top;
+    ++(operandStack->top);
     return 0;
 }
 /*
@@ -408,7 +408,7 @@ static int PopOperandFromStack(OperandStack *operandStack, double *operandAddres
         ShowInformation("no sufficient operands in expression...");
         return 1;
     }
-    --operandStack->top;
+    --(operandStack->top);
     operandAddress[0] = operandStack->top[0];
     return 0;
 }
@@ -429,7 +429,7 @@ static int PushOperatorToStack(OperatorStack *operatorStack, const char currentO
         return 1;
     }
     operatorStack->top[0] = currentOperator;
-    ++operatorStack->top;
+    ++(operatorStack->top);
     return 0;
 }
 /*
@@ -441,7 +441,7 @@ static int PopOperatorFromStack(OperatorStack *operatorStack, char *operatorAddr
         ShowInformation("no sufficient operators in expression...");
         return 1;
     }
-    --operatorStack->top;
+    --(operatorStack->top);
     operatorAddress[0] = operatorStack->top[0];
     return 0;
 }

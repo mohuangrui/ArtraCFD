@@ -18,7 +18,12 @@ int CommandLineProcessor(char *lineCommand)
 {
     char *scanner = lineCommand; /* copy the address to scanner */
     char *receiver = lineCommand; /* copy the address to receiver */
-    /* check whether is a NULL command */
+    /* check whether is a NULL command pointer */
+    if (lineCommand == NULL) {
+        fprintf(stderr, "warning: process a NULL command line pointer\n");
+        return 0;
+    }
+    /* check whether is a empty command line */
     if (lineCommand[0] == '\0') {
         return 0;
     }

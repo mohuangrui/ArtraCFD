@@ -35,7 +35,7 @@ int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space,
     Timer operationTimer; /* timer for computing operations */
     Real operationTime = 0; /* record consuming time of operation */
     /* time marching */
-    for (time->stepCount += 1; time->currentTime < time->totalTime; ++time->stepCount) {
+    for (time->stepCount += 1; time->currentTime < time->totalTime; ++(time->stepCount)) {
         fprintf(stdout, "\nStep=%d; Time=%.6g\n", time->stepCount, time->currentTime);
         /*
          * Calculate dt for current time step
@@ -64,7 +64,7 @@ int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space,
         accumulatedTime = accumulatedTime + time->dt;
         if ((accumulatedTime >=  exportTimeInterval) || 
                 (fabs(time->currentTime - time->totalTime) < 1e-100)) {
-            ++time->outputCount; /* export count increase */
+            ++(time->outputCount); /* export count increase */
             TickTime(&operationTimer);
             WriteComputedDataEnsight(field->Uo, space, particle, time, part);
             operationTime = TockTime(&operationTimer);
