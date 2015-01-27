@@ -252,12 +252,16 @@
  *   be referred to through different pointers. This has an effect on
  *   optimization of the code: since the compiler cannot be sure that whether
  *   the const variable will be changed after aliasing, it has to assume that
- *   it can be changed, which prevents the desired optimations. The restrict
+ *   it can be changed, which prevents the desired optimizations. The restrict
  *   keyword in the C99 standard for C is a way of telling a compiler
  *   to assume that aliasing does not occur for a particular variable. That is,
  *   if a variable is declared restrict, the compiler assumes that changes to
  *   other variables cannot affect that variable. Whether aliasing does or 
  *   does not occur is the responsibility of the programmer.
+ * - Definition VS Declaration: definition occurs in only one specifies the 
+ *   type of an object; reserves storage for it; is used to create place
+ *   new objects, example: int my_array[100]; declaration can occur multiple
+ *   describes the type of an object; is used to refer to objects defined.
  *
  ****************************************************************************/
 /****************************************************************************
