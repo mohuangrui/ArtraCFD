@@ -17,7 +17,7 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ConfigureProgram(const Command *);
+static int ConfigureProgram(const Control *);
 static int Preamble(void);
 static int ProgramManual(void);
 /****************************************************************************
@@ -26,7 +26,7 @@ static int ProgramManual(void);
 /*
  * This is the overall entrance function
  */
-int ProgramEntrance(int argc, char *argv[], Command *command)
+int ProgramEntrance(int argc, char *argv[], Control *control)
 {
     /*
      * Loop for command line options
@@ -47,23 +47,23 @@ int ProgramEntrance(int argc, char *argv[], Command *command)
                 ++argv;
                 --argc;
                 if (strcmp(argv[1], "serial") == 0) {
-                    command->runMode = 's';
+                    control->runMode = 's';
                     break;
                 }
                 if (strcmp(argv[1], "interact") == 0) {
-                    command->runMode = 'i';
+                    control->runMode = 'i';
                     break;
                 }
                 if (strcmp(argv[1], "threaded") == 0) {
-                    command->runMode = 't';
+                    control->runMode = 't';
                     break;
                 }
                 if (strcmp(argv[1], "mpi") == 0) {
-                    command->runMode = 'm';
+                    control->runMode = 'm';
                     break;
                 }
                 if (strcmp(argv[1], "gpu") == 0) {
-                    command->runMode = 'g';
+                    control->runMode = 'g';
                     break;
                 }
                 fprintf(stderr,"error, bad option %s\n", argv[1]);
@@ -74,7 +74,7 @@ int ProgramEntrance(int argc, char *argv[], Command *command)
             case 'n':
                 ++argv;
                 --argc;
-                sscanf(argv[1], "%d", &(command->processorN));
+                sscanf(argv[1], "%d", &(control->processorN));
                 break;
             default: 
                 fprintf(stderr,"error, bad option %s\n", argv[1]);
@@ -96,24 +96,24 @@ int ProgramEntrance(int argc, char *argv[], Command *command)
     /*
      * Check the consistency of run mode and number of processors
      */
-    if ((command->runMode == 't') || (command->runMode == 'm') ||
-            (command->runMode == 'g')) {
-        if (command->processorN <= 1) {
-            fprintf(stderr,"error, illegal number of processors %d\n", command->processorN);
+    if ((control->runMode == 't') || (control->runMode == 'm') ||
+            (control->runMode == 'g')) {
+        if (control->processorN <= 1) {
+            fprintf(stderr,"error, illegal number of processors %d\n", control->processorN);
             exit(EXIT_FAILURE);
         }
     } else {
-        command->processorN = 1; /* otherwise always set to 1 and ignore input */
+        control->processorN = 1; /* otherwise always set to 1 and ignore input */
     }
     /*
      * Configure program according to inputted commands and information
      */
-    ConfigureProgram(command);
+    ConfigureProgram(control);
     return 0;
 }
-static int ConfigureProgram(const Command *command)
+static int ConfigureProgram(const Control *control)
 {
-    if (command->runMode == 'i') {
+    if (control->runMode == 'i') {
         Preamble();
     }
     return 0;

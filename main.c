@@ -107,14 +107,14 @@ int main(int argc, char *argv[])
         .nameHead = NULL,
         .nameLength = 0
     };
-    Command theCommand = { /* program command line */
+    Control theControl = { /* program overall control */
         .runMode = 'i',
         .processorN = 1
     };
     /*
      * Program Entrance
      */
-    ProgramEntrance(argc, argv, &theCommand);
+    ProgramEntrance(argc, argv, &theControl);
     /*
      * Preprocessing
      */

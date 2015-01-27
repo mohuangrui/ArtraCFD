@@ -554,12 +554,12 @@ typedef struct {
     int nameLength; /* length of names */
 }Partition;
 /*
- * Program command line arguments
+ * Program command line arguments and overall control
  */
 typedef struct {
     char runMode; /* mode: [s] serial, [i] interact, [t] threaded, [m] mpi, [g] gpu */
     int processorN; /* number of processors */
-}Command;
+}Control;
 /****************************************************************************
  * Public Functions Declaration
  ****************************************************************************/
