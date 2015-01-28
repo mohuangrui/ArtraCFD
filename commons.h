@@ -125,6 +125,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
+ *
  *                         Tips for C Programming I
  *
  *                            Information Flow
@@ -160,6 +161,17 @@
  * the code into modules, then divide the modules into submodules, then 
  * divide the sub-modules into subsubmodules, and so on. 
  *
+ * "Modular Programming" is the act of designing and writing programs as
+ * interactions among functions that each perform a single well-defined
+ * function, and which have minimal side-effect interaction between them. Put
+ * differently, the content of each function is cohesive, and there is low
+ * coupling between functions. 
+ *
+ * "Modular Programming" tends to encourage splitting of functionality into two
+ * types: "Manager" functions control program flow and primarily contain calls
+ * to "Worker" functions that handle low-level details, like moving data
+ * between structures. 
+ *
  * All have the same basic principle at heart: "Arrange the program's
  * information in the clearest and simplest way possible, and then try to turn
  * it into C code."
@@ -182,7 +194,11 @@
  * - The information passed between modules should be limited.
  * - All the functions in a module should perform related jobs.
  *
- * More Details
+ ****************************************************************************/
+/****************************************************************************
+ *
+ *               More Details about Modular Programming
+ *
  * - Structure code by modules.
  * - A module is a collection of data and functions that perform related tasks.
  * - Modules should be designed to minimize the amount of information that has
@@ -211,6 +227,8 @@
  * - Private functions that will not be called from outside the module should
  *   be declared static. Variables declared outside of a function that are 
  *   not used outside the module should be declared static.
+ * - Obviously, the prototypes for static functions should not be put in the
+ *   module's header file.
  *
  ****************************************************************************/
 /****************************************************************************
@@ -224,6 +242,7 @@
  * - static has two meanings:
  *   For function or global variable, static means "private to this file."
  *   If declare a function or global variable as static, it becomes internal.
+ *   That is, they are global to only the C file they exist in, not outside.
  *   You cannot access the function or variable through the extern keyword 
  *   from other files in your project. Note: extern keyword is default for
  *   any functions declared without the keyword "static".
@@ -583,7 +602,7 @@ typedef struct {
  * Returns
  *      0 -- successful
  */
-int CommandLineProcessor(char *lineCommand);
+extern int CommandLineProcessor(char *lineCommand);
 /*
  * Fatal error control
  *
@@ -594,7 +613,7 @@ int CommandLineProcessor(char *lineCommand);
  *      system is able to free all dynamically allocated memory associated with
  *      the process.
  */
-void FatalError(const char *statement);
+extern void FatalError(const char *statement);
 /*
  * Show information to terminal
  *
@@ -604,7 +623,7 @@ void FatalError(const char *statement);
  * Function
  *      Print information to standard out.
  */
-int ShowInformation(const char *statement);
+extern int ShowInformation(const char *statement);
 /*
  * Assign Storage
  *
@@ -622,7 +641,7 @@ int ShowInformation(const char *statement);
  * Returns
  *      0 -- successful
  */
-void *AssignStorage(const int idxMax, const char *dataType);
+extern void *AssignStorage(const int idxMax, const char *dataType);
 /*
  * Retrieve storage from a pointer.
  *
@@ -638,7 +657,7 @@ void *AssignStorage(const int idxMax, const char *dataType);
  * Returns
  *      0 -- successful
  */
-int RetrieveStorage(void *pointer);
+extern int RetrieveStorage(void *pointer);
 #endif
 /* a good practice: end file with a newline */
 
