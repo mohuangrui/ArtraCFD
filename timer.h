@@ -30,7 +30,7 @@ typedef struct timeval Timer;
  *      which will be measured in microseconds. In short, tick the time and
  *      store in the timer.
  */
-void TickTime(Timer *timer);
+extern void TickTime(Timer *timer);
 /*
  * Tock the timer
  *
@@ -41,7 +41,7 @@ void TickTime(Timer *timer);
  *      moment at "now" (the calling time of this function) in the form of
  *      seconds. In short, tock the timer.
  */
-double TockTime(Timer *timer);
+extern double TockTime(Timer *timer);
 #endif
 /* a good practice: end file with a newline */
 

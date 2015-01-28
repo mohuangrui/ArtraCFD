@@ -39,7 +39,7 @@ typedef struct {
  *      Initialize a Ensight transient case file. This function only needs to
  *      be call once for each non restart run.
  */
-int InitializeEnsightTransientCaseFile(const Time *);
+extern int InitializeEnsightTransientCaseFile(const Time *);
 /*
  * Ensight format data exporter
  *
@@ -52,7 +52,7 @@ int InitializeEnsightTransientCaseFile(const Time *);
  *      primitive field variables. These data are in sequential state and can
  *      be accessed by linear index math.
  */
-int WriteComputedDataEnsight(const Real * fieldData, const Space *, 
+extern int WriteComputedDataEnsight(const Real * fieldData, const Space *, 
         const Particle *, const Time *, const Partition *);
 /*
  * Ensight format data loader
@@ -61,7 +61,7 @@ int WriteComputedDataEnsight(const Real * fieldData, const Space *,
  *      Load computed data from output files which are written in Ensight
  *      format.
  */
-int LoadComputedDataEnsight(Real *fieldData, const Space *, Time *,
+extern int LoadComputedDataEnsight(Real *fieldData, const Space *, Time *,
         const Partition *);
 #endif
 /* a good practice: end file with a newline */

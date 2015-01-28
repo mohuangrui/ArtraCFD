@@ -25,7 +25,7 @@
  *      Initialize domain geometry and call ComputeDomainGeometryGCIBM to
  *      mesh the domain by GCIBM approach. It only needs to be call once.
  */
-int InitializeDomainGeometryGCIBM(Space *, Particle *, const Partition *);
+extern int InitializeDomainGeometryGCIBM(Space *, Particle *, const Partition *);
 /*
  * Compute domain geometry
  *
@@ -33,7 +33,7 @@ int InitializeDomainGeometryGCIBM(Space *, Particle *, const Partition *);
  *      Employ GCIBM approach to handle complex geometry that locates in
  *      the computational domain.
  */
-int ComputeDomainGeometryGCIBM(Space *, Particle *, const Partition *);
+extern int ComputeDomainGeometryGCIBM(Space *, Particle *, const Partition *);
 #endif
 /* a good practice: end file with a newline */
 

@@ -27,7 +27,7 @@
  *      artracfd.case -- the case setting file.
  *      artracfd.geo -- the initial geometry input file.
  */
-int GenerateCaseSettingFiles(void);
+extern int GenerateCaseSettingFiles(void);
 #endif
 /* a good practice: end file with a newline */
 

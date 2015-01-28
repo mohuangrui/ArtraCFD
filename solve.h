@@ -25,7 +25,7 @@
  *      Call a series of function to perform numerical computation of the flow
  *      case.
  */
-int Solve(Field *, Flux *, Space *, Particle *, Time *, 
+extern int Solve(Field *, Flux *, Space *, Particle *, Time *, 
         const Partition *, const Fluid *, const Flow *, const Reference *);
 #endif
 /* a good practice: end file with a newline */

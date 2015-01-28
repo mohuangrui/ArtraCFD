@@ -25,7 +25,7 @@
  *      Decomposite the computational domain, and provide the index range
  *      for each partitions, as well as partition names.
  */
-int DomainPartition(Partition *, const Space *);
+extern int DomainPartition(Partition *, const Space *);
 #endif
 /* a good practice: end file with a newline */
 

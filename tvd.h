@@ -24,7 +24,7 @@
  * Function
  *      Compute field data in the space domain by TVD approach.
  */
-int TVD(Field *, Flux *, const Space *, const Partition *);
+extern int TVD(Field *, Flux *, const Space *, const Partition *);
 #endif
 /* a good practice: end file with a newline */
 

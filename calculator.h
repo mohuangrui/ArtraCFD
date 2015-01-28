@@ -24,7 +24,7 @@
  *      Provide a expression calculator that can calculate complex mathematical
  *      expressions.
  */
-int ExpressionCalculator(void);
+extern int ExpressionCalculator(void);
 #endif
 /* a good practice: end file with a newline */
 

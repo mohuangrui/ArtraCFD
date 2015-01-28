@@ -26,7 +26,7 @@
  *      -- non restart run, load from file artracfd.geo
  *      -- restart run, load from the restart particle file.
  */
-int LoadGeometryData(Particle *, const Time *);
+extern int LoadGeometryData(Particle *, const Time *);
 #endif
 /* a good practice: end file with a newline */
 
