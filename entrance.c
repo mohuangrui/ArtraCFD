@@ -138,8 +138,8 @@ static int Preamble(void)
         if (strncmp(currentLine, "help", sizeof currentLine) == 0) {
             fprintf(stdout, "Options under interactive environment:\n\n");
             fprintf(stdout, "[help]    show this information\n");
-            fprintf(stdout, "[init]    generate case input files\n");
-            fprintf(stdout, "[solve]   solve the case in serial mode\n");
+            fprintf(stdout, "[init]    generate the initial case input files\n");
+            fprintf(stdout, "[solve]   solve current case in serial mode\n");
             fprintf(stdout, "[calc]    access expression calculator\n");
             fprintf(stdout, "[manual]  show a brief user manual of ArtraCFD\n");
             fprintf(stdout, "[exit]    exit program\n");
