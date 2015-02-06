@@ -3,11 +3,34 @@
 // the center and radius of the trace sphere
 xCenter = 3;
 yCenter = 3;
-zCenter = 3;
+zCenter = 0;
 R = 1;
 
 // the radius of particles
-r = 0.2;
+// calculate radius by specifying the total number of particles
+nParticles = 32;
+r = R * sind(180 / nParticles);
+// explicitly specify the radius instead, however non-zero gap
+//r = 0.2;
+
+//****************** Accumulation Calculation ******************
+// this part is needed if accumulate new particles
+
+nnParticles = 48;
+// compute the new distribution radius
+RR = (R + r) / (1 - sind(180 / nnParticles));
+// compute the new particle radius
+rr = RR * sind(180 / nnParticles);
+
+
+nnnParticles = 96;
+// compute the new distribution radius
+RRR = (RR + rr) / (1 - sind(180 / nnnParticles));
+// compute the new particle radius
+rrr = RRR * sind(180 / nnnParticles);
+// update variables
+r = rrr;
+R = RRR;
 
 // ********************* Execute Part ***************************
 // open the target file
@@ -15,7 +38,7 @@ FID=file('open',"Particle",'unknow');
 
 // the angle gap of inclination angle between two contacted particles
 phi = 2 * asind(r / R); // 3D
-//phi = 90; // 2D
+phi = 90; // 2D
 
 // get total number of particles allowed on longitude circle
 // note that inclination range is from 0 to 180 degree
