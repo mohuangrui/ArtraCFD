@@ -24,7 +24,7 @@
  * Function
  *      Apply boundary condition for the flow field.
  */
-extern int BoundaryCondtion(Field *, const Space *, const Partition *);
+extern int BoundaryCondtion(Field *, const Space *, const Partition *, const Flow *);
 #endif
 /* a good practice: end file with a newline */
 

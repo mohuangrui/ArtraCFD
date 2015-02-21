@@ -31,7 +31,7 @@ int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space,
     /* obtain the desired export time interval */
     exportTimeInterval = exportTimeInterval / time->totalOutputTimes;
     Real accumulatedTime = 0; /* used for control when to export data */
-    /* set some timers for monitoring timeconsuming of process */
+    /* set some timers for monitoring time consuming of process */
     Timer operationTimer; /* timer for computing operations */
     Real operationTime = 0; /* record consuming time of operation */
     /* time marching */

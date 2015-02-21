@@ -19,7 +19,7 @@ int Solve(Field *field, Flux *flux, Space *space, Particle *particle,
         Time *time, const Partition *part, const Fluid *fluid,
         const Flow *flow, const Reference *reference)
 {
-    InitializeFlowField(field, space, particle, time, part);
+    InitializeFlowField(field, space, particle, time, part, flow);
     RungeKuttaTimeMarching(field, flux, space, particle, time, part, flow);
     return 0;
 }
