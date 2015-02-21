@@ -41,7 +41,6 @@ int BoundaryCondtion(Field *field, const Space *space, const Partition *part, co
     int idxF = 0; /* index at Front */
     int idxB = 0; /* index at Back */
     int idxWW = 0; /* index at West */
-    int idxEE = 0; /* index at East */
     int idxSS = 0; /* index at South */
     int idxNN = 0; /* index at North */
     int idxFF = 0; /* index at Front */
