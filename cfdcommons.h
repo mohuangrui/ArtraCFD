@@ -1,0 +1,30 @@
+/****************************************************************************
+ * Header File                                                              *
+ * Programmer: Huangrui Mo                                                  *
+ * - Follow the Google's C/C++ style Guide                                  *
+ ****************************************************************************/
+/****************************************************************************
+ * Header File Guards to Avoid Interdependence
+ ****************************************************************************/
+#ifndef ARTRACFD_CFDCOMMONS_H_ /* if this is the first definition */
+#define ARTRACFD_CFDCOMMONS_H_ /* a unique marker for this header file */
+/****************************************************************************
+ * Required Header Files
+ ****************************************************************************/
+#include "commons.h"
+/****************************************************************************
+ * Data Structure Declarations
+ ****************************************************************************/
+/****************************************************************************
+ * Public Functions Declaration
+ ****************************************************************************/
+/*
+ * Converter of field variables
+ *
+ * Function
+ *      Convert field variables from conservative form to primitive form.
+ */
+extern int ConvertConservativeToPrimitive(Field *, const Space *, const Flow *);
+#endif
+/* a good practice: end file with a newline */
+
