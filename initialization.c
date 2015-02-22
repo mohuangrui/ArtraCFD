@@ -12,6 +12,7 @@
 #include <string.h> /* manipulating strings */
 #include "boundarycondition.h"
 #include "ensight.h"
+#include "cfdcommons.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
@@ -54,7 +55,7 @@ static int FirstRunInitializer(Field *field, Space *space, const Partition *part
     Real u0 = 0.0;
     Real v0 = 0.0;
     Real w0 = 0.0;
-    Real p0 = 0.71429;
+    Real p0 = 1.0;
     /*
      * Decompose the field variable into each component.
      */
@@ -87,6 +88,10 @@ static int FirstRunInitializer(Field *field, Space *space, const Partition *part
      * Apply boundary conditions to obtain an entire initialized flow field
      */
     BoundaryCondtion(field, space, part, flow);
+    /*
+     * Compute primitive variables based on conservative variables
+     */
+    ComputePrimitiveByConservative(field, space, flow);
     return 0;
 }
 /*

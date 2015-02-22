@@ -14,7 +14,8 @@
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int TVD(Field *field, Flux *flux, const Space *space, const Partition *part)
+int TVD(Field *field, Flux *flux, const Space *space, const Partition *part,
+        const Fluid *fluid)
 {
     /*
      * When exchange a large bunch of data between two arrays, if there is no

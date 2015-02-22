@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
      * Solve
      */
     Solve(&theField, &theFlux, &theSpace, &theParticle, &theTime, 
-            &thePart, &theFluid, &theFlow, &theReference);
+            &thePart, &theFluid, &theFlow);
     /*
      * Postprocessing
      */

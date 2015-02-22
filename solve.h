@@ -26,7 +26,7 @@
  *      case.
  */
 extern int Solve(Field *, Flux *, Space *, Particle *, Time *, 
-        const Partition *, const Fluid *, const Flow *, const Reference *);
+        const Partition *, const Fluid *, const Flow *);
 #endif
 /* a good practice: end file with a newline */
 

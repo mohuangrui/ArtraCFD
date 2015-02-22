@@ -13,12 +13,15 @@
 #include "gcibm.h"
 #include "ensight.h"
 #include "timer.h"
+#include "tvd.h"
+#include "cfdcommons.h"
 #include "commons.h"
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
 int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space, 
-        Particle *particle, Time *time, const Partition *part, const Flow *flow)
+        Particle *particle, Time *time, const Partition *part, 
+        const Fluid *fluid, const Flow *flow)
 {
     ShowInformation("Time marching...");
     Real exportTimeInterval = (time->totalTime - time->currentTime);
@@ -36,11 +39,11 @@ int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space,
     Real operationTime = 0; /* record consuming time of operation */
     /* time marching */
     for (time->stepCount += 1; time->currentTime < time->totalTime; ++(time->stepCount)) {
-        fprintf(stdout, "\nStep=%d; Time=%.6g\n", time->stepCount, time->currentTime);
         /*
          * Calculate dt for current time step
          */
-        time->dt = exportTimeInterval;
+        time->dt = ComputeTimeStepByCFL(field, space, time, part, flow);
+        fprintf(stdout, "\nStep=%d; Time=%.6g; dt=%.6g\n", time->stepCount, time->currentTime, time->dt);
         /*
          * Update current time stamp, if current time exceeds the total time, 
          * recompute the value of dt to make current time equal total time.
@@ -53,6 +56,7 @@ int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space,
         /*
          * Compute field data in current time step
          */
+        TVD(field, flux, space, part, fluid);
         /*
          * Export computed data. Use accumulatedTime as a flag, if
          * accumulatedTime increases to anticipated export interval,

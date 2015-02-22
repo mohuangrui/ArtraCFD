@@ -63,13 +63,13 @@ int ComputeCFDParameters(Space *space, Time *time,
  *
  * In this program, 2D and 3D space are unified, that is, a 2D space
  * will automatically transfer to a zero-thickness 3D space with
- * 2 cells(that is, three node layers) in the thickness direction.
- * These three node layers are treated as Domain Front Boundary, 
- * inner cell, Domain Back Boundary respectively. Periodic boundary 
+ * 2 cells(that is, three node layers) in the collapsed direction.
+ * These three node layers are treated as Domain Boundary, 
+ * inner cell, Domain Boundary respectively. Periodic boundary 
  * condition will be forced on these two boundaries. Here the concept
  * that a zero-thickness 3D space with 2 cells is that the space is 
  * physically zero-thickness(it's still 2D), but numerically has
- * two cells(three node layers) in thickness direction.  
+ * two cells(three node layers) in this direction.  
  */
 static int NodeBasedMeshNumberRefine(Space *space)
 {
@@ -91,9 +91,9 @@ static int InitializeCFDParameters(Space *space, Time *time,
 {
     /* space */
     Real scale = (1 / reference->length); /* auxiliary variables */
-    space->dx = scale * space->dx / space->nx; /* update to normalized real dx */
-    space->dy = scale * space->dy / space->ny; /* update to normalized real dy */
-    space->dz = scale * space->dz / space->nz; /* update to normalized real dz */
+    space->dx = scale * space->dx / (space->nx - 1); /* update to normalized real dx */
+    space->dy = scale * space->dy / (space->ny - 1); /* update to normalized real dy */
+    space->dz = scale * space->dz / (space->nz - 1); /* update to normalized real dz */
     /* time */
     scale = (reference->velocity / reference->length);
     time->totalTime = scale * time->totalTime;
