@@ -51,7 +51,7 @@ static int ProgramMemoryAllocate(Field *field, Flux *flux, Space *space)
      * Conservative flow variables: rho, rho_u, rho_v, rho_w, E
      */
     int dimU = 5; /* dimension of field variable U */
-    int idxMax = dimU * space->kMax * space->jMax * space->iMax;
+    int idxMax = dimU * space->nMax;
     field->U = AssignStorage(idxMax, "Real");
     field->Un = AssignStorage(idxMax, "Real");
     field->Um = AssignStorage(idxMax, "Real");
@@ -64,12 +64,12 @@ static int ProgramMemoryAllocate(Field *field, Flux *flux, Space *space)
     /*
      * Primitive flow variables: rho, u, v, w, p, T
      */
-    idxMax = (dimU + 1) * space->kMax * space->jMax * space->iMax;
+    idxMax = (dimU + 1) * space->nMax;
     field->Uo = AssignStorage(idxMax, "Real");
     /*
      * Node type identifier
      */
-    idxMax = space->kMax * space->jMax * space->iMax; /* max index */
+    idxMax = space->nMax; /* max index */
     space->ghostFlag = AssignStorage(idxMax, "int");
     space->geoID = AssignStorage(idxMax, "int");
     ShowInformation("Session End");

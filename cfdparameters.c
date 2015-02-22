@@ -79,6 +79,7 @@ static int NodeBasedMeshNumberRefine(Space *space)
     space->kMax = space->nz + 2 * space->ng; /* nz nodes + 2*ng ghosts */
     space->jMax = space->ny + 2 * space->ng; /* ny nodes + 2*ng ghosts */
     space->iMax = space->nx + 2 * space->ng; /* nx nodes + 2*ng ghosts */
+    space->nMax = space->kMax * space->jMax * space->iMax; /* total node number */
     return 0;
 }
 /*

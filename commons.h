@@ -501,6 +501,7 @@ typedef struct {
     int iMax; /* total node number in x */
     int jMax; /* total node number in y */
     int kMax; /* total node number in z */
+    int nMax; /* total node number */
     Real dx; /* first use as x length, then update to mesh size in x */
     Real dy; /* first use as y length, then update to mesh size in y */
     Real dz; /* first use as z length, then update to mesh size in z */

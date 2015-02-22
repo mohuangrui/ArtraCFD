@@ -59,11 +59,11 @@ static int FirstRunInitializer(Field *field, Space *space, const Partition *part
     /*
      * Decompose the field variable into each component.
      */
-    Real *rho = field->Un + 0 * space->kMax * space->jMax * space->iMax;
-    Real *rho_u = field->Un + 1 * space->kMax * space->jMax * space->iMax;
-    Real *rho_v = field->Un + 2 * space->kMax * space->jMax * space->iMax;
-    Real *rho_w = field->Un + 3 * space->kMax * space->jMax * space->iMax;
-    Real *rho_eT = field->Un + 4 * space->kMax * space->jMax * space->iMax;
+    Real *rho = field->Un + 0 * space->nMax;
+    Real *rho_u = field->Un + 1 * space->nMax;
+    Real *rho_v = field->Un + 2 * space->nMax;
+    Real *rho_w = field->Un + 3 * space->nMax;
+    Real *rho_eT = field->Un + 4 * space->nMax;
     /*
      * Initialize the interior field
      */
