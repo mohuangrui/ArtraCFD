@@ -60,17 +60,52 @@ int ComputePrimitiveByConservative(Field *field, const Space *space, const Flow 
     }
     return 0;
 }
-int ComputeFlux(const Field *field, Flux *flux, const Space *space, const Flow *flow)
+int ComputeConservativeByPrimitive(Field *field, const Space *space, const Flow *flow)
 {
     /*
      * Decompose the conservative field variable into each component.
      */
-    const Real *Un[5] = {
+    Real *Un[5] = {
         field->Un + 0 * space->nMax,
         field->Un + 1 * space->nMax,
         field->Un + 2 * space->nMax,
         field->Un + 3 * space->nMax,
         field->Un + 4 * space->nMax};
+    /*
+     * Decompose the primitive field variable into each component.
+     */
+    const Real *rho = field->Uo + 0 * space->nMax;
+    const Real *u = field->Uo + 1 * space->nMax;
+    const Real *v = field->Uo + 2 * space->nMax;
+    const Real *w = field->Uo + 3 * space->nMax;
+    const Real *p = field->Uo + 4 * space->nMax;
+    /*
+     * Indices
+     */
+    int k = 0; /* loop count */
+    int j = 0; /* loop count */
+    int i = 0; /* loop count */
+    int idx = 0; /* calculated index */
+    for (k = 0; k < space->kMax; ++k) {
+        for (j = 0; j < space->jMax; ++j) {
+            for (i = 0; i < space->iMax; ++i) {
+                idx = (k * space->jMax + j) * space->iMax + i;
+                if (space->ghostFlag[idx] == -1) { /* if it's solid node */
+                    continue;
+                }
+                Un[0][idx] = rho[idx];
+                Un[1][idx] = rho[idx] * u[idx];
+                Un[2][idx] = rho[idx] * v[idx];
+                Un[3][idx] = rho[idx] * w[idx];
+                Un[4][idx] = p[idx] / (flow->gamma - 1) + 
+                    0.5 * rho[idx] * (u[idx] * u[idx] + v[idx] * v[idx] + w[idx] * w[idx]);
+            }
+        }
+    }
+    return 0;
+}
+int ComputeFlux(const Field *field, Flux *flux, const Space *space, const Flow *flow)
+{
     /*
      * Decompose the nonviscous flux variables into each component
      */
@@ -121,13 +156,15 @@ int ComputeFlux(const Field *field, Flux *flux, const Space *space, const Flow *
     const Real *v = field->Uo + 2 * space->nMax;
     const Real *w = field->Uo + 3 * space->nMax;
     const Real *p = field->Uo + 4 * space->nMax;
+    const Real *T = field->Uo + 5 * space->nMax;
+    const Real *rho_eT = field->Un + 4 * space->nMax;
     /*
      * Auxiliary variables
      */
     Real divV = 0; /* divergence of velocity V */
-    const Real dx = MinPositive(space->dx, 1);
-    const Real dy = MinPositive(space->dy, 1);
-    const Real dz = MinPositive(space->dz, 1);
+    const Real dx = MinPositive(space->dx, -1);
+    const Real dy = MinPositive(space->dy, -1);
+    const Real dz = MinPositive(space->dz, -1);
     /*
      * Indices
      */
@@ -160,41 +197,44 @@ int ComputeFlux(const Field *field, Flux *flux, const Space *space, const Flow *
                 Fx[1][idx] = rho[idx] * u[idx] * u[idx] + p[idx];
                 Fx[2][idx] = rho[idx] * u[idx] * v[idx];
                 Fx[3][idx] = rho[idx] * u[idx] * w[idx];
-                Fx[4][idx] = (Un[4][idx] + p[idx]) * u[idx];
+                Fx[4][idx] = (rho_eT[idx] + p[idx]) * u[idx];
 
                 Fy[0][idx] = rho[idx] * v[idx];
                 Fy[1][idx] = rho[idx] * v[idx] * u[idx];
                 Fy[2][idx] = rho[idx] * v[idx] * v[idx] + p[idx];
                 Fy[3][idx] = rho[idx] * v[idx] * w[idx];
-                Fy[4][idx] = (Un[4][idx] + p[idx]) * v[idx];
+                Fy[4][idx] = (rho_eT[idx] + p[idx]) * v[idx];
 
                 Fz[0][idx] = rho[idx] * w[idx];
                 Fz[1][idx] = rho[idx] * w[idx] * u[idx];
                 Fz[2][idx] = rho[idx] * w[idx] * v[idx];
                 Fz[3][idx] = rho[idx] * w[idx] * w[idx] + p[idx];
-                Fz[4][idx] = (Un[4][idx] + p[idx]) * w[idx];
+                Fz[4][idx] = (rho_eT[idx] + p[idx]) * w[idx];
 
-                divV = (u[idxW] + u[idxE] - 2 * u[idx]) / (dx * dx) + 
-                    (v[idxS] + v[idxN] - 2 * v[idx]) / (dy * dy) + 
-                    (w[idxF] + w[idxB] - 2 * w[idx]) / (dz * dz);
+                divV = (u[idxE] - u[idxW]) / (2 * dx) + 
+                    (v[idxN] - v[idxS]) / (2 * dy) + 
+                    (w[idxB] - w[idxF]) / (2 * dz);
 
                 Gx[0][idx] = 0;
-                Gx[1][idx] = rho[idx] * u[idx] * u[idx] + p[idx];
-                Gx[2][idx] = rho[idx] * u[idx] * v[idx];
-                Gx[3][idx] = rho[idx] * u[idx] * w[idx];
-                Gx[4][idx] = (Un[4][idx] + p[idx]) * u[idx];
+                Gx[1][idx] = flow->mu * ((u[idxE] - u[idxW]) / dx - (2/3) * divV);
+                Gx[2][idx] = flow->mu * ((u[idxN] - u[idxS]) / (2 * dy) + (v[idxE] - v[idxW]) / (2 * dx));
+                Gx[3][idx] = flow->mu * ((u[idxB] - u[idxF]) / (2 * dz) + (w[idxE] - w[idxW]) / (2 * dx));
+                Gx[4][idx] = flow->heatK * (T[idxE] - T[idxW]) / (2 * dx) + 
+                    u[idx] * Gx[1][idx] + v[idx] * Gx[2][idx] + w[idx] * Gx[3][idx];
 
                 Gy[0][idx] = 0;
-                Gy[1][idx] = rho[idx] * v[idx] * u[idx];
-                Gy[2][idx] = rho[idx] * v[idx] * v[idx] + p[idx];
-                Gy[3][idx] = rho[idx] * v[idx] * w[idx];
-                Gy[4][idx] = (Un[4][idx] + p[idx]) * v[idx];
+                Gy[1][idx] = Gx[2][idx];
+                Gy[2][idx] = flow->mu * ((v[idxN] - v[idxS]) / dy - (2/3) * divV);
+                Gy[3][idx] = flow->mu * ((v[idxB] - v[idxF]) / (2 * dz) + (w[idxN] - w[idxS]) / (2 * dy));
+                Gy[4][idx] = flow->heatK * (T[idxN] - T[idxS]) / (2 * dy) + 
+                    u[idx] * Gy[1][idx] + v[idx] * Gy[2][idx] + w[idx] * Gy[3][idx];
 
                 Gz[0][idx] = 0;
-                Gz[1][idx] = rho[idx] * w[idx] * u[idx];
-                Gz[2][idx] = rho[idx] * w[idx] * v[idx];
-                Gz[3][idx] = rho[idx] * w[idx] * w[idx] + p[idx];
-                Gz[4][idx] = (Un[4][idx] + p[idx]) * w[idx];
+                Gz[1][idx] = Gx[3][idx];
+                Gz[2][idx] = Gy[3][idx];
+                Gz[3][idx] = flow->mu * ((w[idxB] - w[idxF]) / dz - (2/3) * divV);
+                Gz[4][idx] = flow->heatK * (T[idxB] - T[idxF]) / (2 * dz) + 
+                    u[idx] * Gz[1][idx] + v[idx] * Gz[2][idx] + w[idx] * Gz[3][idx];
             }
         }
     }
@@ -215,7 +255,7 @@ Real ComputeTimeStepByCFL(Field *field, const Space *space, const Time *time,
      * Auxiliary variables
      */
     Real velocity = 0;
-    Real velocityMax = 1e-100;
+    Real velocityMax = 1e-38;
     /*
      * Indices
      */
@@ -243,7 +283,7 @@ Real ComputeTimeStepByCFL(Field *field, const Space *space, const Time *time,
 Real MinPositive(Real valueA, Real valueB)
 {
     if ((valueA <= 0) && (valueB <= 0)) {
-        return 1e100;
+        return 1e38;
     }
     if (valueA <= 0) {
         return valueB;

@@ -17,8 +17,8 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int FirstRunInitializer(Field *, Space *, const Partition *, const Flow *);
-static int RestartInitializer(Field *, Space *, Time *, const Partition *);
+static int FirstRunInitializer(Field *, Flux *, Space *, const Partition *, const Flow *);
+static int RestartInitializer(Field *, Flux *, Space *, Time *, const Partition *, const Flow *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -26,17 +26,17 @@ static int RestartInitializer(Field *, Space *, Time *, const Partition *);
  * This function initializes the entire flow field. Initialization will be 
  * done differently determined by the restart status.
  */
-int InitializeFlowField(Field *field, Space *space, const Particle *particle,
+int InitializeFlowField(Field *field, Flux *flux, Space *space, const Particle *particle,
         Time *time, const Partition *part, const Flow *flow)
 {
     ShowInformation("Initializing flow field...");
     if (time->restart == 0) { /* non restart */
-        FirstRunInitializer(field, space, part, flow);
+        FirstRunInitializer(field, flux, space, part, flow);
         /* if this is a first run, output initial data */
         InitializeEnsightTransientCaseFile(time);
         WriteComputedDataEnsight(field->Uo, space, particle, time, part);
     } else {
-        RestartInitializer(field, space, time,  part);
+        RestartInitializer(field, flux, space, time, part, flow);
     }
     ShowInformation("Session End");
     return 0;
@@ -44,7 +44,7 @@ int InitializeFlowField(Field *field, Space *space, const Particle *particle,
 /*
  * The first run initialization will assign values to field variables.
  */
-static int FirstRunInitializer(Field *field, Space *space, const Partition *part, const Flow *flow)
+static int FirstRunInitializer(Field *field, Flux *flux, Space *space, const Partition *part, const Flow *flow)
 {
     ShowInformation("  Non-restart run initializing...");
     /*
@@ -93,20 +93,32 @@ static int FirstRunInitializer(Field *field, Space *space, const Partition *part
      * Compute primitive variables based on conservative variables
      */
     ComputePrimitiveByConservative(field, space, flow);
+    /*
+     * Compute flux variables
+     */
+    ComputeFlux(field, flux, space, flow);
     return 0;
 }
 /*
  * If this is a restart run, then initialize flow field by reading field data
  * from restart files.
  */
-static int RestartInitializer(Field *field, Space *space, Time *time,
-        const Partition *part)
+static int RestartInitializer(Field *field, Flux *flux, Space *space, Time *time,
+        const Partition *part, const Flow *flow)
 {
     ShowInformation("  Restart run initializing...");
     /*
      * Load data from Ensight restart files.
      */
     LoadComputedDataEnsight(field->Uo, space, time, part);
+    /*
+     * Compute conservative variables based on primitive variables
+     */
+    ComputeConservativeByPrimitive(field, space, flow);
+    /*
+     * Compute flux variables
+     */
+    ComputeFlux(field, flux, space, flow);
     return 0;
 }
 /* a good practice: end file with a newline */

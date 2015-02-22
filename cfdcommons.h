@@ -26,6 +26,20 @@
  */
 extern int ComputePrimitiveByConservative(Field *, const Space *, const Flow *);
 /*
+ * Compute conservative field variables
+ *
+ * Function
+ *      Compute values of conservative form based on primitive form.
+ */
+extern int ComputeConservativeByPrimitive(Field *, const Space *, const Flow *);
+/*
+ * Compute flux variables
+ *
+ * Function
+ *      Compute flux variables based on primitive and conservative variables.
+ */
+extern int ComputeFlux(const Field *, Flux *, const Space *, const Flow *);
+/*
  * Compute dt by CFL condition
  *
  * Function
@@ -45,7 +59,7 @@ extern Real ComputeTimeStepByCFL(Field *, const Space *, const Time *,
  *
  * Returns
  *      a real -- the smaller value which is positive
- *      1e100 -- if none of them is positive
+ *      1e38 -- if none of them is positive
  */
 extern Real MinPositive(Real valueA, Real valueB);
 /*
