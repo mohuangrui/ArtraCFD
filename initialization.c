@@ -59,11 +59,12 @@ static int FirstRunInitializer(Field *field, Space *space, const Partition *part
     /*
      * Decompose the field variable into each component.
      */
-    Real *rho = field->Un + 0 * space->nMax;
-    Real *rho_u = field->Un + 1 * space->nMax;
-    Real *rho_v = field->Un + 2 * space->nMax;
-    Real *rho_w = field->Un + 3 * space->nMax;
-    Real *rho_eT = field->Un + 4 * space->nMax;
+    Real *Un[5] = {
+        field->Un + 0 * space->nMax,
+        field->Un + 1 * space->nMax,
+        field->Un + 2 * space->nMax,
+        field->Un + 3 * space->nMax,
+        field->Un + 4 * space->nMax};
     /*
      * Initialize the interior field
      */
@@ -75,11 +76,11 @@ static int FirstRunInitializer(Field *field, Space *space, const Partition *part
         for (j = part->jSub[12]; j < part->jSup[12]; ++j) {
             for (i = part->iSub[12]; i < part->iSup[12]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
-                rho[idx] = rho0;
-                rho_u[idx] = rho0 * u0;
-                rho_v[idx] = rho0 * v0;
-                rho_w[idx] = rho0 * w0;
-                rho_eT[idx] = p0 / (flow->gamma - 1) + 
+                Un[0][idx] = rho0;
+                Un[1][idx] = rho0 * u0;
+                Un[2][idx] = rho0 * v0;
+                Un[3][idx] = rho0 * w0;
+                Un[4][idx] = p0 / (flow->gamma - 1) + 
                     0.5 * rho0 * (u0 * u0 + v0 * v0 + w0 * w0);
             }
         }

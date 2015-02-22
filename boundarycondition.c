@@ -22,17 +22,19 @@ int BoundaryCondtion(Field *field, const Space *space, const Partition *part, co
     /*
      * Decompose the field variable into each component.
      */
-    Real *rho = field->Un + 0 * space->nMax;
-    Real *rho_u = field->Un + 1 * space->nMax;
-    Real *rho_v = field->Un + 2 * space->nMax;
-    Real *rho_w = field->Un + 3 * space->nMax;
-    Real *rho_eT = field->Un + 4 * space->nMax;
+    Real *Un[5] = {
+        field->Un + 0 * space->nMax,
+        field->Un + 1 * space->nMax,
+        field->Un + 2 * space->nMax,
+        field->Un + 3 * space->nMax,
+        field->Un + 4 * space->nMax};
     /*
      * Indices
      */
     int k = 0; /* loop count */
     int j = 0; /* loop count */
     int i = 0; /* loop count */
+    int dim = 0; /* dimension count of vectors */
     int idx = 0; /* calculated index */
     int idxW = 0; /* index at West */
     int idxE = 0; /* index at East */
@@ -60,11 +62,11 @@ int BoundaryCondtion(Field *field, const Space *space, const Partition *part, co
         for (j = part->jSub[domainID]; j < part->jSup[domainID]; ++j) {
             for (i = part->iSub[domainID]; i < part->iSup[domainID]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
-                rho[idx] = rhoInlet;
-                rho_u[idx] = rhoInlet * uInlet;
-                rho_v[idx] = rhoInlet * vInlet;
-                rho_w[idx] = rhoInlet * wInlet;
-                rho_eT[idx] = pInlet / (flow->gamma - 1) + 
+                Un[0][idx] = rhoInlet;
+                Un[1][idx] = rhoInlet * uInlet;
+                Un[2][idx] = rhoInlet * vInlet;
+                Un[3][idx] = rhoInlet * wInlet;
+                Un[4][idx] = pInlet / (flow->gamma - 1) + 
                     0.5 * rhoInlet * (uInlet * uInlet + vInlet * vInlet + wInlet * wInlet);
             }
         }
@@ -76,11 +78,9 @@ int BoundaryCondtion(Field *field, const Space *space, const Partition *part, co
             for (i = part->iSup[domainID] - 1; i >= part->iSub[domainID]; --i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
                 idxE = (k * space->jMax + j) * space->iMax + i + 1;
-                rho[idx] = rho[idxE];
-                rho_u[idx] = rho_u[idxE];
-                rho_v[idx] = rho_v[idxE];
-                rho_w[idx] = rho_w[idxE];
-                rho_eT[idx] = rho_eT[idxE];
+                for (dim = 0; dim < 5; ++dim) {
+                    Un[dim][idx] = Un[dim][idxE];
+                }
             }
         }
     }
@@ -95,11 +95,9 @@ int BoundaryCondtion(Field *field, const Space *space, const Partition *part, co
                 idx = (k * space->jMax + j) * space->iMax + i;
                 idxW = (k * space->jMax + j) * space->iMax + i - 1;
                 idxWW = (k * space->jMax + j) * space->iMax + i - 2;
-                rho[idx] = 2 * rho[idxW] - rho[idxWW];
-                rho_u[idx] = 2 * rho_u[idxW] - rho_u[idxWW];
-                rho_v[idx] = 2 * rho_v[idxW] - rho_v[idxWW];
-                rho_w[idx] = 2 * rho_w[idxW] - rho_w[idxWW];
-                rho_eT[idx] = 2 * rho_eT[idxW] - rho_eT[idxWW];
+                for (dim = 0; dim < 5; ++dim) {
+                    Un[dim][idx] = 2 * Un[dim][idxW] - Un[dim][idxWW];
+                }
             }
         }
     }
@@ -111,11 +109,9 @@ int BoundaryCondtion(Field *field, const Space *space, const Partition *part, co
                 idx = (k * space->jMax + j) * space->iMax + i;
                 idxW = (k * space->jMax + j) * space->iMax + i - 1;
                 idxWW = (k * space->jMax + j) * space->iMax + i - 2;
-                rho[idx] = 2 * rho[idxW] - rho[idxWW];
-                rho_u[idx] = 2 * rho_u[idxW] - rho_u[idxWW];
-                rho_v[idx] = 2 * rho_v[idxW] - rho_v[idxWW];
-                rho_w[idx] = 2 * rho_w[idxW] - rho_w[idxWW];
-                rho_eT[idx] = 2 * rho_eT[idxW] - rho_eT[idxWW];
+                for (dim = 0; dim < 5; ++dim) {
+                    Un[dim][idx] = 2 * Un[dim][idxW] - Un[dim][idxWW];
+                }
             }
         }
     }
@@ -129,11 +125,11 @@ int BoundaryCondtion(Field *field, const Space *space, const Partition *part, co
             for (i = part->iSub[domainID]; i < part->iSup[domainID]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
                 idxN = (k * space->jMax + j + 1) * space->iMax + i;
-                rho[idx] = rho[idxN];
-                rho_u[idx] = rho_u[idxN];
-                rho_v[idx] = 0;
-                rho_w[idx] = 0;
-                rho_eT[idx] = rho_eT[idxN];
+                Un[0][idx] = Un[0][idxN];
+                Un[1][idx] = Un[1][idxN];
+                Un[2][idx] = 0;
+                Un[3][idx] = 0;
+                Un[4][idx] = Un[4][idxN];
             }
         }
     }
@@ -145,11 +141,9 @@ int BoundaryCondtion(Field *field, const Space *space, const Partition *part, co
                 idx = (k * space->jMax + j) * space->iMax + i;
                 idxN = (k * space->jMax + j + 1) * space->iMax + i;
                 idxNN = (k * space->jMax + j + 2) * space->iMax + i;
-                rho[idx] = 2 * rho[idxN] - rho[idxNN];
-                rho_u[idx] = 2 * rho_u[idxN] - rho_u[idxNN];
-                rho_v[idx] = 2 * rho_v[idxN] - rho_v[idxNN];
-                rho_w[idx] = 2 * rho_w[idxN] - rho_w[idxNN];
-                rho_eT[idx] = 2 * rho_eT[idxN] - rho_eT[idxNN];
+                for (dim = 0; dim < 5; ++dim) {
+                    Un[dim][idx] = 2 * Un[dim][idxN] - Un[dim][idxNN];
+                }
             }
         }
     }
@@ -160,11 +154,11 @@ int BoundaryCondtion(Field *field, const Space *space, const Partition *part, co
             for (i = part->iSub[domainID]; i < part->iSup[domainID]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
                 idxS = (k * space->jMax + j - 1) * space->iMax + i;
-                rho[idx] = rho[idxS];
-                rho_u[idx] = rho_u[idxS];
-                rho_v[idx] = 0;
-                rho_w[idx] = 0;
-                rho_eT[idx] = rho_eT[idxS];
+                Un[0][idx] = Un[0][idxS];
+                Un[1][idx] = Un[1][idxS];
+                Un[2][idx] = 0;
+                Un[3][idx] = 0;
+                Un[4][idx] = Un[4][idxS];
             }
         }
     }
@@ -176,11 +170,9 @@ int BoundaryCondtion(Field *field, const Space *space, const Partition *part, co
                 idx = (k * space->jMax + j) * space->iMax + i;
                 idxS = (k * space->jMax + j - 1) * space->iMax + i;
                 idxSS = (k * space->jMax + j - 2) * space->iMax + i;
-                rho[idx] = 2 * rho[idxS] - rho[idxSS];
-                rho_u[idx] = 2 * rho_u[idxS] - rho_u[idxSS];
-                rho_v[idx] = 2 * rho_v[idxS] - rho_v[idxSS];
-                rho_w[idx] = 2 * rho_w[idxS] - rho_w[idxSS];
-                rho_eT[idx] = 2 * rho_eT[idxS] - rho_eT[idxSS];
+                for (dim = 0; dim < 5; ++dim) {
+                    Un[dim][idx] = 2 * Un[dim][idxS] - Un[dim][idxSS];
+                }
             }
         }
     }
@@ -191,11 +183,11 @@ int BoundaryCondtion(Field *field, const Space *space, const Partition *part, co
             for (i = part->iSub[domainID]; i < part->iSup[domainID]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
                 idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
-                rho[idx] = rho[idxB];
-                rho_u[idx] = rho_u[idxB];
-                rho_v[idx] = 0;
-                rho_w[idx] = 0;
-                rho_eT[idx] = rho_eT[idxB];
+                Un[0][idx] = Un[0][idxB];
+                Un[1][idx] = Un[1][idxB];
+                Un[2][idx] = 0;
+                Un[3][idx] = 0;
+                Un[4][idx] = Un[4][idxB];
             }
         }
     }
@@ -207,11 +199,9 @@ int BoundaryCondtion(Field *field, const Space *space, const Partition *part, co
                 idx = (k * space->jMax + j) * space->iMax + i;
                 idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
                 idxBB = ((k + 2) * space->jMax + j) * space->iMax + i;
-                rho[idx] = 2 * rho[idxB] - rho[idxBB];
-                rho_u[idx] = 2 * rho_u[idxB] - rho_u[idxBB];
-                rho_v[idx] = 2 * rho_v[idxB] - rho_v[idxBB];
-                rho_w[idx] = 2 * rho_w[idxB] - rho_w[idxBB];
-                rho_eT[idx] = 2 * rho_eT[idxB] - rho_eT[idxBB];
+                for (dim = 0; dim < 5; ++dim) {
+                    Un[dim][idx] = 2 * Un[dim][idxB] - Un[dim][idxBB];
+                }
             }
         }
     }
@@ -222,11 +212,11 @@ int BoundaryCondtion(Field *field, const Space *space, const Partition *part, co
             for (i = part->iSub[domainID]; i < part->iSup[domainID]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
                 idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
-                rho[idx] = rho[idxF];
-                rho_u[idx] = rho_u[idxF];
-                rho_v[idx] = 0;
-                rho_w[idx] = 0;
-                rho_eT[idx] = rho_eT[idxF];
+                Un[0][idx] = Un[0][idxF];
+                Un[1][idx] = Un[1][idxF];
+                Un[2][idx] = 0;
+                Un[3][idx] = 0;
+                Un[4][idx] = Un[4][idxF];
             }
         }
     }
@@ -238,11 +228,9 @@ int BoundaryCondtion(Field *field, const Space *space, const Partition *part, co
                 idx = (k * space->jMax + j) * space->iMax + i;
                 idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
                 idxFF = ((k - 2) * space->jMax + j) * space->iMax + i;
-                rho[idx] = 2 * rho[idxF] - rho[idxFF];
-                rho_u[idx] = 2 * rho_u[idxF] - rho_u[idxFF];
-                rho_v[idx] = 2 * rho_v[idxF] - rho_v[idxFF];
-                rho_w[idx] = 2 * rho_w[idxF] - rho_w[idxFF];
-                rho_eT[idx] = 2 * rho_eT[idxF] - rho_eT[idxFF];
+                for (dim = 0; dim < 5; ++dim) {
+                    Un[dim][idx] = 2 * Un[dim][idxF] - Un[dim][idxFF];
+                }
             }
         }
     }
