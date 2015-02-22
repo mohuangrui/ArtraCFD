@@ -66,6 +66,15 @@ static int FirstRunInitializer(Field *field, Flux *flux, Space *space, const Par
         field->Un + 3 * space->nMax,
         field->Un + 4 * space->nMax};
     /*
+     * Decompose the primitive field variable into each component.
+     */
+    Real *rho = field->Uo + 0 * space->nMax;
+    Real *u = field->Uo + 1 * space->nMax;
+    Real *v = field->Uo + 2 * space->nMax;
+    Real *w = field->Uo + 3 * space->nMax;
+    Real *p = field->Uo + 4 * space->nMax;
+    Real *T = field->Uo + 5 * space->nMax;
+    /*
      * Initialize the interior field
      */
     int k = 0; /* loop count */
@@ -82,6 +91,15 @@ static int FirstRunInitializer(Field *field, Flux *flux, Space *space, const Par
                 Un[3][idx] = rho0 * w0;
                 Un[4][idx] = p0 / (flow->gamma - 1) + 
                     0.5 * rho0 * (u0 * u0 + v0 * v0 + w0 * w0);
+                /*
+                 * Following part are simply to initialize the storage space.
+                 */
+                rho[idx] = 0;
+                u[idx] = 0;
+                v[idx] = 0;
+                w[idx] = 0;
+                p[idx] = 0;
+                T[idx] = 0;
             }
         }
     }
