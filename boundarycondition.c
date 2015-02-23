@@ -10,6 +10,7 @@
 #include "boundarycondition.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
+#include <stdlib.h> /* common mathematical functions */
 #include "commons.h"
 /****************************************************************************
  * Function definitions
@@ -17,7 +18,8 @@
 /*
  * Values should be normalized values relative to the reference values.
  */
-int BoundaryCondtion(Field *field, const Space *space, const Partition *part, const Flow *flow)
+int BoundaryCondtion(Field *field, const Space *space, const Particle *particle, 
+        const Partition *part, const Flow *flow)
 {
     /*
      * Decompose the field variable into each component.
@@ -51,11 +53,11 @@ int BoundaryCondtion(Field *field, const Space *space, const Partition *part, co
     /*
      * Inlet conditions
      */
-    Real rhoInlet = 1.0;
-    Real uInlet = 1.0;
-    Real vInlet = 0.0;
-    Real wInlet = 0.0;
-    Real pInlet = 1.0;
+    const Real rhoInlet = 1.0;
+    const Real uInlet = 1.0;
+    const Real vInlet = 0.0;
+    const Real wInlet = 0.0;
+    const Real pInlet = 1.0;
     /* Apply conditions to inlet */
     domainID = 6;
     for (k = part->kSub[domainID]; k < part->kSup[domainID]; ++k) {
@@ -237,6 +239,16 @@ int BoundaryCondtion(Field *field, const Space *space, const Partition *part, co
     /*
      * Wall boundary condition for interior ghost cells
      */
+    int geoID = 0; /* the ID of the particle for current ghost node */
+    Real distToCenter = 0; /* distance from node to particle center */
+    Real distToSurface = 0; /* distance from node to particle surface */
+    Real distX = 0;
+    Real distY = 0;
+    Real distZ = 0;
+    Real radius = 0;
+    Real normalX = 0; /* x component of normal vector at surface */
+    Real normalY = 0; /* y component of normal vector at surface */
+    Real normalZ = 0; /* z component of normal vector at surface */
     for (k = part->kSub[12]; k < part->kSup[12]; ++k) {
         for (j = part->jSub[12]; j < part->jSup[12]; ++j) {
             for (i = part->iSub[12]; i < part->iSup[12]; ++i) {
@@ -250,6 +262,13 @@ int BoundaryCondtion(Field *field, const Space *space, const Partition *part, co
                 idxN = (k * space->jMax + j + 1) * space->iMax + i;
                 idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
                 idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
+
+                geoID = abs(space->geoID[idx]); /* get the particle ID to access information */
+                distX = (i - space->ng) * space->dx - particle->x[geoID];
+                distY = (j - space->ng) * space->dy - particle->y[geoID];
+                distZ = (k - space->ng) * space->dz - particle->z[geoID];
+                distToCenter = sqrt(distX * distX + distY * distY + distZ * distZ);
+                radius = particle->r[geoID];
             }
         }
     }

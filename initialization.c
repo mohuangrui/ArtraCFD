@@ -17,7 +17,7 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int FirstRunInitializer(Field *, Flux *, Space *, const Partition *, const Flow *);
+static int FirstRunInitializer(Field *, Flux *, Space *, const Particle *, const Partition *, const Flow *);
 static int RestartInitializer(Field *, Flux *, Space *, Time *, const Partition *, const Flow *);
 /****************************************************************************
  * Function definitions
@@ -31,7 +31,7 @@ int InitializeFlowField(Field *field, Flux *flux, Space *space, const Particle *
 {
     ShowInformation("Initializing flow field...");
     if (time->restart == 0) { /* non restart */
-        FirstRunInitializer(field, flux, space, part, flow);
+        FirstRunInitializer(field, flux, space, particle, part, flow);
         /* if this is a first run, output initial data */
         InitializeEnsightTransientCaseFile(time);
         WriteComputedDataEnsight(field->Uo, space, particle, time, part);
@@ -44,18 +44,18 @@ int InitializeFlowField(Field *field, Flux *flux, Space *space, const Particle *
 /*
  * The first run initialization will assign values to field variables.
  */
-static int FirstRunInitializer(Field *field, Flux *flux, Space *space, const Partition *part, const Flow *flow)
+static int FirstRunInitializer(Field *field, Flux *flux, Space *space, const Particle *particle, const Partition *part, const Flow *flow)
 {
     ShowInformation("  Non-restart run initializing...");
     /*
      * Initial conditions, these values should be
      * normalized values relative to the reference values.
      */
-    Real rho0 = 1.0;
-    Real u0 = 0.0;
-    Real v0 = 0.0;
-    Real w0 = 0.0;
-    Real p0 = 1.0;
+    const Real rho0 = 1.0;
+    const Real u0 = 0.0;
+    const Real v0 = 0.0;
+    const Real w0 = 0.0;
+    const Real p0 = 1.0;
     /*
      * Decompose the field variable into each component.
      */
@@ -106,7 +106,7 @@ static int FirstRunInitializer(Field *field, Flux *flux, Space *space, const Par
     /*
      * Apply boundary conditions to obtain an entire initialized flow field
      */
-    BoundaryCondtion(field, space, part, flow);
+    BoundaryCondtion(field, space, particle, part, flow);
     /*
      * Compute primitive variables based on conservative variables
      */
