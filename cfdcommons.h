@@ -76,9 +76,19 @@ extern Real MinPositive(Real valueA, Real valueB);
  *      Find the minimum value among two values.
  *
  * Returns
- *      a real -- the smaller value which is positive
+ *      a real -- the smaller value
  */
 extern Real Min(Real valueA, Real valueB);
+/*
+ * Maximum
+ *
+ * Function
+ *      Find the maximum value among two values.
+ *
+ * Returns
+ *      a real -- the larger value
+ */
+extern Real Max(Real valueA, Real valueB);
 #endif
 /* a good practice: end file with a newline */
 

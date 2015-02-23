@@ -129,20 +129,20 @@ static int IdentifyGhostCells(Space *space, const Partition *part)
         for (j = part->jSub[12]; j < part->jSup[12]; ++j) {
             for (i = part->iSub[12]; i < part->iSup[12]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
-                if (space->ghostFlag[idx] == -1) {
-                    idxW = (k * space->jMax + j) * space->iMax + i - 1;
-                    idxE = (k * space->jMax + j) * space->iMax + i + 1;
-                    idxS = (k * space->jMax + j - 1) * space->iMax + i;
-                    idxN = (k * space->jMax + j + 1) * space->iMax + i;
-                    idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
-                    idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
-                    flag = space->ghostFlag[idxW] * space->ghostFlag[idxE] * 
-                        space->ghostFlag[idxS] * space->ghostFlag[idxN] * 
-                        space->ghostFlag[idxF] * space->ghostFlag[idxB];
-                    if (flag == 0) { /* if exist one neighbour is fluid, then it's ghost */
-                        space->ghostFlag[idx] = 1;
-                    }
-
+                if (space->ghostFlag[idx] != -1) { /* it's not solid cell */
+                    continue;
+                }
+                idxW = (k * space->jMax + j) * space->iMax + i - 1;
+                idxE = (k * space->jMax + j) * space->iMax + i + 1;
+                idxS = (k * space->jMax + j - 1) * space->iMax + i;
+                idxN = (k * space->jMax + j + 1) * space->iMax + i;
+                idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
+                idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
+                flag = space->ghostFlag[idxW] * space->ghostFlag[idxE] * 
+                    space->ghostFlag[idxS] * space->ghostFlag[idxN] * 
+                    space->ghostFlag[idxF] * space->ghostFlag[idxB];
+                if (flag == 0) { /* if exist one neighbour is fluid, then it's ghost */
+                    space->ghostFlag[idx] = 1;
                 }
             }
         }

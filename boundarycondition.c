@@ -234,6 +234,25 @@ int BoundaryCondtion(Field *field, const Space *space, const Partition *part, co
             }
         }
     }
+    /*
+     * Wall boundary condition for interior ghost cells
+     */
+    for (k = part->kSub[12]; k < part->kSup[12]; ++k) {
+        for (j = part->jSub[12]; j < part->jSup[12]; ++j) {
+            for (i = part->iSub[12]; i < part->iSup[12]; ++i) {
+                idx = (k * space->jMax + j) * space->iMax + i;
+                if (space->ghostFlag[idx] != 1) { /* it's not a ghost */
+                    continue;
+                }
+                idxW = (k * space->jMax + j) * space->iMax + i - 1;
+                idxE = (k * space->jMax + j) * space->iMax + i + 1;
+                idxS = (k * space->jMax + j - 1) * space->iMax + i;
+                idxN = (k * space->jMax + j + 1) * space->iMax + i;
+                idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
+                idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
+            }
+        }
+    }
     return 0;
 }
 /* a good practice: end file with a newline */

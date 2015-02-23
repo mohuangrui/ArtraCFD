@@ -362,7 +362,7 @@ Real ComputeTimeStepByCFL(Field *field, const Space *space, const Time *time,
                     continue;
                 }
                 velocity = sqrt(flow->gamma * p[idx] / rho[idx]) + 
-                    sqrt(u[idx] * u[idx] + v[idx] * v[idx] + w[idx] *w[idx]);
+                    Max(u[idx], Max(v[idx], w[idx]));
                 if (velocityMax < velocity) {
                     velocityMax = velocity;
                 }
@@ -387,6 +387,13 @@ Real MinPositive(Real valueA, Real valueB)
 Real Min(Real valueA, Real valueB)
 {
     if (valueA < valueB) {
+        return valueA;
+    }
+    return valueB;
+}
+Real Max(Real valueA, Real valueB)
+{
+    if (valueA > valueB) {
         return valueA;
     }
     return valueB;
