@@ -250,9 +250,9 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
     Real normalX = 0; /* x component of normal vector at surface */
     Real normalY = 0; /* y component of normal vector at surface */
     Real normalZ = 0; /* z component of normal vector at surface */
-    int imageX = 0; /* node coordinates of the image point of the ghost */
-    int imageY = 0; /* node coordinates of the image point of the ghost */
-    int imageZ = 0; /* node coordinates of the image point of the ghost */
+    int imageI = 0; /* node coordinates of the image point of the ghost */
+    int imageJ = 0; /* node coordinates of the image point of the ghost */
+    int imageK = 0; /* node coordinates of the image point of the ghost */
     const Real dx = MinPositive(space->dx, -1); /* needed when use as denominator */
     const Real dy = MinPositive(space->dy, -1); /* needed when use as denominator */
     const Real dz = MinPositive(space->dz, -1); /* needed when use as denominator */
@@ -280,7 +280,9 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
                 normalX = distX / distToCenter;
                 normalY = distY / distToCenter;
                 normalZ = distZ / distToCenter;
-                imageX = i + (int)(2 * distToSurface * normalX / dx);
+                imageI = i + (int)(2 * distToSurface * normalX / dx);
+                imageJ = j + (int)(2 * distToSurface * normalY / dy);
+                imageK = k + (int)(2 * distToSurface * normalZ / dz);
             }
         }
     }
