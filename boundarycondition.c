@@ -11,6 +11,7 @@
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
 #include <stdlib.h> /* common mathematical functions */
+#include "cfdcommons.h"
 #include "commons.h"
 /****************************************************************************
  * Function definitions
@@ -249,6 +250,12 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
     Real normalX = 0; /* x component of normal vector at surface */
     Real normalY = 0; /* y component of normal vector at surface */
     Real normalZ = 0; /* z component of normal vector at surface */
+    int imageX = 0; /* node coordinates of the image point of the ghost */
+    int imageY = 0; /* node coordinates of the image point of the ghost */
+    int imageZ = 0; /* node coordinates of the image point of the ghost */
+    const Real dx = MinPositive(space->dx, -1); /* needed when use as denominator */
+    const Real dy = MinPositive(space->dy, -1); /* needed when use as denominator */
+    const Real dz = MinPositive(space->dz, -1); /* needed when use as denominator */
     for (k = part->kSub[12]; k < part->kSup[12]; ++k) {
         for (j = part->jSub[12]; j < part->jSup[12]; ++j) {
             for (i = part->iSub[12]; i < part->iSup[12]; ++i) {
@@ -264,11 +271,16 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
                 idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
 
                 geoID = abs(space->geoID[idx]); /* get the particle ID to access information */
+                radius = particle->r[geoID];
                 distX = (i - space->ng) * space->dx - particle->x[geoID];
                 distY = (j - space->ng) * space->dy - particle->y[geoID];
                 distZ = (k - space->ng) * space->dz - particle->z[geoID];
                 distToCenter = sqrt(distX * distX + distY * distY + distZ * distZ);
-                radius = particle->r[geoID];
+                distToSurface = radius - distToCenter;
+                normalX = distX / distToCenter;
+                normalY = distY / distToCenter;
+                normalZ = distZ / distToCenter;
+                imageX = i + (int)(2 * distToSurface * normalX / dx);
             }
         }
     }

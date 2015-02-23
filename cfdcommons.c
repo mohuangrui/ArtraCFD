@@ -218,9 +218,9 @@ int ComputeViscousFlux(const Field *field, Flux *flux, const Space *space, const
     Real dT_dx = 0; /* partial T partial x */
     Real dT_dy = 0;
     Real dT_dz = 0;
-    const Real dx = MinPositive(space->dx, -1);
-    const Real dy = MinPositive(space->dy, -1);
-    const Real dz = MinPositive(space->dz, -1);
+    const Real dx = MinPositive(space->dx, -1); /* needed when use as denominator */
+    const Real dy = MinPositive(space->dy, -1); /* needed when use as denominator */
+    const Real dz = MinPositive(space->dz, -1); /* needed when use as denominator */
     /*
      * Indices
      */
