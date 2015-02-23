@@ -222,9 +222,9 @@ int ComputeViscousFlux(const Field *field, Flux *flux, const Space *space, const
     int idxN = 0; /* index at North */
     int idxF = 0; /* index at Front */
     int idxB = 0; /* index at Back */
-    for (k = 0; k < space->kMax; ++k) {
-        for (j = 0; j < space->jMax; ++j) {
-            for (i = 0; i < space->iMax; ++i) {
+    for (k = 1; k < space->kMax - 1; ++k) {
+        for (j = 1; j < space->jMax - 1; ++j) {
+            for (i = 1; i < space->iMax - 1; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
                 if (space->ghostFlag[idx] == -1) { /* if it's solid node */
                     continue;
