@@ -113,7 +113,7 @@ int ExpressionCalculator(void)
         }
     };
     Parameter theParameter = {
-        .pi = 3.14159265358979323846264338327950288419716939937510,
+        .pi = acos(-1),
         .answer = 0,
         .radianMode = 1,
         .angleFactor = 1.0
