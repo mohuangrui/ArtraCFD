@@ -104,7 +104,7 @@ int ComputeConservativeByPrimitive(Field *field, const Space *space, const Flow 
     }
     return 0;
 }
-int ComputeNonviscousFlux(const Field *field, Flux *flux, const Space *space, const Flow *flow)
+int ComputeNonviscousFlux(const Field *field, Flux *flux, const Space *space)
 {
     /*
      * Decompose the nonviscous flux variables into each component
@@ -135,7 +135,6 @@ int ComputeNonviscousFlux(const Field *field, Flux *flux, const Space *space, co
     const Real *v = field->Uo + 2 * space->nMax;
     const Real *w = field->Uo + 3 * space->nMax;
     const Real *p = field->Uo + 4 * space->nMax;
-    const Real *T = field->Uo + 5 * space->nMax;
     const Real *rho_eT = field->Un + 4 * space->nMax;
     /*
      * Indices
@@ -151,7 +150,6 @@ int ComputeNonviscousFlux(const Field *field, Flux *flux, const Space *space, co
                 if (space->ghostFlag[idx] == -1) { /* if it's solid node */
                     continue;
                 }
-
                 Fx[0][idx] = rho[idx] * u[idx];
                 Fx[1][idx] = rho[idx] * u[idx] * u[idx] + p[idx];
                 Fx[2][idx] = rho[idx] * u[idx] * v[idx];
@@ -200,13 +198,10 @@ int ComputeViscousFlux(const Field *field, Flux *flux, const Space *space, const
     /*
      * Decompose the primitive field variable into each component.
      */
-    const Real *rho = field->Uo + 0 * space->nMax;
     const Real *u = field->Uo + 1 * space->nMax;
     const Real *v = field->Uo + 2 * space->nMax;
     const Real *w = field->Uo + 3 * space->nMax;
-    const Real *p = field->Uo + 4 * space->nMax;
     const Real *T = field->Uo + 5 * space->nMax;
-    const Real *rho_eT = field->Un + 4 * space->nMax;
     /*
      * Auxiliary variables
      */
