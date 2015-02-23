@@ -255,7 +255,7 @@ int ComputeViscousFlux(const Field *field, Flux *flux, const Space *space, const
                     dw_dz = (w[idxB] - w[idx]) / dz;
                     dT_dz = (T[idxB] - T[idx]) / dz;
                 } else {
-                    if (k == space->kMax -1) {
+                    if (k == space->kMax - 1) {
                         du_dz = (u[idx] - u[idxF]) / dz;
                         dv_dz = (v[idx] - v[idxF]) / dz;
                         dw_dz = (w[idx] - w[idxF]) / dz;
@@ -273,7 +273,7 @@ int ComputeViscousFlux(const Field *field, Flux *flux, const Space *space, const
                     dw_dy = (w[idxN] - w[idx]) / dy;
                     dT_dy = (T[idxN] - T[idx]) / dy;
                 } else {
-                    if (j == space->jMax -1) {
+                    if (j == space->jMax - 1) {
                         du_dy = (u[idx] - u[idxS]) / dy;
                         dv_dy = (v[idx] - v[idxS]) / dy;
                         dw_dy = (w[idx] - w[idxS]) / dy;
@@ -291,7 +291,7 @@ int ComputeViscousFlux(const Field *field, Flux *flux, const Space *space, const
                     dw_dx = (w[idxE] - w[idx]) / dx;
                     dT_dx = (T[idxE] - T[idx]) / dx;
                 } else {
-                    if (i == space->iMax -1) {
+                    if (i == space->iMax - 1) {
                         du_dx = (u[idx] - u[idxW]) / dx;
                         dv_dx = (v[idx] - v[idxW]) / dx;
                         dw_dx = (w[idx] - w[idxW]) / dx;
