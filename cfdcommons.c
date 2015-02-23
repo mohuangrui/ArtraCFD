@@ -104,7 +104,7 @@ int ComputeConservativeByPrimitive(Field *field, const Space *space, const Flow 
     }
     return 0;
 }
-int ComputeFlux(const Field *field, Flux *flux, const Space *space, const Flow *flow)
+int ComputeNonviscousFlux(const Field *field, Flux *flux, const Space *space, const Flow *flow)
 {
     /*
      * Decompose the nonviscous flux variables into each component
@@ -127,6 +127,55 @@ int ComputeFlux(const Field *field, Flux *flux, const Space *space, const Flow *
         flux->Fz + 2 * space->nMax,
         flux->Fz + 3 * space->nMax,
         flux->Fz + 4 * space->nMax};
+    /*
+     * Decompose the primitive field variable into each component.
+     */
+    const Real *rho = field->Uo + 0 * space->nMax;
+    const Real *u = field->Uo + 1 * space->nMax;
+    const Real *v = field->Uo + 2 * space->nMax;
+    const Real *w = field->Uo + 3 * space->nMax;
+    const Real *p = field->Uo + 4 * space->nMax;
+    const Real *T = field->Uo + 5 * space->nMax;
+    const Real *rho_eT = field->Un + 4 * space->nMax;
+    /*
+     * Indices
+     */
+    int k = 0; /* loop count */
+    int j = 0; /* loop count */
+    int i = 0; /* loop count */
+    int idx = 0; /* calculated index */
+    for (k = 0; k < space->kMax; ++k) {
+        for (j = 0; j < space->jMax; ++j) {
+            for (i = 0; i < space->iMax; ++i) {
+                idx = (k * space->jMax + j) * space->iMax + i;
+                if (space->ghostFlag[idx] == -1) { /* if it's solid node */
+                    continue;
+                }
+
+                Fx[0][idx] = rho[idx] * u[idx];
+                Fx[1][idx] = rho[idx] * u[idx] * u[idx] + p[idx];
+                Fx[2][idx] = rho[idx] * u[idx] * v[idx];
+                Fx[3][idx] = rho[idx] * u[idx] * w[idx];
+                Fx[4][idx] = (rho_eT[idx] + p[idx]) * u[idx];
+
+                Fy[0][idx] = rho[idx] * v[idx];
+                Fy[1][idx] = rho[idx] * v[idx] * u[idx];
+                Fy[2][idx] = rho[idx] * v[idx] * v[idx] + p[idx];
+                Fy[3][idx] = rho[idx] * v[idx] * w[idx];
+                Fy[4][idx] = (rho_eT[idx] + p[idx]) * v[idx];
+
+                Fz[0][idx] = rho[idx] * w[idx];
+                Fz[1][idx] = rho[idx] * w[idx] * u[idx];
+                Fz[2][idx] = rho[idx] * w[idx] * v[idx];
+                Fz[3][idx] = rho[idx] * w[idx] * w[idx] + p[idx];
+                Fz[4][idx] = (rho_eT[idx] + p[idx]) * w[idx];
+            }
+        }
+    }
+    return 0;
+}
+int ComputeViscousFlux(const Field *field, Flux *flux, const Space *space, const Flow *flow)
+{
     /*
      * Decompose the viscous flux variables into each component
      */
@@ -192,24 +241,6 @@ int ComputeFlux(const Field *field, Flux *flux, const Space *space, const Flow *
                 idxN = (k * space->jMax + j + 1) * space->iMax + i;
                 idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
                 idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
-
-                Fx[0][idx] = rho[idx] * u[idx];
-                Fx[1][idx] = rho[idx] * u[idx] * u[idx] + p[idx];
-                Fx[2][idx] = rho[idx] * u[idx] * v[idx];
-                Fx[3][idx] = rho[idx] * u[idx] * w[idx];
-                Fx[4][idx] = (rho_eT[idx] + p[idx]) * u[idx];
-
-                Fy[0][idx] = rho[idx] * v[idx];
-                Fy[1][idx] = rho[idx] * v[idx] * u[idx];
-                Fy[2][idx] = rho[idx] * v[idx] * v[idx] + p[idx];
-                Fy[3][idx] = rho[idx] * v[idx] * w[idx];
-                Fy[4][idx] = (rho_eT[idx] + p[idx]) * v[idx];
-
-                Fz[0][idx] = rho[idx] * w[idx];
-                Fz[1][idx] = rho[idx] * w[idx] * u[idx];
-                Fz[2][idx] = rho[idx] * w[idx] * v[idx];
-                Fz[3][idx] = rho[idx] * w[idx] * w[idx] + p[idx];
-                Fz[4][idx] = (rho_eT[idx] + p[idx]) * w[idx];
 
                 divV = (u[idxE] - u[idxW]) / (2 * dx) + 
                     (v[idxN] - v[idxS]) / (2 * dy) + 

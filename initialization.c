@@ -114,7 +114,8 @@ static int FirstRunInitializer(Field *field, Flux *flux, Space *space, const Par
     /*
      * Compute flux variables
      */
-    ComputeFlux(field, flux, space, flow);
+    ComputeNonviscousFlux(field, flux, space, flow);
+    ComputeViscousFlux(field, flux, space, flow);
     return 0;
 }
 /*
@@ -136,7 +137,8 @@ static int RestartInitializer(Field *field, Flux *flux, Space *space, Time *time
     /*
      * Compute flux variables
      */
-    ComputeFlux(field, flux, space, flow);
+    ComputeNonviscousFlux(field, flux, space, flow);
+    ComputeViscousFlux(field, flux, space, flow);
     return 0;
 }
 /* a good practice: end file with a newline */

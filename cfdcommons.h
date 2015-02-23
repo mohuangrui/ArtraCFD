@@ -33,12 +33,19 @@ extern int ComputePrimitiveByConservative(Field *, const Space *, const Flow *);
  */
 extern int ComputeConservativeByPrimitive(Field *, const Space *, const Flow *);
 /*
- * Compute flux variables
+ * Compute nonviscous flux variables
  *
  * Function
  *      Compute flux variables based on primitive and conservative variables.
  */
-extern int ComputeFlux(const Field *, Flux *, const Space *, const Flow *);
+extern int ComputeNonviscousFlux(const Field *, Flux *, const Space *, const Flow *);
+/*
+ * Compute viscous flux variables
+ *
+ * Function
+ *      Compute flux variables based on primitive and conservative variables.
+ */
+extern int ComputeViscousFlux(const Field *, Flux *, const Space *, const Flow *);
 /*
  * Compute dt by CFL condition
  *
