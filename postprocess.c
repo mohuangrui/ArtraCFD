@@ -41,7 +41,6 @@ static int ProgramMemoryRelease(Field *field, Flux *flux, Space *space,
     RetrieveStorage(field->U);
     RetrieveStorage(field->Un);
     RetrieveStorage(field->Um);
-    RetrieveStorage(field->Uo);
     /* flux related */
     RetrieveStorage(flux->Fx);
     RetrieveStorage(flux->Fy);

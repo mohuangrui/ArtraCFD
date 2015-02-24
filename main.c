@@ -27,7 +27,6 @@ int main(int argc, char *argv[])
         .U = NULL,
         .Un = NULL,
         .Um = NULL,
-        .Uo = NULL
     };
     Flux theFlux = { /* flux variables */
         .Fx = NULL,

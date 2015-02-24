@@ -48,7 +48,7 @@ static int ProgramMemoryAllocate(Field *field, Flux *flux, Space *space)
 {
     ShowInformation("Allocating memory for program...");
     /*
-     * Conservative flow variables: rho, rho_u, rho_v, rho_w, E
+     * Conservative flow variables: rho, rho_u, rho_v, rho_w, rho_eT
      */
     int dimU = 5; /* dimension of field variable U */
     int idxMax = dimU * space->nMax;
@@ -61,11 +61,6 @@ static int ProgramMemoryAllocate(Field *field, Flux *flux, Space *space)
     flux->Gx = AssignStorage(idxMax, "Real");
     flux->Gy = AssignStorage(idxMax, "Real");
     flux->Gz = AssignStorage(idxMax, "Real");
-    /*
-     * Primitive flow variables: rho, u, v, w, p, T
-     */
-    idxMax = (dimU + 1) * space->nMax;
-    field->Uo = AssignStorage(idxMax, "Real");
     /*
      * Node type identifier
      */

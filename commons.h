@@ -437,10 +437,9 @@ typedef double Real;
  * Field variables of flow
  *
  * Conservative variables are vectors with five elements(rho, rho_u, rho_v,
- * rho_w, E), while each element is a three dimensional array in 3D space.
+ * rho_w, rho_eT), while each element is a three dimensional array in 3D space.
  * Thus, the conservative variables need to be presented as a 4 dimensional
- * array in 3D flow. Besides, primitive variable Uo has one more element 
- * than U, since Uo stands for primitive variables: rho, u, v, w, p, T.
+ * array in 3D flow.
  *
  * Using high order pointers (arrays) is complicated. The pointers in the 
  * array of arrays of arrays waste space and the malloc( ) calls are 
@@ -474,7 +473,6 @@ typedef struct {
     Real *U; /* conservative flow variables at n+1*/
     Real *Un; /* conservative flow variables at time n */
     Real *Um; /* conservative flow variables at time n-1 */
-    Real *Uo; /* primitive flow variables */
 }Field;
 /*
  * Flux variables
