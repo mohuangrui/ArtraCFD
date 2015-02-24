@@ -83,7 +83,7 @@ int TVD(Field *field, Flux *flux, const Space *space, const Partition *part,
     Real v = 0;
     Real w = 0;
     Real p = 0;
-    Real rho_eT = 0;
+    Real eT = 0;
     /*
      * Auxiliary variables
      */

@@ -417,7 +417,7 @@ Real ComputeTimeStepByCFL(const Field *field, const Space *space, const Time *ti
     Real v = 0;
     Real w = 0;
     Real p = 0;
-    Real rho_eT = 0;
+    Real eT = 0;
     /*
      * Auxiliary variables
      */
@@ -441,8 +441,8 @@ Real ComputeTimeStepByCFL(const Field *field, const Space *space, const Time *ti
                 u = Un[1][idx] / rho;
                 v = Un[2][idx] / rho;
                 w = Un[3][idx] / rho;
-                rho_eT = Un[4][idx];
-                p = (flow->gamma - 1) * (rho_eT - 0.5 * rho * (u * u + v * v + w * w));
+                eT = Un[4][idx] / rho;
+                p = (flow->gamma - 1) * rho * (eT - 0.5 * (u * u + v * v + w * w));
 
                 velocity = sqrt(flow->gamma * p / rho) + 
                     Max(u, Max(v, w));
