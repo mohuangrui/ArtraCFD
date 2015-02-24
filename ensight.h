@@ -27,7 +27,6 @@ typedef struct {
     EnsightString baseName; /* data file base name */
     EnsightString fileName; /* store current open file name */
     EnsightString stringData; /* Ensight string data */
-    EnsightReal data; /* Ensight real data */
 }EnsightSet;
 /****************************************************************************
  * Public Functions Declaration
@@ -44,16 +43,17 @@ extern int InitializeEnsightTransientCaseFile(const Time *);
  * Ensight format data exporter
  *
  * Function
- *      Export primitive field data vector variable
- *      fieldData = [rho, u, v, w, p, T]
+ *      Export conservative field data vector variable:
+ *      fieldData = [rho, rho_u, rho_v, rho_w, rho_eT]
+ *      to primitive variables = [rho, u, v, w, p, T]
  *      to binary data files with Ensight data format.
  * Notice
- *      fieldData is a linear array that stores all the values of all the 
- *      primitive field variables. These data are in sequential state and can
- *      be accessed by linear index math.
+ *      fieldData is a linear array that stores all the values.
+ *      These data are in sequential state 
+ *      and can be accessed by linear index math.
  */
 extern int WriteComputedDataEnsight(const Real * fieldData, const Space *, 
-        const Particle *, const Time *, const Partition *);
+        const Particle *, const Time *, const Partition *, const Flow *);
 /*
  * Ensight format data loader
  *
@@ -62,7 +62,7 @@ extern int WriteComputedDataEnsight(const Real * fieldData, const Space *,
  *      format.
  */
 extern int LoadComputedDataEnsight(Real *fieldData, const Space *, Time *,
-        const Partition *);
+        const Partition *, const Flow *);
 #endif
 /* a good practice: end file with a newline */
 

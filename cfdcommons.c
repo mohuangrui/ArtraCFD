@@ -14,7 +14,7 @@
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int ComputePrimitiveByConservative(Field *field, const Space *space, const Flow *flow)
+int ComputeNonviscousFlux(const Field *field, Flux *flux, const Space *space, const Flow *flow)
 {
     /*
      * Decompose the conservative field variable into each component.
@@ -25,87 +25,6 @@ int ComputePrimitiveByConservative(Field *field, const Space *space, const Flow 
         field->Un + 2 * space->nMax,
         field->Un + 3 * space->nMax,
         field->Un + 4 * space->nMax};
-    /*
-     * Decompose the primitive field variable into each component.
-     */
-    Real *rho = field->Uo + 0 * space->nMax;
-    Real *u = field->Uo + 1 * space->nMax;
-    Real *v = field->Uo + 2 * space->nMax;
-    Real *w = field->Uo + 3 * space->nMax;
-    Real *p = field->Uo + 4 * space->nMax;
-    Real *T = field->Uo + 5 * space->nMax;
-    /*
-     * Indices
-     */
-    int k = 0; /* loop count */
-    int j = 0; /* loop count */
-    int i = 0; /* loop count */
-    int idx = 0; /* calculated index */
-    for (k = 0; k < space->kMax; ++k) {
-        for (j = 0; j < space->jMax; ++j) {
-            for (i = 0; i < space->iMax; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
-                if (space->ghostFlag[idx] == -1) { /* if it's solid node */
-                    continue;
-                }
-                rho[idx] = Un[0][idx];
-                u[idx] = Un[1][idx] / rho[idx];
-                v[idx] = Un[2][idx] / rho[idx];
-                w[idx] = Un[3][idx] / rho[idx];
-                p[idx] = (flow->gamma - 1) * (Un[4][idx] - 0.5 * rho[idx] * 
-                        (u[idx] * u[idx] + v[idx] * v[idx] + w[idx] * w[idx]));
-                T[idx] = p[idx] / (rho[idx] * flow->gasR);
-            }
-        }
-    }
-    return 0;
-}
-int ComputeConservativeByPrimitive(Field *field, const Space *space, const Flow *flow)
-{
-    /*
-     * Decompose the conservative field variable into each component.
-     */
-    Real *Un[5] = {
-        field->Un + 0 * space->nMax,
-        field->Un + 1 * space->nMax,
-        field->Un + 2 * space->nMax,
-        field->Un + 3 * space->nMax,
-        field->Un + 4 * space->nMax};
-    /*
-     * Decompose the primitive field variable into each component.
-     */
-    const Real *rho = field->Uo + 0 * space->nMax;
-    const Real *u = field->Uo + 1 * space->nMax;
-    const Real *v = field->Uo + 2 * space->nMax;
-    const Real *w = field->Uo + 3 * space->nMax;
-    const Real *p = field->Uo + 4 * space->nMax;
-    /*
-     * Indices
-     */
-    int k = 0; /* loop count */
-    int j = 0; /* loop count */
-    int i = 0; /* loop count */
-    int idx = 0; /* calculated index */
-    for (k = 0; k < space->kMax; ++k) {
-        for (j = 0; j < space->jMax; ++j) {
-            for (i = 0; i < space->iMax; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
-                if (space->ghostFlag[idx] == -1) { /* if it's solid node */
-                    continue;
-                }
-                Un[0][idx] = rho[idx];
-                Un[1][idx] = rho[idx] * u[idx];
-                Un[2][idx] = rho[idx] * v[idx];
-                Un[3][idx] = rho[idx] * w[idx];
-                Un[4][idx] = p[idx] / (flow->gamma - 1) + 
-                    0.5 * rho[idx] * (u[idx] * u[idx] + v[idx] * v[idx] + w[idx] * w[idx]);
-            }
-        }
-    }
-    return 0;
-}
-int ComputeNonviscousFlux(const Field *field, Flux *flux, const Space *space)
-{
     /*
      * Decompose the nonviscous flux variables into each component
      */
@@ -128,14 +47,14 @@ int ComputeNonviscousFlux(const Field *field, Flux *flux, const Space *space)
         flux->Fz + 3 * space->nMax,
         flux->Fz + 4 * space->nMax};
     /*
-     * Decompose the primitive field variable into each component.
+     * Define the primitive field variables.
      */
-    const Real *rho = field->Uo + 0 * space->nMax;
-    const Real *u = field->Uo + 1 * space->nMax;
-    const Real *v = field->Uo + 2 * space->nMax;
-    const Real *w = field->Uo + 3 * space->nMax;
-    const Real *p = field->Uo + 4 * space->nMax;
-    const Real *rho_eT = field->Un + 4 * space->nMax;
+    Real rho = 0; 
+    Real u = 0;
+    Real v = 0;
+    Real w = 0;
+    Real p = 0;
+    Real eT = 0;
     /*
      * Indices
      */
@@ -150,23 +69,30 @@ int ComputeNonviscousFlux(const Field *field, Flux *flux, const Space *space)
                 if (space->ghostFlag[idx] == -1) { /* if it's solid node */
                     continue;
                 }
-                Fx[0][idx] = rho[idx] * u[idx];
-                Fx[1][idx] = rho[idx] * u[idx] * u[idx] + p[idx];
-                Fx[2][idx] = rho[idx] * u[idx] * v[idx];
-                Fx[3][idx] = rho[idx] * u[idx] * w[idx];
-                Fx[4][idx] = (rho_eT[idx] + p[idx]) * u[idx];
+                rho = Un[0][idx];
+                u = Un[1][idx] / rho;
+                v = Un[2][idx] / rho;
+                w = Un[3][idx] / rho;
+                eT = Un[4][idx] / rho;
+                p = (flow->gamma - 1) * rho * (eT - 0.5 * (u * u + v * v + w * w));
 
-                Fy[0][idx] = rho[idx] * v[idx];
-                Fy[1][idx] = rho[idx] * v[idx] * u[idx];
-                Fy[2][idx] = rho[idx] * v[idx] * v[idx] + p[idx];
-                Fy[3][idx] = rho[idx] * v[idx] * w[idx];
-                Fy[4][idx] = (rho_eT[idx] + p[idx]) * v[idx];
+                Fx[0][idx] = rho * u;
+                Fx[1][idx] = rho * u * u + p;
+                Fx[2][idx] = rho * u * v;
+                Fx[3][idx] = rho * u * w;
+                Fx[4][idx] = (rho * eT + p) * u;
 
-                Fz[0][idx] = rho[idx] * w[idx];
-                Fz[1][idx] = rho[idx] * w[idx] * u[idx];
-                Fz[2][idx] = rho[idx] * w[idx] * v[idx];
-                Fz[3][idx] = rho[idx] * w[idx] * w[idx] + p[idx];
-                Fz[4][idx] = (rho_eT[idx] + p[idx]) * w[idx];
+                Fy[0][idx] = rho * v;
+                Fy[1][idx] = rho * v * u;
+                Fy[2][idx] = rho * v * v + p;
+                Fy[3][idx] = rho * v * w;
+                Fy[4][idx] = (rho * eT + p) * v;
+
+                Fz[0][idx] = rho * w;
+                Fz[1][idx] = rho * w * u;
+                Fz[2][idx] = rho * w * v;
+                Fz[3][idx] = rho * w * w + p;
+                Fz[4][idx] = (rho * eT + p) * w;
             }
         }
     }
@@ -174,6 +100,15 @@ int ComputeNonviscousFlux(const Field *field, Flux *flux, const Space *space)
 }
 int ComputeViscousFlux(const Field *field, Flux *flux, const Space *space, const Flow *flow)
 {
+    /*
+     * Decompose the conservative field variable into each component.
+     */
+    const Real *Un[5] = {
+        field->Un + 0 * space->nMax,
+        field->Un + 1 * space->nMax,
+        field->Un + 2 * space->nMax,
+        field->Un + 3 * space->nMax,
+        field->Un + 4 * space->nMax};
     /*
      * Decompose the viscous flux variables into each component
      */
@@ -196,12 +131,21 @@ int ComputeViscousFlux(const Field *field, Flux *flux, const Space *space, const
         flux->Gz + 3 * space->nMax,
         flux->Gz + 4 * space->nMax};
     /*
-     * Decompose the primitive field variable into each component.
+     * Define the primitive field variables.
      */
-    const Real *u = field->Uo + 1 * space->nMax;
-    const Real *v = field->Uo + 2 * space->nMax;
-    const Real *w = field->Uo + 3 * space->nMax;
-    const Real *T = field->Uo + 5 * space->nMax;
+    Real rho = 0; 
+    Real rho_h = 0; 
+    Real u = 0;
+    Real u_h = 0;
+    Real v = 0;
+    Real v_h = 0;
+    Real w = 0;
+    Real w_h = 0;
+    Real eT = 0;
+    Real eT_h = 0;
+    Real T = 0;
+    Real T_h = 0;
+    Real h = 0; /* differencing length */
     /*
      * Auxiliary variables
      */
@@ -250,59 +194,181 @@ int ComputeViscousFlux(const Field *field, Flux *flux, const Space *space, const
                 idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
 
                 if (k == 0) {
-                    du_dz = (u[idxB] - u[idx]) / dz;
-                    dv_dz = (v[idxB] - v[idx]) / dz;
-                    dw_dz = (w[idxB] - w[idx]) / dz;
-                    dT_dz = (T[idxB] - T[idx]) / dz;
+                    rho_h = Un[0][idxB];
+                    u_h = Un[1][idxB] / rho_h;
+                    v_h = Un[2][idxB] / rho_h;
+                    w_h = Un[3][idxB] / rho_h;
+                    eT_h = Un[4][idxB] / rho_h;
+                    T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
+
+                    rho = Un[0][idx];
+                    u = Un[1][idx] / rho;
+                    v = Un[2][idx] / rho;
+                    w = Un[3][idx] / rho;
+                    eT = Un[4][idx] / rho;
+                    T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
+
+                    h = dz;
                 } else {
                     if (k == space->kMax - 1) {
-                        du_dz = (u[idx] - u[idxF]) / dz;
-                        dv_dz = (v[idx] - v[idxF]) / dz;
-                        dw_dz = (w[idx] - w[idxF]) / dz;
-                        dT_dz = (T[idx] - T[idxF]) / dz;
+                        rho_h = Un[0][idx];
+                        u_h = Un[1][idx] / rho_h;
+                        v_h = Un[2][idx] / rho_h;
+                        w_h = Un[3][idx] / rho_h;
+                        eT_h = Un[4][idx] / rho_h;
+                        T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
+
+                        rho = Un[0][idxF];
+                        u = Un[1][idxF] / rho;
+                        v = Un[2][idxF] / rho;
+                        w = Un[3][idxF] / rho;
+                        eT = Un[4][idxF] / rho;
+                        T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
+
+                        h = dz;
                     } else {
-                        du_dz = (u[idxB] - u[idxF]) / (2 * dz);
-                        dv_dz = (v[idxB] - v[idxF]) / (2 * dz);
-                        dw_dz = (w[idxB] - w[idxF]) / (2 * dz);
-                        dT_dz = (T[idxB] - T[idxF]) / (2 * dz);
+                        rho_h = Un[0][idxB];
+                        u_h = Un[1][idxB] / rho_h;
+                        v_h = Un[2][idxB] / rho_h;
+                        w_h = Un[3][idxB] / rho_h;
+                        eT_h = Un[4][idxB] / rho_h;
+                        T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
+
+                        rho = Un[0][idxF];
+                        u = Un[1][idxF] / rho;
+                        v = Un[2][idxF] / rho;
+                        w = Un[3][idxF] / rho;
+                        eT = Un[4][idxF] / rho;
+                        T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
+
+                        h = 2 * dz;
                     }
                 }
+                /* calculate derivatives in z direction */
+                du_dz = (u_h - u) / h;
+                dv_dz = (v_h - v) / h;
+                dw_dz = (w_h - w) / h;
+                dT_dz = (T_h - T) / h;
+
                 if (j == 0) {
-                    du_dy = (u[idxN] - u[idx]) / dy;
-                    dv_dy = (v[idxN] - v[idx]) / dy;
-                    dw_dy = (w[idxN] - w[idx]) / dy;
-                    dT_dy = (T[idxN] - T[idx]) / dy;
+                    rho_h = Un[0][idxN];
+                    u_h = Un[1][idxN] / rho_h;
+                    v_h = Un[2][idxN] / rho_h;
+                    w_h = Un[3][idxN] / rho_h;
+                    eT_h = Un[4][idxN] / rho_h;
+                    T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
+
+                    rho = Un[0][idx];
+                    u = Un[1][idx] / rho;
+                    v = Un[2][idx] / rho;
+                    w = Un[3][idx] / rho;
+                    eT = Un[4][idx] / rho;
+                    T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
+
+                    h = dy;
                 } else {
                     if (j == space->jMax - 1) {
-                        du_dy = (u[idx] - u[idxS]) / dy;
-                        dv_dy = (v[idx] - v[idxS]) / dy;
-                        dw_dy = (w[idx] - w[idxS]) / dy;
-                        dT_dy = (T[idx] - T[idxS]) / dy;
+                        rho_h = Un[0][idx];
+                        u_h = Un[1][idx] / rho_h;
+                        v_h = Un[2][idx] / rho_h;
+                        w_h = Un[3][idx] / rho_h;
+                        eT_h = Un[4][idx] / rho_h;
+                        T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
+
+                        rho = Un[0][idxS];
+                        u = Un[1][idxS] / rho;
+                        v = Un[2][idxS] / rho;
+                        w = Un[3][idxS] / rho;
+                        eT = Un[4][idxS] / rho;
+                        T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
+
+                        h = dy;
                     } else {
-                        du_dy = (u[idxN] - u[idxS]) / (2 * dy);
-                        dv_dy = (v[idxN] - v[idxS]) / (2 * dy);
-                        dw_dy = (w[idxN] - w[idxS]) / (2 * dy);
-                        dT_dy = (T[idxN] - T[idxS]) / (2 * dy);
+                        rho_h = Un[0][idxN];
+                        u_h = Un[1][idxN] / rho_h;
+                        v_h = Un[2][idxN] / rho_h;
+                        w_h = Un[3][idxN] / rho_h;
+                        eT_h = Un[4][idxN] / rho_h;
+                        T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
+
+                        rho = Un[0][idxS];
+                        u = Un[1][idxS] / rho;
+                        v = Un[2][idxS] / rho;
+                        w = Un[3][idxS] / rho;
+                        eT = Un[4][idxS] / rho;
+                        T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
+
+                        h = 2 * dy;
                     }
                 }
+                /* calculate derivatives in y direction */
+                du_dy = (u_h - u) / h;
+                dv_dy = (v_h - v) / h;
+                dw_dy = (w_h - w) / h;
+                dT_dy = (T_h - T) / h;
+
                 if (i == 0) {
-                    du_dx = (u[idxE] - u[idx]) / dx;
-                    dv_dx = (v[idxE] - v[idx]) / dx;
-                    dw_dx = (w[idxE] - w[idx]) / dx;
-                    dT_dx = (T[idxE] - T[idx]) / dx;
+                    rho_h = Un[0][idxE];
+                    u_h = Un[1][idxE] / rho_h;
+                    v_h = Un[2][idxE] / rho_h;
+                    w_h = Un[3][idxE] / rho_h;
+                    eT_h = Un[4][idxE] / rho_h;
+                    T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
+
+                    rho = Un[0][idx];
+                    u = Un[1][idx] / rho;
+                    v = Un[2][idx] / rho;
+                    w = Un[3][idx] / rho;
+                    eT = Un[4][idx] / rho;
+                    T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
+
+                    h = dx;
                 } else {
                     if (i == space->iMax - 1) {
-                        du_dx = (u[idx] - u[idxW]) / dx;
-                        dv_dx = (v[idx] - v[idxW]) / dx;
-                        dw_dx = (w[idx] - w[idxW]) / dx;
-                        dT_dx = (T[idx] - T[idxW]) / dx;
+                        rho_h = Un[0][idx];
+                        u_h = Un[1][idx] / rho_h;
+                        v_h = Un[2][idx] / rho_h;
+                        w_h = Un[3][idx] / rho_h;
+                        eT_h = Un[4][idx] / rho_h;
+                        T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
+
+                        rho = Un[0][idxW];
+                        u = Un[1][idxW] / rho;
+                        v = Un[2][idxW] / rho;
+                        w = Un[3][idxW] / rho;
+                        eT = Un[4][idxW] / rho;
+                        T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
+
+                        h = dx;
                     } else {
-                        du_dx = (u[idxE] - u[idxW]) / (2 * dx);
-                        dv_dx = (v[idxE] - v[idxW]) / (2 * dx);
-                        dw_dx = (w[idxE] - w[idxW]) / (2 * dx);
-                        dT_dx = (T[idxE] - T[idxW]) / (2 * dx);
+                        rho_h = Un[0][idxE];
+                        u_h = Un[1][idxE] / rho_h;
+                        v_h = Un[2][idxE] / rho_h;
+                        w_h = Un[3][idxE] / rho_h;
+                        eT_h = Un[4][idxE] / rho_h;
+                        T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
+
+                        rho = Un[0][idxW];
+                        u = Un[1][idxW] / rho;
+                        v = Un[2][idxW] / rho;
+                        w = Un[3][idxW] / rho;
+                        eT = Un[4][idxW] / rho;
+                        T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
+
+                        h = 2 * dx;
                     }
                 }
+                /* calculate derivatives in x direction */
+                du_dx = (u_h - u) / h;
+                dv_dx = (v_h - v) / h;
+                dw_dx = (w_h - w) / h;
+                dT_dx = (T_h - T) / h;
+
+                /* regain the primitive variables in current point */
+                rho = Un[0][idx];
+                u = Un[1][idx] / rho;
+                v = Un[2][idx] / rho;
+                w = Un[3][idx] / rho;
 
                 divV = du_dx + dv_dy + dw_dz;
 
@@ -311,37 +377,47 @@ int ComputeViscousFlux(const Field *field, Flux *flux, const Space *space, const
                 Gx[2][idx] = flow->mu * (du_dy + dv_dx);
                 Gx[3][idx] = flow->mu * (du_dz + dw_dx);
                 Gx[4][idx] = flow->heatK * dT_dx + 
-                    u[idx] * Gx[1][idx] + v[idx] * Gx[2][idx] + w[idx] * Gx[3][idx];
+                    u * Gx[1][idx] + v * Gx[2][idx] + w * Gx[3][idx];
 
                 Gy[0][idx] = 0;
                 Gy[1][idx] = Gx[2][idx];
                 Gy[2][idx] = flow->mu * (2 * dv_dy - (2/3) * divV);
                 Gy[3][idx] = flow->mu * (dv_dz + dw_dy);
                 Gy[4][idx] = flow->heatK * dT_dy + 
-                    u[idx] * Gy[1][idx] + v[idx] * Gy[2][idx] + w[idx] * Gy[3][idx];
+                    u * Gy[1][idx] + v * Gy[2][idx] + w * Gy[3][idx];
 
                 Gz[0][idx] = 0;
                 Gz[1][idx] = Gx[3][idx];
                 Gz[2][idx] = Gy[3][idx];
                 Gz[3][idx] = flow->mu * (2 * dw_dz - (2/3) * divV);
                 Gz[4][idx] = flow->heatK * dT_dz + 
-                    u[idx] * Gz[1][idx] + v[idx] * Gz[2][idx] + w[idx] * Gz[3][idx];
+                    u * Gz[1][idx] + v * Gz[2][idx] + w * Gz[3][idx];
             }
         }
     }
     return 0;
 }
-Real ComputeTimeStepByCFL(Field *field, const Space *space, const Time *time, 
+Real ComputeTimeStepByCFL(const Field *field, const Space *space, const Time *time, 
         const Partition *part, const Flow *flow)
 {
     /*
-     * Decompose the primitive field variable into each component.
+     * Decompose the conservative field variable into each component.
      */
-    Real *rho = field->Uo + 0 * space->nMax;
-    Real *u = field->Uo + 1 * space->nMax;
-    Real *v = field->Uo + 2 * space->nMax;
-    Real *w = field->Uo + 3 * space->nMax;
-    Real *p = field->Uo + 4 * space->nMax;
+    const Real *Un[5] = {
+        field->Un + 0 * space->nMax,
+        field->Un + 1 * space->nMax,
+        field->Un + 2 * space->nMax,
+        field->Un + 3 * space->nMax,
+        field->Un + 4 * space->nMax};
+    /*
+     * Define the primitive field variables.
+     */
+    Real rho = 0; 
+    Real u = 0;
+    Real v = 0;
+    Real w = 0;
+    Real p = 0;
+    Real rho_eT = 0;
     /*
      * Auxiliary variables
      */
@@ -361,8 +437,15 @@ Real ComputeTimeStepByCFL(Field *field, const Space *space, const Time *time,
                 if (space->ghostFlag[idx] == -1) { /* if it's solid node */
                     continue;
                 }
-                velocity = sqrt(flow->gamma * p[idx] / rho[idx]) + 
-                    Max(u[idx], Max(v[idx], w[idx]));
+                rho = Un[0][idx];
+                u = Un[1][idx] / rho;
+                v = Un[2][idx] / rho;
+                w = Un[3][idx] / rho;
+                rho_eT = Un[4][idx];
+                p = (flow->gamma - 1) * (rho_eT - 0.5 * rho * (u * u + v * v + w * w));
+
+                velocity = sqrt(flow->gamma * p / rho) + 
+                    Max(u, Max(v, w));
                 if (velocityMax < velocity) {
                     velocityMax = velocity;
                 }
@@ -371,7 +454,7 @@ Real ComputeTimeStepByCFL(Field *field, const Space *space, const Time *time,
     }
     return time->numCFL * MinPositive(space->dx, MinPositive(space->dy, space->dz)) / velocityMax;
 }
-Real MinPositive(Real valueA, Real valueB)
+Real MinPositive(const Real valueA, const Real valueB)
 {
     if ((valueA <= 0) && (valueB <= 0)) {
         return 1e38;
@@ -384,14 +467,14 @@ Real MinPositive(Real valueA, Real valueB)
     }
     return Min(valueA, valueB);
 }
-Real Min(Real valueA, Real valueB)
+Real Min(const Real valueA, const Real valueB)
 {
     if (valueA < valueB) {
         return valueA;
     }
     return valueB;
 }
-Real Max(Real valueA, Real valueB)
+Real Max(const Real valueA, const Real valueB)
 {
     if (valueA > valueB) {
         return valueA;

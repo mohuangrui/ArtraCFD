@@ -19,7 +19,7 @@
 static int WriteEnsightCaseFile(EnsightSet *, const Time *);
 static int WriteEnsightGeometryFile(EnsightSet *, const Space *, const Partition *);
 static int WriteEnsightVariableFile(const Real *, EnsightSet *, const Space *,
-        const Partition *);
+        const Partition *, const Flow *);
 static int WriteParticleFile(EnsightSet *, const Particle *);
 /****************************************************************************
  * Function definitions
@@ -68,18 +68,18 @@ int InitializeEnsightTransientCaseFile(const Time *time)
  * default base file name and export step tag. 
  */
 int WriteComputedDataEnsight(const Real *fieldData, const Space *space, 
-        const Particle *particle, const Time *time, const Partition *part)
+        const Particle *particle, const Time *time, const Partition *part,
+        const Flow *flow)
 {
     ShowInformation("  Writing field data to file...");
     EnsightSet enSet = { /* initialize Ensight environment */
         .baseName = "ensight", /* data file base name */
         .fileName = {'\0'}, /* data file name */
         .stringData = {'\0'}, /* string data recorder */
-        .data = 0.0 /* ensight float data recorder */
     };
     WriteEnsightCaseFile(&enSet, time);
     WriteEnsightGeometryFile(&enSet, space, part);
-    WriteEnsightVariableFile(fieldData, &enSet, space, part);
+    WriteEnsightVariableFile(fieldData, &enSet, space, part, flow);
     WriteParticleFile(&enSet, particle);
     return 0;
 }
@@ -190,6 +190,7 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
     int blankID = 0; /* Ensight geometry iblank entry */
     /* linear array index math variables */
     int idx = 0; /* calculated index */
+    EnsightReal data = 0; /* the ensight data format */
     for (partCount = 0, partNum = 1; partCount < part->totalN; ++partCount, ++partNum) {
         strncpy(enSet->stringData, "part", sizeof(EnsightString));
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
@@ -207,8 +208,8 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
         for (k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
             for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                 for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                    enSet->data = (i - space->ng) * space->dx;
-                    fwrite(&enSet->data, sizeof(EnsightReal), 1, filePointer);
+                    data = (i - space->ng) * space->dx;
+                    fwrite(&data, sizeof(EnsightReal), 1, filePointer);
                 }
             }
         }
@@ -216,8 +217,8 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
         for (k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
             for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                 for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                    enSet->data = (j - space->ng) * space->dy;
-                    fwrite(&enSet->data, sizeof(EnsightReal), 1, filePointer);
+                    data = (j - space->ng) * space->dy;
+                    fwrite(&data, sizeof(EnsightReal), 1, filePointer);
                 }
             }
         }
@@ -225,8 +226,8 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
         for (k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
             for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                 for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                    enSet->data = (k - space->ng) * space->dz;
-                    fwrite(&enSet->data, sizeof(EnsightReal), 1, filePointer);
+                    data = (k - space->ng) * space->dz;
+                    fwrite(&data, sizeof(EnsightReal), 1, filePointer);
                 }
             }
         }
@@ -258,7 +259,7 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
  * part are obtained from the corresponding EnSight Gold geometry file.)
  */
 static int WriteEnsightVariableFile(const Real *fieldData, EnsightSet *enSet,
-        const Space *space, const Partition *part)
+        const Space *space, const Partition *part, const Flow *flow)
 {
     FILE *filePointer = NULL;
     int partCount = 0; /* part count starts from 0 */
@@ -268,12 +269,29 @@ static int WriteEnsightVariableFile(const Real *fieldData, EnsightSet *enSet,
     int i = 0; /* loop count */
     /* linear array index math variables */
     int idx = 0; /* calculated index */
+    EnsightReal data = 0; /* the ensight data format */
     /*
      * Write the scalar field (Binary Form)
-     * There are six primitive variables in primitive variable
-     * vector(fieldData): density, u, v, w, pressure, temperature,
-     * the writing sequence is the same with that.
+     * There are six primitive variables need to be written:
+     * density, u, v, w, pressure, temperature
      */
+    /*
+     * Decompose the conservative field variable into each component.
+     */
+    const Real *U[5] = {
+        fieldData + 0 * space->nMax,
+        fieldData + 1 * space->nMax,
+        fieldData + 2 * space->nMax,
+        fieldData + 3 * space->nMax,
+        fieldData + 4 * space->nMax};
+    /*
+     * Define the primitive field variables.
+     */
+    Real rho = 0; 
+    Real u = 0;
+    Real v = 0;
+    Real w = 0;
+    Real eT = 0;
     const int dimU = 6; /* dimension of the primitive variable vector */
     int dimCount = 0; /* dimension count */
     const char nameSuffix[6][10] = {"den", "u", "v", "w", "pre", "tem"};
@@ -298,9 +316,39 @@ static int WriteEnsightVariableFile(const Real *fieldData, EnsightSet *enSet,
             for (k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
                 for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                     for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                        idx = ((dimCount * space->kMax + k) * space->jMax + j) * space->iMax + i;
-                        enSet->data = fieldData[idx];
-                        fwrite(&enSet->data, sizeof(EnsightReal), 1, filePointer);
+                        idx = (k * space->jMax + j) * space->iMax + i;
+                        rho = U[0][idx];
+                        switch (dimCount) {
+                            case 0: /* rho */
+                                data = rho;
+                                break;
+                            case 1: /* u */
+                                data = U[1][idx] / rho;
+                                break;
+                            case 2: /* v */
+                                data = U[2][idx] / rho;
+                                break;
+                            case 3: /* w */
+                                data = U[3][idx] / rho;
+                                break;
+                            case 4: /* p */
+                                u = U[1][idx] / rho;
+                                v = U[2][idx] / rho;
+                                w = U[3][idx] / rho;
+                                eT = U[4][idx] / rho;
+                                data = (flow->gamma - 1) * rho * (eT - 0.5 * (u * u + v * v + w * w));
+                                break;
+                            case 5: /* T */
+                                u = U[1][idx] / rho;
+                                v = U[2][idx] / rho;
+                                w = U[3][idx] / rho;
+                                eT = U[4][idx] / rho;
+                                data = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
+                                break;
+                            default:
+                                break;
+                        }
+                        fwrite(&data, sizeof(EnsightReal), 1, filePointer);
                     }
                 }
             }
@@ -333,9 +381,22 @@ static int WriteEnsightVariableFile(const Real *fieldData, EnsightSet *enSet,
             for (k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
                 for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                     for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                        idx = ((dimCount * space->kMax + k) * space->jMax + j) * space->iMax + i;
-                        enSet->data = fieldData[idx];
-                        fwrite(&enSet->data, sizeof(EnsightReal), 1, filePointer);
+                        idx = (k * space->jMax + j) * space->iMax + i;
+                        rho = U[0][idx];
+                        switch (dimCount) {
+                            case 1: /* u */
+                                data = U[1][idx] / rho;
+                                break;
+                            case 2: /* v */
+                                data = U[2][idx] / rho;
+                                break;
+                            case 3: /* w */
+                                data = U[3][idx] / rho;
+                                break;
+                            default:
+                                break;
+                        }
+                        fwrite(&data, sizeof(EnsightReal), 1, filePointer);
                     }
                 }
             }

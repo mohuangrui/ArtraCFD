@@ -76,14 +76,14 @@ int TVD(Field *field, Flux *flux, const Space *space, const Partition *part,
         flux->Gz + 3 * space->nMax,
         flux->Gz + 4 * space->nMax};
     /*
-     * Decompose the primitive field variable into each component.
+     * Define the primitive field variables.
      */
-    const Real *rho = field->Uo + 0 * space->nMax;
-    const Real *u = field->Uo + 1 * space->nMax;
-    const Real *v = field->Uo + 2 * space->nMax;
-    const Real *w = field->Uo + 3 * space->nMax;
-    const Real *p = field->Uo + 4 * space->nMax;
-    const Real *T = field->Uo + 5 * space->nMax;
+    Real rho = 0; 
+    Real u = 0;
+    Real v = 0;
+    Real w = 0;
+    Real p = 0;
+    Real rho_eT = 0;
     /*
      * Auxiliary variables
      */

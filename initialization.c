@@ -34,7 +34,7 @@ int InitializeFlowField(Field *field, Flux *flux, Space *space, const Particle *
         FirstRunInitializer(field, flux, space, particle, part, flow);
         /* if this is a first run, output initial data */
         InitializeEnsightTransientCaseFile(time);
-        WriteComputedDataEnsight(field->Uo, space, particle, time, part);
+        WriteComputedDataEnsight(field->Un, space, particle, time, part, flow);
     } else {
         RestartInitializer(field, flux, space, time, part, flow);
     }
@@ -66,15 +66,6 @@ static int FirstRunInitializer(Field *field, Flux *flux, Space *space, const Par
         field->Un + 3 * space->nMax,
         field->Un + 4 * space->nMax};
     /*
-     * Decompose the primitive field variable into each component.
-     */
-    Real *rho = field->Uo + 0 * space->nMax;
-    Real *u = field->Uo + 1 * space->nMax;
-    Real *v = field->Uo + 2 * space->nMax;
-    Real *w = field->Uo + 3 * space->nMax;
-    Real *p = field->Uo + 4 * space->nMax;
-    Real *T = field->Uo + 5 * space->nMax;
-    /*
      * Initialize the interior field
      */
     int k = 0; /* loop count */
@@ -91,15 +82,6 @@ static int FirstRunInitializer(Field *field, Flux *flux, Space *space, const Par
                 Un[3][idx] = rho0 * w0;
                 Un[4][idx] = p0 / (flow->gamma - 1) + 
                     0.5 * rho0 * (u0 * u0 + v0 * v0 + w0 * w0);
-                /*
-                 * Following part are simply to initialize the storage space.
-                 */
-                rho[idx] = 0;
-                u[idx] = 0;
-                v[idx] = 0;
-                w[idx] = 0;
-                p[idx] = 0;
-                T[idx] = 0;
             }
         }
     }
@@ -108,13 +90,9 @@ static int FirstRunInitializer(Field *field, Flux *flux, Space *space, const Par
      */
     BoundaryCondtion(field, space, particle, part, flow);
     /*
-     * Compute primitive variables based on conservative variables
-     */
-    ComputePrimitiveByConservative(field, space, flow);
-    /*
      * Compute flux variables
      */
-    ComputeNonviscousFlux(field, flux, space);
+    ComputeNonviscousFlux(field, flux, space, flow);
     ComputeViscousFlux(field, flux, space, flow);
     return 0;
 }
@@ -129,15 +107,11 @@ static int RestartInitializer(Field *field, Flux *flux, Space *space, Time *time
     /*
      * Load data from Ensight restart files.
      */
-    LoadComputedDataEnsight(field->Uo, space, time, part);
-    /*
-     * Compute conservative variables based on primitive variables
-     */
-    ComputeConservativeByPrimitive(field, space, flow);
+    LoadComputedDataEnsight(field->Un, space, time, part, flow);
     /*
      * Compute flux variables
      */
-    ComputeNonviscousFlux(field, flux, space);
+    ComputeNonviscousFlux(field, flux, space, flow);
     ComputeViscousFlux(field, flux, space, flow);
     return 0;
 }

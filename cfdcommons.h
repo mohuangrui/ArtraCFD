@@ -19,31 +19,17 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Compute primitive field variables
- *
- * Function
- *      Compute values of primitive form based on conservative form.
- */
-extern int ComputePrimitiveByConservative(Field *, const Space *, const Flow *);
-/*
- * Compute conservative field variables
- *
- * Function
- *      Compute values of conservative form based on primitive form.
- */
-extern int ComputeConservativeByPrimitive(Field *, const Space *, const Flow *);
-/*
  * Compute nonviscous flux variables
  *
  * Function
- *      Compute flux variables based on primitive and conservative variables.
+ *      Compute flux variables based on conservative variables.
  */
-extern int ComputeNonviscousFlux(const Field *, Flux *, const Space *);
+extern int ComputeNonviscousFlux(const Field *, Flux *, const Space *, const Flow *);
 /*
  * Compute viscous flux variables
  *
  * Function
- *      Compute flux variables based on primitive and conservative variables.
+ *      Compute flux variables based on conservative variables.
  */
 extern int ComputeViscousFlux(const Field *, Flux *, const Space *, const Flow *);
 /*
@@ -55,7 +41,7 @@ extern int ComputeViscousFlux(const Field *, Flux *, const Space *, const Flow *
  * Returns
  *      a real -- the calculated time step size dt.
  */
-extern Real ComputeTimeStepByCFL(Field *, const Space *, const Time *, 
+extern Real ComputeTimeStepByCFL(const Field *, const Space *, const Time *, 
         const Partition *, const Flow *);
 /*
  * Minimum positive
@@ -68,7 +54,7 @@ extern Real ComputeTimeStepByCFL(Field *, const Space *, const Time *,
  *      a real -- the smaller value which is positive
  *      1e38 -- if none of them is positive
  */
-extern Real MinPositive(Real valueA, Real valueB);
+extern Real MinPositive(const Real valueA, const Real valueB);
 /*
  * Minimum
  *
@@ -78,7 +64,7 @@ extern Real MinPositive(Real valueA, Real valueB);
  * Returns
  *      a real -- the smaller value
  */
-extern Real Min(Real valueA, Real valueB);
+extern Real Min(const Real valueA, const Real valueB);
 /*
  * Maximum
  *
@@ -88,7 +74,7 @@ extern Real Min(Real valueA, Real valueB);
  * Returns
  *      a real -- the larger value
  */
-extern Real Max(Real valueA, Real valueB);
+extern Real Max(const Real valueA, const Real valueB);
 #endif
 /* a good practice: end file with a newline */
 

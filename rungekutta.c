@@ -70,7 +70,7 @@ int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space,
                 (fabs(time->currentTime - time->totalTime) < 1e-38)) {
             ++(time->outputCount); /* export count increase */
             TickTime(&operationTimer);
-            WriteComputedDataEnsight(field->Uo, space, particle, time, part);
+            WriteComputedDataEnsight(field->Un, space, particle, time, part, flow);
             operationTime = TockTime(&operationTimer);
             accumulatedTime = 0; /* reset accumulated time */
             fprintf(stdout, "  data export time consuming: %.6gs\n", operationTime);
