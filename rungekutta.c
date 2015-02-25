@@ -56,7 +56,6 @@ int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space,
         /*
          * Compute field data in current time step
          */
-        TVD(field, flux, space, part, fluid);
         /*
          * Export computed data. Use accumulatedTime as a flag, if
          * accumulatedTime increases to anticipated export interval,

@@ -484,9 +484,6 @@ typedef struct {
     Real *Gx; /* viscous flux vector at x direction */
     Real *Gy; /* viscous flux vector at y direction */
     Real *Gz; /* viscous flux vector at z direction */
-    Real *eigenValue; /* eigenvalue */
-    Real *leftMatrix; /* left matrix */
-    Real *rightMatrix; /* right matrix */
 }Flux;
 /*
  * Space domain parameters
