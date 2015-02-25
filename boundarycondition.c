@@ -10,7 +10,6 @@
 #include "boundarycondition.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
-#include <stdlib.h> /* common mathematical functions */
 #include "cfdcommons.h"
 #include "commons.h"
 /****************************************************************************
@@ -240,7 +239,6 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
     /*
      * Wall boundary condition for interior ghost cells
      */
-    int geoID = 0; /* the ID of the particle for current ghost node */
     Real distToCenter = 0; /* distance from node to particle center */
     Real distToSurface = 0; /* distance from node to particle surface */
     Real distX = 0;
@@ -270,11 +268,10 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
                 idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
                 idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
 
-                geoID = abs(space->geoID[idx]); /* get the particle ID to access information */
-                radius = particle->r[geoID];
-                distX = (i - space->ng) * space->dx - particle->x[geoID];
-                distY = (j - space->ng) * space->dy - particle->y[geoID];
-                distZ = (k - space->ng) * space->dz - particle->z[geoID];
+                radius = particle->r[space->geoID[idx]];
+                distX = (i - space->ng) * space->dx - particle->x[space->geoID[idx]];
+                distY = (j - space->ng) * space->dy - particle->y[space->geoID[idx]];
+                distZ = (k - space->ng) * space->dz - particle->z[space->geoID[idx]];
                 distToCenter = sqrt(distX * distX + distY * distY + distZ * distZ);
                 distToSurface = radius - distToCenter;
                 normalX = distX / distToCenter;
