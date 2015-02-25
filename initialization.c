@@ -71,7 +71,7 @@ static int FirstRunInitializer(Field *field, Flux *flux, Space *space, const Par
     int k = 0; /* loop count */
     int j = 0; /* loop count */
     int i = 0; /* loop count */
-    int idx = 0; /* calculated index */
+    int idx = 0; /* linear array index math variable */
     for (k = part->kSub[12]; k < part->kSup[12]; ++k) {
         for (j = part->jSub[12]; j < part->jSup[12]; ++j) {
             for (i = part->iSub[12]; i < part->iSup[12]; ++i) {

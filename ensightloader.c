@@ -84,8 +84,7 @@ static int LoadEnsightVariableFile(Real *fieldData, EnsightSet *enSet,
     int k = 0; /* loop count */
     int j = 0; /* loop count */
     int i = 0; /* loop count */
-    /* linear array index math variables */
-    int idx = 0; /* calculated index */
+    int idx = 0; /* linear array index math variable */
     EnsightReal data = 0; /* the ensight data format */
     const int dimU = 5; /* dimension of the primitive variables need to be read */
     int dimCount = 0; /* dimension count */

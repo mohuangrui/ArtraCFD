@@ -37,7 +37,7 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
     int j = 0; /* loop count */
     int i = 0; /* loop count */
     int dim = 0; /* dimension count of vectors */
-    int idx = 0; /* calculated index */
+    int idx = 0; /* linear array index math variable */
     int idxW = 0; /* index at West */
     int idxE = 0; /* index at East */
     int idxS = 0; /* index at South */

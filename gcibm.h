@@ -22,10 +22,9 @@
  * Initialize domain geometry
  *
  * Function
- *      Initialize domain geometry and call ComputeDomainGeometryGCIBM to
- *      mesh the domain by GCIBM approach. It only needs to be call once.
+ *      Initialize domain geometry. It only needs to be call once.
  */
-extern int InitializeDomainGeometryGCIBM(Space *, Particle *, const Partition *);
+extern int InitializeDomainGeometry(Space *);
 /*
  * Compute domain geometry
  *

@@ -37,18 +37,15 @@ static int IdentifyGhostCells(Space *, const Partition *);
  * This function initializes the geometry for the entire domain.
  * It's separated because only need to be executed once as initialization.
  */
-int InitializeDomainGeometryGCIBM(Space *space, Particle *particle, const Partition *part)
+int InitializeDomainGeometry(Space *space)
 {
-    ShowInformation("Initialize domain geometry...");
     /*
-     * First initialize the entire domain to type "2"
+     * Initialize the entire domain to type "2"
      */
-    /* linear array index math variable */
-    int idx = 0; /* calculated index */
-    /* for loop control */
-    int k = 0; /* count, k for z dimension */
-    int j = 0; /* count, j for y dimension */
-    int i = 0; /* count, i for x dimension */
+    int k = 0; /* loop count */
+    int j = 0; /* loop count */
+    int i = 0; /* loop count */
+    int idx = 0; /* linear array index math variable */
     for (k = 0; k < space->kMax; ++k) {
         for (j = 0; j < space->jMax; ++j) {
             for (i = 0; i < space->iMax; ++i) {
@@ -57,11 +54,6 @@ int InitializeDomainGeometryGCIBM(Space *space, Particle *particle, const Partit
             }
         }
     }
-    /*
-     * Then call ComputeDomainGeometryGCIBM
-     */
-    ComputeDomainGeometryGCIBM(space, particle, part); /* domain meshing */
-    ShowInformation("Session End");
     return 0;
 }
 int ComputeDomainGeometryGCIBM(Space *space, Particle *particle, const Partition *part)
@@ -74,12 +66,10 @@ int ComputeDomainGeometryGCIBM(Space *space, Particle *particle, const Partition
 static int LocateSolidGeometry(Space *space, Particle *particle, const Partition *part)
 {
     ShowInformation("    Locate solid geometry...");
-    /* linear array index math variable */
-    int idx = 0; /* calculated index */
-    /* for loop control */
-    int k = 0; /* count, k for z dimension */
-    int j = 0; /* count, j for y dimension */
-    int i = 0; /* count, i for x dimension */
+    int k = 0; /* loop count */
+    int j = 0; /* loop count */
+    int i = 0; /* loop count */
+    int idx = 0; /* linear array index math variable */
     /* geometry computation */
     int geoCount = 0; /* geometry objects count */
     Real distance = 0;
@@ -111,18 +101,17 @@ static int LocateSolidGeometry(Space *space, Particle *particle, const Partition
 static int IdentifyGhostCells(Space *space, const Partition *part)
 {
     ShowInformation("    Identify ghost cells...");
-    /* linear array index math variable */
-    int idx = 0; /* calculated index */
+    /* indices */
+    int k = 0; /* loop count */
+    int j = 0; /* loop count */
+    int i = 0; /* loop count */
+    int idx = 0; /* linear array index math variable */
     int idxW = 0; /* index at West */
     int idxE = 0; /* index at East */
     int idxS = 0; /* index at South */
     int idxN = 0; /* index at North */
     int idxF = 0; /* index at Front */
     int idxB = 0; /* index at Back */
-    /* for loop control */
-    int k = 0; /* count, k for z dimension */
-    int j = 0; /* count, j for y dimension */
-    int i = 0; /* count, i for x dimension */
     /* criteria */
     int flag = 0;
     for (k = part->kSub[12]; k < part->kSup[12]; ++k) {

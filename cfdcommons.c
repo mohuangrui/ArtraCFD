@@ -61,7 +61,7 @@ int ComputeNonviscousFlux(const Field *field, Flux *flux, const Space *space, co
     int k = 0; /* loop count */
     int j = 0; /* loop count */
     int i = 0; /* loop count */
-    int idx = 0; /* calculated index */
+    int idx = 0; /* linear array index math variable */
     for (k = 0; k < space->kMax; ++k) {
         for (j = 0; j < space->jMax; ++j) {
             for (i = 0; i < space->iMax; ++i) {
@@ -170,7 +170,7 @@ int ComputeViscousFlux(const Field *field, Flux *flux, const Space *space, const
     int k = 0; /* loop count */
     int j = 0; /* loop count */
     int i = 0; /* loop count */
-    int idx = 0; /* calculated index */
+    int idx = 0; /* linear array index math variable */
     int idxW = 0; /* index at West */
     int idxE = 0; /* index at East */
     int idxS = 0; /* index at South */
@@ -323,7 +323,7 @@ Real ComputeTimeStepByCFL(const Field *field, const Space *space, const Time *ti
     int k = 0; /* loop count */
     int j = 0; /* loop count */
     int i = 0; /* loop count */
-    int idx = 0; /* calculated index */
+    int idx = 0; /* linear array index math variable */
     for (k = part->kSub[12]; k < part->kSup[12]; ++k) {
         for (j = part->jSub[12]; j < part->jSup[12]; ++j) {
             for (i = part->iSub[12]; i < part->iSup[12]; ++i) {

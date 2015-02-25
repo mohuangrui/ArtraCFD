@@ -186,10 +186,9 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
     int k = 0; /* loop count */
     int j = 0; /* loop count */
     int i = 0; /* loop count */
+    int idx = 0; /* linear array index math variable */
     int nodeCount[3] = {0, 0, 0}; /* i j k node number in each part */
     int blankID = 0; /* Ensight geometry iblank entry */
-    /* linear array index math variables */
-    int idx = 0; /* calculated index */
     EnsightReal data = 0; /* the ensight data format */
     for (partCount = 0, partNum = 1; partCount < part->totalN; ++partCount, ++partNum) {
         strncpy(enSet->stringData, "part", sizeof(EnsightString));
@@ -267,8 +266,7 @@ static int WriteEnsightVariableFile(const Real *fieldData, EnsightSet *enSet,
     int k = 0; /* loop count */
     int j = 0; /* loop count */
     int i = 0; /* loop count */
-    /* linear array index math variables */
-    int idx = 0; /* calculated index */
+    int idx = 0; /* linear array index math variable */
     EnsightReal data = 0; /* the ensight data format */
     /*
      * Write the scalar field (Binary Form)
