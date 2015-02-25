@@ -145,7 +145,6 @@ int ComputeViscousFlux(const Field *field, Flux *flux, const Space *space, const
     Real eT_h = 0;
     Real T = 0;
     Real T_h = 0;
-    Real h = 0; /* differencing length */
     /*
      * Auxiliary variables
      */
@@ -178,9 +177,15 @@ int ComputeViscousFlux(const Field *field, Flux *flux, const Space *space, const
     int idxN = 0; /* index at North */
     int idxF = 0; /* index at Front */
     int idxB = 0; /* index at Back */
-    for (k = 0; k < space->kMax; ++k) {
-        for (j = 0; j < space->jMax; ++j) {
-            for (i = 0; i < space->iMax; ++i) {
+    /*
+     * Generally the viscous terms will only be discretized by central
+     * difference scheme, therefore, only the viscous variables at 
+     * the boudary region and interior region need to be calculated, 
+     * there is no need to do this for outer ghost cells.
+     */
+    for (k = space->ng; k < space->kMax - space->ng; ++k) {
+        for (j = space->ng; j < space->jMax - space->ng; ++j) {
+            for (i = space->ng; i < space->iMax - space->ng; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
                 if (space->ghostFlag[idx] == -1) { /* if it's solid node */
                     continue;
@@ -193,176 +198,65 @@ int ComputeViscousFlux(const Field *field, Flux *flux, const Space *space, const
                 idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
                 idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
 
-                if (k == 0) {
-                    rho_h = Un[0][idxB];
-                    u_h = Un[1][idxB] / rho_h;
-                    v_h = Un[2][idxB] / rho_h;
-                    w_h = Un[3][idxB] / rho_h;
-                    eT_h = Un[4][idxB] / rho_h;
-                    T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
-
-                    rho = Un[0][idx];
-                    u = Un[1][idx] / rho;
-                    v = Un[2][idx] / rho;
-                    w = Un[3][idx] / rho;
-                    eT = Un[4][idx] / rho;
-                    T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
-
-                    h = dz;
-                } else {
-                    if (k == space->kMax - 1) {
-                        rho_h = Un[0][idx];
-                        u_h = Un[1][idx] / rho_h;
-                        v_h = Un[2][idx] / rho_h;
-                        w_h = Un[3][idx] / rho_h;
-                        eT_h = Un[4][idx] / rho_h;
-                        T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
-
-                        rho = Un[0][idxF];
-                        u = Un[1][idxF] / rho;
-                        v = Un[2][idxF] / rho;
-                        w = Un[3][idxF] / rho;
-                        eT = Un[4][idxF] / rho;
-                        T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
-
-                        h = dz;
-                    } else {
-                        rho_h = Un[0][idxB];
-                        u_h = Un[1][idxB] / rho_h;
-                        v_h = Un[2][idxB] / rho_h;
-                        w_h = Un[3][idxB] / rho_h;
-                        eT_h = Un[4][idxB] / rho_h;
-                        T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
-
-                        rho = Un[0][idxF];
-                        u = Un[1][idxF] / rho;
-                        v = Un[2][idxF] / rho;
-                        w = Un[3][idxF] / rho;
-                        eT = Un[4][idxF] / rho;
-                        T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
-
-                        h = 2 * dz;
-                    }
-                }
                 /* calculate derivatives in z direction */
-                du_dz = (u_h - u) / h;
-                dv_dz = (v_h - v) / h;
-                dw_dz = (w_h - w) / h;
-                dT_dz = (T_h - T) / h;
+                rho_h = Un[0][idxB];
+                u_h = Un[1][idxB] / rho_h;
+                v_h = Un[2][idxB] / rho_h;
+                w_h = Un[3][idxB] / rho_h;
+                eT_h = Un[4][idxB] / rho_h;
+                T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
 
-                if (j == 0) {
-                    rho_h = Un[0][idxN];
-                    u_h = Un[1][idxN] / rho_h;
-                    v_h = Un[2][idxN] / rho_h;
-                    w_h = Un[3][idxN] / rho_h;
-                    eT_h = Un[4][idxN] / rho_h;
-                    T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
+                rho = Un[0][idxF];
+                u = Un[1][idxF] / rho;
+                v = Un[2][idxF] / rho;
+                w = Un[3][idxF] / rho;
+                eT = Un[4][idxF] / rho;
+                T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
 
-                    rho = Un[0][idx];
-                    u = Un[1][idx] / rho;
-                    v = Un[2][idx] / rho;
-                    w = Un[3][idx] / rho;
-                    eT = Un[4][idx] / rho;
-                    T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
+                du_dz = (u_h - u) / (2 * dz);
+                dv_dz = (v_h - v) / (2 * dz);
+                dw_dz = (w_h - w) / (2 * dz);
+                dT_dz = (T_h - T) / (2 * dz);
 
-                    h = dy;
-                } else {
-                    if (j == space->jMax - 1) {
-                        rho_h = Un[0][idx];
-                        u_h = Un[1][idx] / rho_h;
-                        v_h = Un[2][idx] / rho_h;
-                        w_h = Un[3][idx] / rho_h;
-                        eT_h = Un[4][idx] / rho_h;
-                        T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
-
-                        rho = Un[0][idxS];
-                        u = Un[1][idxS] / rho;
-                        v = Un[2][idxS] / rho;
-                        w = Un[3][idxS] / rho;
-                        eT = Un[4][idxS] / rho;
-                        T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
-
-                        h = dy;
-                    } else {
-                        rho_h = Un[0][idxN];
-                        u_h = Un[1][idxN] / rho_h;
-                        v_h = Un[2][idxN] / rho_h;
-                        w_h = Un[3][idxN] / rho_h;
-                        eT_h = Un[4][idxN] / rho_h;
-                        T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
-
-                        rho = Un[0][idxS];
-                        u = Un[1][idxS] / rho;
-                        v = Un[2][idxS] / rho;
-                        w = Un[3][idxS] / rho;
-                        eT = Un[4][idxS] / rho;
-                        T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
-
-                        h = 2 * dy;
-                    }
-                }
                 /* calculate derivatives in y direction */
-                du_dy = (u_h - u) / h;
-                dv_dy = (v_h - v) / h;
-                dw_dy = (w_h - w) / h;
-                dT_dy = (T_h - T) / h;
+                rho_h = Un[0][idxN];
+                u_h = Un[1][idxN] / rho_h;
+                v_h = Un[2][idxN] / rho_h;
+                w_h = Un[3][idxN] / rho_h;
+                eT_h = Un[4][idxN] / rho_h;
+                T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
 
-                if (i == 0) {
-                    rho_h = Un[0][idxE];
-                    u_h = Un[1][idxE] / rho_h;
-                    v_h = Un[2][idxE] / rho_h;
-                    w_h = Un[3][idxE] / rho_h;
-                    eT_h = Un[4][idxE] / rho_h;
-                    T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
+                rho = Un[0][idxS];
+                u = Un[1][idxS] / rho;
+                v = Un[2][idxS] / rho;
+                w = Un[3][idxS] / rho;
+                eT = Un[4][idxS] / rho;
+                T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
 
-                    rho = Un[0][idx];
-                    u = Un[1][idx] / rho;
-                    v = Un[2][idx] / rho;
-                    w = Un[3][idx] / rho;
-                    eT = Un[4][idx] / rho;
-                    T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
+                du_dy = (u_h - u) / (2 * dy);
+                dv_dy = (v_h - v) / (2 * dy);
+                dw_dy = (w_h - w) / (2 * dy);
+                dT_dy = (T_h - T) / (2 * dy);
 
-                    h = dx;
-                } else {
-                    if (i == space->iMax - 1) {
-                        rho_h = Un[0][idx];
-                        u_h = Un[1][idx] / rho_h;
-                        v_h = Un[2][idx] / rho_h;
-                        w_h = Un[3][idx] / rho_h;
-                        eT_h = Un[4][idx] / rho_h;
-                        T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
-
-                        rho = Un[0][idxW];
-                        u = Un[1][idxW] / rho;
-                        v = Un[2][idxW] / rho;
-                        w = Un[3][idxW] / rho;
-                        eT = Un[4][idxW] / rho;
-                        T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
-
-                        h = dx;
-                    } else {
-                        rho_h = Un[0][idxE];
-                        u_h = Un[1][idxE] / rho_h;
-                        v_h = Un[2][idxE] / rho_h;
-                        w_h = Un[3][idxE] / rho_h;
-                        eT_h = Un[4][idxE] / rho_h;
-                        T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
-
-                        rho = Un[0][idxW];
-                        u = Un[1][idxW] / rho;
-                        v = Un[2][idxW] / rho;
-                        w = Un[3][idxW] / rho;
-                        eT = Un[4][idxW] / rho;
-                        T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
-
-                        h = 2 * dx;
-                    }
-                }
                 /* calculate derivatives in x direction */
-                du_dx = (u_h - u) / h;
-                dv_dx = (v_h - v) / h;
-                dw_dx = (w_h - w) / h;
-                dT_dx = (T_h - T) / h;
+                rho_h = Un[0][idxE];
+                u_h = Un[1][idxE] / rho_h;
+                v_h = Un[2][idxE] / rho_h;
+                w_h = Un[3][idxE] / rho_h;
+                eT_h = Un[4][idxE] / rho_h;
+                T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
+
+                rho = Un[0][idxW];
+                u = Un[1][idxW] / rho;
+                v = Un[2][idxW] / rho;
+                w = Un[3][idxW] / rho;
+                eT = Un[4][idxW] / rho;
+                T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
+
+                du_dx = (u_h - u) / (2 * dx);
+                dv_dx = (v_h - v) / (2 * dx);
+                dw_dx = (w_h - w) / (2 * dx);
+                dT_dx = (T_h - T) / (2 * dx);
 
                 /* regain the primitive variables in current point */
                 rho = Un[0][idx];
