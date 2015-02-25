@@ -11,6 +11,7 @@
 #include "gcibm.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
+#include "cfdcommons.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
@@ -65,7 +66,6 @@ int ComputeDomainGeometryGCIBM(Space *space, Particle *particle, const Partition
 }
 static int LocateSolidGeometry(Space *space, Particle *particle, const Partition *part)
 {
-    ShowInformation("    Locate solid geometry...");
     int k = 0; /* loop count */
     int j = 0; /* loop count */
     int i = 0; /* loop count */
@@ -100,7 +100,6 @@ static int LocateSolidGeometry(Space *space, Particle *particle, const Partition
 }
 static int IdentifyGhostCells(Space *space, const Partition *part)
 {
-    ShowInformation("    Identify ghost cells...");
     /* indices */
     int k = 0; /* loop count */
     int j = 0; /* loop count */
@@ -133,6 +132,81 @@ static int IdentifyGhostCells(Space *space, const Partition *part)
                 if (flag == 0) { /* if exist one neighbour is fluid, then it's ghost */
                     space->ghostFlag[idx] = 1;
                 }
+            }
+        }
+    }
+    return 0;
+}
+/*
+ * Boundary condition for interior ghost cells
+ */
+int BoundaryConditionGCIBM(Field *field, const Space *space, const Particle *particle, 
+        const Partition *part)
+{
+    /*
+     * Decompose the field variable into each component.
+     */
+    Real *Un[5] = {
+        field->Un + 0 * space->nMax,
+        field->Un + 1 * space->nMax,
+        field->Un + 2 * space->nMax,
+        field->Un + 3 * space->nMax,
+        field->Un + 4 * space->nMax};
+    /*
+     * Indices
+     */
+    int k = 0; /* loop count */
+    int j = 0; /* loop count */
+    int i = 0; /* loop count */
+    int dim = 0; /* dimension count of vectors */
+    int idx = 0; /* linear array index math variable */
+    int idxW = 0; /* index at West */
+    int idxE = 0; /* index at East */
+    int idxS = 0; /* index at South */
+    int idxN = 0; /* index at North */
+    int idxF = 0; /* index at Front */
+    int idxB = 0; /* index at Back */
+    Real distToCenter = 0; /* distance from node to particle center */
+    Real distToSurface = 0; /* distance from node to particle surface */
+    Real distX = 0;
+    Real distY = 0;
+    Real distZ = 0;
+    Real radius = 0;
+    Real normalX = 0; /* x component of normal vector at surface */
+    Real normalY = 0; /* y component of normal vector at surface */
+    Real normalZ = 0; /* z component of normal vector at surface */
+    int imageI = 0; /* node coordinates of the image point of the ghost */
+    int imageJ = 0; /* node coordinates of the image point of the ghost */
+    int imageK = 0; /* node coordinates of the image point of the ghost */
+    const Real dx = MinPositive(space->dx, -1); /* needed when use as denominator */
+    const Real dy = MinPositive(space->dy, -1); /* needed when use as denominator */
+    const Real dz = MinPositive(space->dz, -1); /* needed when use as denominator */
+    for (k = part->kSub[12]; k < part->kSup[12]; ++k) {
+        for (j = part->jSub[12]; j < part->jSup[12]; ++j) {
+            for (i = part->iSub[12]; i < part->iSup[12]; ++i) {
+                idx = (k * space->jMax + j) * space->iMax + i;
+                if (space->ghostFlag[idx] != 1) { /* it's not a ghost */
+                    continue;
+                }
+                idxW = (k * space->jMax + j) * space->iMax + i - 1;
+                idxE = (k * space->jMax + j) * space->iMax + i + 1;
+                idxS = (k * space->jMax + j - 1) * space->iMax + i;
+                idxN = (k * space->jMax + j + 1) * space->iMax + i;
+                idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
+                idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
+
+                radius = particle->r[space->geoID[idx]];
+                distX = (i - space->ng) * space->dx - particle->x[space->geoID[idx]];
+                distY = (j - space->ng) * space->dy - particle->y[space->geoID[idx]];
+                distZ = (k - space->ng) * space->dz - particle->z[space->geoID[idx]];
+                distToCenter = sqrt(distX * distX + distY * distY + distZ * distZ);
+                distToSurface = radius - distToCenter;
+                normalX = distX / distToCenter;
+                normalY = distY / distToCenter;
+                normalZ = distZ / distToCenter;
+                imageI = i + (int)(2 * distToSurface * normalX / dx);
+                imageJ = j + (int)(2 * distToSurface * normalY / dy);
+                imageK = k + (int)(2 * distToSurface * normalZ / dz);
             }
         }
     }

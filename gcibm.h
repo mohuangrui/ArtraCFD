@@ -33,6 +33,14 @@ extern int InitializeDomainGeometry(Space *);
  *      the computational domain.
  */
 extern int ComputeDomainGeometryGCIBM(Space *, Particle *, const Partition *);
+/*
+ * Boundary condition for interior ghost cells
+ *
+ * Function
+ *      Apply boundary conditions to the interior ghost cells.
+ */
+extern int BoundaryConditionGCIBM(Field *, const Space *, const Particle *, 
+        const Partition *);
 #endif
 /* a good practice: end file with a newline */
 
