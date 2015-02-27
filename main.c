@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
         .outputCount = 0};
     Flow theFlow = { /* flow parameters */
         .refMa = 0.0,
-        .refRe = 0.0,
+        .refMu = 0.0,
         .refPr = 0.0,
         .gamma = 0.0,
         .gasR = 0.0,

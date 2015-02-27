@@ -9,7 +9,6 @@
  ****************************************************************************/
 #include "casefilegenerator.h"
 #include <stdio.h> /* standard library for input and output */
-#include <string.h> /* manipulating strings */
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
@@ -69,13 +68,11 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "time end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#                        >> Fluid Properties <<\n");
+    fprintf(filePointer, "#                    >> Fluid and Flow Properties <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "fluid begin\n");
-    fprintf(filePointer, "1.205              # density of fluid\n");
-    fprintf(filePointer, "1.0e-5             # kinematic viscosity\n");
-    fprintf(filePointer, "1.0e2              # thermal diffusivity\n");
+    fprintf(filePointer, "0.71               # Prandtl number\n");
     fprintf(filePointer, "fluid end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");

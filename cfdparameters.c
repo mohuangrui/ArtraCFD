@@ -15,17 +15,15 @@
  * Static Function Declarations
  ****************************************************************************/
 static int NodeBasedMeshNumberRefine(Space *);
-static int InitializeCFDParameters(Space *, Time *, const Fluid *,
-        Flow *, const Reference *);
+static int InitializeCFDParameters(Space *, Time *, Flow *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int ComputeCFDParameters(Space *space, Time *time,
-        const Fluid *fluid, Flow *flow, const Reference * reference)
+int ComputeCFDParameters(Space *space, Time *time, Flow *flow)
 {
     ShowInformation("Computing CFD parameters...");
     NodeBasedMeshNumberRefine(space);
-    InitializeCFDParameters(space, time, fluid, flow, reference);
+    InitializeCFDParameters(space, time, flow);
     ShowInformation("Session End");
     return 0;
 }
@@ -87,14 +85,12 @@ static int NodeBasedMeshNumberRefine(Space *space)
  * the numerical simulation environment. These parameters will be normalized
  * by reference values.
  */
-static int InitializeCFDParameters(Space *space, Time *time,
-        const Fluid *fluid, Flow *flow, const Reference * reference)
+static int InitializeCFDParameters(Space *space, Time *time, Flow *flow)
 {
     /* space */
-    Real scale = (1 / reference->length); /* auxiliary variables */
-    space->dx = scale * space->dx / (space->nx - 1); /* update to normalized real dx */
-    space->dy = scale * space->dy / (space->ny - 1); /* update to normalized real dy */
-    space->dz = scale * space->dz / (space->nz - 1); /* update to normalized real dz */
+    space->dx = (space->dx / (space->nx - 1)) / flow->refLength; /* normalized real dx */
+    space->dy = (space->dy / (space->ny - 1)) / flow->refLength; /* normalized real dy */
+    space->dz = (space->dz / (space->nz - 1)) / flow->refLength; /* normalized real dz */
     if (space->dx <= 0) { /* zero value should have zero reciprocal */
         space->dx = 1e38;
     }
@@ -105,23 +101,20 @@ static int InitializeCFDParameters(Space *space, Time *time,
         space->dz = 1e38;
     }
     /* time */
-    scale = (reference->velocity / reference->length);
-    time->totalTime = scale * time->totalTime;
+    time->totalTime = time->totalTime * flow->refVelocity / flow->refLength;
     /* fluid and flow */
     flow->gamma = 1.4;
     flow->gasR = 8.314462175;
     /* reference Mach number */
-    scale = sqrt(flow->gamma * flow->gasR * reference->temperature);
-    flow->refMa = reference->velocity / scale;
-    /* reference Reynolds number */
-    scale = reference->density * reference->velocity * reference->length;
-    flow->refRe = scale / (fluid->density * fluid->nu);
+    flow->refMa = flow->refVelocity / sqrt(flow->gamma * flow->gasR * flow->refTemperature);
+    /* user defined reference dynamic viscosity to simply Sutherland's law */
+    flow->refMu = 1.45e-6 / (flow->refDensity * flow->refVelocity * flow->refLength);
     /*
      * Now replace some parameters by general forms that are valid
      * for both dimensional and nondimensional N-S equations, since
      * dimensional forms can be seen as normalized by reference 1.
      */
-    flow->gasR = 1 / (flow->gamma * flow->referenceMa * flow->referenceMa);
+    flow->gasR = 1 / (flow->gamma * flow->refMa * flow->refMa);
     flow->cv = flow->gasR / (flow->gamma - 1);
     return 0;
 }

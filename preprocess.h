@@ -29,8 +29,7 @@
  * Returns
  *      0 -- successful
  */
-extern int Preprocess(Field *, Flux *, Space *, Particle *, Time *,
-        Partition *, Fluid *, Flow *, Reference *);
+extern int Preprocess(Field *, Space *, Particle *, Time *, Partition *, Flow *);
 #endif
 /* a good practice: end file with a newline */
 

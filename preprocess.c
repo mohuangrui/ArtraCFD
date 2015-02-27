@@ -10,7 +10,6 @@
 #include "preprocess.h"
 #include <stdio.h> /* standard library for input and output */
 #include <stdlib.h> /* dynamic memory allocation and exit */
-#include <string.h> /* manipulating strings */
 #include "casedataloader.h"
 #include "cfdparameters.h"
 #include "domainpartition.h"
@@ -20,21 +19,20 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ProgramMemoryAllocate(Field *, Flux *, Space *);
+static int ProgramMemoryAllocate(Field *, Space *);
 /****************************************************************************
  * Function Definitions
  ****************************************************************************/
 /*
  * This is the overall preprocessing function
  */
-int Preprocess(Field *field, Flux *flux, Space *space,
-        Particle *particle, Time *time, Partition *part, Fluid *fluid, 
-        Flow *flow, Reference *reference)
+int Preprocess(Field *field, Space *space, Particle *particle, Time *time, 
+        Partition *part, Flow *flow)
 {
-    LoadCaseSettingData(space, time, fluid, reference);
-    ComputeCFDParameters(space, time, fluid, flow, reference);
+    LoadCaseSettingData(space, time, flow);
+    ComputeCFDParameters(space, time, flow);
     DomainPartition(part, space);
-    ProgramMemoryAllocate(field, flux, space);
+    ProgramMemoryAllocate(field, space);
     LoadGeometryData(particle, time);
     InitializeDomainGeometry(space);
     ComputeDomainGeometryGCIBM(space, particle, part);
@@ -45,23 +43,16 @@ int Preprocess(Field *field, Flux *flux, Space *space,
  * memory allocation for each global pointer. The storage retrieving
  * need to be done in the postprocessor.
  */
-static int ProgramMemoryAllocate(Field *field, Flux *flux, Space *space)
+static int ProgramMemoryAllocate(Field *field, Space *space)
 {
     ShowInformation("Allocating memory for program...");
     /*
      * Conservative flow variables: rho, rho_u, rho_v, rho_w, rho_eT
      */
-    int dimU = 5; /* dimension of field variable U */
-    int idxMax = dimU * space->nMax;
+    int idxMax = 5 * space->nMax;
     field->U = AssignStorage(idxMax, "Real");
     field->Un = AssignStorage(idxMax, "Real");
     field->Um = AssignStorage(idxMax, "Real");
-    flux->Fx = AssignStorage(idxMax, "Real");
-    flux->Fy = AssignStorage(idxMax, "Real");
-    flux->Fz = AssignStorage(idxMax, "Real");
-    flux->Gx = AssignStorage(idxMax, "Real");
-    flux->Gy = AssignStorage(idxMax, "Real");
-    flux->Gz = AssignStorage(idxMax, "Real");
     /*
      * Node type identifier
      */

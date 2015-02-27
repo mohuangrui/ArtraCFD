@@ -14,24 +14,21 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ReadCaseSettingData(Space *, Time *, Fluid *, Reference *);
-static int WriteVerifyData(const Space *, const Time *, const Fluid *,
-        const Reference *);
-static int CheckCaseSettingData(const Space *, const Time *, const Fluid *,
-        const Reference *);
+static int ReadCaseSettingData(Space *, Time *, Flow *);
+static int WriteVerifyData(const Space *, const Time *, const Flow *);
+static int CheckCaseSettingData(const Space *, const Time *, const Flow *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
 /*
  * This function load the case settings from the case file.
  */
-int LoadCaseSettingData(Space *space, Time *time, Fluid *fluid, 
-        Reference *reference)
+int LoadCaseSettingData(Space *space, Time *time, Flow *flow)
 {
     ShowInformation("Loading case setting data ...");
-    ReadCaseSettingData(space, time, fluid, reference);
-    WriteVerifyData(space, time, fluid, reference);
-    CheckCaseSettingData(space, time, fluid, reference);
+    ReadCaseSettingData(space, time, flow);
+    WriteVerifyData(space, time, flow);
+    CheckCaseSettingData(space, time, flow);
     ShowInformation("Session End");
     return 0;
 }
@@ -59,8 +56,7 @@ int LoadCaseSettingData(Space *space, Time *time, Fluid *fluid,
  * you use for fprintf because the fprintf library function treats them as
  * synonymous, but it's crucial to get it right for sscanf. 
  */
-static int ReadCaseSettingData(Space *space, Time *time, Fluid *fluid, 
-        Reference *reference)
+static int ReadCaseSettingData(Space *space, Time *time, Flow *flow)
 {
     FILE *filePointer = fopen("artracfd.case", "r");
     if (filePointer == NULL) {
@@ -107,23 +103,19 @@ static int ReadCaseSettingData(Space *space, Time *time, Fluid *fluid,
         if (strncmp(currentLine, "fluid begin", sizeof currentLine) == 0) {
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(fluid->density)); 
-            fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(fluid->nu)); 
-            fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(fluid->alpha)); 
+            sscanf(currentLine, formatI, &(flow->refPr)); 
             continue;
         }
         if (strncmp(currentLine, "reference begin", sizeof currentLine) == 0) {
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(reference->length)); 
+            sscanf(currentLine, formatI, &(flow->refLength)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(reference->density)); 
+            sscanf(currentLine, formatI, &(flow->refDensity)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(reference->velocity)); 
+            sscanf(currentLine, formatI, &(flow->refVelocity)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(reference->temperature)); 
+            sscanf(currentLine, formatI, &(flow->refTemperature)); 
             continue;
         }
     }
@@ -140,7 +132,7 @@ static int ReadCaseSettingData(Space *space, Time *time, Fluid *fluid,
  * This function outputs the case setting data to a file for verification.
  */
 static int WriteVerifyData(const Space *space, const Time *time, 
-        const Fluid *fluid, const Reference *reference)
+        const Flow *flow)
 {
     ShowInformation("  Data outputted into artracfd.verify...");
     FILE *filePointer = fopen("artracfd.verify", "w");
@@ -166,18 +158,16 @@ static int WriteVerifyData(const Space *space, const Time *time,
     fprintf(filePointer, "CFL condition number: %.6g\n", time->numCFL); 
     fprintf(filePointer, "exporting data times: %d\n", time->totalOutputTimes); 
     fprintf(filePointer, "#--------------------------------------\n"); 
-    fprintf(filePointer, "#     >> Fluid Properties << \n"); 
+    fprintf(filePointer, "#  >> Fluid and Flow Properties << \n"); 
     fprintf(filePointer, "#--------------------------------------\n"); 
-    fprintf(filePointer, "fluid density: %.6g\n", fluid->density); 
-    fprintf(filePointer, "kinematic viscosity: %.6g\n", fluid->nu); 
-    fprintf(filePointer, "thermal diffusivity: %.6g\n", fluid->alpha); 
+    fprintf(filePointer, "Prandtl number: %.6g\n", flow->refPr); 
     fprintf(filePointer, "#--------------------------------------\n"); 
     fprintf(filePointer, "#    >> Characteristic Values << \n"); 
     fprintf(filePointer, "#--------------------------------------\n"); 
-    fprintf(filePointer, "length: %.6g\n", reference->length); 
-    fprintf(filePointer, "density: %.6g\n", reference->density); 
-    fprintf(filePointer, "velocity: %.6g\n", reference->velocity); 
-    fprintf(filePointer, "temperature: %.6g\n", reference->temperature); 
+    fprintf(filePointer, "length: %.6g\n", flow->refLength); 
+    fprintf(filePointer, "density: %.6g\n", flow->refDensity); 
+    fprintf(filePointer, "velocity: %.6g\n", flow->refVelocity); 
+    fprintf(filePointer, "temperature: %.6g\n", flow->refTemperature); 
     fprintf(filePointer, "#--------------------------------------\n\n"); 
     fclose(filePointer); /* close current opened file */
     return 0;
@@ -186,7 +176,7 @@ static int WriteVerifyData(const Space *space, const Time *time,
  * This function do some parameter checking
  */
 static int CheckCaseSettingData(const Space *space, const Time *time, 
-        const Fluid *fluid, const Reference *reference)
+        const Flow *flow)
 {
     ShowInformation("  Preliminary case data checking ...");
     /* space */
@@ -202,13 +192,13 @@ static int CheckCaseSettingData(const Space *space, const Time *time,
             || (time->numCFL <= 0) || (time->totalOutputTimes < 1)) {
         FatalError("wrong values in time section of case settings");
     }
-    /* fluid */
-    if ((fluid->density <= 0) || (fluid->nu <= 0) || (fluid->alpha <= 0)) {
-        FatalError("wrong values in fluid section of case settings");
+    /* fluid and flow */
+    if ((flow->refPr <= 0)) {
+        FatalError("wrong values in fluid and flow section of case settings");
     }
     /* reference */
-    if ((reference->length <= 0) || (reference->density <= 0) || 
-            (reference->velocity <= 0) || reference->temperature <= 0) {
+    if ((flow->refLength <= 0) || (flow->refDensity <= 0) || 
+            (flow->refVelocity <= 0) || flow->refTemperature <= 0) {
         FatalError("wrong values in reference section of case settings");
     }
     return 0;

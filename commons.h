@@ -524,7 +524,7 @@ typedef struct {
  */
 typedef struct {
     Real refMa; /* reference Mach number */
-    Real refRe; /* reference Reynolds number */
+    Real refMu; /* reference dynamic viscosity for Sutherland's law */
     Real refPr; /* reference Prandtl number */
     Real gamma; /* heat capacity ratio */
     Real gasR; /* the gas constant */
