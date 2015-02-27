@@ -19,9 +19,8 @@
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int RungeKuttaTimeMarching(Field *field, Flux *flux, Space *space, 
-        Particle *particle, Time *time, const Partition *part, 
-        const Fluid *fluid, const Flow *flow)
+int RungeKuttaTimeMarching(Field *field, Space *space, Particle *particle,
+        Time *time, const Partition *part, const Flow *flow)
 {
     ShowInformation("Time marching...");
     Real exportTimeInterval = (time->totalTime - time->currentTime);

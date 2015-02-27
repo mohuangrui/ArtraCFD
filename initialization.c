@@ -12,13 +12,12 @@
 #include <string.h> /* manipulating strings */
 #include "boundarycondition.h"
 #include "ensight.h"
-#include "cfdcommons.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int FirstRunInitializer(Field *, Flux *, Space *, const Particle *, const Partition *, const Flow *);
-static int RestartInitializer(Field *, Flux *, Space *, Time *, const Partition *, const Flow *);
+static int FirstRunInitializer(Field *, const Space *, const Particle *, const Partition *, const Flow *);
+static int RestartInitializer(Field *, const Space *, Time *, const Partition *, const Flow *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -26,17 +25,17 @@ static int RestartInitializer(Field *, Flux *, Space *, Time *, const Partition 
  * This function initializes the entire flow field. Initialization will be 
  * done differently determined by the restart status.
  */
-int InitializeFlowField(Field *field, Flux *flux, Space *space, const Particle *particle,
+int InitializeFlowField(Field *field, const Space *space, const Particle *particle,
         Time *time, const Partition *part, const Flow *flow)
 {
     ShowInformation("Initializing flow field...");
     if (time->restart == 0) { /* non restart */
-        FirstRunInitializer(field, flux, space, particle, part, flow);
+        FirstRunInitializer(field, space, particle, part, flow);
         /* if this is a first run, output initial data */
         InitializeEnsightTransientCaseFile(time);
         WriteComputedDataEnsight(field->Un, space, particle, time, part, flow);
     } else {
-        RestartInitializer(field, flux, space, time, part, flow);
+        RestartInitializer(field, space, time, part, flow);
     }
     ShowInformation("Session End");
     return 0;
@@ -44,7 +43,8 @@ int InitializeFlowField(Field *field, Flux *flux, Space *space, const Particle *
 /*
  * The first run initialization will assign values to field variables.
  */
-static int FirstRunInitializer(Field *field, Flux *flux, Space *space, const Particle *particle, const Partition *part, const Flow *flow)
+static int FirstRunInitializer(Field *field, const Space *space, const Particle *particle, 
+        const Partition *part, const Flow *flow)
 {
     ShowInformation("  Non-restart run initializing...");
     /*
@@ -89,18 +89,13 @@ static int FirstRunInitializer(Field *field, Flux *flux, Space *space, const Par
      * Apply boundary conditions to obtain an entire initialized flow field
      */
     BoundaryCondtion(field, space, particle, part, flow);
-    /*
-     * Compute flux variables
-     */
-    ComputeNonviscousFlux(field, flux, space, flow);
-    ComputeViscousFlux(field, flux, space, flow);
     return 0;
 }
 /*
  * If this is a restart run, then initialize flow field by reading field data
  * from restart files.
  */
-static int RestartInitializer(Field *field, Flux *flux, Space *space, Time *time,
+static int RestartInitializer(Field *field, const Space *space, Time *time,
         const Partition *part, const Flow *flow)
 {
     ShowInformation("  Restart run initializing...");
@@ -108,11 +103,6 @@ static int RestartInitializer(Field *field, Flux *flux, Space *space, Time *time
      * Load data from Ensight restart files.
      */
     LoadComputedDataEnsight(field->Un, space, time, part, flow);
-    /*
-     * Compute flux variables
-     */
-    ComputeNonviscousFlux(field, flux, space, flow);
-    ComputeViscousFlux(field, flux, space, flow);
     return 0;
 }
 /* a good practice: end file with a newline */

@@ -26,7 +26,7 @@
  *      non restart -- initialize by specified data.
  *      restart -- initialize by restart data.
  */
-extern int InitializeFlowField(Field *, Flux *, Space *, const Particle *, Time *,
+extern int InitializeFlowField(Field *, const Space *, const Particle *, Time *,
         const Partition *, const Flow *);
 #endif
 /* a good practice: end file with a newline */

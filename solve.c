@@ -15,12 +15,11 @@
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int Solve(Field *field, Flux *flux, Space *space, Particle *particle,
-        Time *time, const Partition *part, const Fluid *fluid,
-        const Flow *flow)
+int Solve(Field *field, Space *space, Particle *particle, Time *time, 
+        const Partition *part, const Flow *flow)
 {
-    InitializeFlowField(field, flux, space, particle, time, part, flow);
-    RungeKuttaTimeMarching(field, flux, space, particle, time, part, fluid, flow);
+    InitializeFlowField(field, space, particle, time, part, flow);
+    RungeKuttaTimeMarching(field, space, particle, time, part, flow);
     return 0;
 }
 /* a good practice: end file with a newline */

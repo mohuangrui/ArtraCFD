@@ -22,8 +22,8 @@ static Real Max(const Real valueA, const Real valueB);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int TVD(Real *fieldDataU, const Real *fieldDataUn, const Flux *flux, const Space *space, 
-        const Partition *part, const Fluid *fluid)
+int TVD(Real *fieldDataU, const Real *fieldDataUn, const Space *space, 
+        const Partition *part, const Flow *flow)
 {
     /*
      * Decompose the conservative field variable into each component.
@@ -43,45 +43,15 @@ int TVD(Real *fieldDataU, const Real *fieldDataUn, const Flux *flux, const Space
     /*
      * Decompose the nonviscous flux variables into each component
      */
-    const Real *Fx[5] = {
-        flux->Fx + 0 * space->nMax,
-        flux->Fx + 1 * space->nMax,
-        flux->Fx + 2 * space->nMax,
-        flux->Fx + 3 * space->nMax,
-        flux->Fx + 4 * space->nMax};
-    const Real *Fy[5] = {
-        flux->Fy + 0 * space->nMax,
-        flux->Fy + 1 * space->nMax,
-        flux->Fy + 2 * space->nMax,
-        flux->Fy + 3 * space->nMax,
-        flux->Fy + 4 * space->nMax};
-    const Real *Fz[5] = {
-        flux->Fz + 0 * space->nMax,
-        flux->Fz + 1 * space->nMax,
-        flux->Fz + 2 * space->nMax,
-        flux->Fz + 3 * space->nMax,
-        flux->Fz + 4 * space->nMax};
+    Real Fx[5] = {0, 0, 0, 0, 0};
+    Real Fy[5] = {0, 0, 0, 0, 0};
+    Real Fz[5] = {0, 0, 0, 0, 0};
     /*
      * Decompose the viscous flux variables into each component
      */
-    const Real *Gx[5] = {
-        flux->Gx + 0 * space->nMax,
-        flux->Gx + 1 * space->nMax,
-        flux->Gx + 2 * space->nMax,
-        flux->Gx + 3 * space->nMax,
-        flux->Gx + 4 * space->nMax};
-    const Real *Gy[5] = {
-        flux->Gy + 0 * space->nMax,
-        flux->Gy + 1 * space->nMax,
-        flux->Gy + 2 * space->nMax,
-        flux->Gy + 3 * space->nMax,
-        flux->Gy + 4 * space->nMax};
-    const Real *Gz[5] = {
-        flux->Gz + 0 * space->nMax,
-        flux->Gz + 1 * space->nMax,
-        flux->Gz + 2 * space->nMax,
-        flux->Gz + 3 * space->nMax,
-        flux->Gz + 4 * space->nMax};
+    Real Gx[5] = {0, 0, 0, 0, 0};
+    Real Gy[5] = {0, 0, 0, 0, 0};
+    Real Gz[5] = {0, 0, 0, 0, 0};
     /*
      * Define the primitive field variables.
      */
@@ -112,8 +82,8 @@ int TVD(Real *fieldDataU, const Real *fieldDataUn, const Flux *flux, const Space
      */
     return 0;
 }
-static int Lx(Real *fieldDataU, const Real *fieldDataUn, const Flux *flux, const Space *space, 
-        const Partition *part, const Fluid *fluid)
+static int Lx(Real *fieldDataU, const Real *fieldDataUn, const Space *space, 
+        const Partition *part, const Flow *flow)
 {
     /*
      * Decompose the conservative field variable into each component.
@@ -133,21 +103,11 @@ static int Lx(Real *fieldDataU, const Real *fieldDataUn, const Flux *flux, const
     /*
      * Decompose the nonviscous flux variables into each component
      */
-    const Real *Fx[5] = {
-        flux->Fx + 0 * space->nMax,
-        flux->Fx + 1 * space->nMax,
-        flux->Fx + 2 * space->nMax,
-        flux->Fx + 3 * space->nMax,
-        flux->Fx + 4 * space->nMax};
+    Real Fx[5] = {0, 0, 0, 0, 0};
     /*
      * Decompose the viscous flux variables into each component
      */
-    const Real *Gx[5] = {
-        flux->Gx + 0 * space->nMax,
-        flux->Gx + 1 * space->nMax,
-        flux->Gx + 2 * space->nMax,
-        flux->Gx + 3 * space->nMax,
-        flux->Gx + 4 * space->nMax};
+    Real Gx[5] = {0, 0, 0, 0, 0};
     /*
      * Define the primitive field variables.
      */
