@@ -475,17 +475,6 @@ typedef struct {
     Real *Um; /* conservative flow variables at time n-1 */
 }Field;
 /*
- * Flux variables
- */
-typedef struct {
-    Real *Fx; /* non-viscous flux vector at x direction */
-    Real *Fy; /* non-viscous flux vector at y direction */
-    Real *Fz; /* non-viscous flux vector at z direction */
-    Real *Gx; /* viscous flux vector at x direction */
-    Real *Gy; /* viscous flux vector at y direction */
-    Real *Gz; /* viscous flux vector at z direction */
-}Flux;
-/*
  * Space domain parameters
  */
 typedef struct {
@@ -531,35 +520,20 @@ typedef struct {
     int outputCount; /* exporting data count */
 }Time;
 /*
- * Fluid properties
- */
-typedef struct {
-    Real density; /* fluid density */
-    Real nu; /* kinematic viscosity */
-    Real alpha; /* thermal diffusivity */
-}Fluid;
-/*
  * Flow properties and physics parameters
  */
 typedef struct {
-    Real mu; /* generalized normalized dynamic viscosity */
-    Real heatK; /* generalized normalized thermal conductivity */
-    Real numMa; /* Mach number */
-    Real numRe; /* Reynolds number */
-    Real numPr; /* Prandtl number */
+    Real refMa; /* reference Mach number */
+    Real refRe; /* reference Reynolds number */
+    Real refPr; /* reference Prandtl number */
     Real gamma; /* heat capacity ratio */
     Real gasR; /* the gas constant */
     Real cv; /* specific heat capacity at constant volume */
+    Real refLength; /* characteristic length */
+    Real refDensity; /* characteristic density */
+    Real refVelocity;  /*characteristic velocity */
+    Real refTemperature; /* characteristic temperature */
 }Flow;
-/*
- * Characteristic values for normalization
- */
-typedef struct {
-    Real length; /* characteristic length */
-    Real density; /* characteristic density */
-    Real velocity;  /*characteristic velocity */
-    Real temperature; /* characteristic temperature */
-}Reference;
 /*
  * Domain partition structure
  */

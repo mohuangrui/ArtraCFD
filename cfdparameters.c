@@ -110,23 +110,19 @@ static int InitializeCFDParameters(Space *space, Time *time,
     /* fluid and flow */
     flow->gamma = 1.4;
     flow->gasR = 8.314462175;
-    /* mach number */
+    /* reference Mach number */
     scale = sqrt(flow->gamma * flow->gasR * reference->temperature);
-    flow->numMa = reference->velocity / scale;
-    /* Reynolds number */
+    flow->refMa = reference->velocity / scale;
+    /* reference Reynolds number */
     scale = reference->density * reference->velocity * reference->length;
-    flow->numRe = scale / (fluid->density * fluid->nu);
-    /* prandtl number */
-    flow->numPr = fluid->nu / fluid->alpha;
+    flow->refRe = scale / (fluid->density * fluid->nu);
     /*
      * Now replace some parameters by general forms that are valid
      * for both dimensional and nondimensional N-S equations, since
      * dimensional forms can be seen as normalized by reference 1.
      */
-    flow->gasR = 1 / (flow->gamma * flow->numMa * flow->numMa);
+    flow->gasR = 1 / (flow->gamma * flow->referenceMa * flow->referenceMa);
     flow->cv = flow->gasR / (flow->gamma - 1);
-    flow->mu = 1 / flow->numRe;
-    flow->heatK = flow->gamma * flow->cv * flow->mu / flow->numPr;
     return 0;
 }
 /* a good practice: end file with a newline */

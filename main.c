@@ -26,16 +26,7 @@ int main(int argc, char *argv[])
     Field theField = { /* flow field variables */
         .U = NULL,
         .Un = NULL,
-        .Um = NULL,
-    };
-    Flux theFlux = { /* flux variables */
-        .Fx = NULL,
-        .Fy = NULL,
-        .Fz = NULL,
-        .Gx = NULL,
-        .Gy = NULL,
-        .Gz = NULL,
-    };
+        .Um = NULL};
     Space theSpace = { /* space dimensions */
         .nx = 0,
         .ny = 0,
@@ -44,12 +35,12 @@ int main(int argc, char *argv[])
         .iMax = 0,
         .jMax = 0,
         .kMax = 0,
+        .nMax = 0,
         .dx = 0.0,
         .dy = 0.0,
         .dz = 0.0,
         .ghostFlag = NULL,
-        .geoID = NULL
-    };
+        .geoID = NULL};
     Particle theParticle = { /* particle entities */
         .totalN = 0,
         .x = NULL,
@@ -58,8 +49,7 @@ int main(int argc, char *argv[])
         .r = NULL,
         .u = NULL,
         .v = NULL,
-        .w = NULL
-    };
+        .w = NULL};
     Time theTime = { /* time dimensions */
         .restart = 0,
         .totalTime = 0.0,
@@ -68,29 +58,19 @@ int main(int argc, char *argv[])
         .numCFL = 0.0,
         .totalStep = 0,
         .stepCount = 0,
-        .totalOutputTimes = 0
-    };
-    Fluid theFluid = { /* fluid properties */
-        .density = 0.0,
-        .nu = 0.0,
-        .alpha = 0.0
-    };
+        .totalOutputTimes = 0,
+        .outputCount = 0};
     Flow theFlow = { /* flow parameters */
-        .mu = 0.0,
-        .heatK = 0.0,
-        .numMa = 0.0,
-        .numRe = 0.0,
-        .numPr = 0.0,
+        .refMa = 0.0,
+        .refRe = 0.0,
+        .refPr = 0.0,
         .gamma = 0.0,
         .gasR = 0.0,
-        .cv = 0.0
-    };
-    Reference theReference = { /* normalization values */
-        .length = 0.0,
-        .density = 0.0,
-        .velocity = 0.0,
-        .temperature = 0.0
-    };
+        .cv = 0.0,
+        .refLength = 0.0,
+        .refDensity = 0.0,
+        .refVelocity = 0.0,
+        .refTemperature = 0.0};
     Partition thePart = { /* domain partition control */
         .totalN = 0,
         .idxHead = NULL,
@@ -101,12 +81,10 @@ int main(int argc, char *argv[])
         .iSub = NULL,
         .iSup = NULL,
         .nameHead = NULL,
-        .nameLength = 0
-    };
+        .nameLength = 0};
     Control theControl = { /* program overall control */
         .runMode = 'i',
-        .processorN = 1
-    };
+        .processorN = 1};
     /*
      * Program Entrance
      */
@@ -114,17 +92,15 @@ int main(int argc, char *argv[])
     /*
      * Preprocessing
      */
-    Preprocess(&theField, &theFlux, &theSpace, &theParticle, &theTime, 
-            &thePart, &theFluid, &theFlow, &theReference);
+    Preprocess(&theField, &theSpace, &theParticle, &theTime, &thePart, &theFlow);
     /*
      * Solve
      */
-    Solve(&theField, &theFlux, &theSpace, &theParticle, &theTime, 
-            &thePart, &theFluid, &theFlow);
+    Solve(&theField, &theSpace, &theParticle, &theTime, &thePart, &theFlow);
     /*
      * Postprocessing
      */
-    Postprocess(&theField, &theFlux, &theSpace, &theParticle, &thePart);
+    Postprocess(&theField, &theSpace, &theParticle, &thePart);
     /*
      * Successfully return
      */
