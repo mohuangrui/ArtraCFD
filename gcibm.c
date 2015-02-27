@@ -11,7 +11,6 @@
 #include "gcibm.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
-#include "cfdcommons.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
@@ -178,9 +177,6 @@ int BoundaryConditionGCIBM(Field *field, const Space *space, const Particle *par
     int imageI = 0; /* node coordinates of the image point of the ghost */
     int imageJ = 0; /* node coordinates of the image point of the ghost */
     int imageK = 0; /* node coordinates of the image point of the ghost */
-    const Real dx = MinPositive(space->dx, -1); /* needed when use as denominator */
-    const Real dy = MinPositive(space->dy, -1); /* needed when use as denominator */
-    const Real dz = MinPositive(space->dz, -1); /* needed when use as denominator */
     for (k = part->kSub[12]; k < part->kSup[12]; ++k) {
         for (j = part->jSub[12]; j < part->jSup[12]; ++j) {
             for (i = part->iSub[12]; i < part->iSup[12]; ++i) {
@@ -200,13 +196,13 @@ int BoundaryConditionGCIBM(Field *field, const Space *space, const Particle *par
                 distY = (j - space->ng) * space->dy - particle->y[space->geoID[idx]];
                 distZ = (k - space->ng) * space->dz - particle->z[space->geoID[idx]];
                 distToCenter = sqrt(distX * distX + distY * distY + distZ * distZ);
-                distToSurface = radius - distToCenter;
                 normalX = distX / distToCenter;
                 normalY = distY / distToCenter;
                 normalZ = distZ / distToCenter;
-                imageI = i + (int)(2 * distToSurface * normalX / dx);
-                imageJ = j + (int)(2 * distToSurface * normalY / dy);
-                imageK = k + (int)(2 * distToSurface * normalZ / dz);
+                distToSurface = radius - distToCenter;
+                imageI = i + (int)(2 * distToSurface * normalX / space->dx);
+                imageJ = j + (int)(2 * distToSurface * normalY / space->dy);
+                imageK = k + (int)(2 * distToSurface * normalZ / space->dz);
             }
         }
     }

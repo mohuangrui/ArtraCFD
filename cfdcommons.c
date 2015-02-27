@@ -12,6 +12,11 @@
 #include <math.h> /* common mathematical functions */
 #include "commons.h"
 /****************************************************************************
+ * Static Function Declarations
+ ****************************************************************************/
+static Real Min(const Real valueA, const Real valueB);
+static Real Max(const Real valueA, const Real valueB);
+/****************************************************************************
  * Function definitions
  ****************************************************************************/
 int ComputeNonviscousFlux(const Field *field, Flux *flux, const Space *space, const Flow *flow)
@@ -161,9 +166,6 @@ int ComputeViscousFlux(const Field *field, Flux *flux, const Space *space, const
     Real dT_dx = 0; /* partial T partial x */
     Real dT_dy = 0;
     Real dT_dz = 0;
-    const Real dx = MinPositive(space->dx, -1); /* needed when use as denominator */
-    const Real dy = MinPositive(space->dy, -1); /* needed when use as denominator */
-    const Real dz = MinPositive(space->dz, -1); /* needed when use as denominator */
     /*
      * Indices
      */
@@ -213,10 +215,10 @@ int ComputeViscousFlux(const Field *field, Flux *flux, const Space *space, const
                 eT = Un[4][idxF] / rho;
                 T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
 
-                du_dz = (u_h - u) / (2 * dz);
-                dv_dz = (v_h - v) / (2 * dz);
-                dw_dz = (w_h - w) / (2 * dz);
-                dT_dz = (T_h - T) / (2 * dz);
+                du_dz = (u_h - u) / (2 * space->dz);
+                dv_dz = (v_h - v) / (2 * space->dz);
+                dw_dz = (w_h - w) / (2 * space->dz);
+                dT_dz = (T_h - T) / (2 * space->dz);
 
                 /* calculate derivatives in y direction */
                 rho_h = Un[0][idxN];
@@ -233,10 +235,10 @@ int ComputeViscousFlux(const Field *field, Flux *flux, const Space *space, const
                 eT = Un[4][idxS] / rho;
                 T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
 
-                du_dy = (u_h - u) / (2 * dy);
-                dv_dy = (v_h - v) / (2 * dy);
-                dw_dy = (w_h - w) / (2 * dy);
-                dT_dy = (T_h - T) / (2 * dy);
+                du_dy = (u_h - u) / (2 * space->dy);
+                dv_dy = (v_h - v) / (2 * space->dy);
+                dw_dy = (w_h - w) / (2 * space->dy);
+                dT_dy = (T_h - T) / (2 * space->dy);
 
                 /* calculate derivatives in x direction */
                 rho_h = Un[0][idxE];
@@ -253,10 +255,10 @@ int ComputeViscousFlux(const Field *field, Flux *flux, const Space *space, const
                 eT = Un[4][idxW] / rho;
                 T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
 
-                du_dx = (u_h - u) / (2 * dx);
-                dv_dx = (v_h - v) / (2 * dx);
-                dw_dx = (w_h - w) / (2 * dx);
-                dT_dx = (T_h - T) / (2 * dx);
+                du_dx = (u_h - u) / (2 * space->dx);
+                dv_dx = (v_h - v) / (2 * space->dx);
+                dw_dx = (w_h - w) / (2 * space->dx);
+                dT_dx = (T_h - T) / (2 * space->dx);
 
                 /* regain the primitive variables in current point */
                 rho = Un[0][idx];
@@ -346,29 +348,16 @@ Real ComputeTimeStepByCFL(const Field *field, const Space *space, const Time *ti
             }
         }
     }
-    return time->numCFL * MinPositive(space->dx, MinPositive(space->dy, space->dz)) / velocityMax;
+    return time->numCFL * Min(space->dx, Min(space->dy, space->dz)) / velocityMax;
 }
-Real MinPositive(const Real valueA, const Real valueB)
-{
-    if ((valueA <= 0) && (valueB <= 0)) {
-        return 1e38;
-    }
-    if (valueA <= 0) {
-        return valueB;
-    }
-    if (valueB <= 0) {
-        return valueA;
-    }
-    return Min(valueA, valueB);
-}
-Real Min(const Real valueA, const Real valueB)
+static Real Min(const Real valueA, const Real valueB)
 {
     if (valueA < valueB) {
         return valueA;
     }
     return valueB;
 }
-Real Max(const Real valueA, const Real valueB)
+static Real Max(const Real valueA, const Real valueB)
 {
     if (valueA > valueB) {
         return valueA;

@@ -10,8 +10,15 @@
 #include "tvd.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
-#include "cfdcommons.h"
 #include "commons.h"
+/****************************************************************************
+ * Static Function Declarations
+ ****************************************************************************/
+static Real Q(const Real x);
+static int sgn(const Real x);
+static Real minmod(const Real x, const Real y, const Real z);
+static Real Min(const Real valueA, const Real valueB);
+static Real Max(const Real valueA, const Real valueB);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -85,12 +92,6 @@ int TVD(Real *fieldDataU, const Real *fieldDataUn, const Flux *flux, const Space
     Real p = 0;
     Real eT = 0;
     /*
-     * Auxiliary variables
-     */
-    const Real dx = MinPositive(space->dx, -1);
-    const Real dy = MinPositive(space->dy, -1);
-    const Real dz = MinPositive(space->dz, -1);
-    /*
      * Indices
      */
     int k = 0; /* loop count */
@@ -157,10 +158,6 @@ static int Lx(Real *fieldDataU, const Real *fieldDataUn, const Flux *flux, const
     Real p = 0;
     Real eT = 0;
     /*
-     * Auxiliary variables
-     */
-    const Real dx = MinPositive(space->dx, -1);
-    /*
      * Indices
      */
     int k = 0; /* loop count */
@@ -196,6 +193,19 @@ static Real minmod(const Real x, const Real y, const Real z)
     }
     return (sgn(x) * Min(fabs(x), Min(fabs(y), fabs(z))));
 }
-
+static Real Min(const Real valueA, const Real valueB)
+{
+    if (valueA < valueB) {
+        return valueA;
+    }
+    return valueB;
+}
+static Real Max(const Real valueA, const Real valueB)
+{
+    if (valueA > valueB) {
+        return valueA;
+    }
+    return valueB;
+}
 /* a good practice: end file with a newline */
 

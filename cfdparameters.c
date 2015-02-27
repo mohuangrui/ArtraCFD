@@ -95,6 +95,15 @@ static int InitializeCFDParameters(Space *space, Time *time,
     space->dx = scale * space->dx / (space->nx - 1); /* update to normalized real dx */
     space->dy = scale * space->dy / (space->ny - 1); /* update to normalized real dy */
     space->dz = scale * space->dz / (space->nz - 1); /* update to normalized real dz */
+    if (space->dx <= 0) { /* zero value should have zero reciprocal */
+        space->dx = 1e38;
+    }
+    if (space->dy <= 0) {
+        space->dy = 1e38;
+    }
+    if (space->dz <= 0) {
+        space->dz = 1e38;
+    }
     /* time */
     scale = (reference->velocity / reference->length);
     time->totalTime = scale * time->totalTime;

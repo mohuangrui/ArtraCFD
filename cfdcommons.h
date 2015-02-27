@@ -43,38 +43,6 @@ extern int ComputeViscousFlux(const Field *, Flux *, const Space *, const Flow *
  */
 extern Real ComputeTimeStepByCFL(const Field *, const Space *, const Time *, 
         const Partition *, const Flow *);
-/*
- * Minimum positive
- *
- * Function
- *      Find the minimum positive value among two values, if none of them is
- *      positive, return a very large number instead.
- *
- * Returns
- *      a real -- the smaller value which is positive
- *      1e38 -- if none of them is positive
- */
-extern Real MinPositive(const Real valueA, const Real valueB);
-/*
- * Minimum
- *
- * Function
- *      Find the minimum value among two values.
- *
- * Returns
- *      a real -- the smaller value
- */
-extern Real Min(const Real valueA, const Real valueB);
-/*
- * Maximum
- *
- * Function
- *      Find the maximum value among two values.
- *
- * Returns
- *      a real -- the larger value
- */
-extern Real Max(const Real valueA, const Real valueB);
 #endif
 /* a good practice: end file with a newline */
 

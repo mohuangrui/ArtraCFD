@@ -35,9 +35,6 @@ int main(int argc, char *argv[])
         .Gx = NULL,
         .Gy = NULL,
         .Gz = NULL,
-        .eigenValue = NULL,
-        .leftMatrix = NULL,
-        .rightMatrix = NULL
     };
     Space theSpace = { /* space dimensions */
         .nx = 0,
