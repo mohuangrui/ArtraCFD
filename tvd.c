@@ -19,6 +19,10 @@ static int sgn(const Real x);
 static Real minmod(const Real x, const Real y, const Real z);
 static Real Min(const Real valueA, const Real valueB);
 static Real Max(const Real valueA, const Real valueB);
+static int ComputeNonviscousFlux(const Real U[], Real Fx[], Real Fy[], Real Fz[],
+        const Flow *flow);
+static int ComputeViscousFlux(const Real *U, Real Gx[], Real Gy[], Real Gz[], 
+        const int k, const int j, const int i, const Space *space, const Flow *flow);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -61,6 +65,45 @@ static int Lx(Real *U, const Real *Un, const Space *space, const Partition *part
     int idxW = 0; /* index at West */
     int idxE = 0; /* index at East */
     return 0;
+}
+static Real Q(const Real x)
+{
+    const Real e = 0.01;
+    if (fabs(x) >= e) {
+        return fabs(x);
+    }
+    return (0.5 * (x * x / e + e));
+}
+static int sgn(const Real x)
+{
+    if (x > 0) {
+        return 1;
+    }
+    if (x < 0) {
+        return -1;
+    }
+    return 0;
+}
+static Real minmod(const Real x, const Real y, const Real z)
+{
+    if ((x * y <= 0) || (x * z <= 0)) {
+        return 0;
+    }
+    return (sgn(x) * Min(fabs(x), Min(fabs(y), fabs(z))));
+}
+static Real Min(const Real valueA, const Real valueB)
+{
+    if (valueA < valueB) {
+        return valueA;
+    }
+    return valueB;
+}
+static Real Max(const Real valueA, const Real valueB)
+{
+    if (valueA > valueB) {
+        return valueA;
+    }
+    return valueB;
 }
 static int ComputeNonviscousFlux(const Real U[], Real Fx[], Real Fy[], Real Fz[], const Flow *flow)
 {
@@ -264,7 +307,7 @@ static int ComputeViscousFlux(const Real *U, Real Gx[], Real Gy[], Real Gz[],
     /*
      * Calculate dynamic viscosity and heat conductivity
      */
-    mu = flow->refMu * (pow(T * flow->refTemperature, 1.5) / (T * flow->refTemperature + 110));
+    mu = 1.45e-6 * (pow(T * flow->refTemperature, 1.5) / (T * flow->refTemperature + 110)) / flow->refMu ;
     heatK = flow->gamma * flow->cv * mu / flow->refPr;
 
     divV = du_dx + dv_dy + dw_dz;
@@ -296,45 +339,6 @@ static int ComputeViscousFlux(const Real *U, Real Gx[], Real Gy[], Real Gz[],
             u * Gz[1] + v * Gz[2] + w * Gz[3];
     }
     return 0;
-}
-static Real Q(const Real x)
-{
-    const Real e = 0.01;
-    if (fabs(x) >= e) {
-        return fabs(x);
-    }
-    return (0.5 * (x * x / e + e));
-}
-static int sgn(const Real x)
-{
-    if (x > 0) {
-        return 1;
-    }
-    if (x < 0) {
-        return -1;
-    }
-    return 0;
-}
-static Real minmod(const Real x, const Real y, const Real z)
-{
-    if ((x * y <= 0) || (x * z <= 0)) {
-        return 0;
-    }
-    return (sgn(x) * Min(fabs(x), Min(fabs(y), fabs(z))));
-}
-static Real Min(const Real valueA, const Real valueB)
-{
-    if (valueA < valueB) {
-        return valueA;
-    }
-    return valueB;
-}
-static Real Max(const Real valueA, const Real valueB)
-{
-    if (valueA > valueB) {
-        return valueA;
-    }
-    return valueB;
 }
 /* a good practice: end file with a newline */
 
