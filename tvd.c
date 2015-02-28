@@ -62,7 +62,7 @@ static int Lx(Real *U, const Real *Un, const Space *space, const Partition *part
     int idxE = 0; /* index at East */
     return 0;
 }
-static int ComputeNonviscousFlux(const Real U[], Real Fx[], Real Fy[], Real Fz[], const Space *space, const Flow *flow)
+static int ComputeNonviscousFlux(const Real U[], Real Fx[], Real Fy[], Real Fz[], const Flow *flow)
 {
     /*
      * Define the primitive field variables.
@@ -74,26 +74,33 @@ static int ComputeNonviscousFlux(const Real U[], Real Fx[], Real Fy[], Real Fz[]
     Real eT = U[4] / rho;
     Real p = (flow->gamma - 1) * rho * (eT - 0.5 * (u * u + v * v + w * w));
 
-    Fx[0] = rho * u;
-    Fx[1] = rho * u * u + p;
-    Fx[2] = rho * u * v;
-    Fx[3] = rho * u * w;
-    Fx[4] = (rho * eT + p) * u;
+    if (Fx != NULL) {
+        Fx[0] = rho * u;
+        Fx[1] = rho * u * u + p;
+        Fx[2] = rho * u * v;
+        Fx[3] = rho * u * w;
+        Fx[4] = (rho * eT + p) * u;
+    }
 
-    Fy[0] = rho * v;
-    Fy[1] = rho * v * u;
-    Fy[2] = rho * v * v + p;
-    Fy[3] = rho * v * w;
-    Fy[4] = (rho * eT + p) * v;
+    if (Fy != NULL) {
+        Fy[0] = rho * v;
+        Fy[1] = rho * v * u;
+        Fy[2] = rho * v * v + p;
+        Fy[3] = rho * v * w;
+        Fy[4] = (rho * eT + p) * v;
+    }
 
-    Fz[0] = rho * w;
-    Fz[1] = rho * w * u;
-    Fz[2] = rho * w * v;
-    Fz[3] = rho * w * w + p;
-    Fz[4] = (rho * eT + p) * w;
+    if (Fz != NULL) {
+        Fz[0] = rho * w;
+        Fz[1] = rho * w * u;
+        Fz[2] = rho * w * v;
+        Fz[3] = rho * w * w + p;
+        Fz[4] = (rho * eT + p) * w;
+    }
     return 0;
 }
-static int ComputeViscousFlux(const Real *U, Real Gx[], Real Gy[], Real Gz[], const int k, const int j, const int i, const Space *space, const Flow *flow)
+static int ComputeViscousFlux(const Real *U, Real Gx[], Real Gy[], Real Gz[], 
+        const int k, const int j, const int i, const Space *space, const Flow *flow)
 {
     /*
      * Define the primitive field variables.
@@ -113,8 +120,8 @@ static int ComputeViscousFlux(const Real *U, Real Gx[], Real Gy[], Real Gz[], co
     /*
      * Fluid and flow properties
      */
-    Real mu =0; /* normalized dynamic viscosity */
-    Real heatK =0; /* normalized heat conductivity */
+    Real mu = 0; /* normalized dynamic viscosity */
+    Real heatK = 0; /* normalized heat conductivity */
     /*
      * Auxiliary variables
      */
@@ -143,17 +150,48 @@ static int ComputeViscousFlux(const Real *U, Real Gx[], Real Gy[], Real Gz[], co
     int idxB = 0; /* index at Back */
     /*
      * Generally the viscous terms will only be discretized by central
-     * difference scheme, therefore, only the viscous variables at 
-     * the boudary region and interior region need to be calculated, 
-     * there is no need to do this for outer ghost cells.
+     * difference scheme, and the calculation will be conducted on boundary
+     * nodes and interior nodes. However, for interior ghost nodes the central
+     * difference scheme can't be applied because of lacking stencil. Thus,
+     * they need to be identified and modified.
      */
-    idx = ((k * space->jMax + j) * space->iMax + i) * 5;
-    idxW = ((k * space->jMax + j) * space->iMax + i - 1) * 5;
-    idxE = ((k * space->jMax + j) * space->iMax + i + 1) * 5;
-    idxS = ((k * space->jMax + j - 1) * space->iMax + i) * 5;
-    idxN = ((k * space->jMax + j + 1) * space->iMax + i) * 5;
-    idxF = (((k - 1) * space->jMax + j) * space->iMax + i) * 5;
-    idxB = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
+    idx = (k * space->jMax + j) * space->iMax + i;
+    idxW = (k * space->jMax + j) * space->iMax + i - 1;
+    idxE = (k * space->jMax + j) * space->iMax + i + 1;
+    idxS = (k * space->jMax + j - 1) * space->iMax + i;
+    idxN = (k * space->jMax + j + 1) * space->iMax + i;
+    idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
+    idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
+    if (space->ghostFlag[idx] == 1) { /* interior ghost used Forward or Backward scheme */
+        if (space->ghostFlag[idxW] == -1) { 
+            idxW = idx;
+        }
+        if (space->ghostFlag[idxE] == -1) {
+            idxE = idx;
+        }
+        if (space->ghostFlag[idxS] == -1) {
+            idxS = idx;
+        }
+        if (space->ghostFlag[idxN] == -1) {
+            idxN = idx;
+        }
+        if (space->ghostFlag[idxF] == -1) {
+            idxF = idx;
+        }
+        if (space->ghostFlag[idxB] == -1) {
+            idxB = idx;
+        }
+    }
+    /*
+     * Now transform indices to refer field variables
+     */
+    idx = idx * 5;
+    idxW = idxW * 5;
+    idxE = idxE * 5;
+    idxS = idxS * 5;
+    idxN = idxN * 5;
+    idxF = idxF * 5;
+    idxB = idxB * 5;
 
     /* calculate derivatives in z direction */
     rho_h = U[idxB+0];
@@ -220,29 +258,43 @@ static int ComputeViscousFlux(const Real *U, Real Gx[], Real Gy[], Real Gz[], co
     u = U[idx+1] / rho;
     v = U[idx+2] / rho;
     w = U[idx+3] / rho;
+    eT = U[idx+4] / rho;
+    T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
+
+    /*
+     * Calculate dynamic viscosity and heat conductivity
+     */
+    mu = flow->refMu * (pow(T * flow->refTemperature, 1.5) / (T * flow->refTemperature + 110));
+    heatK = flow->gamma * flow->cv * mu / flow->refPr;
 
     divV = du_dx + dv_dy + dw_dz;
 
-    Gx[0] = 0;
-    Gx[1] = mu * (2 * du_dx - (2/3) * divV);
-    Gx[2] = mu * (du_dy + dv_dx);
-    Gx[3] = mu * (du_dz + dw_dx);
-    Gx[4] = heatK * dT_dx + 
-        u * Gx[1] + v * Gx[2] + w * Gx[3];
+    if (Gx != NULL) {
+        Gx[0] = 0;
+        Gx[1] = mu * (2 * du_dx - (2/3) * divV);
+        Gx[2] = mu * (du_dy + dv_dx);
+        Gx[3] = mu * (du_dz + dw_dx);
+        Gx[4] = heatK * dT_dx + 
+            u * Gx[1] + v * Gx[2] + w * Gx[3];
+    }
 
-    Gy[0] = 0;
-    Gy[1] = Gx[2];
-    Gy[2] = mu * (2 * dv_dy - (2/3) * divV);
-    Gy[3] = mu * (dv_dz + dw_dy);
-    Gy[4] = heatK * dT_dy + 
-        u * Gy[1] + v * Gy[2] + w * Gy[3];
+    if (Gy != NULL) {
+        Gy[0] = 0;
+        Gy[1] = mu * (dv_dx + du_dy);
+        Gy[2] = mu * (2 * dv_dy - (2/3) * divV);
+        Gy[3] = mu * (dv_dz + dw_dy);
+        Gy[4] = heatK * dT_dy + 
+            u * Gy[1] + v * Gy[2] + w * Gy[3];
+    }
 
-    Gz[0] = 0;
-    Gz[1] = Gx[3];
-    Gz[2] = Gy[3];
-    Gz[3] = mu * (2 * dw_dz - (2/3) * divV);
-    Gz[4] = heatK * dT_dz + 
-        u * Gz[1] + v * Gz[2] + w * Gz[3];
+    if (Gz != NULL) {
+        Gz[0] = 0;
+        Gz[1] = mu * (dw_dx + du_dz);
+        Gz[2] = mu * (dw_dy + dv_dz);
+        Gz[3] = mu * (2 * dw_dz - (2/3) * divV);
+        Gz[4] = heatK * dT_dz + 
+            u * Gz[1] + v * Gz[2] + w * Gz[3];
+    }
     return 0;
 }
 static Real Q(const Real x)
