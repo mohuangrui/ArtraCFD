@@ -49,7 +49,7 @@ static int ProgramMemoryAllocate(Field *field, Space *space)
     /*
      * Conservative flow variables: rho, rho_u, rho_v, rho_w, rho_eT
      */
-    int idxMax = 5 * space->nMax;
+    int idxMax = space->nMax * 5;
     field->U = AssignStorage(idxMax, "Real");
     field->Un = AssignStorage(idxMax, "Real");
     field->Um = AssignStorage(idxMax, "Real");

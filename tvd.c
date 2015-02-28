@@ -22,58 +22,8 @@ static Real Max(const Real valueA, const Real valueB);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int TVD(Real *fieldDataU, const Real *fieldDataUn, const Space *space, 
-        const Partition *part, const Flow *flow)
+int TVD(Real *U, const Real *Un, const Space *space, const Partition *part, const Flow *flow)
 {
-    /*
-     * Decompose the conservative field variable into each component.
-     */
-    Real *U[5] = {
-        fieldDataU + 0 * space->nMax,
-        fieldDataU + 1 * space->nMax,
-        fieldDataU + 2 * space->nMax,
-        fieldDataU + 3 * space->nMax,
-        fieldDataU + 4 * space->nMax};
-    const Real *Un[5] = {
-        fieldDataUn + 0 * space->nMax,
-        fieldDataUn + 1 * space->nMax,
-        fieldDataUn + 2 * space->nMax,
-        fieldDataUn + 3 * space->nMax,
-        fieldDataUn + 4 * space->nMax};
-    /*
-     * Decompose the nonviscous flux variables into each component
-     */
-    Real Fx[5] = {0, 0, 0, 0, 0};
-    Real Fy[5] = {0, 0, 0, 0, 0};
-    Real Fz[5] = {0, 0, 0, 0, 0};
-    /*
-     * Decompose the viscous flux variables into each component
-     */
-    Real Gx[5] = {0, 0, 0, 0, 0};
-    Real Gy[5] = {0, 0, 0, 0, 0};
-    Real Gz[5] = {0, 0, 0, 0, 0};
-    /*
-     * Define the primitive field variables.
-     */
-    Real rho = 0; 
-    Real u = 0;
-    Real v = 0;
-    Real w = 0;
-    Real p = 0;
-    Real eT = 0;
-    /*
-     * Indices
-     */
-    int k = 0; /* loop count */
-    int j = 0; /* loop count */
-    int i = 0; /* loop count */
-    int idx = 0; /* calculated index */
-    int idxW = 0; /* index at West */
-    int idxE = 0; /* index at East */
-    int idxS = 0; /* index at South */
-    int idxN = 0; /* index at North */
-    int idxF = 0; /* index at Front */
-    int idxB = 0; /* index at Back */
     /*
      * When exchange a large bunch of data between two arrays, if there is no
      * new data generation but just data exchange and update, then the rational
@@ -82,24 +32,8 @@ int TVD(Real *fieldDataU, const Real *fieldDataUn, const Space *space,
      */
     return 0;
 }
-static int Lx(Real *fieldDataU, const Real *fieldDataUn, const Space *space, 
-        const Partition *part, const Flow *flow)
+static int Lx(Real *U, const Real *Un, const Space *space, const Partition *part, const Flow *flow)
 {
-    /*
-     * Decompose the conservative field variable into each component.
-     */
-    Real *U[5] = {
-        fieldDataU + 0 * space->nMax,
-        fieldDataU + 1 * space->nMax,
-        fieldDataU + 2 * space->nMax,
-        fieldDataU + 3 * space->nMax,
-        fieldDataU + 4 * space->nMax};
-    const Real *Un[5] = {
-        fieldDataUn + 0 * space->nMax,
-        fieldDataUn + 1 * space->nMax,
-        fieldDataUn + 2 * space->nMax,
-        fieldDataUn + 3 * space->nMax,
-        fieldDataUn + 4 * space->nMax};
     /*
      * Decompose the nonviscous flux variables into each component
      */
@@ -126,6 +60,189 @@ static int Lx(Real *fieldDataU, const Real *fieldDataUn, const Space *space,
     int idx = 0; /* calculated index */
     int idxW = 0; /* index at West */
     int idxE = 0; /* index at East */
+    return 0;
+}
+static int ComputeNonviscousFlux(const Real U[], Real Fx[], Real Fy[], Real Fz[], const Space *space, const Flow *flow)
+{
+    /*
+     * Define the primitive field variables.
+     */
+    Real rho = U[0];
+    Real u = U[1] / rho;
+    Real v = U[2] / rho;
+    Real w = U[3] / rho;
+    Real eT = U[4] / rho;
+    Real p = (flow->gamma - 1) * rho * (eT - 0.5 * (u * u + v * v + w * w));
+
+    Fx[0] = rho * u;
+    Fx[1] = rho * u * u + p;
+    Fx[2] = rho * u * v;
+    Fx[3] = rho * u * w;
+    Fx[4] = (rho * eT + p) * u;
+
+    Fy[0] = rho * v;
+    Fy[1] = rho * v * u;
+    Fy[2] = rho * v * v + p;
+    Fy[3] = rho * v * w;
+    Fy[4] = (rho * eT + p) * v;
+
+    Fz[0] = rho * w;
+    Fz[1] = rho * w * u;
+    Fz[2] = rho * w * v;
+    Fz[3] = rho * w * w + p;
+    Fz[4] = (rho * eT + p) * w;
+    return 0;
+}
+static int ComputeViscousFlux(const Real *U, Real Gx[], Real Gy[], Real Gz[], const int k, const int j, const int i, const Space *space, const Flow *flow)
+{
+    /*
+     * Define the primitive field variables.
+     */
+    Real rho = 0; 
+    Real rho_h = 0; 
+    Real u = 0;
+    Real u_h = 0;
+    Real v = 0;
+    Real v_h = 0;
+    Real w = 0;
+    Real w_h = 0;
+    Real eT = 0;
+    Real eT_h = 0;
+    Real T = 0;
+    Real T_h = 0;
+    /*
+     * Fluid and flow properties
+     */
+    Real mu =0; /* normalized dynamic viscosity */
+    Real heatK =0; /* normalized heat conductivity */
+    /*
+     * Auxiliary variables
+     */
+    Real divV = 0; /* divergence of velocity V */
+    Real du_dx = 0; /* partial u partial x */
+    Real du_dy = 0;
+    Real du_dz = 0;
+    Real dv_dx = 0; /* partial v partial x */
+    Real dv_dy = 0;
+    Real dv_dz = 0;
+    Real dw_dx = 0; /* partial w partial x */
+    Real dw_dy = 0;
+    Real dw_dz = 0;
+    Real dT_dx = 0; /* partial T partial x */
+    Real dT_dy = 0;
+    Real dT_dz = 0;
+    /*
+     * Indices
+     */
+    int idx = 0; /* linear array index math variable */
+    int idxW = 0; /* index at West */
+    int idxE = 0; /* index at East */
+    int idxS = 0; /* index at South */
+    int idxN = 0; /* index at North */
+    int idxF = 0; /* index at Front */
+    int idxB = 0; /* index at Back */
+    /*
+     * Generally the viscous terms will only be discretized by central
+     * difference scheme, therefore, only the viscous variables at 
+     * the boudary region and interior region need to be calculated, 
+     * there is no need to do this for outer ghost cells.
+     */
+    idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+    idxW = ((k * space->jMax + j) * space->iMax + i - 1) * 5;
+    idxE = ((k * space->jMax + j) * space->iMax + i + 1) * 5;
+    idxS = ((k * space->jMax + j - 1) * space->iMax + i) * 5;
+    idxN = ((k * space->jMax + j + 1) * space->iMax + i) * 5;
+    idxF = (((k - 1) * space->jMax + j) * space->iMax + i) * 5;
+    idxB = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
+
+    /* calculate derivatives in z direction */
+    rho_h = U[idxB+0];
+    u_h = U[idxB+1] / rho_h;
+    v_h = U[idxB+2] / rho_h;
+    w_h = U[idxB+3] / rho_h;
+    eT_h = U[idxB+4] / rho_h;
+    T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
+
+    rho = U[idxF+0];
+    u = U[idxF+1] / rho;
+    v = U[idxF+2] / rho;
+    w = U[idxF+3] / rho;
+    eT = U[idxF+4] / rho;
+    T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
+
+    du_dz = (u_h - u) / (2 * space->dz);
+    dv_dz = (v_h - v) / (2 * space->dz);
+    dw_dz = (w_h - w) / (2 * space->dz);
+    dT_dz = (T_h - T) / (2 * space->dz);
+
+    /* calculate derivatives in y direction */
+    rho_h = U[idxN+0];
+    u_h = U[idxN+1] / rho_h;
+    v_h = U[idxN+2] / rho_h;
+    w_h = U[idxN+3] / rho_h;
+    eT_h = U[idxN+4] / rho_h;
+    T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
+
+    rho = U[idxS+0];
+    u = U[idxS+1] / rho;
+    v = U[idxS+2] / rho;
+    w = U[idxS+3] / rho;
+    eT = U[idxS+4] / rho;
+    T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
+
+    du_dy = (u_h - u) / (2 * space->dy);
+    dv_dy = (v_h - v) / (2 * space->dy);
+    dw_dy = (w_h - w) / (2 * space->dy);
+    dT_dy = (T_h - T) / (2 * space->dy);
+
+    /* calculate derivatives in x direction */
+    rho_h = U[idxE+0];
+    u_h = U[idxE+1] / rho_h;
+    v_h = U[idxE+2] / rho_h;
+    w_h = U[idxE+3] / rho_h;
+    eT_h = U[idxE+4] / rho_h;
+    T_h = (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h)) / flow->cv;
+
+    rho = U[idxW+0];
+    u = U[idxW+1] / rho;
+    v = U[idxW+2] / rho;
+    w = U[idxW+3] / rho;
+    eT = U[idxW+4] / rho;
+    T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
+
+    du_dx = (u_h - u) / (2 * space->dx);
+    dv_dx = (v_h - v) / (2 * space->dx);
+    dw_dx = (w_h - w) / (2 * space->dx);
+    dT_dx = (T_h - T) / (2 * space->dx);
+
+    /* regain the primitive variables in current point */
+    rho = U[idx+0];
+    u = U[idx+1] / rho;
+    v = U[idx+2] / rho;
+    w = U[idx+3] / rho;
+
+    divV = du_dx + dv_dy + dw_dz;
+
+    Gx[0] = 0;
+    Gx[1] = mu * (2 * du_dx - (2/3) * divV);
+    Gx[2] = mu * (du_dy + dv_dx);
+    Gx[3] = mu * (du_dz + dw_dx);
+    Gx[4] = heatK * dT_dx + 
+        u * Gx[1] + v * Gx[2] + w * Gx[3];
+
+    Gy[0] = 0;
+    Gy[1] = Gx[2];
+    Gy[2] = mu * (2 * dv_dy - (2/3) * divV);
+    Gy[3] = mu * (dv_dz + dw_dy);
+    Gy[4] = heatK * dT_dy + 
+        u * Gy[1] + v * Gy[2] + w * Gy[3];
+
+    Gz[0] = 0;
+    Gz[1] = Gx[3];
+    Gz[2] = Gy[3];
+    Gz[3] = mu * (2 * dw_dz - (2/3) * divV);
+    Gz[4] = heatK * dT_dz + 
+        u * Gz[1] + v * Gz[2] + w * Gz[3];
     return 0;
 }
 static Real Q(const Real x)

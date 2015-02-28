@@ -459,15 +459,19 @@ typedef double Real;
  * result is fewer cache misses and much better performance.
  *
  * This code use nested loops with linear array and index math instead nested
- * loops with multi-dimensional arrays, take an three dimensional array as an
- * example:
+ * loops with multi-dimensional arrays, because we need to store five
+ * conservative variables at each (k,j,i), the most efficient index arrangement
+ * should be the following:
  *
- * U[width][height][depth] ~ U[kMax][jMax][iMax];
+ * U[kMax][jMax][iMax][5] (Note: NOT U[5][kMax][jMax][iMax]);
  * int k, j, i;
  * int idx; use long type if needed
- * idx = (k * jMax * iMax) + (j * iMax) + i; (three multipliers)
- * idx = (k * jMax + j) * iMax + i; (two multipliers)
- * value = U[idx];
+ * idx = ((k * jMax + j) * iMax + i) * 5;
+ * rho    = U[idx+0];
+ * rho_u  = U[idx+1];
+ * rho_v  = U[idx+2];
+ * rho_w  = U[idx+3];
+ * rho_eT = U[idx+4];
  */
 typedef struct {
     Real *U; /* conservative flow variables at n+1*/

@@ -22,11 +22,11 @@
  * Flow field initializer
  *
  * Function
- *      Initialize the flow field.
+ *      Initialize the flow field variable.
  *      non restart -- initialize by specified data.
  *      restart -- initialize by restart data.
  */
-extern int InitializeFlowField(Field *, const Space *, const Particle *, Time *,
+extern int InitializeFlowField(Real *U, const Space *, const Particle *, Time *,
         const Partition *, const Flow *);
 #endif
 /* a good practice: end file with a newline */

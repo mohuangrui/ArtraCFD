@@ -14,7 +14,7 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ProgramMemoryRelease(Field *, Flux *, Space *, Particle *, Partition *);
+static int ProgramMemoryRelease(Field *, Space *, Particle *, Partition *);
 static int FinalInformation(void);
 /****************************************************************************
  * Function Definitions
@@ -22,10 +22,10 @@ static int FinalInformation(void);
 /*
  * This is the overall postprocessing function
  */
-int Postprocess(Field *field, Flux *flux, Space *space, Particle *particle,
+int Postprocess(Field *field, Space *space, Particle *particle,
         Partition *part)
 {
-    ProgramMemoryRelease(field, flux, space, particle, part);
+    ProgramMemoryRelease(field, space, particle, part);
     FinalInformation();
     return 0;
 }
@@ -33,7 +33,7 @@ int Postprocess(Field *field, Flux *flux, Space *space, Particle *particle,
  * This function together with some subfuctions realize the dynamic
  * memory release for each global pointer
  */
-static int ProgramMemoryRelease(Field *field, Flux *flux, Space *space,
+static int ProgramMemoryRelease(Field *field, Space *space,
         Particle *particle, Partition *part)
 {
     ShowInformation("Releasing memory back to system...");
@@ -41,13 +41,6 @@ static int ProgramMemoryRelease(Field *field, Flux *flux, Space *space,
     RetrieveStorage(field->U);
     RetrieveStorage(field->Un);
     RetrieveStorage(field->Um);
-    /* flux related */
-    RetrieveStorage(flux->Fx);
-    RetrieveStorage(flux->Fy);
-    RetrieveStorage(flux->Fz);
-    RetrieveStorage(flux->Gx);
-    RetrieveStorage(flux->Gy);
-    RetrieveStorage(flux->Gz);
     /* space related */
     RetrieveStorage(space->geoID);
     RetrieveStorage(space->ghostFlag);

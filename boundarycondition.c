@@ -17,18 +17,9 @@
 /*
  * Values should be normalized values relative to the reference values.
  */
-int BoundaryCondtion(Field *field, const Space *space, const Particle *particle, 
+int BoundaryCondtion(Real *U, const Space *space, const Particle *particle, 
         const Partition *part, const Flow *flow)
 {
-    /*
-     * Decompose the field variable into each component.
-     */
-    Real *Un[5] = {
-        field->Un + 0 * space->nMax,
-        field->Un + 1 * space->nMax,
-        field->Un + 2 * space->nMax,
-        field->Un + 3 * space->nMax,
-        field->Un + 4 * space->nMax};
     /*
      * Indices
      */
@@ -62,12 +53,12 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
     for (k = part->kSub[domainID]; k < part->kSup[domainID]; ++k) {
         for (j = part->jSub[domainID]; j < part->jSup[domainID]; ++j) {
             for (i = part->iSub[domainID]; i < part->iSup[domainID]; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
-                Un[0][idx] = rhoInlet;
-                Un[1][idx] = rhoInlet * uInlet;
-                Un[2][idx] = rhoInlet * vInlet;
-                Un[3][idx] = rhoInlet * wInlet;
-                Un[4][idx] = pInlet / (flow->gamma - 1) + 
+                idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+                U[idx+0] = rhoInlet;
+                U[idx+1] = rhoInlet * uInlet;
+                U[idx+2] = rhoInlet * vInlet;
+                U[idx+3] = rhoInlet * wInlet;
+                U[idx+4] = pInlet / (flow->gamma - 1) + 
                     0.5 * rhoInlet * (uInlet * uInlet + vInlet * vInlet + wInlet * wInlet);
             }
         }
@@ -77,10 +68,10 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
     for (k = part->kSub[domainID]; k < part->kSup[domainID]; ++k) {
         for (j = part->jSub[domainID]; j < part->jSup[domainID]; ++j) {
             for (i = part->iSup[domainID] - 1; i >= part->iSub[domainID]; --i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
-                idxE = (k * space->jMax + j) * space->iMax + i + 1;
+                idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+                idxE = ((k * space->jMax + j) * space->iMax + i + 1) * 5;
                 for (dim = 0; dim < 5; ++dim) {
-                    Un[dim][idx] = Un[dim][idxE];
+                    U[idx+dim] = U[idxE+dim];
                 }
             }
         }
@@ -93,11 +84,11 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
     for (k = part->kSub[domainID]; k < part->kSup[domainID]; ++k) {
         for (j = part->jSub[domainID]; j < part->jSup[domainID]; ++j) {
             for (i = part->iSub[domainID]; i < part->iSup[domainID]; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
-                idxW = (k * space->jMax + j) * space->iMax + i - 1;
-                idxWW = (k * space->jMax + j) * space->iMax + i - 2;
+                idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+                idxW = ((k * space->jMax + j) * space->iMax + i - 1) * 5;
+                idxWW = ((k * space->jMax + j) * space->iMax + i - 2) * 5;
                 for (dim = 0; dim < 5; ++dim) {
-                    Un[dim][idx] = 2 * Un[dim][idxW] - Un[dim][idxWW];
+                    U[idx+dim] = 2 * U[idxW+dim] - U[idxWW+dim];
                 }
             }
         }
@@ -107,11 +98,11 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
     for (k = part->kSub[domainID]; k < part->kSup[domainID]; ++k) {
         for (j = part->jSub[domainID]; j < part->jSup[domainID]; ++j) {
             for (i = part->iSub[domainID]; i < part->iSup[domainID]; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
-                idxW = (k * space->jMax + j) * space->iMax + i - 1;
-                idxWW = (k * space->jMax + j) * space->iMax + i - 2;
+                idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+                idxW = ((k * space->jMax + j) * space->iMax + i - 1) * 5;
+                idxWW = ((k * space->jMax + j) * space->iMax + i - 2) * 5;
                 for (dim = 0; dim < 5; ++dim) {
-                    Un[dim][idx] = 2 * Un[dim][idxW] - Un[dim][idxWW];
+                    U[idx+dim] = 2 * U[idxW+dim] - U[idxWW+dim];
                 }
             }
         }
@@ -124,13 +115,13 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
     for (k = part->kSub[domainID]; k < part->kSup[domainID]; ++k) {
         for (j = part->jSub[domainID]; j < part->jSup[domainID]; ++j) {
             for (i = part->iSub[domainID]; i < part->iSup[domainID]; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
-                idxN = (k * space->jMax + j + 1) * space->iMax + i;
-                Un[0][idx] = Un[0][idxN];
-                Un[1][idx] = Un[1][idxN];
-                Un[2][idx] = 0;
-                Un[3][idx] = 0;
-                Un[4][idx] = Un[4][idxN];
+                idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+                idxN = ((k * space->jMax + j + 1) * space->iMax + i) * 5;
+                U[idx+0] = U[idxN+0];
+                U[idx+1] = U[idxN+1];
+                U[idx+2] = 0;
+                U[idx+3] = 0;
+                U[idx+4] = U[idxN+4];
             }
         }
     }
@@ -139,11 +130,11 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
     for (k = part->kSub[domainID]; k < part->kSup[domainID]; ++k) {
         for (j = part->jSup[domainID] - 1; j >= part->jSub[domainID]; --j) {
             for (i = part->iSub[domainID]; i < part->iSup[domainID]; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
-                idxN = (k * space->jMax + j + 1) * space->iMax + i;
-                idxNN = (k * space->jMax + j + 2) * space->iMax + i;
+                idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+                idxN = ((k * space->jMax + j + 1) * space->iMax + i) * 5;
+                idxNN = ((k * space->jMax + j + 2) * space->iMax + i) * 5;
                 for (dim = 0; dim < 5; ++dim) {
-                    Un[dim][idx] = 2 * Un[dim][idxN] - Un[dim][idxNN];
+                    U[idx+dim] = 2 * U[idxN+dim] - U[idxNN+dim];
                 }
             }
         }
@@ -153,13 +144,13 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
     for (k = part->kSub[domainID]; k < part->kSup[domainID]; ++k) {
         for (j = part->jSub[domainID]; j < part->jSup[domainID]; ++j) {
             for (i = part->iSub[domainID]; i < part->iSup[domainID]; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
-                idxS = (k * space->jMax + j - 1) * space->iMax + i;
-                Un[0][idx] = Un[0][idxS];
-                Un[1][idx] = Un[1][idxS];
-                Un[2][idx] = 0;
-                Un[3][idx] = 0;
-                Un[4][idx] = Un[4][idxS];
+                idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+                idxS = ((k * space->jMax + j - 1) * space->iMax + i) * 5;
+                U[idx+0] = U[idxS+0];
+                U[idx+1] = U[idxS+1];
+                U[idx+2] = 0;
+                U[idx+3] = 0;
+                U[idx+4] = U[idxS+4];
             }
         }
     }
@@ -168,11 +159,11 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
     for (k = part->kSub[domainID]; k < part->kSup[domainID]; ++k) {
         for (j = part->jSub[domainID]; j < part->jSup[domainID]; ++j) {
             for (i = part->iSub[domainID]; i < part->iSup[domainID]; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
-                idxS = (k * space->jMax + j - 1) * space->iMax + i;
-                idxSS = (k * space->jMax + j - 2) * space->iMax + i;
+                idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+                idxS = ((k * space->jMax + j - 1) * space->iMax + i) * 5;
+                idxSS = ((k * space->jMax + j - 2) * space->iMax + i) * 5;
                 for (dim = 0; dim < 5; ++dim) {
-                    Un[dim][idx] = 2 * Un[dim][idxS] - Un[dim][idxSS];
+                    U[idx+dim] = 2 * U[idxS+dim] - U[idxSS+dim];
                 }
             }
         }
@@ -182,13 +173,13 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
     for (k = part->kSub[domainID]; k < part->kSup[domainID]; ++k) {
         for (j = part->jSub[domainID]; j < part->jSup[domainID]; ++j) {
             for (i = part->iSub[domainID]; i < part->iSup[domainID]; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
-                idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
-                Un[0][idx] = Un[0][idxB];
-                Un[1][idx] = Un[1][idxB];
-                Un[2][idx] = 0;
-                Un[3][idx] = 0;
-                Un[4][idx] = Un[4][idxB];
+                idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+                idxB = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
+                U[idx+0] = U[idxB+0];
+                U[idx+1] = U[idxB+1];
+                U[idx+2] = 0;
+                U[idx+3] = 0;
+                U[idx+4] = U[idxB+4];
             }
         }
     }
@@ -197,11 +188,11 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
     for (k = part->kSup[domainID] - 1; k >= part->kSub[domainID]; --k) {
         for (j = part->jSub[domainID]; j < part->jSup[domainID]; ++j) {
             for (i = part->iSub[domainID]; i < part->iSup[domainID]; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
-                idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
-                idxBB = ((k + 2) * space->jMax + j) * space->iMax + i;
+                idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+                idxB = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
+                idxBB = (((k + 2) * space->jMax + j) * space->iMax + i) * 5;
                 for (dim = 0; dim < 5; ++dim) {
-                    Un[dim][idx] = 2 * Un[dim][idxB] - Un[dim][idxBB];
+                    U[idx+dim] = 2 * U[idxB+dim] - U[idxBB+dim];
                 }
             }
         }
@@ -211,13 +202,13 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
     for (k = part->kSub[domainID]; k < part->kSup[domainID]; ++k) {
         for (j = part->jSub[domainID]; j < part->jSup[domainID]; ++j) {
             for (i = part->iSub[domainID]; i < part->iSup[domainID]; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
-                idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
-                Un[0][idx] = Un[0][idxF];
-                Un[1][idx] = Un[1][idxF];
-                Un[2][idx] = 0;
-                Un[3][idx] = 0;
-                Un[4][idx] = Un[4][idxF];
+                idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+                idxF = (((k - 1) * space->jMax + j) * space->iMax + i) * 5;
+                U[idx+0] = U[idxF+0];
+                U[idx+1] = U[idxF+1];
+                U[idx+2] = 0;
+                U[idx+3] = 0;
+                U[idx+4] = U[idxF+4];
             }
         }
     }
@@ -226,11 +217,11 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
     for (k = part->kSub[domainID]; k < part->kSup[domainID]; ++k) {
         for (j = part->jSub[domainID]; j < part->jSup[domainID]; ++j) {
             for (i = part->iSub[domainID]; i < part->iSup[domainID]; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
-                idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
-                idxFF = ((k - 2) * space->jMax + j) * space->iMax + i;
+                idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+                idxF = (((k - 1) * space->jMax + j) * space->iMax + i) * 5;
+                idxFF = (((k - 2) * space->jMax + j) * space->iMax + i) * 5;
                 for (dim = 0; dim < 5; ++dim) {
-                    Un[dim][idx] = 2 * Un[dim][idxF] - Un[dim][idxFF];
+                    U[idx+dim] = 2 * U[idxF+dim] - U[idxFF+dim];
                 }
             }
         }
@@ -238,7 +229,7 @@ int BoundaryCondtion(Field *field, const Space *space, const Particle *particle,
     /*
      * Boundary condition for interior ghost cells
      */
-    BoundaryConditionGCIBM(field, space, particle, part);
+    BoundaryConditionGCIBM(U, space, particle, part);
     return 0;
 }
 /* a good practice: end file with a newline */

@@ -44,15 +44,15 @@ extern int InitializeEnsightTransientCaseFile(const Time *);
  *
  * Function
  *      Export conservative field data vector variable:
- *      fieldData = [rho, rho_u, rho_v, rho_w, rho_eT]
+ *      U = [rho, rho_u, rho_v, rho_w, rho_eT]
  *      to primitive variables = [rho, u, v, w, p, T]
  *      to binary data files with Ensight data format.
  * Notice
- *      fieldData is a linear array that stores all the values.
+ *      U is a linear array that stores all the values.
  *      These data are in sequential state 
  *      and can be accessed by linear index math.
  */
-extern int WriteComputedDataEnsight(const Real * fieldData, const Space *, 
+extern int WriteComputedDataEnsight(const Real * U, const Space *, 
         const Particle *, const Time *, const Partition *, const Flow *);
 /*
  * Ensight format data loader
@@ -61,7 +61,7 @@ extern int WriteComputedDataEnsight(const Real * fieldData, const Space *,
  *      Load computed data from output files which are written in Ensight
  *      format.
  */
-extern int LoadComputedDataEnsight(Real *fieldData, const Space *, Time *,
+extern int LoadComputedDataEnsight(Real *U, const Space *, Time *,
         const Partition *, const Flow *);
 #endif
 /* a good practice: end file with a newline */

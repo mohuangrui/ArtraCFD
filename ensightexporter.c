@@ -67,7 +67,7 @@ int InitializeEnsightTransientCaseFile(const Time *time)
  * including transient and steady output with file names consists of the 
  * default base file name and export step tag. 
  */
-int WriteComputedDataEnsight(const Real *fieldData, const Space *space, 
+int WriteComputedDataEnsight(const Real *U, const Space *space, 
         const Particle *particle, const Time *time, const Partition *part,
         const Flow *flow)
 {
@@ -79,7 +79,7 @@ int WriteComputedDataEnsight(const Real *fieldData, const Space *space,
     };
     WriteEnsightCaseFile(&enSet, time);
     WriteEnsightGeometryFile(&enSet, space, part);
-    WriteEnsightVariableFile(fieldData, &enSet, space, part, flow);
+    WriteEnsightVariableFile(U, &enSet, space, part, flow);
     WriteParticleFile(&enSet, particle);
     return 0;
 }
@@ -272,7 +272,7 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
  * the same IJK order as the coordinates. (The number of nodes in the
  * part are obtained from the corresponding EnSight Gold geometry file.)
  */
-static int WriteEnsightVariableFile(const Real *fieldData, EnsightSet *enSet,
+static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
         const Space *space, const Partition *part, const Flow *flow)
 {
     FILE *filePointer = NULL;
@@ -289,15 +289,6 @@ static int WriteEnsightVariableFile(const Real *fieldData, EnsightSet *enSet,
      * density, u, v, w, pressure, temperature
      */
     /*
-     * Decompose the conservative field variable into each component.
-     */
-    const Real *U[5] = {
-        fieldData + 0 * space->nMax,
-        fieldData + 1 * space->nMax,
-        fieldData + 2 * space->nMax,
-        fieldData + 3 * space->nMax,
-        fieldData + 4 * space->nMax};
-    /*
      * Define the primitive field variables.
      */
     Real rho = 0; 
@@ -305,12 +296,11 @@ static int WriteEnsightVariableFile(const Real *fieldData, EnsightSet *enSet,
     Real v = 0;
     Real w = 0;
     Real eT = 0;
-    const int dimU = 6; /* dimension of the primitive variable vector */
-    int dimCount = 0; /* dimension count */
+    int dim = 0; /* dimension count */
     const char nameSuffix[6][10] = {"den", "u", "v", "w", "pre", "tem"};
-    for (dimCount = 0; dimCount < dimU; ++dimCount) {
+    for (dim = 0; dim < 6; ++dim) {
         snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, 
-                nameSuffix[dimCount]);
+                nameSuffix[dim]);
         filePointer = fopen(enSet->fileName, "wb");
         if (filePointer == NULL) {
             FatalError("failed to write data to ensight data file: ensight.***...");
@@ -329,33 +319,33 @@ static int WriteEnsightVariableFile(const Real *fieldData, EnsightSet *enSet,
             for (k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
                 for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                     for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                        idx = (k * space->jMax + j) * space->iMax + i;
-                        rho = U[0][idx];
-                        switch (dimCount) {
+                        idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+                        rho = U[idx];
+                        switch (dim) {
                             case 0: /* rho */
                                 data = rho;
                                 break;
                             case 1: /* u */
-                                data = U[1][idx] / rho;
+                                data = U[idx+1] / rho;
                                 break;
                             case 2: /* v */
-                                data = U[2][idx] / rho;
+                                data = U[idx+2] / rho;
                                 break;
                             case 3: /* w */
-                                data = U[3][idx] / rho;
+                                data = U[idx+3] / rho;
                                 break;
                             case 4: /* p */
-                                u = U[1][idx] / rho;
-                                v = U[2][idx] / rho;
-                                w = U[3][idx] / rho;
-                                eT = U[4][idx] / rho;
+                                u = U[idx+1] / rho;
+                                v = U[idx+2] / rho;
+                                w = U[idx+3] / rho;
+                                eT = U[idx+4] / rho;
                                 data = (flow->gamma - 1) * rho * (eT - 0.5 * (u * u + v * v + w * w));
                                 break;
                             case 5: /* T */
-                                u = U[1][idx] / rho;
-                                v = U[2][idx] / rho;
-                                w = U[3][idx] / rho;
-                                eT = U[4][idx] / rho;
+                                u = U[idx+1] / rho;
+                                v = U[idx+2] / rho;
+                                w = U[idx+3] / rho;
+                                eT = U[idx+4] / rho;
                                 data = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
                                 break;
                             default:
@@ -387,24 +377,24 @@ static int WriteEnsightVariableFile(const Real *fieldData, EnsightSet *enSet,
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
         /*
          * Now output the vector components at each node in current part
-         * dimension index of u, v, w is 1, 2, 3 in fieldData in each part, 
+         * dimension index of u, v, w is 1, 2, 3 in U in each part, 
          * write u, v, w sequentially
          */
-        for (dimCount = 1; dimCount < 4; ++dimCount) {
+        for (dim = 1; dim < 4; ++dim) {
             for (k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
                 for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                     for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                        idx = (k * space->jMax + j) * space->iMax + i;
-                        rho = U[0][idx];
-                        switch (dimCount) {
+                        idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+                        rho = U[idx];
+                        switch (dim) {
                             case 1: /* u */
-                                data = U[1][idx] / rho;
+                                data = U[idx+1] / rho;
                                 break;
                             case 2: /* v */
-                                data = U[2][idx] / rho;
+                                data = U[idx+2] / rho;
                                 break;
                             case 3: /* w */
-                                data = U[3][idx] / rho;
+                                data = U[idx+3] / rho;
                                 break;
                             default:
                                 break;

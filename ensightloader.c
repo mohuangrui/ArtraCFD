@@ -15,7 +15,7 @@
  * Static Function Declarations
  ****************************************************************************/
 static int LoadEnsightCaseFile(EnsightSet *, Time *);
-static int LoadEnsightVariableFile(Real *fieldData, EnsightSet *,
+static int LoadEnsightVariableFile(Real *U, EnsightSet *,
         const Space *, const Partition *, const Flow *);
 /****************************************************************************
  * Function definitions
@@ -23,7 +23,7 @@ static int LoadEnsightVariableFile(Real *fieldData, EnsightSet *,
 /*
  * Load necessary flow information from computed data
  */
-int LoadComputedDataEnsight(Real *fieldData, const Space *space, Time *time,
+int LoadComputedDataEnsight(Real *U, const Space *space, Time *time,
         const Partition *part, const Flow *flow)
 {
     EnsightSet enSet = { /* initialize Ensight environment */
@@ -32,7 +32,7 @@ int LoadComputedDataEnsight(Real *fieldData, const Space *space, Time *time,
         .stringData = {'\0'}, /* string data recorder */
     };
     LoadEnsightCaseFile(&enSet, time);
-    LoadEnsightVariableFile(fieldData, &enSet, space, part, flow);
+    LoadEnsightVariableFile(U, &enSet, space, part, flow);
     return 0;
 }
 static int LoadEnsightCaseFile(EnsightSet *enSet, Time *time)
@@ -75,7 +75,7 @@ static int LoadEnsightCaseFile(EnsightSet *enSet, Time *time)
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-static int LoadEnsightVariableFile(Real *fieldData, EnsightSet *enSet,
+static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,
         const Space *space, const Partition *part, const Flow *flow)
 {
     FILE *filePointer = NULL;
@@ -86,18 +86,8 @@ static int LoadEnsightVariableFile(Real *fieldData, EnsightSet *enSet,
     int i = 0; /* loop count */
     int idx = 0; /* linear array index math variable */
     EnsightReal data = 0; /* the ensight data format */
-    const int dimU = 5; /* dimension of the primitive variables need to be read */
-    int dimCount = 0; /* dimension count */
+    int dim = 0; /* dimension count */
     const char nameSuffix[5][10] = {"den", "u", "v", "w", "pre"};
-    /*
-     * Decompose the conservative field variable into each component.
-     */
-    Real *U[5] = {
-        fieldData + 0 * space->nMax,
-        fieldData + 1 * space->nMax,
-        fieldData + 2 * space->nMax,
-        fieldData + 3 * space->nMax,
-        fieldData + 4 * space->nMax};
     /*
      * Define the primitive field variables.
      */
@@ -105,9 +95,9 @@ static int LoadEnsightVariableFile(Real *fieldData, EnsightSet *enSet,
     Real u = 0;
     Real v = 0;
     Real w = 0;
-    for (dimCount = 0; dimCount < dimU; ++dimCount) {
+    for (dim = 0; dim < 5; ++dim) {
         snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName,
-                nameSuffix[dimCount]);
+                nameSuffix[dim]);
         filePointer = fopen(enSet->fileName, "rb");
         if (filePointer == NULL) {
             FatalError("failed to open restart data files: restart.***...");
@@ -121,26 +111,26 @@ static int LoadEnsightVariableFile(Real *fieldData, EnsightSet *enSet,
                 for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                     for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
                         fread(&data, sizeof(EnsightReal), 1, filePointer);
-                        idx = (k * space->jMax + j) * space->iMax + i;
-                        switch (dimCount) {
+                        idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+                        switch (dim) {
                             case 0: /* rho */
-                                U[0][idx] = data;
+                                U[idx] = data;
                                 break;
                             case 1: /* u */
-                                U[1][idx] = U[0][idx] * data;
+                                U[idx+1] = U[idx] * data;
                                 break;
                             case 2: /* v */
-                                U[2][idx] = U[0][idx] * data;
+                                U[idx+2] = U[idx] * data;
                                 break;
                             case 3: /* w */
-                                U[3][idx] = U[0][idx] * data;
+                                U[idx+3] = U[idx] * data;
                                 break;
                             case 4: /* p */
-                                rho = U[0][idx];
-                                u = U[1][idx] / rho;
-                                v = U[2][idx] / rho;
-                                w = U[3][idx] / rho;
-                                U[4][idx] = data / (flow->gamma - 1) + 0.5 * rho * (u * u + v * v + w * w);
+                                rho = U[idx];
+                                u = U[idx+1] / rho;
+                                v = U[idx+2] / rho;
+                                w = U[idx+3] / rho;
+                                U[idx] = data / (flow->gamma - 1) + 0.5 * rho * (u * u + v * v + w * w);
                                 break;
                             default:
                                 break;

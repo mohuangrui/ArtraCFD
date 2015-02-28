@@ -14,8 +14,14 @@
 #include "ensight.h"
 #include "timer.h"
 #include "tvd.h"
-#include "cfdcommons.h"
 #include "commons.h"
+/****************************************************************************
+ * Static Function Declarations
+ ****************************************************************************/
+static Real ComputeTimeStepByCFL(const Real *U, const Space *, const Time *, 
+        const Partition *, const Flow *);
+static Real Min(const Real valueA, const Real valueB);
+static Real Max(const Real valueA, const Real valueB);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -41,7 +47,7 @@ int RungeKuttaTimeMarching(Field *field, Space *space, Particle *particle,
         /*
          * Calculate dt for current time step
          */
-        time->dt = ComputeTimeStepByCFL(field, space, time, part, flow);
+        time->dt = ComputeTimeStepByCFL(field->Un, space, time, part, flow);
         fprintf(stdout, "\nStep=%d; Time=%.6g; dt=%.6g\n", time->stepCount, time->currentTime, time->dt);
         /*
          * Update current time stamp, if current time exceeds the total time, 
@@ -79,6 +85,68 @@ int RungeKuttaTimeMarching(Field *field, Space *space, Particle *particle,
     }
     ShowInformation("Session End");
     return 0;
+}
+static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Time *time, 
+        const Partition *part, const Flow *flow)
+{
+    /*
+     * Define the primitive field variables.
+     */
+    Real rho = 0; 
+    Real u = 0;
+    Real v = 0;
+    Real w = 0;
+    Real p = 0;
+    Real eT = 0;
+    /*
+     * Auxiliary variables
+     */
+    Real velocity = 0;
+    Real velocityMax = 1e-38;
+    /*
+     * Indices
+     */
+    int k = 0; /* loop count */
+    int j = 0; /* loop count */
+    int i = 0; /* loop count */
+    int idx = 0; /* linear array index math variable */
+    for (k = part->kSub[12]; k < part->kSup[12]; ++k) {
+        for (j = part->jSub[12]; j < part->jSup[12]; ++j) {
+            for (i = part->iSub[12]; i < part->iSup[12]; ++i) {
+                idx = (k * space->jMax + j) * space->iMax + i;
+                if (space->ghostFlag[idx] == -1) { /* if it's solid node */
+                    continue;
+                }
+                idx = idx * 5; /* change idx to field variable */
+                rho = U[idx+0];
+                u = U[idx+1] / rho;
+                v = U[idx+2] / rho;
+                w = U[idx+3] / rho;
+                eT = U[idx+4] / rho;
+                p = (flow->gamma - 1) * rho * (eT - 0.5 * (u * u + v * v + w * w));
+
+                velocity = sqrt(flow->gamma * p / rho) + Max(u, Max(v, w));
+                if (velocityMax < velocity) {
+                    velocityMax = velocity;
+                }
+            }
+        }
+    }
+    return time->numCFL * Min(space->dx, Min(space->dy, space->dz)) / velocityMax;
+}
+static Real Min(const Real valueA, const Real valueB)
+{
+    if (valueA < valueB) {
+        return valueA;
+    }
+    return valueB;
+}
+static Real Max(const Real valueA, const Real valueB)
+{
+    if (valueA > valueB) {
+        return valueA;
+    }
+    return valueB;
 }
 /* a good practice: end file with a newline */
 

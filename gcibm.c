@@ -139,18 +139,9 @@ static int IdentifyGhostCells(Space *space, const Partition *part)
 /*
  * Boundary condition for interior ghost cells
  */
-int BoundaryConditionGCIBM(Field *field, const Space *space, const Particle *particle, 
+int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle, 
         const Partition *part)
 {
-    /*
-     * Decompose the field variable into each component.
-     */
-    Real *Un[5] = {
-        field->Un + 0 * space->nMax,
-        field->Un + 1 * space->nMax,
-        field->Un + 2 * space->nMax,
-        field->Un + 3 * space->nMax,
-        field->Un + 4 * space->nMax};
     /*
      * Indices
      */
