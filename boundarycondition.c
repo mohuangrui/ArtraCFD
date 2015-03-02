@@ -14,18 +14,16 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ApplyBoundaryCondition(const int, Real *, const Space *, const Partition *, const Flow *);
+static int ApplyBoundaryCondition(const int, Real *, const Space *, 
+        const Partition *, const Flow *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-/*
- * Values should be normalized values relative to the reference values.
- */
 int BoundaryCondtion(Real *U, const Space *space, const Particle *particle, 
         const Partition *part, const Flow *flow)
 {
     int partID = 0; /* part count */
-    for (partID = 6; partID < 12; ++partID) {
+    for (partID = 1; partID < 7; ++partID) {
         ApplyBoundaryCondition(partID, U, space, part, flow);
     }
     /*
@@ -34,7 +32,8 @@ int BoundaryCondtion(Real *U, const Space *space, const Particle *particle,
     BoundaryConditionGCIBM(U, space, particle, part);
     return 0;
 }
-static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space, const Partition *part, const Flow *flow)
+static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space, 
+        const Partition *part, const Flow *flow)
 {
     /*
      * Indices
@@ -61,8 +60,7 @@ static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space,
             for (i = part->iSub[partID]; i < part->iSup[partID]; ++i) {
                 idx = ((k * space->jMax + j) * space->iMax + i) * 5;
                 /*
-                 * Calculate inner neighbour nodes according to normal vector
-                 * direction.
+                 * Calculate inner neighbour nodes according to normal vector direction.
                  */
                 idxh = (((k - normalZ) * space->jMax + (j - normalY)) * space->iMax + i - normalX) * 5;
                 idxhh = (((k - 2 * normalZ) * space->jMax + (j - 2 * normalY)) * space->iMax + i - 2 * normalX) * 5;
@@ -75,8 +73,7 @@ static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space,
                         U[idx+1] = rho * u;
                         U[idx+2] = rho * v;
                         U[idx+3] = rho * w;
-                        U[idx+4] = p / (flow->gamma - 1) + 
-                            0.5 * rho * (u * u + v * v + w * w);
+                        U[idx+4] = p / (flow->gamma - 1) + 0.5 * rho * (u * u + v * v + w * w);
                         break;
                     case 2: /* outflow */
                         for (dim = 0; dim < 5; ++dim) {

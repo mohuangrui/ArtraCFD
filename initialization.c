@@ -49,15 +49,12 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
         const Partition *part, const Flow *flow)
 {
     ShowInformation("  Non-restart run initializing...");
-    /*
-     * Initial conditions, these values should be
-     * normalized values relative to the reference values.
-     */
-    const Real rho = part->valueBC[12][0];
-    const Real u = part->valueBC[12][1];
-    const Real v = part->valueBC[12][2];
-    const Real w = part->valueBC[12][3];
-    const Real p = part->valueBC[12][4];
+    /* extract initial values */
+    const Real rho = part->valueBC[0][0];
+    const Real u = part->valueBC[0][1];
+    const Real v = part->valueBC[0][2];
+    const Real w = part->valueBC[0][3];
+    const Real p = part->valueBC[0][4];
     /*
      * Initialize the interior field
      */
@@ -65,16 +62,15 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
     int j = 0; /* loop count */
     int i = 0; /* loop count */
     int idx = 0; /* linear array index math variable */
-    for (k = part->kSub[12]; k < part->kSup[12]; ++k) {
-        for (j = part->jSub[12]; j < part->jSup[12]; ++j) {
-            for (i = part->iSub[12]; i < part->iSup[12]; ++i) {
+    for (k = part->kSub[0]; k < part->kSup[0]; ++k) {
+        for (j = part->jSub[0]; j < part->jSup[0]; ++j) {
+            for (i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = ((k * space->jMax + j) * space->iMax + i) * 5;
                 U[idx+0] = rho;
                 U[idx+1] = rho * u;
                 U[idx+2] = rho * v;
                 U[idx+3] = rho * w;
-                U[idx+4] = p / (flow->gamma - 1) + 
-                    0.5 * rho * (u * u + v * v + w * w);
+                U[idx+4] = p / (flow->gamma - 1) + 0.5 * rho * (u * u + v * v + w * w);
             }
         }
     }

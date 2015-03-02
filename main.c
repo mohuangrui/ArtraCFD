@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
         .normalY = {0},
         .normalX = {0},
         .typeBC = {0},
-        .valueBC = {{0.0},{0.0}},
+        .valueBC = {{0.0}},
         .name = {" "}};
     Control theControl = { /* program overall control */
         .runMode = 'i',

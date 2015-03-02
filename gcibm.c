@@ -76,9 +76,9 @@ static int LocateSolidGeometry(Space *space, Particle *particle, const Partition
     Real distY = 0;
     Real distZ = 0;
     Real radius = 0;
-    for (k = part->kSub[12]; k < part->kSup[12]; ++k) {
-        for (j = part->jSub[12]; j < part->jSup[12]; ++j) {
-            for (i = part->iSub[12]; i < part->iSup[12]; ++i) {
+    for (k = part->kSub[0]; k < part->kSup[0]; ++k) {
+        for (j = part->jSub[0]; j < part->jSup[0]; ++j) {
+            for (i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
                 space->ghostFlag[idx] = 0; /* reset to fluid */
                 for (geoCount = 0; geoCount < particle->totalN; ++geoCount) {
@@ -112,9 +112,9 @@ static int IdentifyGhostCells(Space *space, const Partition *part)
     int idxB = 0; /* index at Back */
     /* criteria */
     int flag = 0;
-    for (k = part->kSub[12]; k < part->kSup[12]; ++k) {
-        for (j = part->jSub[12]; j < part->jSup[12]; ++j) {
-            for (i = part->iSub[12]; i < part->iSup[12]; ++i) {
+    for (k = part->kSub[0]; k < part->kSup[0]; ++k) {
+        for (j = part->jSub[0]; j < part->jSup[0]; ++j) {
+            for (i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
                 if (space->ghostFlag[idx] != -1) { /* it's not solid cell */
                     continue;
@@ -168,9 +168,9 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
     int imageI = 0; /* node coordinates of the image point of the ghost */
     int imageJ = 0; /* node coordinates of the image point of the ghost */
     int imageK = 0; /* node coordinates of the image point of the ghost */
-    for (k = part->kSub[12]; k < part->kSup[12]; ++k) {
-        for (j = part->jSub[12]; j < part->jSup[12]; ++j) {
-            for (i = part->iSub[12]; i < part->iSup[12]; ++i) {
+    for (k = part->kSub[0]; k < part->kSup[0]; ++k) {
+        for (j = part->jSub[0]; j < part->jSup[0]; ++j) {
+            for (i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
                 if (space->ghostFlag[idx] != 1) { /* it's not a ghost */
                     continue;

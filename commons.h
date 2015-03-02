@@ -551,11 +551,11 @@ typedef struct {
     int jSup[13];
     int iSub[13];
     int iSup[13];
-    int normalZ[13]; /* outer surface normal vector of each inner part */
-    int normalY[13];
-    int normalX[13];
-    int typeBC[13]; /* BC type of each inner part */
-    Real valueBC[13][6]; /* BC values of each inner part */
+    int normalZ[7]; /* outer surface normal vector of each inner part */
+    int normalY[7];
+    int normalX[7];
+    int typeBC[7]; /* BC type of each inner part */
+    Real valueBC[7][6]; /* BC values of each inner part */
     char name[13][15]; /* store names of each inner part */
 }Partition;
 /*
