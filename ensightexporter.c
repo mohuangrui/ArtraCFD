@@ -45,13 +45,13 @@ int InitializeEnsightTransientCaseFile(const Time *time)
     fprintf(filePointer, "model:            1       %s*****.geo\n", baseName); 
     fprintf(filePointer, "\n"); 
     fprintf(filePointer, "VARIABLE\n"); 
-    fprintf(filePointer, "scalar per node:  1  R    %s*****.den\n", baseName); 
+    fprintf(filePointer, "scalar per node:  1  rho  %s*****.rho\n", baseName); 
     fprintf(filePointer, "scalar per node:  1  u    %s*****.u\n", baseName); 
     fprintf(filePointer, "scalar per node:  1  v    %s*****.v\n", baseName); 
     fprintf(filePointer, "scalar per node:  1  w    %s*****.w\n", baseName); 
-    fprintf(filePointer, "scalar per node:  1  P    %s*****.pre\n", baseName); 
-    fprintf(filePointer, "scalar per node:  1  T    %s*****.tem\n", baseName); 
-    fprintf(filePointer, "vector per node:  1  Vel  %s*****.vel\n", baseName); 
+    fprintf(filePointer, "scalar per node:  1  p    %s*****.p\n", baseName); 
+    fprintf(filePointer, "scalar per node:  1  T    %s*****.T\n", baseName); 
+    fprintf(filePointer, "vector per node:  1  Vel  %s*****.Vel\n", baseName); 
     fprintf(filePointer, "\n"); 
     fprintf(filePointer, "TIME\n"); 
     fprintf(filePointer, "time set:         1\n"); 
@@ -121,13 +121,13 @@ static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
     fprintf(filePointer, "constant per case:  Order %d\n", time->outputCount);
     fprintf(filePointer, "constant per case:  Time  %.6g\n", time->currentTime);
     fprintf(filePointer, "constant per case:  Step  %d\n", time->stepCount);
-    fprintf(filePointer, "scalar per node:    R     %s.den\n", enSet->baseName); 
+    fprintf(filePointer, "scalar per node:    rho   %s.rho\n", enSet->baseName); 
     fprintf(filePointer, "scalar per node:    u     %s.u\n", enSet->baseName); 
     fprintf(filePointer, "scalar per node:    v     %s.v\n", enSet->baseName); 
     fprintf(filePointer, "scalar per node:    w     %s.w\n", enSet->baseName); 
-    fprintf(filePointer, "scalar per node:    P     %s.pre\n", enSet->baseName); 
-    fprintf(filePointer, "scalar per node:    T     %s.tem\n", enSet->baseName); 
-    fprintf(filePointer, "vector per node:    Vel   %s.vel\n", enSet->baseName); 
+    fprintf(filePointer, "scalar per node:    p     %s.p\n", enSet->baseName); 
+    fprintf(filePointer, "scalar per node:    T     %s.T\n", enSet->baseName); 
+    fprintf(filePointer, "vector per node:    Vel   %s.Vel\n", enSet->baseName); 
     fprintf(filePointer, "\n"); 
     fclose(filePointer); /* close current opened file */
     /*
@@ -205,11 +205,11 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
     if (space->dz >= 1e38) {
         dz = 0;
     }
-    for (partCount = 0, partNum = 1; partCount < part->totalN; ++partCount, ++partNum) {
+    for (partCount = 0, partNum = 1; partCount < part->subN; ++partCount, ++partNum) {
         strncpy(enSet->stringData, "part", sizeof(EnsightString));
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
         fwrite(&partNum, sizeof(int), 1, filePointer);
-        strncpy(enSet->stringData, part->nameHead + partCount * part->nameLength, sizeof(EnsightString));
+        strncpy(enSet->stringData, part->name[partCount], sizeof(EnsightString));
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
         strncpy(enSet->stringData, "block iblanked", sizeof(EnsightString));
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
@@ -297,10 +297,9 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
     Real w = 0;
     Real eT = 0;
     int dim = 0; /* dimension count */
-    const char nameSuffix[6][10] = {"den", "u", "v", "w", "pre", "tem"};
+    const char nameSuffix[6][5] = {"rho", "u", "v", "w", "p", "T"};
     for (dim = 0; dim < 6; ++dim) {
-        snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, 
-                nameSuffix[dim]);
+        snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
         filePointer = fopen(enSet->fileName, "wb");
         if (filePointer == NULL) {
             FatalError("failed to write data to ensight data file: ensight.***...");
@@ -308,7 +307,7 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
         /* first line description per file */
         strncpy(enSet->stringData, "scalar variable", sizeof(EnsightString));
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        for (partCount = 0, partNum = 1; partCount < part->totalN; ++partCount, ++partNum) {
+        for (partCount = 0, partNum = 1; partCount < part->subN; ++partCount, ++partNum) {
             /* binary file format */
             strncpy(enSet->stringData, "part", sizeof(EnsightString));
             fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
@@ -361,15 +360,15 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
     /*
      * Write the velocity vector field (Binary Form)
      */
-    snprintf(enSet->fileName, sizeof(EnsightString), "%s.vel", enSet->baseName);
+    snprintf(enSet->fileName, sizeof(EnsightString), "%s.Vel", enSet->baseName);
     filePointer = fopen(enSet->fileName, "wb");
     if (filePointer == NULL) {
-        FatalError("failed to write ensight data file: ensight.vel***...");
+        FatalError("failed to write ensight data file: ensight.Vel***...");
     }
     /* binary file format */
     strncpy(enSet->stringData, "vector variable", sizeof(EnsightString));
     fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-    for (partCount = 0, partNum = 1; partCount < part->totalN; ++partCount, ++partNum) {
+    for (partCount = 0, partNum = 1; partCount < part->subN; ++partCount, ++partNum) {
         strncpy(enSet->stringData, "part", sizeof(EnsightString));
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
         fwrite(&partNum, sizeof(int), 1, filePointer);

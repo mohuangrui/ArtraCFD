@@ -87,7 +87,7 @@ static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,
     int idx = 0; /* linear array index math variable */
     EnsightReal data = 0; /* the ensight data format */
     int dim = 0; /* dimension count */
-    const char nameSuffix[5][10] = {"den", "u", "v", "w", "pre"};
+    const char nameSuffix[5][10] = {"rho", "u", "v", "w", "p"};
     /*
      * Define the primitive field variables.
      */
@@ -96,14 +96,13 @@ static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,
     Real v = 0;
     Real w = 0;
     for (dim = 0; dim < 5; ++dim) {
-        snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName,
-                nameSuffix[dim]);
+        snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
         filePointer = fopen(enSet->fileName, "rb");
         if (filePointer == NULL) {
             FatalError("failed to open restart data files: restart.***...");
         }
         fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        for (partCount = 0; partCount < part->totalN; ++partCount) {
+        for (partCount = 0; partCount < part->subN; ++partCount) {
             fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
             fread(&partNum, sizeof(int), 1, filePointer);
             fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);

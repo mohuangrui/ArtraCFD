@@ -14,7 +14,7 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ProgramMemoryRelease(Field *, Space *, Particle *, Partition *);
+static int ProgramMemoryRelease(Field *, Space *, Particle *);
 static int FinalInformation(void);
 /****************************************************************************
  * Function Definitions
@@ -22,10 +22,9 @@ static int FinalInformation(void);
 /*
  * This is the overall postprocessing function
  */
-int Postprocess(Field *field, Space *space, Particle *particle,
-        Partition *part)
+int Postprocess(Field *field, Space *space, Particle *particle)
 {
-    ProgramMemoryRelease(field, space, particle, part);
+    ProgramMemoryRelease(field, space, particle);
     FinalInformation();
     return 0;
 }
@@ -33,8 +32,7 @@ int Postprocess(Field *field, Space *space, Particle *particle,
  * This function together with some subfuctions realize the dynamic
  * memory release for each global pointer
  */
-static int ProgramMemoryRelease(Field *field, Space *space,
-        Particle *particle, Partition *part)
+static int ProgramMemoryRelease(Field *field, Space *space, Particle *particle)
 {
     ShowInformation("Releasing memory back to system...");
     /* field variable related */
@@ -45,16 +43,7 @@ static int ProgramMemoryRelease(Field *field, Space *space,
     RetrieveStorage(space->geoID);
     RetrieveStorage(space->ghostFlag);
     /* particle related */
-    RetrieveStorage(particle->x);
-    RetrieveStorage(particle->y);
-    RetrieveStorage(particle->z);
-    RetrieveStorage(particle->r);
-    RetrieveStorage(particle->u);
-    RetrieveStorage(particle->v);
-    RetrieveStorage(particle->w);
-    /* partition related */
-    RetrieveStorage(part->nameHead);
-    RetrieveStorage(part->idxHead);
+    RetrieveStorage(particle->headAddress);
     ShowInformation("Session End");
     return 0;
 }

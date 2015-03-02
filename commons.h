@@ -501,6 +501,7 @@ typedef struct {
  */
 typedef struct {
     int totalN; /* total number of particles */
+    Real *headAddress; /* record the head address */
     Real *x; /* x coordinates of the particle center */
     Real *y; /* y coordinates of the particle center */
     Real *z; /* z coordinates of the particle center */
@@ -543,15 +544,19 @@ typedef struct {
  */
 typedef struct {
     int totalN; /* total number of domain partitions */
-    int *idxHead; /* store the malloc address of indices */
-    int *kSub; /* domain decomposition control */
-    int *kSup; /* domain decomposition control */
-    int *jSub; /* domain decomposition control */
-    int *jSup; /* domain decomposition control */
-    int *iSub; /* domain decomposition control */
-    int *iSup; /* domain decomposition control */
-    char *nameHead; /* store the malloc address of names */
-    int nameLength; /* length of names */
+    const int subN; /* 13 inner partitions for each partition */
+    int kSub[13]; /* inner decomposition control for each partition */
+    int kSup[13];
+    int jSub[13];
+    int jSup[13];
+    int iSub[13];
+    int iSup[13];
+    int normalZ[13]; /* outer surface normal vector of each inner part */
+    int normalY[13];
+    int normalX[13];
+    int typeBC[13]; /* BC type of each inner part */
+    Real valueBC[13][6]; /* BC values of each inner part */
+    char name[13][15]; /* store names of each inner part */
 }Partition;
 /*
  * Program command line arguments and overall control

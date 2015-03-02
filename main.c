@@ -43,6 +43,7 @@ int main(int argc, char *argv[])
         .geoID = NULL};
     Particle theParticle = { /* particle entities */
         .totalN = 0,
+        .headAddress = NULL,
         .x = NULL,
         .y = NULL,
         .z = NULL,
@@ -72,16 +73,20 @@ int main(int argc, char *argv[])
         .refVelocity = 0.0,
         .refTemperature = 0.0};
     Partition thePart = { /* domain partition control */
-        .totalN = 0,
-        .idxHead = NULL,
-        .kSub = NULL,
-        .kSup = NULL,
-        .jSub = NULL,
-        .jSup = NULL,
-        .iSub = NULL,
-        .iSup = NULL,
-        .nameHead = NULL,
-        .nameLength = 0};
+        .totalN = 1,
+        .subN = 13,
+        .kSub = {0},
+        .kSup = {0},
+        .jSub = {0},
+        .jSup = {0},
+        .iSub = {0},
+        .iSup = {0},
+        .normalZ = {0},
+        .normalY = {0},
+        .normalX = {0},
+        .typeBC = {0},
+        .valueBC = {{0.0},{0.0}},
+        .name = {" "}};
     Control theControl = { /* program overall control */
         .runMode = 'i',
         .processorN = 1};
@@ -100,7 +105,7 @@ int main(int argc, char *argv[])
     /*
      * Postprocessing
      */
-    Postprocess(&theField, &theSpace, &theParticle, &thePart);
+    Postprocess(&theField, &theSpace, &theParticle);
     /*
      * Successfully return
      */

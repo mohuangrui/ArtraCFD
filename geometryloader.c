@@ -87,13 +87,14 @@ static int ReadGeometryData(FILE *filePointer, Particle *particle)
         return 0;
     }
     /* first assign storage to particle pointers */
-    particle->x = AssignStorage(particle->totalN, "Real");
-    particle->y = AssignStorage(particle->totalN, "Real");
-    particle->z = AssignStorage(particle->totalN, "Real");
-    particle->r = AssignStorage(particle->totalN, "Real");
-    particle->u = AssignStorage(particle->totalN, "Real");
-    particle->v = AssignStorage(particle->totalN, "Real");
-    particle->w = AssignStorage(particle->totalN, "Real");
+    particle->headAddress = AssignStorage(particle->totalN * 7, "Real");
+    particle->x = particle->headAddress + particle->totalN * 0;
+    particle->y = particle->headAddress + particle->totalN * 1;
+    particle->z = particle->headAddress + particle->totalN * 2;
+    particle->r = particle->headAddress + particle->totalN * 3;
+    particle->u = particle->headAddress + particle->totalN * 4;
+    particle->v = particle->headAddress + particle->totalN * 5;
+    particle->w = particle->headAddress + particle->totalN * 6;
     /* then read and store data per object*/
     char currentLine[200] = {'\0'}; /* store the current read line */
     int geoCount = 0; /* geometry object count */
