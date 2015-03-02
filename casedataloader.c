@@ -274,8 +274,7 @@ static int WriteBoundaryData(FILE **filePointerPointer, const Partition *part, c
 /*
  * This function outputs the case setting data to a file for verification.
  */
-static int WriteVerifyData(const Space *space, const Time *time, 
-        const Flow *flow, const Partition *part)
+static int WriteVerifyData(const Space *space, const Time *time, const Flow *flow, const Partition *part)
 {
     ShowInformation("  Data outputted into artracfd.verify...");
     FILE *filePointer = fopen("artracfd.verify", "w");
