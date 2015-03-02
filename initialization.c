@@ -53,11 +53,11 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
      * Initial conditions, these values should be
      * normalized values relative to the reference values.
      */
-    const Real rho0 = 1.0;
-    const Real u0 = 0.0;
-    const Real v0 = 0.0;
-    const Real w0 = 0.0;
-    const Real p0 = 1.0;
+    const Real rho = part->valueBC[12][0];
+    const Real u = part->valueBC[12][1];
+    const Real v = part->valueBC[12][2];
+    const Real w = part->valueBC[12][3];
+    const Real p = part->valueBC[12][4];
     /*
      * Initialize the interior field
      */
@@ -69,12 +69,12 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
         for (j = part->jSub[12]; j < part->jSup[12]; ++j) {
             for (i = part->iSub[12]; i < part->iSup[12]; ++i) {
                 idx = ((k * space->jMax + j) * space->iMax + i) * 5;
-                U[idx+0] = rho0;
-                U[idx+1] = rho0 * u0;
-                U[idx+2] = rho0 * v0;
-                U[idx+3] = rho0 * w0;
-                U[idx+4] = p0 / (flow->gamma - 1) + 
-                    0.5 * rho0 * (u0 * u0 + v0 * v0 + w0 * w0);
+                U[idx+0] = rho;
+                U[idx+1] = rho * u;
+                U[idx+2] = rho * v;
+                U[idx+3] = rho * w;
+                U[idx+4] = p / (flow->gamma - 1) + 
+                    0.5 * rho * (u * u + v * v + w * w);
             }
         }
     }
