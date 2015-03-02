@@ -14,21 +14,23 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ReadCaseSettingData(Space *, Time *, Flow *);
-static int WriteVerifyData(const Space *, const Time *, const Flow *);
-static int CheckCaseSettingData(const Space *, const Time *, const Flow *);
+static int ReadCaseSettingData(Space *, Time *, Flow *, Partition *);
+static int ReadBoundaryData(FILE **, Partition *, const int);
+static int WriteBoundaryData(FILE **, const Partition *, const int);
+static int WriteVerifyData(const Space *, const Time *, const Flow *, const Partition *);
+static int CheckCaseSettingData(const Space *, const Time *, const Flow *, const Partition *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
 /*
  * This function load the case settings from the case file.
  */
-int LoadCaseSettingData(Space *space, Time *time, Flow *flow)
+int LoadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *part)
 {
     ShowInformation("Loading case setting data ...");
-    ReadCaseSettingData(space, time, flow);
-    WriteVerifyData(space, time, flow);
-    CheckCaseSettingData(space, time, flow);
+    ReadCaseSettingData(space, time, flow, part);
+    WriteVerifyData(space, time, flow, part);
+    CheckCaseSettingData(space, time, flow, part);
     ShowInformation("Session End");
     return 0;
 }
@@ -56,7 +58,7 @@ int LoadCaseSettingData(Space *space, Time *time, Flow *flow)
  * you use for fprintf because the fprintf library function treats them as
  * synonymous, but it's crucial to get it right for sscanf. 
  */
-static int ReadCaseSettingData(Space *space, Time *time, Flow *flow)
+static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *part)
 {
     FILE *filePointer = fopen("artracfd.case", "r");
     if (filePointer == NULL) {
@@ -118,21 +120,162 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow)
             sscanf(currentLine, formatI, &(flow->refTemperature)); 
             continue;
         }
+        if (strncmp(currentLine, "west boundary begin", sizeof currentLine) == 0) {
+            ++entryCount;
+            /* Read boundary values for inner part */
+            ReadBoundaryData(&filePointer, part, 6);
+            continue;
+        }
+        if (strncmp(currentLine, "east boundary begin", sizeof currentLine) == 0) {
+            ++entryCount;
+            /* Read boundary values for inner part */
+            ReadBoundaryData(&filePointer, part, 7);
+            continue;
+        }
+        if (strncmp(currentLine, "south boundary begin", sizeof currentLine) == 0) {
+            ++entryCount;
+            /* Read boundary values for inner part */
+            ReadBoundaryData(&filePointer, part, 8);
+            continue;
+        }
+        if (strncmp(currentLine, "north boundary begin", sizeof currentLine) == 0) {
+            ++entryCount;
+            /* Read boundary values for inner part */
+            ReadBoundaryData(&filePointer, part, 9);
+            continue;
+        }
+        if (strncmp(currentLine, "front boundary begin", sizeof currentLine) == 0) {
+            ++entryCount;
+            /* Read boundary values for inner part */
+            ReadBoundaryData(&filePointer, part, 10);
+            continue;
+        }
+        if (strncmp(currentLine, "back boundary begin", sizeof currentLine) == 0) {
+            ++entryCount;
+            /* Read boundary values for inner part */
+            ReadBoundaryData(&filePointer, part, 11);
+            continue;
+        }
+        if (strncmp(currentLine, "initialization begin", sizeof currentLine) == 0) {
+            ++entryCount;
+            /*
+             * Read initial values rho, u, v, w, p to inner part 12
+             */
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, &(part->valueBC[12][0])); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, &(part->valueBC[12][1])); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, &(part->valueBC[12][2])); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, &(part->valueBC[12][3])); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, &(part->valueBC[12][4])); 
+            continue;
+        }
     }
     fclose(filePointer); /* close current opened file */
     /*
      * Check missing information section in configuration
      */
-    if (entryCount != 4) {
+    if (entryCount != 11) {
         FatalError("missing or repeated necessary information section");
     }
+    return 0;
+}
+/*
+ * Boundary type ID:
+ * 0: interior region (default value)
+ * 1: inlet
+ * 2: outflow
+ * 3: slip wall
+ * 4: nonslip wall
+ */
+static int ReadBoundaryData(FILE **filePointerPointer, Partition *part, const int partID)
+{
+    FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
+    char currentLine[200] = {'\0'}; /* store the current read line */
+    char formatI[5] = "%lg"; /* default is double type */
+    if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
+        strncpy(formatI, "%g", sizeof formatI); /* float type */
+    }
+    fgets(currentLine, sizeof currentLine, filePointer);
+    CommandLineProcessor(currentLine); /* process current line */
+    if (strncmp(currentLine, "inlet", sizeof currentLine) == 0) {
+        part->typeBC[partID] = 1;
+        fgets(currentLine, sizeof currentLine, filePointer);
+        sscanf(currentLine, formatI, &(part->valueBC[partID][0])); 
+        fgets(currentLine, sizeof currentLine, filePointer);
+        sscanf(currentLine, formatI, &(part->valueBC[partID][1])); 
+        fgets(currentLine, sizeof currentLine, filePointer);
+        sscanf(currentLine, formatI, &(part->valueBC[partID][2])); 
+        fgets(currentLine, sizeof currentLine, filePointer);
+        sscanf(currentLine, formatI, &(part->valueBC[partID][3])); 
+        fgets(currentLine, sizeof currentLine, filePointer);
+        sscanf(currentLine, formatI, &(part->valueBC[partID][4])); 
+        *filePointerPointer = filePointer; /* return a updated value of file pointer */
+        return 0;
+    }
+    if (strncmp(currentLine, "outflow", sizeof currentLine) == 0) {
+        part->typeBC[partID] = 2;
+        *filePointerPointer = filePointer; /* return a updated value of file pointer */
+        return 0;
+    }
+    if (strncmp(currentLine, "slip wall", sizeof currentLine) == 0) {
+        part->typeBC[partID] = 3;
+        fgets(currentLine, sizeof currentLine, filePointer);
+        sscanf(currentLine, formatI, &(part->valueBC[partID][5])); 
+        *filePointerPointer = filePointer; /* return a updated value of file pointer */
+        return 0;
+    }
+    if (strncmp(currentLine, "nonslip wall", sizeof currentLine) == 0) {
+        part->typeBC[partID] = 4;
+        fgets(currentLine, sizeof currentLine, filePointer);
+        sscanf(currentLine, formatI, &(part->valueBC[partID][5])); 
+        *filePointerPointer = filePointer; /* return a updated value of file pointer */
+        return 0;
+    }
+    FatalError("Unidentified boundary type...");
+    return 0;
+}
+static int WriteBoundaryData(FILE **filePointerPointer, const Partition *part, const int partID)
+{
+    FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
+    if (part->typeBC[partID] == 1) {
+        fprintf(filePointer, "boundary type: inlet\n"); 
+        fprintf(filePointer, "density: %.6g\n", part->valueBC[partID][0]);
+        fprintf(filePointer, "x velocity: %.6g\n", part->valueBC[partID][1]);
+        fprintf(filePointer, "y velocity: %.6g\n", part->valueBC[partID][2]);
+        fprintf(filePointer, "z velocity: %.6g\n", part->valueBC[partID][3]);
+        fprintf(filePointer, "pressure: %.6g\n", part->valueBC[partID][4]);
+        *filePointerPointer = filePointer; /* return a updated value of file pointer */
+        return 0;
+    }
+    if (part->typeBC[partID] == 2) {
+        fprintf(filePointer, "boundary type: outflow\n"); 
+        *filePointerPointer = filePointer; /* return a updated value of file pointer */
+        return 0;
+    }
+    if (part->typeBC[partID] == 3) {
+        fprintf(filePointer, "boundary type: slip wall\n"); 
+        fprintf(filePointer, "temperature: %.6g\n", part->valueBC[partID][5]);
+        *filePointerPointer = filePointer; /* return a updated value of file pointer */
+        return 0;
+    }
+    if (part->typeBC[partID] == 4) {
+        fprintf(filePointer, "boundary type: nonslip wall\n"); 
+        fprintf(filePointer, "temperature: %.6g\n", part->valueBC[partID][5]);
+        *filePointerPointer = filePointer; /* return a updated value of file pointer */
+        return 0;
+    }
+    FatalError("Unidentified boundary type...");
     return 0;
 }
 /*
  * This function outputs the case setting data to a file for verification.
  */
 static int WriteVerifyData(const Space *space, const Time *time, 
-        const Flow *flow)
+        const Flow *flow, const Partition *part)
 {
     ShowInformation("  Data outputted into artracfd.verify...");
     FILE *filePointer = fopen("artracfd.verify", "w");
@@ -140,43 +283,98 @@ static int WriteVerifyData(const Space *space, const Time *time,
         FatalError("failed to write data to file: artracfd.verify");
     }
     /* output information to file */
-    fprintf(filePointer, "#--------------------------------------\n"); 
-    fprintf(filePointer, "# Input Conformation of ArtraCFD\n"); 
-    fprintf(filePointer, "#--------------------------------------\n"); 
-    fprintf(filePointer, "#       >> Space Domain << \n"); 
-    fprintf(filePointer, "#--------------------------------------\n"); 
-    fprintf(filePointer, "x, y, z length: %.6g, %.6g, %.6g\n", 
-            space->dx, space->dy, space->dz); 
-    fprintf(filePointer, "x, y, z mesh number: %d, %d, %d\n", 
-            space->nx, space->ny, space->nz); 
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "#                                                                             -\n");
+    fprintf(filePointer, "#                     Case Conformation for ArtraCFD                          -\n");
+    fprintf(filePointer, "#                                                                             -\n");
+    fprintf(filePointer, "# - Coordinate system: Right-handed Cartesian system. X-Y plane is the screen -\n");
+    fprintf(filePointer, "#   plane; X is horizontal from west to east; Y is vertical from south to     -\n");
+    fprintf(filePointer, "#   north; Z axis is perpendicular to the screen and points from front to     -\n");
+    fprintf(filePointer, "#   back; The origin locates at the west-south-front corner of the            -\n");
+    fprintf(filePointer, "#   computational domain;                                                     -\n");
+    fprintf(filePointer, "#                                                                             -\n");
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#                          >> Space Domain <<\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "x, y, z length: %.6g, %.6g, %.6g\n", space->dx, space->dy, space->dz); 
+    fprintf(filePointer, "x, y, z mesh number: %d, %d, %d\n", space->nx, space->ny, space->nz); 
     fprintf(filePointer, "exterior ghost cell layers: %d\n", space->ng); 
-    fprintf(filePointer, "#--------------------------------------\n"); 
-    fprintf(filePointer, "#       >> Time Domain << \n"); 
-    fprintf(filePointer, "#--------------------------------------\n"); 
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#                          >> Time Domain <<\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "restart flag: %d\n", time->restart); 
     fprintf(filePointer, "total evolution time: %.6g\n", time->totalTime); 
     fprintf(filePointer, "CFL condition number: %.6g\n", time->numCFL); 
     fprintf(filePointer, "exporting data times: %d\n", time->totalOutputTimes); 
-    fprintf(filePointer, "#--------------------------------------\n"); 
-    fprintf(filePointer, "#  >> Fluid and Flow Properties << \n"); 
-    fprintf(filePointer, "#--------------------------------------\n"); 
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#                    >> Fluid and Flow Properties <<\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "Prandtl number: %.6g\n", flow->refPr); 
-    fprintf(filePointer, "#--------------------------------------\n"); 
-    fprintf(filePointer, "#    >> Characteristic Values << \n"); 
-    fprintf(filePointer, "#--------------------------------------\n"); 
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#                        >> Reference Values  <<\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "length: %.6g\n", flow->refLength); 
     fprintf(filePointer, "density: %.6g\n", flow->refDensity); 
     fprintf(filePointer, "velocity: %.6g\n", flow->refVelocity); 
     fprintf(filePointer, "temperature: %.6g\n", flow->refTemperature); 
-    fprintf(filePointer, "#--------------------------------------\n\n"); 
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#                            >> NOTE <<\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "# Values in following parts are relative to reference values. Hence, they need\n");
+    fprintf(filePointer, "# to be normalized by the given reference values. Like pressure should be\n");
+    fprintf(filePointer, "# normalized by reference density times reference velocity square.\n");
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#                     >> Boundary Condition <<\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "Domian West\n"); 
+    WriteBoundaryData(&filePointer, part, 6);
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "Domian East\n"); 
+    WriteBoundaryData(&filePointer, part, 7);
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "Domian South\n"); 
+    WriteBoundaryData(&filePointer, part, 8);
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "Domian North\n"); 
+    WriteBoundaryData(&filePointer, part, 9);
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "Domian Front\n"); 
+    WriteBoundaryData(&filePointer, part, 10);
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "Domian Back\n"); 
+    WriteBoundaryData(&filePointer, part, 11);
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#                     >> Flow Initialization <<\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "density: %.6g\n", part->valueBC[12][0]);
+    fprintf(filePointer, "x velocity: %.6g\n", part->valueBC[12][1]);
+    fprintf(filePointer, "y velocity: %.6g\n", part->valueBC[12][2]);
+    fprintf(filePointer, "z velocity: %.6g\n", part->valueBC[12][3]);
+    fprintf(filePointer, "pressure: %.6g\n", part->valueBC[12][4]);
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fclose(filePointer); /* close current opened file */
     return 0;
 }
 /*
  * This function do some parameter checking
  */
-static int CheckCaseSettingData(const Space *space, const Time *time, 
-        const Flow *flow)
+static int CheckCaseSettingData(const Space *space, const Time *time, const Flow *flow, const Partition *part)
 {
     ShowInformation("  Preliminary case data checking ...");
     /* space */
@@ -198,8 +396,14 @@ static int CheckCaseSettingData(const Space *space, const Time *time,
     }
     /* reference */
     if ((flow->refLength <= 0) || (flow->refDensity <= 0) || 
-            (flow->refVelocity <= 0) || flow->refTemperature <= 0) {
+            (flow->refVelocity <= 0) || (flow->refTemperature <= 0)) {
         FatalError("wrong values in reference section of case settings");
+    }
+    /* initialization */
+    if ((part->valueBC[12][0] < 0) || (part->valueBC[12][1] < 0) || 
+            (part->valueBC[12][2] < 0) || (part->valueBC[12][3] < 0) ||
+            (part->valueBC[12][4] < 0)) {
+        FatalError("wrong values in initialization section of case settings");
     }
     return 0;
 }

@@ -16,7 +16,7 @@
  ****************************************************************************/
 static int NonrestartGeometryLoader(Particle *);
 static int RestartGeometryLoader(Particle *);
-static int ReadGeometryData(FILE *, Particle *);
+static int ReadGeometryData(FILE **, Particle *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -52,7 +52,7 @@ static int NonrestartGeometryLoader(Particle *particle)
         }
         if (strncmp(currentLine, "circle begin", sizeof currentLine) == 0) {
             ++entryCount;
-            ReadGeometryData(filePointer, particle);
+            ReadGeometryData(&filePointer, particle);
         }
         continue;
     }
@@ -76,13 +76,14 @@ static int RestartGeometryLoader(Particle *particle)
     char currentLine[200] = {'\0'}; /* store the current read line */
     fgets(currentLine, sizeof currentLine, filePointer);
     sscanf(currentLine, "N: %d", &(particle->totalN)); 
-    ReadGeometryData(filePointer, particle);
+    ReadGeometryData(&filePointer, particle);
     fclose(filePointer); /* close current opened file */
     ShowInformation("Session End");
     return 0;
 }
-static int ReadGeometryData(FILE *filePointer, Particle *particle)
+static int ReadGeometryData(FILE **filePointerPointer, Particle *particle)
 {
+    FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
     if (particle->totalN == 0) { /* no internal geometries */
         return 0;
     }
@@ -111,6 +112,7 @@ static int ReadGeometryData(FILE *filePointer, Particle *particle)
                 &(particle->u[geoCount]), &(particle->v[geoCount]),
                 &(particle->w[geoCount]));
     }
+    *filePointerPointer = filePointer; /* return a updated value of file pointer */
     return 0;
 }
 /* a good practice: end file with a newline */

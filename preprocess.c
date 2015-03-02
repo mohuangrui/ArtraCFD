@@ -29,7 +29,7 @@ static int ProgramMemoryAllocate(Field *, Space *);
 int Preprocess(Field *field, Space *space, Particle *particle, Time *time, 
         Partition *part, Flow *flow)
 {
-    LoadCaseSettingData(space, time, flow);
+    LoadCaseSettingData(space, time, flow, part);
     ComputeCFDParameters(space, time, flow);
     DomainPartition(part, space);
     ProgramMemoryAllocate(field, space);
