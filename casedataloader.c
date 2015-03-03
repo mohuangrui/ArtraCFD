@@ -17,6 +17,7 @@
 static int ReadCaseSettingData(Space *, Time *, Flow *, Partition *);
 static int ReadBoundaryData(FILE **, Partition *, const int);
 static int WriteBoundaryData(FILE **, const Partition *, const int);
+static int WriteRegionalInitializerData(FILE **, const int, const Real **);
 static int WriteVerifyData(const Space *, const Time *, const Flow *, const Partition *);
 static int CheckCaseSettingData(const Space *, const Time *, const Flow *, const Partition *);
 /****************************************************************************
@@ -176,7 +177,7 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
         }
         if (strncmp(currentLine, "plane initialization begin", sizeof currentLine) == 0) {
             /* optional entry do not increase entry count */
-            ++part->typeIC[0]; /* special initializer count and pointer */
+            ++part->typeIC[0]; /* regional initializer count and pointer */
             part->typeIC[part->typeIC[0]] = 1; /* IC type id */
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatIII, valueIC + 0, valueIC + 1, valueIC + 2); 
@@ -197,7 +198,7 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
         }
         if (strncmp(currentLine, "sphere initialization begin", sizeof currentLine) == 0) {
             /* optional entry do not increase entry count */
-            ++part->typeIC[0]; /* special initializer count and pointer */
+            ++part->typeIC[0]; /* regional initializer count and pointer */
             part->typeIC[part->typeIC[0]] = 2; /* IC type id */
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatIII, valueIC + 0, valueIC + 1, valueIC + 2); 
@@ -218,7 +219,7 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
         }
         if (strncmp(currentLine, "box initialization begin", sizeof currentLine) == 0) {
             /* optional entry do not increase entry count */
-            ++part->typeIC[0]; /* special initializer count and pointer */
+            ++part->typeIC[0]; /* regional initializer count and pointer */
             part->typeIC[part->typeIC[0]] = 3; /* IC type id */
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatIII, valueIC + 0, valueIC + 1, valueIC + 2); 
@@ -335,6 +336,52 @@ static int WriteBoundaryData(FILE **filePointerPointer, const Partition *part, c
     FatalError("Unidentified boundary type...");
     return 0;
 }
+static int WriteRegionalInitializerData(FILE **filePointerPointer, const int typeIC, const Real **valueICPointerPointer)
+{
+    FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
+    const Real *valueIC = *valueICPointerPointer; /* get the current valueIC pointer */
+    if (typeIC == 1) {
+        fprintf(filePointer, "regional initialization: plane\n"); 
+        fprintf(filePointer, "plane point x, y, z: %.6g, %.6g, %.6g\n", valueIC[0], valueIC[1], valueIC[2]);
+        fprintf(filePointer, "plane normal nx, ny, nz: %.6g, %.6g, %.6g\n", valueIC[3], valueIC[4], valueIC[5]);
+        fprintf(filePointer, "density: %.6g\n", valueIC[6]);
+        fprintf(filePointer, "x velocity: %.6g\n", valueIC[7]);
+        fprintf(filePointer, "y velocity: %.6g\n", valueIC[8]);
+        fprintf(filePointer, "z velocity: %.6g\n", valueIC[9]);
+        fprintf(filePointer, "pressure: %.6g\n", valueIC[10]);
+        *filePointerPointer = filePointer; /* return a updated value of file pointer */
+        *valueICPointerPointer = valueIC + 11; /* update pointer of valueIC queue */
+        return 0;
+    }
+    if (typeIC == 2) {
+        fprintf(filePointer, "regional initialization: sphere\n"); 
+        fprintf(filePointer, "center point x, y, z: %.6g, %.6g, %.6g\n", valueIC[0], valueIC[1], valueIC[2]);
+        fprintf(filePointer, "radius: %.6g\n", valueIC[3]);
+        fprintf(filePointer, "density: %.6g\n", valueIC[4]);
+        fprintf(filePointer, "x velocity: %.6g\n", valueIC[5]);
+        fprintf(filePointer, "y velocity: %.6g\n", valueIC[6]);
+        fprintf(filePointer, "z velocity: %.6g\n", valueIC[7]);
+        fprintf(filePointer, "pressure: %.6g\n", valueIC[8]);
+        *filePointerPointer = filePointer; /* return a updated value of file pointer */
+        *valueICPointerPointer = valueIC + 9; /* update pointer of valueIC queue */
+        return 0;
+    }
+    if (typeIC == 3) {
+        fprintf(filePointer, "regional initialization: box\n"); 
+        fprintf(filePointer, "west-south-front point, (x, y, z): %.6g, %.6g, %.6g\n", valueIC[0], valueIC[1], valueIC[2]);
+        fprintf(filePointer, "east-north-back point (x, y, z): %.6g, %.6g, %.6g\n", valueIC[3], valueIC[4], valueIC[5]);
+        fprintf(filePointer, "density: %.6g\n", valueIC[6]);
+        fprintf(filePointer, "x velocity: %.6g\n", valueIC[7]);
+        fprintf(filePointer, "y velocity: %.6g\n", valueIC[8]);
+        fprintf(filePointer, "z velocity: %.6g\n", valueIC[9]);
+        fprintf(filePointer, "pressure: %.6g\n", valueIC[10]);
+        *filePointerPointer = filePointer; /* return a updated value of file pointer */
+        *valueICPointerPointer = valueIC + 11; /* update pointer of valueIC queue */
+        return 0;
+    }
+    FatalError("Unidentified regional initializer type...");
+    return 0;
+}
 /*
  * This function outputs the case setting data to a file for verification.
  */
@@ -429,6 +476,17 @@ static int WriteVerifyData(const Space *space, const Time *time, const Flow *flo
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "Domian Back\n"); 
     WriteBoundaryData(&filePointer, part, 6);
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#                  >> Regional Initialization <<\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    const Real *valueIC = part->valueIC; /* pointer to the value queue of initial values */
+    int i = 0;
+    for (i = 1; i <= part->typeIC[0]; ++i) {
+        fprintf(filePointer, "#\n");
+        WriteRegionalInitializerData(&filePointer, part->typeIC[i], &valueIC);
+    }
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fclose(filePointer); /* close current opened file */

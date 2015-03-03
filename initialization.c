@@ -18,7 +18,7 @@
  ****************************************************************************/
 static int FirstRunInitializer(Real *U, const Space *, const Particle *,
         const Partition *, const Flow *);
-static int ApplySpecialInitializer(const int, const Real **, Real *U, const Space *, 
+static int ApplyRegionalInitializer(const int, const Real **, Real *U, const Space *, 
         const Partition *, const Flow *);
 static int RestartInitializer(Real *U, const Space *, Time *, 
         const Partition *, const Flow *);
@@ -77,11 +77,11 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
         }
     }
     /*
-     * Special initializer for specific flow regions
+     * Regional initializer for specific flow regions
      */
     const Real *valueIC = part->valueIC; /* pointer to the value queue of initial values */
     for (i = 1; i <= part->typeIC[0]; ++i) {
-        ApplySpecialInitializer(part->typeIC[i], &valueIC, U, space, part, flow);
+        ApplyRegionalInitializer(part->typeIC[i], &valueIC, U, space, part, flow);
     }
     /*
      * Apply boundary conditions to obtain an entire initialized flow field
@@ -90,9 +90,9 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
     return 0;
 }
 /*
- * The handling of special initialization for specific flow region is achieved
+ * The handling of regional initialization for specific flow region is achieved
  * through the cooperation of two data structures:
- * The typeIC array keeps a list of the types of special initialization, with
+ * The typeIC array keeps a list of the types of regional initialization, with
  * the first element typeIC[0] as a tally, as well as a pointer to search and 
  * manipulate the array when reading in a type entry.
  * The valueIC array is a queue data structure which stored the information of
@@ -103,7 +103,7 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
  * 2: sphere (x, y, z, r, rho, u, v, w, p)
  * 3: box (xmin, ymin, zmin, xmax, ymax, zmax, rho, u, v, w, p)
  */
-static int ApplySpecialInitializer(const int typeIC, const Real **valueICPointerPointer,
+static int ApplyRegionalInitializer(const int typeIC, const Real **valueICPointerPointer,
         Real *U, const Space *space, const Partition *part, const Flow *flow)
 {
     const Real *valueIC = *valueICPointerPointer; /* get the current valueIC pointer */
@@ -181,7 +181,7 @@ static int ApplySpecialInitializer(const int typeIC, const Real **valueICPointer
                         xh = (x - (i - space->ng) * space->dx) * normalX;
                         yh = (y - (j - space->ng) * space->dy) * normalY;
                         zh = (z - (k - space->ng) * space->dz) * normalZ;
-                        if ((xh + yh + zh) <= 0) { /* on the plane or on the normal direction */
+                        if ((xh + yh + zh) < 0) { /* on the normal direction */
                             flag = 1; /* set flag to true */
                         }
                         break;
@@ -189,7 +189,7 @@ static int ApplySpecialInitializer(const int typeIC, const Real **valueICPointer
                         xh = (x - (i - space->ng) * space->dx);
                         yh = (y - (j - space->ng) * space->dy);
                         zh = (z - (k - space->ng) * space->dz);
-                        if ((xh * xh + yh * yh + zh * zh - r * r) <= 0) { /* on or in the sphere */
+                        if ((xh * xh + yh * yh + zh * zh - r * r) < 0) { /* in the sphere */
                             flag = 1; /* set flag to true */
                         }
                         break;
@@ -197,7 +197,7 @@ static int ApplySpecialInitializer(const int typeIC, const Real **valueICPointer
                         normalX = ((i - space->ng) * space->dx - x) * ((i - space->ng) * space->dx - xh);
                         normalY = ((j - space->ng) * space->dy - y) * ((j - space->ng) * space->dy - yh);
                         normalZ = ((k - space->ng) * space->dz - z) * ((k - space->ng) * space->dz - zh);
-                        if ((normalX <= 0) || (normalY <= 0) || (normalZ <= 0)) { /* on or in the box */
+                        if ((normalX < 0) && (normalY < 0) && (normalZ < 0)) { /* in the box */
                             flag = 1; /* set flag to true */
                         }
                         break;
