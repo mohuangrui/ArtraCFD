@@ -178,25 +178,25 @@ static int ApplyRegionalInitializer(const int typeIC, const Real **valueICPointe
                 flag = 0; /* always initialize flag to zero */
                 switch (typeIC) {
                     case 1: /* plane */
-                        xh = (x - (i - space->ng) * space->dx) * normalX;
-                        yh = (y - (j - space->ng) * space->dy) * normalY;
-                        zh = (z - (k - space->ng) * space->dz) * normalZ;
+                        xh = (space->xMin + (i - space->ng) * space->dx - x) * normalX;
+                        yh = (space->yMin + (j - space->ng) * space->dy - y) * normalY;
+                        zh = (space->zMin + (k - space->ng) * space->dz - z) * normalZ;
                         if ((xh + yh + zh) > 0) { /* on the normal direction */
                             flag = 1; /* set flag to true */
                         }
                         break;
                     case 2: /* sphere */
-                        xh = (x - (i - space->ng) * space->dx);
-                        yh = (y - (j - space->ng) * space->dy);
-                        zh = (z - (k - space->ng) * space->dz);
+                        xh = (space->xMin + (i - space->ng) * space->dx - x);
+                        yh = (space->yMin + (j - space->ng) * space->dy - y);
+                        zh = (space->zMin + (k - space->ng) * space->dz - z);
                         if ((xh * xh + yh * yh + zh * zh - r * r) < 0) { /* in the sphere */
                             flag = 1; /* set flag to true */
                         }
                         break;
                     case 3: /* box */
-                        normalX = ((i - space->ng) * space->dx - x) * ((i - space->ng) * space->dx - xh);
-                        normalY = ((j - space->ng) * space->dy - y) * ((j - space->ng) * space->dy - yh);
-                        normalZ = ((k - space->ng) * space->dz - z) * ((k - space->ng) * space->dz - zh);
+                        normalX = (space->xMin + (i - space->ng) * space->dx - x) * (space->xMin + (i - space->ng) * space->dx - xh);
+                        normalY = (space->yMin + (j - space->ng) * space->dy - y) * (space->yMin + (j - space->ng) * space->dy - yh);
+                        normalZ = (space->zMin + (k - space->ng) * space->dz - z) * (space->zMin + (k - space->ng) * space->dz - zh);
                         if ((normalX < 0) && (normalY < 0) && (normalZ < 0)) { /* in the box */
                             flag = 1; /* set flag to true */
                         }
