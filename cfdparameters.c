@@ -31,16 +31,12 @@ int ComputeCFDParameters(Space *space, Time *time, Flow *flow)
  * Calculations in this program is node based. Instead of implicitly 
  * adding a calculation node at each cell center as in cell based 
  * program does and resulting grid size inconsistency at the boundaries,
- * we simply use available node layers in the original cells 
- * configurations. Therefore, to have the same number of nodes layers as
- * in a cell based approach, we need to explicitly use one more cell(mesh).
+ * we simply use available node layers in the original cell configurations. 
+ * Therefore, at least two cells are required in each direction.
  *
  * Moreover, if we have m cells without adding nodes at cell center but using
  * original nodes layers as computational domain, the total number of node
- * layers will be (m+1). To use n to stand for the total number of normal nodes
- * (that is, including boundary nodes and interior nodes but excluding exterior
- * ghost nodes), an extra 1 need to be added. As a conclusion, we need to
- * refine the inputed mesh number by 2.
+ * layers will be (m+1).
  *
  * After these operations, the member n(x,y,z) in Space is the total number of
  * normal node layers. Considering the exterior ghost cells, The detailed 
@@ -71,9 +67,19 @@ int ComputeCFDParameters(Space *space, Time *time, Flow *flow)
  */
 static int NodeBasedMeshNumberRefine(Space *space)
 {
-    space->nz = space->nz + 2;
-    space->ny = space->ny + 2;
-    space->nx = space->nx + 2;
+    if (space->nz < 2) {
+        space->nz = 2; /* at least two cells are required */
+    }
+    if (space->ny < 2) {
+        space->ny = 2; /* at least two cells are required */
+    }
+    if (space->nx < 2) {
+        space->nx = 2; /* at least two cells are required */
+    }
+    /* change from number of cells to number of node layers */
+    space->nz = space->nz + 1;
+    space->ny = space->ny + 1;
+    space->nx = space->nx + 1;
     space->kMax = space->nz + 2 * space->ng; /* nz nodes + 2*ng ghosts */
     space->jMax = space->ny + 2 * space->ng; /* ny nodes + 2*ng ghosts */
     space->iMax = space->nx + 2 * space->ng; /* nx nodes + 2*ng ghosts */
