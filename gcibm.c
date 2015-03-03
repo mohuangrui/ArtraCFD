@@ -86,7 +86,7 @@ static int LocateSolidGeometry(Space *space, Particle *particle, const Partition
                     distX = space->xMin + (i - space->ng) * space->dx - particle->x[geoCount];
                     distY = space->yMin + (j - space->ng) * space->dy - particle->y[geoCount];
                     distZ = space->zMin + (k - space->ng) * space->dz - particle->z[geoCount];
-                    distance = sqrt(distX * distX + distY * distY + distZ * distZ) - radius;
+                    distance = distX * distX + distY * distY + distZ * distZ - radius * radius;
                     if (distance < 0) { /* in the solid geometry */
                         space->ghostFlag[idx] = -1;
                         space->geoID[idx] = geoCount;
