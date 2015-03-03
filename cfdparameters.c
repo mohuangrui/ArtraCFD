@@ -97,6 +97,12 @@ static int InitializeCFDParameters(Space *space, Time *time, Flow *flow)
     space->dx = ((space->xMax - space->xMin) / (space->nx - 1)) / flow->refLength;
     space->dy = ((space->yMax - space->yMin) / (space->ny - 1)) / flow->refLength;
     space->dz = ((space->zMax - space->zMin) / (space->nz - 1)) / flow->refLength;
+    space->xMax = space->xMax / flow->refLength;
+    space->yMax = space->yMax / flow->refLength;
+    space->zMax = space->zMax / flow->refLength;
+    space->xMin = space->xMin / flow->refLength;
+    space->yMin = space->yMin / flow->refLength;
+    space->zMin = space->zMin / flow->refLength;
     /* time */
     time->totalTime = time->totalTime * flow->refVelocity / flow->refLength;
     /* fluid and flow */
