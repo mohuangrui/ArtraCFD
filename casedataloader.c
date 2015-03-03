@@ -84,7 +84,10 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatIII, 
-                    &(space->dx), &(space->dy), &(space->dz)); 
+                    &(space->xMin), &(space->yMin), &(space->zMin)); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatIII, 
+                    &(space->xMax), &(space->yMax), &(space->zMax)); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d, %d, %d", 
                     &(space->nx), &(space->ny), &(space->nz)); 
@@ -368,8 +371,8 @@ static int WriteRegionalInitializerData(FILE **filePointerPointer, const int typ
     }
     if (typeIC == 3) {
         fprintf(filePointer, "regional initialization: box\n"); 
-        fprintf(filePointer, "west-south-front point, (x, y, z): %.6g, %.6g, %.6g\n", valueIC[0], valueIC[1], valueIC[2]);
-        fprintf(filePointer, "east-north-back point (x, y, z): %.6g, %.6g, %.6g\n", valueIC[3], valueIC[4], valueIC[5]);
+        fprintf(filePointer, "xmin, ymin, zmin: %.6g, %.6g, %.6g\n", valueIC[0], valueIC[1], valueIC[2]);
+        fprintf(filePointer, "xmax, ymax, zmax: %.6g, %.6g, %.6g\n", valueIC[3], valueIC[4], valueIC[5]);
         fprintf(filePointer, "density: %.6g\n", valueIC[6]);
         fprintf(filePointer, "x velocity: %.6g\n", valueIC[7]);
         fprintf(filePointer, "y velocity: %.6g\n", valueIC[8]);
@@ -397,19 +400,14 @@ static int WriteVerifyData(const Space *space, const Time *time, const Flow *flo
     fprintf(filePointer, "#                                                                             -\n");
     fprintf(filePointer, "#                     Case Conformation for ArtraCFD                          -\n");
     fprintf(filePointer, "#                                                                             -\n");
-    fprintf(filePointer, "# - Coordinate system: Right-handed Cartesian system. X-Y plane is the screen -\n");
-    fprintf(filePointer, "#   plane; X is horizontal from west to east; Y is vertical from south to     -\n");
-    fprintf(filePointer, "#   north; Z axis is perpendicular to the screen and points from front to     -\n");
-    fprintf(filePointer, "#   back; The origin locates at the west-south-front corner of the            -\n");
-    fprintf(filePointer, "#   computational domain;                                                     -\n");
-    fprintf(filePointer, "#                                                                             -\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                          >> Space Domain <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "x, y, z length: %.6g, %.6g, %.6g\n", space->dx, space->dy, space->dz); 
+    fprintf(filePointer, "domain xmin, ymin, zmin: %.6g, %.6g, %.6g\n", space->xMin, space->yMin, space->zMin); 
+    fprintf(filePointer, "domain xmax, ymax, zmax: %.6g, %.6g, %.6g\n", space->xMax, space->yMax, space->zMax); 
     fprintf(filePointer, "x, y, z mesh number: %d, %d, %d\n", space->nx, space->ny, space->nz); 
     fprintf(filePointer, "exterior ghost cell layers: %d\n", space->ng); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
@@ -499,8 +497,9 @@ static int CheckCaseSettingData(const Space *space, const Time *time, const Flow
 {
     ShowInformation("  Preliminary case data checking ...");
     /* space */
-    if ((space->dz < 0) || (space->dy < 0) || (space->dx < 0)) {
-        FatalError("negative length values in case settings");
+    if (((space->xMax - space->xMin) < 0) || ((space->yMax - space->yMin) < 0) ||
+            ((space->zMax - space->zMin) < 0)) {
+        FatalError("wrong domian region values in case settings");
     }
     if ((space->nz < 1) || (space->ny < 1) || (space->nx < 1)
             || (space->ng < 1)) {
