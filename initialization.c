@@ -181,7 +181,7 @@ static int ApplyRegionalInitializer(const int typeIC, const Real **valueICPointe
                         xh = (x - (i - space->ng) * space->dx) * normalX;
                         yh = (y - (j - space->ng) * space->dy) * normalY;
                         zh = (z - (k - space->ng) * space->dz) * normalZ;
-                        if ((xh + yh + zh) < 0) { /* on the normal direction */
+                        if ((xh + yh + zh) > 0) { /* on the normal direction */
                             flag = 1; /* set flag to true */
                         }
                         break;
