@@ -83,9 +83,9 @@ static int LocateSolidGeometry(Space *space, Particle *particle, const Partition
                 space->ghostFlag[idx] = 0; /* reset to fluid */
                 for (geoCount = 0; geoCount < particle->totalN; ++geoCount) {
                     radius = particle->r[geoCount];
-                    distX = (i - space->ng) * space->dx - particle->x[geoCount];
-                    distY = (j - space->ng) * space->dy - particle->y[geoCount];
-                    distZ = (k - space->ng) * space->dz - particle->z[geoCount];
+                    distX = space->xMin + (i - space->ng) * space->dx - particle->x[geoCount];
+                    distY = space->yMin + (j - space->ng) * space->dy - particle->y[geoCount];
+                    distZ = space->zMin + (k - space->ng) * space->dz - particle->z[geoCount];
                     distance = sqrt(distX * distX + distY * distY + distZ * distZ) - radius;
                     if (distance < 0) { /* in the solid geometry */
                         space->ghostFlag[idx] = -1;
@@ -183,17 +183,30 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
                 idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
 
                 radius = particle->r[space->geoID[idx]];
-                distX = (i - space->ng) * space->dx - particle->x[space->geoID[idx]];
-                distY = (j - space->ng) * space->dy - particle->y[space->geoID[idx]];
-                distZ = (k - space->ng) * space->dz - particle->z[space->geoID[idx]];
+                distX = space->xMin + (i - space->ng) * space->dx - particle->x[space->geoID[idx]];
+                distY = space->yMin + (j - space->ng) * space->dy - particle->y[space->geoID[idx]];
+                distZ = space->zMin + (k - space->ng) * space->dz - particle->z[space->geoID[idx]];
                 distToCenter = sqrt(distX * distX + distY * distY + distZ * distZ);
                 normalX = distX / distToCenter;
                 normalY = distY / distToCenter;
                 normalZ = distZ / distToCenter;
                 distToSurface = radius - distToCenter;
-                imageI = i + (int)(2 * distToSurface * normalX / space->dx);
-                imageJ = j + (int)(2 * distToSurface * normalY / space->dy);
-                imageK = k + (int)(2 * distToSurface * normalZ / space->dz);
+
+                if (space->dx > 0) {
+                    imageI = i + (int)(2 * distToSurface * normalX / space->dx);
+                } else {
+                    imageI = i;
+                }
+                if (space->dy > 0) {
+                    imageJ = j + (int)(2 * distToSurface * normalY / space->dy);
+                } else {
+                    imageJ = j;
+                }
+                if (space->dz > 0) {
+                    imageK = k + (int)(2 * distToSurface * normalZ / space->dz);
+                } else {
+                    imageK = 0;
+                }
             }
         }
     }
