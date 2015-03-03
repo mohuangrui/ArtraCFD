@@ -263,6 +263,7 @@ static int ComputeViscousFlux(const Real *U, Real Gx[], Real Gy[], Real Gz[],
         du_dz = 0;
         dv_dz = 0;
         dw_dz = 0;
+        dT_dz = 0;
     }
 
     /* calculate derivatives in y direction */
