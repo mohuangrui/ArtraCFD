@@ -181,6 +181,9 @@ static int ComputeViscousFlux(const Real *U, Real Gx[], Real Gy[], Real Gz[],
     Real dT_dx = 0; /* partial T partial x */
     Real dT_dy = 0;
     Real dT_dz = 0;
+    const Real dz = space->dz;
+    const Real dy = space->dy;
+    const Real dx = space->dx;
     /*
      * Indices
      */
@@ -251,10 +254,16 @@ static int ComputeViscousFlux(const Real *U, Real Gx[], Real Gy[], Real Gz[],
     eT = U[idxF+4] / rho;
     T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
 
-    du_dz = (u_h - u) / (2 * space->dz);
-    dv_dz = (v_h - v) / (2 * space->dz);
-    dw_dz = (w_h - w) / (2 * space->dz);
-    dT_dz = (T_h - T) / (2 * space->dz);
+    if (dz > 0) {
+        du_dz = (u_h - u) / (2 * dz);
+        dv_dz = (v_h - v) / (2 * dz);
+        dw_dz = (w_h - w) / (2 * dz);
+        dT_dz = (T_h - T) / (2 * dz);
+    } else {
+        du_dz = 0;
+        dv_dz = 0;
+        dw_dz = 0;
+    }
 
     /* calculate derivatives in y direction */
     rho_h = U[idxN+0];
@@ -271,10 +280,17 @@ static int ComputeViscousFlux(const Real *U, Real Gx[], Real Gy[], Real Gz[],
     eT = U[idxS+4] / rho;
     T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
 
-    du_dy = (u_h - u) / (2 * space->dy);
-    dv_dy = (v_h - v) / (2 * space->dy);
-    dw_dy = (w_h - w) / (2 * space->dy);
-    dT_dy = (T_h - T) / (2 * space->dy);
+    if (dy > 0) {
+        du_dy = (u_h - u) / (2 * dy);
+        dv_dy = (v_h - v) / (2 * dy);
+        dw_dy = (w_h - w) / (2 * dy);
+        dT_dy = (T_h - T) / (2 * dy);
+    } else {
+        du_dy = 0;
+        dv_dy = 0;
+        dw_dy = 0;
+        dT_dy = 0;
+    }
 
     /* calculate derivatives in x direction */
     rho_h = U[idxE+0];
@@ -291,10 +307,17 @@ static int ComputeViscousFlux(const Real *U, Real Gx[], Real Gy[], Real Gz[],
     eT = U[idxW+4] / rho;
     T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
 
-    du_dx = (u_h - u) / (2 * space->dx);
-    dv_dx = (v_h - v) / (2 * space->dx);
-    dw_dx = (w_h - w) / (2 * space->dx);
-    dT_dx = (T_h - T) / (2 * space->dx);
+    if (dx > 0) {
+        du_dx = (u_h - u) / (2 * dx);
+        dv_dx = (v_h - v) / (2 * dx);
+        dw_dx = (w_h - w) / (2 * dx);
+        dT_dx = (T_h - T) / (2 * dx);
+    } else {
+        du_dx = 0;
+        dv_dx = 0;
+        dw_dx = 0;
+        dT_dx = 0;
+    }
 
     /* regain the primitive variables in current point */
     rho = U[idx+0];

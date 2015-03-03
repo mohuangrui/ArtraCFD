@@ -20,7 +20,7 @@
  ****************************************************************************/
 static Real ComputeTimeStepByCFL(const Real *U, const Space *, const Time *, 
         const Partition *, const Flow *);
-static Real Min(const Real valueA, const Real valueB);
+static Real MinPositive(const Real valueA, const Real valueB);
 static Real Max(const Real valueA, const Real valueB);
 /****************************************************************************
  * Function definitions
@@ -125,17 +125,26 @@ static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Time *
                 eT = U[idx+4] / rho;
                 p = (flow->gamma - 1) * rho * (eT - 0.5 * (u * u + v * v + w * w));
 
-                velocity = sqrt(flow->gamma * p / rho) + Max(u, Max(v, w));
+                velocity = sqrt(flow->gamma * p / rho) + Max(fabs(u), Max(fabs(v), fabs(w)));
                 if (velocityMax < velocity) {
                     velocityMax = velocity;
                 }
             }
         }
     }
-    return time->numCFL * Min(space->dx, Min(space->dy, space->dz)) / velocityMax;
+    return time->numCFL * MinPositive(space->dx, MinPositive(space->dy, space->dz)) / velocityMax;
 }
-static Real Min(const Real valueA, const Real valueB)
+static Real MinPositive(const Real valueA, const Real valueB)
 {
+    if ((valueA <= 0) && (valueB <= 0)) {
+        return 1e10;
+    }
+    if (valueA <= 0) {
+        return valueB;
+    }
+    if (valueB <= 0) {
+        return valueA;
+    }
     if (valueA < valueB) {
         return valueA;
     }
