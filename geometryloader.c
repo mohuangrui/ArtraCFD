@@ -44,13 +44,13 @@ static int NonrestartGeometryLoader(Particle *particle)
     int entryCount = 0; /* entry count */
     while (fgets(currentLine, sizeof currentLine, filePointer) != NULL) {
         CommandLineProcessor(currentLine); /* process current line */
-        if (strncmp(currentLine, "count begin", sizeof currentLine) == 0) {
+        if (strncmp(currentLine, "sphere count begin", sizeof currentLine) == 0) {
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d", &(particle->totalN)); 
             continue;
         }
-        if (strncmp(currentLine, "circle begin", sizeof currentLine) == 0) {
+        if (strncmp(currentLine, "sphere begin", sizeof currentLine) == 0) {
             ++entryCount;
             ReadGeometryData(&filePointer, particle);
         }

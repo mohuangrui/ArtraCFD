@@ -76,6 +76,7 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
         strncpy(formatI, "%g", sizeof formatI); /* float type */
         strncpy(formatIII, "%g, %g, %g", sizeof formatIII); /* float type */
     }
+    Real *valueIC = part->valueIC; /* auxiliary pointer for reading regional IC */
     while (fgets(currentLine, sizeof currentLine, filePointer) != NULL) {
         CommandLineProcessor(currentLine); /* process current line */
         if (strncmp(currentLine, "space begin", sizeof currentLine) == 0) {
@@ -171,6 +172,69 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
             ++entryCount;
             /* Read boundary values for inner part */
             ReadBoundaryData(&filePointer, part, 6);
+            continue;
+        }
+        if (strncmp(currentLine, "plane initialization begin", sizeof currentLine) == 0) {
+            /* optional entry do not increase entry count */
+            ++part->typeIC[0]; /* special initializer count and pointer */
+            part->typeIC[part->typeIC[0]] = 1; /* IC type id */
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatIII, valueIC + 0, valueIC + 1, valueIC + 2); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatIII, valueIC + 3, valueIC + 4, valueIC + 5); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, valueIC + 6); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, valueIC + 7); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, valueIC + 8); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, valueIC + 9); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, valueIC + 10); 
+            valueIC = valueIC + 11; /* update data loader pointer */
+            continue;
+        }
+        if (strncmp(currentLine, "sphere initialization begin", sizeof currentLine) == 0) {
+            /* optional entry do not increase entry count */
+            ++part->typeIC[0]; /* special initializer count and pointer */
+            part->typeIC[part->typeIC[0]] = 2; /* IC type id */
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatIII, valueIC + 0, valueIC + 1, valueIC + 2); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, valueIC + 3); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, valueIC + 4); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, valueIC + 5); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, valueIC + 6); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, valueIC + 7); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, valueIC + 8); 
+            valueIC = valueIC + 9; /* update data loader pointer */
+            continue;
+        }
+        if (strncmp(currentLine, "box initialization begin", sizeof currentLine) == 0) {
+            /* optional entry do not increase entry count */
+            ++part->typeIC[0]; /* special initializer count and pointer */
+            part->typeIC[part->typeIC[0]] = 3; /* IC type id */
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatIII, valueIC + 0, valueIC + 1, valueIC + 2); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatIII, valueIC + 3, valueIC + 4, valueIC + 5); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, valueIC + 6); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, valueIC + 7); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, valueIC + 8); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, valueIC + 9); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, valueIC + 10); 
+            valueIC = valueIC + 11; /* update data loader pointer */
             continue;
         }
     }
