@@ -190,21 +190,6 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
     int nodeCount[3] = {0, 0, 0}; /* i j k node number in each part */
     int blankID = 0; /* Ensight geometry iblank entry */
     EnsightReal data = 0; /* the ensight data format */
-    /*
-     * Recover the zero values of mesh size
-     */
-    Real dx = space->dx;
-    Real dy = space->dy;
-    Real dz = space->dz;
-    if (space->dx >= 1e38) {
-        dx = 0;
-    }
-    if (space->dy >=1e38) {
-        dy = 0;
-    }
-    if (space->dz >= 1e38) {
-        dz = 0;
-    }
     for (partCount = 0, partNum = 1; partCount < part->subN; ++partCount, ++partNum) {
         strncpy(enSet->stringData, "part", sizeof(EnsightString));
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
@@ -222,7 +207,7 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
         for (k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
             for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                 for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                    data = (i - space->ng) * dx;
+                    data = space->xMin + (i - space->ng) * space->dx;
                     fwrite(&data, sizeof(EnsightReal), 1, filePointer);
                 }
             }
@@ -231,7 +216,7 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
         for (k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
             for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                 for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                    data = (j - space->ng) * dy;
+                    data = space->yMin + (j - space->ng) * space->dy;
                     fwrite(&data, sizeof(EnsightReal), 1, filePointer);
                 }
             }
@@ -240,7 +225,7 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
         for (k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
             for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                 for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                    data = (k - space->ng) * dz;
+                    data = space->zMin + (k - space->ng) * space->dz;
                     fwrite(&data, sizeof(EnsightReal), 1, filePointer);
                 }
             }
