@@ -36,9 +36,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#                                                                             -\n");
     fprintf(filePointer, "# - Coordinate system: Right-handed Cartesian system. X-Y plane is the screen -\n");
     fprintf(filePointer, "#   plane; X is horizontal from west to east; Y is vertical from south to     -\n");
-    fprintf(filePointer, "#   north; Z axis is perpendicular to the screen and points from front to     -\n");
-    fprintf(filePointer, "#   back; The origin locates at the west-south-front corner of the            -\n");
-    fprintf(filePointer, "#   computational domain;                                                     -\n");
+    fprintf(filePointer, "#   north; Z axis is perpendicular to screen and points from front to back.   -\n");
     fprintf(filePointer, "# - Physical quantities are SI Unit based. Data are float type if no specific -\n");
     fprintf(filePointer, "#   information. Floats can be exponential notation of lower-case e.          -\n");
     fprintf(filePointer, "# - In each 'begin end' environment, there should NOT be any empty or comment -\n");
@@ -51,8 +49,9 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "space begin\n");
-    fprintf(filePointer, "6, 6, 0            # x, y, z length (0 if collapse a dimension)\n");
-    fprintf(filePointer, "100, 100, 1        # x, y, z mesh number (integer, 1 if collapse a dimension)\n");
+    fprintf(filePointer, "-3, -3, 0          # xmin, ymin, zmin of space domain\n");
+    fprintf(filePointer, "3, 3, 0            # xmax, ymax, zmax of space domain (max = min if collapse)\n");
+    fprintf(filePointer, "100, 100, 1        # x, y, z mesh number (integer, 1 if a dimension collapsed)\n");
     fprintf(filePointer, "2                  # number of exterior ghost cells layers (integer, >=1)\n");
     fprintf(filePointer, "space end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
@@ -153,7 +152,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#plane initialization begin\n");
-    fprintf(filePointer, "#3, 3, 0           # x, y, z of a plane point\n");
+    fprintf(filePointer, "#0, 0, 0           # x, y, z of a plane point\n");
     fprintf(filePointer, "#1, 1, 0           # normal vector of plane\n");
     fprintf(filePointer, "#1                 # density\n");
     fprintf(filePointer, "#3                 # x velocity\n");
@@ -163,7 +162,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#plane initialization end\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#sphere initialization begin\n");
-    fprintf(filePointer, "#1, 1, 0           # x, y, z of sphere center\n");
+    fprintf(filePointer, "#-2, -2, 0         # x, y, z of sphere center\n");
     fprintf(filePointer, "#0.5               # radius of sphere\n");
     fprintf(filePointer, "#2                 # density\n");
     fprintf(filePointer, "#4                 # x velocity\n");
@@ -173,8 +172,8 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#sphere initialization end\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#box initialization begin\n");
-    fprintf(filePointer, "#5, 5, 0           # xmin, ymin, zmin, west-south-front corner of box\n");
-    fprintf(filePointer, "#5.5, 5.5, 0       # xmax, ymax, zmax, east-north-back corner of box\n");
+    fprintf(filePointer, "#2, 2, 0           # xmin, ymin, zmin of box\n");
+    fprintf(filePointer, "#2.5, 2.5, 0       # xmax, ymax, zmax of box\n");
     fprintf(filePointer, "#3                 # density\n");
     fprintf(filePointer, "#5                 # x velocity\n");
     fprintf(filePointer, "#0                 # y velocity\n");
@@ -200,9 +199,7 @@ static int CaseGeometryFileGenerator(void)
     fprintf(filePointer, "#                                                                             -\n");
     fprintf(filePointer, "# - Coordinate system: Right-handed Cartesian system. X-Y plane is the screen -\n");
     fprintf(filePointer, "#   plane; X is horizontal from west to east; Y is vertical from south to     -\n");
-    fprintf(filePointer, "#   north; Z axis is perpendicular to the screen and points from front to     -\n");
-    fprintf(filePointer, "#   back; The origin locates at the west-south-front corner of the            -\n");
-    fprintf(filePointer, "#   computational domain;                                                     -\n");
+    fprintf(filePointer, "#   north; Z axis is perpendicular to screen and points from front to back.   -\n");
     fprintf(filePointer, "# - All coordinate values and velocity values here are relative values, they  -\n");
     fprintf(filePointer, "#   should be normalized by the reference length and velocity respectively.   -\n");
     fprintf(filePointer, "# - In each 'begin end' environment, there should NOT be any empty or comment -\n");
@@ -223,7 +220,7 @@ static int CaseGeometryFileGenerator(void)
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "sphere begin\n");
-    fprintf(filePointer, "3, 3, 0, 0.5, 0, 0, 0   # x, y, z, radius, u, v, w\n");
+    fprintf(filePointer, "0, 0, 0, 0.5, 0, 0, 0   # x, y, z, radius, u, v, w\n");
     fprintf(filePointer, "sphere end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");

@@ -490,9 +490,15 @@ typedef struct {
     int jMax; /* total node number in y */
     int kMax; /* total node number in z */
     int nMax; /* total node number */
-    Real dx; /* first use as x length, then update to mesh size in x */
-    Real dy; /* first use as y length, then update to mesh size in y */
-    Real dz; /* first use as z length, then update to mesh size in z */
+    Real dx; /* mesh size in x */
+    Real dy; /* mesh size in y */
+    Real dz; /* mesh size in z */
+    Real xMin; /* coordinates define the space domain */
+    Real yMin; /* coordinates define the space domain */
+    Real zMin; /* coordinates define the space domain */
+    Real xMax; /* coordinates define the space domain */
+    Real yMax; /* coordinates define the space domain */
+    Real zMax; /* coordinates define the space domain */
     int *ghostFlag; /* node type integer flag: normal, ghost, solid, etc. */
     int *geoID; /* store the ID of geometry object for each ghost cell */
 }Space;

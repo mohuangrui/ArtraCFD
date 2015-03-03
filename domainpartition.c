@@ -19,8 +19,7 @@
  * Coordinate system: right-handed Cartesian system.
  * X-Y plane is the screen plane, X is horizontal from west to east, 
  * Y is vertical from south to north. Z axis is perpendicular to the
- * screen and points from front to back. The origin locates at the 
- * west-south-front corner of the computational domain.
+ * screen and points from front to back. 
  *
  * The entire space domain will be decomposed according to the specified number
  * of processors. Moreover, each partition domain will be slitted into 13 parts:

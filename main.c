@@ -39,6 +39,12 @@ int main(int argc, char *argv[])
         .dx = 0.0,
         .dy = 0.0,
         .dz = 0.0,
+        .xMin = 0.0,
+        .yMin = 0.0,
+        .zMin = 0.0,
+        .xMax = 0.0,
+        .yMax = 0.0,
+        .zMax = 0.0,
         .ghostFlag = NULL,
         .geoID = NULL};
     Particle theParticle = { /* particle entities */

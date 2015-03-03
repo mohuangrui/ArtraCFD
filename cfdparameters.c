@@ -97,15 +97,6 @@ static int InitializeCFDParameters(Space *space, Time *time, Flow *flow)
     space->dx = (space->dx / (space->nx - 1)) / flow->refLength; /* normalized real dx */
     space->dy = (space->dy / (space->ny - 1)) / flow->refLength; /* normalized real dy */
     space->dz = (space->dz / (space->nz - 1)) / flow->refLength; /* normalized real dz */
-    if (space->dx <= 0) { /* zero value should have zero reciprocal */
-        space->dx = 1e38;
-    }
-    if (space->dy <= 0) {
-        space->dy = 1e38;
-    }
-    if (space->dz <= 0) {
-        space->dz = 1e38;
-    }
     /* time */
     time->totalTime = time->totalTime * flow->refVelocity / flow->refLength;
     /* fluid and flow */
