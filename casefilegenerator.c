@@ -112,8 +112,8 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "west boundary begin\n");
     fprintf(filePointer, "inlet              # boundary type\n");
-    fprintf(filePointer, "1                  # density\n");
-    fprintf(filePointer, "1                  # x velocity\n");
+    fprintf(filePointer, "2                  # density\n");
+    fprintf(filePointer, "2                  # x velocity\n");
     fprintf(filePointer, "0                  # y velocity\n");
     fprintf(filePointer, "0                  # z velocity\n");
     fprintf(filePointer, "1                  # pressure\n");
@@ -153,8 +153,8 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#plane initialization begin\n");
-    fprintf(filePointer, "#0, 0, 0           # x, y, z of a plane point\n");
-    fprintf(filePointer, "#1, 1, 0           # normal vector of plane\n");
+    fprintf(filePointer, "#-1, 1, 0          # x, y, z of a plane point\n");
+    fprintf(filePointer, "#-1, 1, 0          # normal vector of plane\n");
     fprintf(filePointer, "#1                 # density\n");
     fprintf(filePointer, "#3                 # x velocity\n");
     fprintf(filePointer, "#0                 # y velocity\n");
