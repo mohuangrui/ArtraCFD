@@ -315,7 +315,11 @@ static int ReadBoundaryData(FILE **filePointerPointer, Partition *part, const in
     if (strncmp(currentLine, "periodic", sizeof currentLine) == 0) {
         /* only need to set id and its periodic pair */
         part->typeBC[partID] = 5;
-        part->typeBC[partID - part->normalZ[partID] - part->normalY[partID] - part->normalX[partID]] = -5;
+        if ((partID == 1) || (partID == 3) || (partID == 5)) {
+            part->typeBC[partID+1] = -5;
+        } else {
+            part->typeBC[partID-1] = -5;
+        }
         *filePointerPointer = filePointer; /* return a updated value of file pointer */
         return 0;
     }
