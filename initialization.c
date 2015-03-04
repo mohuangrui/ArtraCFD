@@ -197,7 +197,7 @@ static int ApplyRegionalInitializer(const int typeIC, const Real **valueICPointe
                         normalX = (space->xMin + (i - space->ng) * space->dx - x) * (space->xMin + (i - space->ng) * space->dx - xh);
                         normalY = (space->yMin + (j - space->ng) * space->dy - y) * (space->yMin + (j - space->ng) * space->dy - yh);
                         normalZ = (space->zMin + (k - space->ng) * space->dz - z) * (space->zMin + (k - space->ng) * space->dz - zh);
-                        if ((normalX < 0) && (normalY < 0) && (normalZ < 0)) { /* in the box */
+                        if ((normalX <= 0) && (normalY <= 0) && (normalZ <= 0)) { /* in the box, equal sign is needed for collapse */
                             flag = 1; /* set flag to true */
                         }
                         break;
