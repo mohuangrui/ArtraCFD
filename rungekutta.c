@@ -43,7 +43,8 @@ int RungeKuttaTimeMarching(Field *field, Space *space, Particle *particle,
     Timer operationTimer; /* timer for computing operations */
     Real operationTime = 0; /* record consuming time of operation */
     /* time marching */
-    for (time->stepCount += 1; time->currentTime < time->totalTime; ++(time->stepCount)) {
+    for (time->stepCount += 1; (time->currentTime < time->totalTime) && 
+            (time->stepCount <= time->stepCount); ++(time->stepCount)) {
         /*
          * Calculate dt for current time step
          */

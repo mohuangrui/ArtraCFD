@@ -62,6 +62,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "time begin\n");
     fprintf(filePointer, "0                  # restart flag (integer, 0 if false and 1 if true)\n");
     fprintf(filePointer, "0.1                # total evolution time\n");
+    fprintf(filePointer, "10                 # a maximum number of steps to force cease\n");
     fprintf(filePointer, "0.8                # CFL condition number\n");
     fprintf(filePointer, "2                  # total number of times of exporting computed data (integer)\n");
     fprintf(filePointer, "time end\n");

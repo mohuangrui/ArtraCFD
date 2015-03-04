@@ -100,6 +100,8 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d", &(time->restart)); 
             fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, "%d", &(time->totalStep)); 
+            fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatI, &(time->totalTime)); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatI, &(time->numCFL)); 
@@ -416,6 +418,7 @@ static int WriteVerifyData(const Space *space, const Time *time, const Flow *flo
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "restart flag: %d\n", time->restart); 
+    fprintf(filePointer, "maximum number of steps: %d\n", time->totalStep); 
     fprintf(filePointer, "total evolution time: %.6g\n", time->totalTime); 
     fprintf(filePointer, "CFL condition number: %.6g\n", time->numCFL); 
     fprintf(filePointer, "exporting data times: %d\n", time->totalOutputTimes); 
