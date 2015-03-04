@@ -58,7 +58,6 @@ int InitializeDomainGeometry(Space *space)
 }
 int ComputeDomainGeometryGCIBM(Space *space, Particle *particle, const Partition *part)
 {
-    ShowInformation("  Computing domain geometry...");
     LocateSolidGeometry(space, particle, part);
     IdentifyGhostCells(space, part);
     return 0;
