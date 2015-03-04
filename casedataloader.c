@@ -100,9 +100,9 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d", &(time->restart)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%d", &(time->totalStep)); 
-            fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatI, &(time->totalTime)); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, "%d", &(time->totalStep)); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatI, &(time->numCFL)); 
             fgets(currentLine, sizeof currentLine, filePointer);
