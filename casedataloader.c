@@ -356,8 +356,13 @@ static int WriteBoundaryData(FILE **filePointerPointer, const Partition *part, c
         *filePointerPointer = filePointer; /* return a updated value of file pointer */
         return 0;
     }
-    if ((part->typeBC[partID] == 5) || (part->typeBC[partID] == -5)) {
-        fprintf(filePointer, "boundary type: periodic\n"); 
+    if ((part->typeBC[partID] == 5)) {
+        fprintf(filePointer, "boundary type: periodic, primary pair with translation\n"); 
+        *filePointerPointer = filePointer; /* return a updated value of file pointer */
+        return 0;
+    }
+    if ((part->typeBC[partID] == -5)) {
+        fprintf(filePointer, "boundary type: periodic, auxiliary pair with zero gradient flow\n"); 
         *filePointerPointer = filePointer; /* return a updated value of file pointer */
         return 0;
     }
