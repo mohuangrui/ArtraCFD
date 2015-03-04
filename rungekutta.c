@@ -44,7 +44,7 @@ int RungeKuttaTimeMarching(Field *field, Space *space, Particle *particle,
     Real operationTime = 0; /* record consuming time of operation */
     /* time marching */
     for (time->stepCount += 1; (time->currentTime < time->totalTime) && 
-            (time->stepCount <= time->stepCount); ++(time->stepCount)) {
+            (time->stepCount <= time->totalStep); ++(time->stepCount)) {
         /*
          * Calculate dt for current time step
          */
@@ -72,7 +72,8 @@ int RungeKuttaTimeMarching(Field *field, Space *space, Particle *particle,
          */
         accumulatedTime = accumulatedTime + time->dt;
         if ((accumulatedTime >=  exportTimeInterval) || 
-                (fabs(time->currentTime - time->totalTime) < 1e-38)) {
+                (time->currentTime - time->totalTime == 0 ) ||
+                (time->stepCount == time->totalStep)) {
             ++(time->outputCount); /* export count increase */
             TickTime(&operationTimer);
             WriteComputedDataEnsight(field->Un, space, particle, time, part, flow);

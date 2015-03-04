@@ -510,7 +510,8 @@ static int CheckCaseSettingData(const Space *space, const Time *time, const Flow
     }
     /* time */
     if ((time->restart < 0) || (time->restart > 1)|| (time->totalTime <= 0)
-            || (time->numCFL <= 0) || (time->totalOutputTimes < 1)) {
+            || (time->numCFL <= 0) || (time->totalOutputTimes < 1)
+            || (time->totalStep < 1)) {
         FatalError("wrong values in time section of case settings");
     }
     /* fluid and flow */
