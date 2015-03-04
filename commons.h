@@ -493,6 +493,9 @@ typedef struct {
     Real dx; /* mesh size in x */
     Real dy; /* mesh size in y */
     Real dz; /* mesh size in z */
+    Real ddx; /* reciprocal of mesh size in x */
+    Real ddy; /* reciprocal of mesh size in y */
+    Real ddz; /* reciprocal of mesh size in z */
     Real xMin; /* coordinates define the space domain */
     Real yMin; /* coordinates define the space domain */
     Real zMin; /* coordinates define the space domain */

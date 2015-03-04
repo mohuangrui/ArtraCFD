@@ -190,22 +190,9 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
                 normalY = distY / distToCenter;
                 normalZ = distZ / distToCenter;
                 distToSurface = radius - distToCenter;
-
-                if (space->dx > 0) {
-                    imageI = i + (int)(2 * distToSurface * normalX / space->dx);
-                } else {
-                    imageI = i;
-                }
-                if (space->dy > 0) {
-                    imageJ = j + (int)(2 * distToSurface * normalY / space->dy);
-                } else {
-                    imageJ = j;
-                }
-                if (space->dz > 0) {
-                    imageK = k + (int)(2 * distToSurface * normalZ / space->dz);
-                } else {
-                    imageK = 0;
-                }
+                imageI = i + (int)(2 * distToSurface * normalX * space->ddx);
+                imageJ = j + (int)(2 * distToSurface * normalY * space->ddy);
+                imageK = k + (int)(2 * distToSurface * normalZ * space->ddz);
             }
         }
     }
