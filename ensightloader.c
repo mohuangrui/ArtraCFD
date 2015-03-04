@@ -129,7 +129,7 @@ static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,
                                 u = U[idx+1] / rho;
                                 v = U[idx+2] / rho;
                                 w = U[idx+3] / rho;
-                                U[idx] = data / (flow->gamma - 1) + 0.5 * rho * (u * u + v * v + w * w);
+                                U[idx+4] = data / (flow->gamma - 1) + 0.5 * rho * (u * u + v * v + w * w);
                                 break;
                             default:
                                 break;

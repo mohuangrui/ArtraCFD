@@ -418,8 +418,8 @@ static int WriteVerifyData(const Space *space, const Time *time, const Flow *flo
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "restart flag: %d\n", time->restart); 
-    fprintf(filePointer, "maximum number of steps: %d\n", time->totalStep); 
     fprintf(filePointer, "total evolution time: %.6g\n", time->totalTime); 
+    fprintf(filePointer, "maximum number of steps: %d\n", time->totalStep); 
     fprintf(filePointer, "CFL condition number: %.6g\n", time->numCFL); 
     fprintf(filePointer, "exporting data times: %d\n", time->totalOutputTimes); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
