@@ -73,6 +73,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "fluid begin\n");
     fprintf(filePointer, "0.71               # Prandtl number\n");
+    fprintf(filePointer, "1                  # modify coefficient of dynamic viscosity (0 if inviscid)\n");
     fprintf(filePointer, "fluid end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
@@ -108,7 +109,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                     >> Boundary Condition <<\n");
     fprintf(filePointer, "#\n");
-    fprintf(filePointer, "# Available boundary types: [inlet], [outflow], [slip wall], [nonslip wall]\n");
+    fprintf(filePointer, "# Available types: [inlet], [outflow], [slip wall], [nonslip wall], [periodic]\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "west boundary begin\n");
     fprintf(filePointer, "inlet              # boundary type\n");
@@ -134,13 +135,11 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "north boundary end\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "front boundary begin\n");
-    fprintf(filePointer, "slip wall          # boundary type\n");
-    fprintf(filePointer, "-1                 # temperature, negative if adiabatic\n");
+    fprintf(filePointer, "periodic           # boundary type\n");
     fprintf(filePointer, "front boundary end\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "back boundary begin\n");
-    fprintf(filePointer, "slip wall          # boundary type\n");
-    fprintf(filePointer, "-1                 # temperature, negative if adiabatic\n");
+    fprintf(filePointer, "periodic           # boundary type\n");
     fprintf(filePointer, "back boundary end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");

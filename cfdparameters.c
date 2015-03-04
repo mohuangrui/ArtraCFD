@@ -125,8 +125,8 @@ static int InitializeCFDParameters(Space *space, Time *time, Flow *flow)
     flow->gasR = 8.314462175;
     /* reference Mach number */
     flow->refMa = flow->refVelocity / sqrt(flow->gamma * flow->gasR * flow->refTemperature);
-    /* reference dynamic viscosity for viscosity normalization */
-    flow->refMu = flow->refDensity * flow->refVelocity * flow->refLength;
+    /* reference dynamic viscosity for viscosity normalization and modify Sutherland's law */
+    flow->refMu = flow->refMu / (flow->refDensity * flow->refVelocity * flow->refLength);
     /*
      * Now replace some parameters by general forms that are valid
      * for both dimensional and nondimensional N-S equations, since

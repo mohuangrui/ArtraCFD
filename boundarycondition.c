@@ -103,6 +103,17 @@ static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space,
                             U[idx+4] = U[idx+0] * flow->cv * T;
                         }
                         break;
+                    case 5: /* primary periodic pair, apply boundary translation */
+                        idxh = (((k - (space->nz - 2) * normalZ) * space->jMax + (j - (space->ny - 2) * normalY)) * space->iMax + i - (space->nx - 2) * normalX) * 5;
+                        for (dim = 0; dim < 5; ++dim) {
+                            U[idx+dim] = U[idxh+dim];
+                        }
+                        break;
+                    case -5: /* auxiliary periodic pair, apply zero gradient flow */
+                        for (dim = 0; dim < 5; ++dim) {
+                            U[idx+dim] = U[idxh+dim];
+                        }
+                        break;
                     default:
                         break;
                 }
@@ -115,11 +126,13 @@ static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space,
                     idxhh = (((k + (ng-2) * normalZ) * space->jMax + (j + (ng-2) * normalY)) * space->iMax + i + (ng-2) * normalX) * 5;
                     switch (part->typeBC[partID]) {
                         case 1: /* inlet */
+                        case 5: /* primary periodic pair */
+                        case -5: /* auxiliary periodic pair */
                             for (dim = 0; dim < 5; ++dim) {
                                 U[idx+dim] = U[idxh+dim];
                             }
                             break;
-                        default:
+                        default: /* linear interpolation */
                             for (dim = 0; dim < 5; ++dim) {
                                 U[idx+dim] = 2 * U[idxh+dim] - U[idxhh+dim];
                             }

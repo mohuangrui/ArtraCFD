@@ -113,6 +113,8 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatI, &(flow->refPr)); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, &(flow->refMu)); 
             continue;
         }
         if (strncmp(currentLine, "reference begin", sizeof currentLine) == 0) {
@@ -260,9 +262,14 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
  * 2: outflow
  * 3: slip wall
  * 4: nonslip wall
+ * 5: periodic
+ * -5: periodic pair
  */
 static int ReadBoundaryData(FILE **filePointerPointer, Partition *part, const int partID)
 {
+    if (part->typeBC[partID] == -5) { /* already set as periodic pair */
+        return 0;
+    }
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
     char currentLine[200] = {'\0'}; /* store the current read line */
     char formatI[5] = "%lg"; /* default is double type */
@@ -305,6 +312,13 @@ static int ReadBoundaryData(FILE **filePointerPointer, Partition *part, const in
         *filePointerPointer = filePointer; /* return a updated value of file pointer */
         return 0;
     }
+    if (strncmp(currentLine, "periodic", sizeof currentLine) == 0) {
+        /* only need to set id and its periodic pair */
+        part->typeBC[partID] = 5;
+        part->typeBC[partID - part->normalZ[partID] - part->normalY[partID] - part->normalX[partID]] = -5;
+        *filePointerPointer = filePointer; /* return a updated value of file pointer */
+        return 0;
+    }
     FatalError("Unidentified boundary type...");
     return 0;
 }
@@ -335,6 +349,11 @@ static int WriteBoundaryData(FILE **filePointerPointer, const Partition *part, c
     if (part->typeBC[partID] == 4) {
         fprintf(filePointer, "boundary type: nonslip wall\n"); 
         fprintf(filePointer, "temperature: %.6g\n", part->valueBC[partID][5]);
+        *filePointerPointer = filePointer; /* return a updated value of file pointer */
+        return 0;
+    }
+    if ((part->typeBC[partID] == 5) || (part->typeBC[partID] == -5)) {
+        fprintf(filePointer, "boundary type: periodic\n"); 
         *filePointerPointer = filePointer; /* return a updated value of file pointer */
         return 0;
     }
@@ -428,6 +447,7 @@ static int WriteVerifyData(const Space *space, const Time *time, const Flow *flo
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "Prandtl number: %.6g\n", flow->refPr); 
+    fprintf(filePointer, "modify coefficient of dynamic viscosity: %.6g\n", flow->refMu); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                        >> Reference Values  <<\n");
@@ -515,7 +535,7 @@ static int CheckCaseSettingData(const Space *space, const Time *time, const Flow
         FatalError("wrong values in time section of case settings");
     }
     /* fluid and flow */
-    if ((flow->refPr <= 0)) {
+    if ((flow->refPr <= 0) || (flow->refMu < 0)) {
         FatalError("wrong values in fluid and flow section of case settings");
     }
     /* reference */

@@ -307,7 +307,7 @@ static int ComputeViscousFlux(const Real *U, Real Gx[], Real Gy[], Real Gz[],
     /*
      * Calculate dynamic viscosity and heat conductivity
      */
-    mu = 1.45e-6 * (pow(T * flow->refTemperature, 1.5) / (T * flow->refTemperature + 110)) / flow->refMu ;
+    mu = flow->refMu * 1.45e-6 * (pow(T * flow->refTemperature, 1.5) / (T * flow->refTemperature + 110));
     heatK = flow->gamma * flow->cv * mu / flow->refPr;
 
     divV = du_dx + dv_dy + dw_dz;
