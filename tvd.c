@@ -32,17 +32,16 @@ int TVD(Real *U, const Real *Un, const Space *space, const Partition *part, cons
      */
     return 0;
 }
-static int TVDNumericalFluxX(Real F[], const int k, const int j, const int i, 
+static int TVDNumericalFluxX(Real Fi[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    Real fluxSpace[6][5] = {{0}}; /* Storage space for required flux quantities */
-    Real *Fi = fluxSpace[0];
-    Real *Fih = fluxSpace[1];
-    Real *Fr = fluxSpace[2];
-    Real *Gl = fluxSpace[3];
-    Real *Gm = fluxSpace[4];
-    Real *Gr = fluxSpace[5];
-    Real primitiveSpace[3][6] = {{0}}; /* Storage space for primitive variables */
+    Real storage[12][5] = {{0}}; /* Storage space for required quantities */
+    Real *F = storage[0]; /* nonviscous flux at current node */
+    Real *Fh = storage[1]; /* nonviscous flux at neighbour */
+    Real *g = storage[2]; /* TVD g function at current node */
+    Real *gh = storage[3]; /* TVD g function at neighbour */
+    Real *lambda = storage[4]; /* eigenvalues */
+    Real *gamma = storage[5];
     /*
      * Assign flux pointers to their store space 
      */
