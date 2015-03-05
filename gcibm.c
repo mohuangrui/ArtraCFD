@@ -15,7 +15,7 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int LocateSolidGeometry(Space *, Particle *, const Partition *);
+static int LocateSolidGeometry(Space *, const Particle *, const Partition *);
 static int IdentifyGhostCells(Space *, const Partition *);
 /****************************************************************************
  * Function definitions
@@ -59,7 +59,7 @@ int ComputeDomainGeometryGCIBM(Space *space, Particle *particle, const Partition
     IdentifyGhostCells(space, part);
     return 0;
 }
-static int LocateSolidGeometry(Space *space, Particle *particle, const Partition *part)
+static int LocateSolidGeometry(Space *space, const Particle *particle, const Partition *part)
 {
     int idx = 0; /* linear array index math variable */
     /* geometry computation */

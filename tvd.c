@@ -236,10 +236,10 @@ static int ComputeViscousFlux(Real Gz[], Real Gy[], Real Gx[],
     eT = U[idxF+4] / rho;
     T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
 
-    const int du_dz = (u_h - u) * (0.5 * space->ddz);
-    const int dv_dz = (v_h - v) * (0.5 * space->ddz);
-    const int dw_dz = (w_h - w) * (0.5 * space->ddz);
-    const int dT_dz = (T_h - T) * (0.5 * space->ddz);
+    const Real du_dz = (u_h - u) * (0.5 * space->ddz);
+    const Real dv_dz = (v_h - v) * (0.5 * space->ddz);
+    const Real dw_dz = (w_h - w) * (0.5 * space->ddz);
+    const Real dT_dz = (T_h - T) * (0.5 * space->ddz);
 
     /* calculate derivatives in y direction */
     rho_h = U[idxN+0];
@@ -256,10 +256,10 @@ static int ComputeViscousFlux(Real Gz[], Real Gy[], Real Gx[],
     eT = U[idxS+4] / rho;
     T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
 
-    const int du_dy = (u_h - u) * (0.5 * space->ddy);
-    const int dv_dy = (v_h - v) * (0.5 * space->ddy);
-    const int dw_dy = (w_h - w) * (0.5 * space->ddy);
-    const int dT_dy = (T_h - T) * (0.5 * space->ddy);
+    const Real du_dy = (u_h - u) * (0.5 * space->ddy);
+    const Real dv_dy = (v_h - v) * (0.5 * space->ddy);
+    const Real dw_dy = (w_h - w) * (0.5 * space->ddy);
+    const Real dT_dy = (T_h - T) * (0.5 * space->ddy);
 
     /* calculate derivatives in x direction */
     rho_h = U[idxE+0];
@@ -276,10 +276,10 @@ static int ComputeViscousFlux(Real Gz[], Real Gy[], Real Gx[],
     eT = U[idxW+4] / rho;
     T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
 
-    const int du_dx = (u_h - u) * (0.5 * space->ddx);
-    const int dv_dx = (v_h - v) * (0.5 * space->ddx);
-    const int dw_dx = (w_h - w) * (0.5 * space->ddx);
-    const int dT_dx = (T_h - T) * (0.5 * space->ddx);
+    const Real du_dx = (u_h - u) * (0.5 * space->ddx);
+    const Real dv_dx = (v_h - v) * (0.5 * space->ddx);
+    const Real dw_dx = (w_h - w) * (0.5 * space->ddx);
+    const Real dT_dx = (T_h - T) * (0.5 * space->ddx);
 
     /* regain the primitive variables in current point */
     rho = U[idx+0];
@@ -290,10 +290,10 @@ static int ComputeViscousFlux(Real Gz[], Real Gy[], Real Gx[],
     T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
 
     /* Calculate dynamic viscosity and heat conductivity */
-    const int mu = flow->refMu * 1.45e-6 * (pow(T * flow->refTemperature, 1.5) / (T * flow->refTemperature + 110));
-    const int heatK = flow->gamma * flow->cv * mu / flow->refPr;
+    const Real mu = flow->refMu * 1.45e-6 * (pow(T * flow->refTemperature, 1.5) / (T * flow->refTemperature + 110));
+    const Real heatK = flow->gamma * flow->cv * mu / flow->refPr;
 
-    const int divV = du_dx + dv_dy + dw_dz;
+    const Real divV = du_dx + dv_dy + dw_dz;
 
     if (Gx != NULL) {
         Gx[0] = 0;

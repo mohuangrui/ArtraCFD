@@ -329,10 +329,8 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
  */
 static char QueryPriority(const OperatorStack *operatorStack, const char operatorA, const char operatorB)
 {
-    int i = 0; /* index of a operator */
-    int j = 0; /* index of a operator */
-    i = QueryIndex(operatorA);
-    j = QueryIndex(operatorB);
+    const int i = QueryIndex(operatorA);
+    const int j = QueryIndex(operatorB);
     return operatorStack->priority[i][j];
 }
 /*

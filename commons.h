@@ -73,7 +73,12 @@
  *   Everything else should be in parentheses. 
  * - Avoid complex logic like multiply nested ifs. Consider splitting your 
  *   code into multiple procedures, to decrease the level of complexity.
- * - Variables should be declared as locally as possible.
+ * - Variables should be declared as locally as possible:
+ *    * declare non-constant variables that are used through-out the function
+ *      at the top.
+ *    * declare constant variables when their values can be determined.
+ *    * declare variables that are used in only a local scope of the function
+ *      at the point where they are needed, e.g., loop counts.
  * - Use of const whenever possible, using const as much as possible is
  *   compiler-enforced protection from unintended writes to data
  *   that should be read-only.
