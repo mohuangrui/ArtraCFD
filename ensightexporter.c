@@ -181,7 +181,6 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
     /*
      * Begin to write each part
      */
-    int partNum = 1; /* part number starts from 1 */
     int idx = 0; /* linear array index math variable */
     int nodeCount[3] = {0, 0, 0}; /* i j k node number in each part */
     int blankID = 0; /* Ensight geometry iblank entry */
@@ -257,7 +256,6 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
         const Space *space, const Partition *part, const Flow *flow)
 {
     FILE *filePointer = NULL;
-    int partNum = 1; /* part number starts from 1 */
     int idx = 0; /* linear array index math variable */
     EnsightReal data = 0; /* the ensight data format */
     /*

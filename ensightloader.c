@@ -79,7 +79,6 @@ static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,
         const Space *space, const Partition *part, const Flow *flow)
 {
     FILE *filePointer = NULL;
-    int partNum = 1; /* part number starts from 1 */
     int idx = 0; /* linear array index math variable */
     EnsightReal data = 0; /* the ensight data format */
     const char nameSuffix[5][10] = {"rho", "u", "v", "w", "p"};
@@ -97,7 +96,7 @@ static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,
             FatalError("failed to open restart data files: restart.***...");
         }
         fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        for (int partCount = 0; partCount < part->subN; ++partCount) {
+        for (int partCount = 0, partNum = 1; partCount < part->subN; ++partCount) {
             fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
             fread(&partNum, sizeof(int), 1, filePointer);
             fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
