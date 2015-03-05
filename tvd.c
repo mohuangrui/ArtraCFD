@@ -22,6 +22,12 @@ static Real Max(const Real, const Real);
 static int ComputeNonViscousFlux(Real Fz[], Real Fy[], Real Fx[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
+static int ComputeViscousFlux(Real Gz[], Real Gy[], Real Gx[], 
+        const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Flow *flow);
+static int ComputeRoeAverage(Real Uoz[], Real Uoy[], Real Uox[], 
+        const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Flow *flow);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -48,35 +54,61 @@ static int TVDNumericalFluxX(Real H[], const int k, const int j, const int i,
     ComputeEigenvectorSpaceRx(R, k, j, i, U, space, flow);
     return 0;
 }
-static int ComputeEigenvectorSpaceRx(Real *R[], const int k, const int j, const int i, const Real *U, const Space *space, const Flow *flow);
+static int ComputeEigenvectorSpaceR(Real *Rz[], *Ry[], *Rx[], const int k, const int j, const int i, const Real *U, const Space *space, const Flow *flow);
 {
 
 }
 static int ComputeRoeAverage(Real Uoz[], Real Uoy[], Real Uox[], const int k, const int j, const int i, const Real *U, const Space *space, const Flow *flow)
 {
     const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
-    const int idxE = ((k * space->jMax + j) * space->iMax + i + 1) * 5;
-    const int idxN = ((k * space->jMax + j + 1) * space->iMax + i) * 5;
-    const int idxB = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
     const Real rho = U[idx+0];
     const Real u = U[idx+1] / rho;
     const Real v = U[idx+2] / rho;
     const Real w = U[idx+3] / rho;
     const Real hT = flow->gamma * U[idx+4] / rho - 0.5 * (u * u + v * v + w * w) * (flow->gamma - 1);
-    Real rho_h = 0; 
-    Real u_h = 0;
-    Real v_h = 0;
-    Real w_h = 0;
-    Real hT_h = 0;
     if (Uoz != NULL) {
-        rho_h = U[idxB+0];
-        u_h = U[idxB+1] / rho_h;
-        v_h = U[idxB+2] / rho_h;
-        w_h = U[idxB+3] / rho_h;
-        hT_h = flow->gamma * U[idxB+4] / rho_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h) * (flow->gamma - 1);
-        Uoz[0] = (0.5 * (sqrt(rho) + sqrt(rho_h))) * (0.5 * (sqrt(rho) + sqrt(rho_h)));
-        Uoz[1] = (sqrt(rho) * u + sqrt(rho_h))
+        const int idxh = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
+        const Real  rho_h = U[idxh+0];
+        const Real  u_h = U[idxh+1] / rho_h;
+        const Real  v_h = U[idxh+2] / rho_h;
+        const Real  w_h = U[idxh+3] / rho_h;
+        const Real  hT_h = flow->gamma * U[idxh+4] / rho_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h) * (flow->gamma - 1);
+        Uoz[0] = (0.5 * (sqrt(rho) + sqrt(rho_h))) * (0.5 * (sqrt(rho) + sqrt(rho_h))); /* rho average */
+        Uoz[1] = (sqrt(rho) * u + sqrt(rho_h) * u_h) / (sqrt(rho) + sqrt(rho_h)); /* u average */
+        Uoz[2] = (sqrt(rho) * v + sqrt(rho_h) * v_h) / (sqrt(rho) + sqrt(rho_h)); /* v average */
+        Uoz[3] = (sqrt(rho) * w + sqrt(rho_h) * w_h) / (sqrt(rho) + sqrt(rho_h)); /* w average */
+        Uoz[4] = (sqrt(rho) * hT + sqrt(rho_h) * hT_h) / (sqrt(rho) + sqrt(rho_h)); /* hT average */
+        Uoz[5] = sqrt((flow->gamma - 1) * (Uoz[4] - 0.5 * (Uoz[1] * Uoz[1] + Uoz[2] * Uoz[2] + Uoz[3] * Uoz[3]))); /* the speed of sound */
     }
+    if (Uoy != NULL) {
+        const int idxh = ((k * space->jMax + j + 1) * space->iMax + i) * 5;
+        const Real  rho_h = U[idxh+0];
+        const Real  u_h = U[idxh+1] / rho_h;
+        const Real  v_h = U[idxh+2] / rho_h;
+        const Real  w_h = U[idxh+3] / rho_h;
+        const Real  hT_h = flow->gamma * U[idxh+4] / rho_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h) * (flow->gamma - 1);
+        Uoy[0] = (0.5 * (sqrt(rho) + sqrt(rho_h))) * (0.5 * (sqrt(rho) + sqrt(rho_h))); /* rho average */
+        Uoy[1] = (sqrt(rho) * u + sqrt(rho_h) * u_h) / (sqrt(rho) + sqrt(rho_h)); /* u average */
+        Uoy[2] = (sqrt(rho) * v + sqrt(rho_h) * v_h) / (sqrt(rho) + sqrt(rho_h)); /* v average */
+        Uoy[3] = (sqrt(rho) * w + sqrt(rho_h) * w_h) / (sqrt(rho) + sqrt(rho_h)); /* w average */
+        Uoy[4] = (sqrt(rho) * hT + sqrt(rho_h) * hT_h) / (sqrt(rho) + sqrt(rho_h)); /* hT average */
+        Uoy[5] = sqrt((flow->gamma - 1) * (Uoy[4] - 0.5 * (Uoy[1] * Uoy[1] + Uoy[2] * Uoy[2] + Uoy[3] * Uoy[3]))); /* the speed of sound */
+    }
+    if (Uox != NULL) {
+        const int idxh = ((k * space->jMax + j) * space->iMax + i + 1) * 5;
+        const Real  rho_h = U[idxh+0];
+        const Real  u_h = U[idxh+1] / rho_h;
+        const Real  v_h = U[idxh+2] / rho_h;
+        const Real  w_h = U[idxh+3] / rho_h;
+        const Real  hT_h = flow->gamma * U[idxh+4] / rho_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h) * (flow->gamma - 1);
+        Uox[0] = (0.5 * (sqrt(rho) + sqrt(rho_h))) * (0.5 * (sqrt(rho) + sqrt(rho_h))); /* rho average */
+        Uox[1] = (sqrt(rho) * u + sqrt(rho_h) * u_h) / (sqrt(rho) + sqrt(rho_h)); /* u average */
+        Uox[2] = (sqrt(rho) * v + sqrt(rho_h) * v_h) / (sqrt(rho) + sqrt(rho_h)); /* v average */
+        Uox[3] = (sqrt(rho) * w + sqrt(rho_h) * w_h) / (sqrt(rho) + sqrt(rho_h)); /* w average */
+        Uox[4] = (sqrt(rho) * hT + sqrt(rho_h) * hT_h) / (sqrt(rho) + sqrt(rho_h)); /* hT average */
+        Uox[5] = sqrt((flow->gamma - 1) * (Uox[4] - 0.5 * (Uox[1] * Uox[1] + Uox[2] * Uox[2] + Uox[3] * Uox[3]))); /* the speed of sound */
+    }
+    return 0;
 }
 static int Lx(Real *U, const Real *Un, const Space *space, const Partition *part, const Flow *flow)
 {
