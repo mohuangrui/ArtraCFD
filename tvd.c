@@ -59,17 +59,60 @@ int TVD(Real *U, const Real *Un, const Space *space, const Partition *part, cons
      */
     return 0;
 }
-static int TVDNumericalFluxX(Real H[], const int k, const int j, const int i, 
+static int TVDNumericalFluxX(Real Hz[], Real Hy[], Real Hx[], 
+        const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
     Real F[5] = {0.0}; /* flux at current node */
     Real Fh[5] = {0.0}; /* flux at neighbour */
     Real R[5][5] = {{0.0}}; /* vector space {Rn} */
     Real Phi[5] = {0.0}; /* flux projection or decomposition coefficients on vector space {Rn} */
-    ComputeNonViscousFlux(NULL, NULL, F, k, j, i, U, space, flow);
-    ComputeNonViscousFlux(NULL, NULL, Fh, k, j, i+1, U, space, flow);
-    ComputeEigenvectorSpaceR(NULL, NULL, R, k, j, i, U, space, flow);
-    ComputeFluxDecompositionCoefficientPhi(NULL, NULL, Phi, k, j, i, U, space, flow);
+    Real RPhi[5] = {0.0}; /* R x Phi */
+    if (Hz != NULL) {
+        ComputeNonViscousFlux(F, NULL, NULL, k, j, i, U, space, flow);
+        ComputeNonViscousFlux(Fh, NULL, NULL, k+1, j, i, U, space, flow);
+        ComputeEigenvectorSpaceR(R, NULL, NULL, k, j, i, U, space, flow);
+        ComputeFluxDecompositionCoefficientPhi(Phi, NULL, NULL, k, j, i, U, space, flow);
+        for (int row = 0; row < 5; ++row) {
+            RPhi[row] = 0;
+            for (int col = 0; col < 5; ++col) {
+                RPhi[row] = RPhi[row] + R[row][col] * Phi[col];
+            }
+        }
+        for (int row = 0; row < 5; ++row) {
+            Hz[row] = 0.5 * (F[row] + Fh[row] + RPhi[row]);
+        }
+    }
+    if (Hy != NULL) {
+        ComputeNonViscousFlux(NULL, F, NULL, k, j, i, U, space, flow);
+        ComputeNonViscousFlux(NULL, Fh, NULL, k, j+1, i, U, space, flow);
+        ComputeEigenvectorSpaceR(NULL, R, NULL, k, j, i, U, space, flow);
+        ComputeFluxDecompositionCoefficientPhi(NULL, Phi, NULL, k, j, i, U, space, flow);
+        for (int row = 0; row < 5; ++row) {
+            RPhi[row] = 0;
+            for (int col = 0; col < 5; ++col) {
+                RPhi[row] = RPhi[row] + R[row][col] * Phi[col];
+            }
+        }
+        for (int row = 0; row < 5; ++row) {
+            Hy[row] = 0.5 * (F[row] + Fh[row] + RPhi[row]);
+        }
+    }
+    if (Hx != NULL) {
+        ComputeNonViscousFlux(NULL, NULL, F, k, j, i, U, space, flow);
+        ComputeNonViscousFlux(NULL, NULL, Fh, k, j, i+1, U, space, flow);
+        ComputeEigenvectorSpaceR(NULL, NULL, R, k, j, i, U, space, flow);
+        ComputeFluxDecompositionCoefficientPhi(NULL, NULL, Phi, k, j, i, U, space, flow);
+        for (int row = 0; row < 5; ++row) {
+            RPhi[row] = 0;
+            for (int col = 0; col < 5; ++col) {
+                RPhi[row] = RPhi[row] + R[row][col] * Phi[col];
+            }
+        }
+        for (int row = 0; row < 5; ++row) {
+            Hx[row] = 0.5 * (F[row] + Fh[row] + RPhi[row]);
+        }
+    }
     return 0;
 }
 static int ComputeFluxDecompositionCoefficientPhi(Real Phiz[], Real Phiy[], Real Phix[], 
