@@ -107,14 +107,19 @@ static int ApplyRegionalInitializer(const int typeIC, const Real **valueICPointe
         Real *U, const Space *space, const Partition *part, const Flow *flow)
 {
     const Real *valueIC = *valueICPointerPointer; /* get the current valueIC pointer */
-    Real rho = 0;
-    Real u = 0;
-    Real v = 0;
-    Real w = 0;
-    Real p = 0;
-    Real x = 0;
-    Real y = 0;
-    Real z = 0;
+    /*
+     * Acquire the specialized information data entries
+     */
+    /* the fix index part */
+    const Real x = valueIC[0];
+    const Real y = valueIC[1];
+    const Real z = valueIC[2];
+    const Real rho = valueIC[10];
+    const Real u = valueIC[11];
+    const Real v = valueIC[12];
+    const Real w = valueIC[13];
+    const Real p = valueIC[14];
+    /* the vary part */
     Real r = 0;
     Real xh = 0;
     Real yh = 0;
@@ -122,47 +127,24 @@ static int ApplyRegionalInitializer(const int typeIC, const Real **valueICPointe
     Real normalZ = 0;
     Real normalY = 0;
     Real normalX = 0;
-    /*
-     * First, acquire the information data entries
-     */
-    x = valueIC[0];
-    y = valueIC[1];
-    z = valueIC[2];
     switch (typeIC) {
         case 1: /* plane */
             normalX = valueIC[3];
             normalY = valueIC[4];
             normalZ = valueIC[5];
-            rho = valueIC[6];
-            u = valueIC[7];
-            v = valueIC[8];
-            w = valueIC[9];
-            p = valueIC[10];
-            *valueICPointerPointer = valueIC + 11; /* update pointer of valueIC queue */
             break;
         case 2: /* sphere */
             r = valueIC[3];
-            rho = valueIC[4];
-            u = valueIC[5];
-            v = valueIC[6];
-            w = valueIC[7];
-            p = valueIC[8];
-            *valueICPointerPointer = valueIC + 9; /* update pointer of valueIC queue */
             break;
         case 3: /* box */
             xh = valueIC[3];
             yh = valueIC[4];
             zh = valueIC[5];
-            rho = valueIC[6];
-            u = valueIC[7];
-            v = valueIC[8];
-            w = valueIC[9];
-            p = valueIC[10];
-            *valueICPointerPointer = valueIC + 11; /* update pointer of valueIC queue */
             break;
         default:
             break;
     }
+    *valueICPointerPointer = valueIC + 15; /* update pointer of valueIC queue */
     /*
      * Apply initial values for nodes that meets condition
      */
