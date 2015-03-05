@@ -19,16 +19,22 @@ static int sign(const Real);
 static Real minmod(const Real, const Real, const Real);
 static Real Min(const Real, const Real);
 static Real Max(const Real, const Real);
-static int ComputeDecompositionCoefficientAlpha(Real alphaz[], Real alphay[], Real alphax[], 
+static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
+        Real lambdaz[], Real lambday[], Real lambdax[], 
+        Real alphaz[], Real alphay[], Real alphax[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
-static int ComputeFluxDecompositionCoefficientPhi(Real Phiz[], Real Phiy[], Real Phix[], 
+static int ComputeFluxDecompositionCoefficientPhi(
+        Real Phiz[], Real Phiy[], Real Phix[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
-static int ComputeEigenvectorSpaceL(Real Lz[][5], Real Ly[][5], Real Lx[][5], 
+static int ComputeEigenvaluesAndEigenvectorSpaceL(
+        Real lambdaz[], Real lambday[], Real lambdax[],
+        Real Lz[][5], Real Ly[][5], Real Lx[][5], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
-static int ComputeEigenvectorSpaceR(Real Rz[][5], Real Ry[][5], Real Rx[][5], 
+static int ComputeEigenvectorSpaceR(
+        Real Rz[][5], Real Ry[][5], Real Rx[][5], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
 static int ComputeRoeAverage(Real Uoz[], Real Uoy[], Real Uox[], 
@@ -77,10 +83,12 @@ static int ComputeFluxDecompositionCoefficientPhi(Real Phiz[], Real Phiy[], Real
     Real lambda[5] = {0.0}; /* eigenvalues */
     Real alpha[5] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
     if (Phiz != NULL) {
-        ComputeDecompositionCoefficientAlpha(alpha, NULL, NULL, k, j, i, U, space, flow);
+        ComputeEigenvaluesAndDecompositionCoefficientAlpha(lambda, NULL, NULL, alpha, NULL, NULL, k, j, i, U, space, flow);
     }
 }
-static int ComputeDecompositionCoefficientAlpha(Real alphaz[], Real alphay[], Real alphax[], 
+static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
+        Real lambdaz[], Real lambday[], Real lambdax[], 
+        Real alphaz[], Real alphay[], Real alphax[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
@@ -94,7 +102,7 @@ static int ComputeDecompositionCoefficientAlpha(Real alphaz[], Real alphay[], Re
             U[idxh+3] - U[idx+3],
             U[idxh+4] - U[idx+4]};
         Real L[5][5] = {{0.0}};
-        ComputeEigenvectorSpaceL(L, NULL, NULL, k, j, i, U, space, flow);
+        ComputeEigenvaluesAndEigenvectorSpaceL(lambdaz, NULL, NULL, L, NULL, NULL, k, j, i, U, space, flow);
         for (int row = 0; row < 5; ++row) {
             alphaz[row] = 0;
             for (int col = 0; col < 5; ++col) {
@@ -111,7 +119,7 @@ static int ComputeDecompositionCoefficientAlpha(Real alphaz[], Real alphay[], Re
             U[idxh+3] - U[idx+3],
             U[idxh+4] - U[idx+4]};
         Real L[5][5] = {{0.0}};
-        ComputeEigenvectorSpaceL(NULL, L, NULL, k, j, i, U, space, flow);
+        ComputeEigenvaluesAndEigenvectorSpaceL(NULL, lambday, NULL, NULL, L, NULL, k, j, i, U, space, flow);
         for (int row = 0; row < 5; ++row) {
             alphay[row] = 0;
             for (int col = 0; col < 5; ++col) {
@@ -128,7 +136,7 @@ static int ComputeDecompositionCoefficientAlpha(Real alphaz[], Real alphay[], Re
             U[idxh+3] - U[idx+3],
             U[idxh+4] - U[idx+4]};
         Real L[5][5] = {{0.0}};
-        ComputeEigenvectorSpaceL(NULL, NULL, L, k, j, i, U, space, flow);
+        ComputeEigenvaluesAndEigenvectorSpaceL(NULL, NULL, lambdax, NULL, NULL, L, k, j, i, U, space, flow);
         for (int row = 0; row < 5; ++row) {
             alphax[row] = 0;
             for (int col = 0; col < 5; ++col) {
@@ -136,12 +144,15 @@ static int ComputeDecompositionCoefficientAlpha(Real alphaz[], Real alphay[], Re
             }
         }
     }
+    return 0;
 }
-static int ComputeEigenvectorSpaceL(Real Lz[][5], Real Ly[][5], Real Lx[][5], 
+static int ComputeEigenvaluesAndEigenvectorSpaceL(
+        Real lambdaz[], Real lambday[], Real lambdax[], 
+        Real Lz[][5], Real Ly[][5], Real Lx[][5], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    if (Lz != NULL) {
+    if ((lambdaz != NULL) || (Lz != NULL)) {
         Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(Uo, NULL, NULL, k, j, i, U, space, flow);
         const Real u = Uo[1];
@@ -151,13 +162,18 @@ static int ComputeEigenvectorSpaceL(Real Lz[][5], Real Ly[][5], Real Lx[][5],
         const Real q = 0.5 * (u * u + v * v + w * w);
         const Real b = (flow->gamma - 1) / (2 * c * c);
         const Real d = (1 / (2 * c)); 
-        Lz[0][0] = b * q + d * w;   Lz[0][1] = -b * u;             Lz[0][2] = -b * v;             Lz[0][3] = -b * w - d;     Lz[0][4] = b;
-        Lz[1][0] = -2 * b * q * u;  Lz[1][1] = 2 * b * u * u + 1;  Lz[1][2] = 2 * b * v * u;      Lz[1][3] = 2 * b * w * u;  Lz[1][4] = -2 * b * u;
-        Lz[2][0] = -2 * b * q * v;  Lz[2][1] = 2 * b * v * u;      Lz[2][2] = 2 * b * v * v + 1;  Lz[2][3] = 2 * b * w * v;  Lz[2][4] = -2 * b * v;
-        Lz[3][0] = -2 * b * q + 1;  Lz[3][1] = 2 * b * u;          Lz[3][2] = 2 * b * v;          Lz[3][3] = 2 * b * w;      Lz[3][4] = -2 * b;
-        Lz[4][0] = b * q - d * w;   Lz[4][1] = -b * u;             Lz[4][2] = -b * v;             Lz[4][3] = -b * w + d;     Lz[4][4] = b;
+        if (lambdaz != NULL) {
+            lambdaz[0] = w - c; lambdaz[1] = w; lambdaz[2] = w; lambdaz[3] = w; lambdaz[4] = w + c;
+        }
+        if (Lz != NULL) {
+            Lz[0][0] = b * q + d * w;   Lz[0][1] = -b * u;             Lz[0][2] = -b * v;             Lz[0][3] = -b * w - d;     Lz[0][4] = b;
+            Lz[1][0] = -2 * b * q * u;  Lz[1][1] = 2 * b * u * u + 1;  Lz[1][2] = 2 * b * v * u;      Lz[1][3] = 2 * b * w * u;  Lz[1][4] = -2 * b * u;
+            Lz[2][0] = -2 * b * q * v;  Lz[2][1] = 2 * b * v * u;      Lz[2][2] = 2 * b * v * v + 1;  Lz[2][3] = 2 * b * w * v;  Lz[2][4] = -2 * b * v;
+            Lz[3][0] = -2 * b * q + 1;  Lz[3][1] = 2 * b * u;          Lz[3][2] = 2 * b * v;          Lz[3][3] = 2 * b * w;      Lz[3][4] = -2 * b;
+            Lz[4][0] = b * q - d * w;   Lz[4][1] = -b * u;             Lz[4][2] = -b * v;             Lz[4][3] = -b * w + d;     Lz[4][4] = b;
+        }
     }
-    if (Ly != NULL) {
+    if ((lambday != NULL) || (Ly != NULL)) {
         Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(NULL, Uo, NULL, k, j, i, U, space, flow);
         const Real u = Uo[1];
@@ -167,13 +183,18 @@ static int ComputeEigenvectorSpaceL(Real Lz[][5], Real Ly[][5], Real Lx[][5],
         const Real q = 0.5 * (u * u + v * v + w * w);
         const Real b = (flow->gamma - 1) / (2 * c * c);
         const Real d = (1 / (2 * c)); 
-        Lz[0][0] = b * q + d * v;    Lz[0][1] = -b * u;             Lz[0][2] = -b * v - d;     Lz[0][3] = -b * w;             Lz[0][4] = b;
-        Lz[1][0] = -2 * b * q * u;   Lz[1][1] = 2 * b * u * u + 1;  Lz[1][2] = 2 * b * v * u;  Lz[1][3] = 2 * b * w * u;      Lz[1][4] = -2 * b * u;
-        Lz[2][0] = -2 * b * q + 1;   Lz[2][1] = 2 * b * u;          Lz[2][2] = 2 * b * v;      Lz[2][3] = 2 * b * w;          Lz[2][4] = -2 * b;
-        Lz[3][0] = -2 * b * q * w;   Lz[3][1] = 2 * b * w * u;      Lz[3][2] = 2 * b * w * v;  Lz[3][3] = 2 * b * w * w + 1;  Lz[3][4] = -2 * b * w;
-        Lz[4][0] = b * q - d * v;    Lz[4][1] = -b * u;             Lz[4][2] = -b * v + d;     Lz[4][3] = -b * w;             Lz[4][4] = b;
+        if (lambday != NULL) {
+            lambday[0] = v - c; lambday[1] = v; lambday[2] = v; lambday[3] = v; lambday[4] = v + c;
+        }
+        if (Ly != NULL) {
+            Ly[0][0] = b * q + d * v;    Ly[0][1] = -b * u;             Ly[0][2] = -b * v - d;     Ly[0][3] = -b * w;             Ly[0][4] = b;
+            Ly[1][0] = -2 * b * q * u;   Ly[1][1] = 2 * b * u * u + 1;  Ly[1][2] = 2 * b * v * u;  Ly[1][3] = 2 * b * w * u;      Ly[1][4] = -2 * b * u;
+            Ly[2][0] = -2 * b * q + 1;   Ly[2][1] = 2 * b * u;          Ly[2][2] = 2 * b * v;      Ly[2][3] = 2 * b * w;          Ly[2][4] = -2 * b;
+            Ly[3][0] = -2 * b * q * w;   Ly[3][1] = 2 * b * w * u;      Ly[3][2] = 2 * b * w * v;  Ly[3][3] = 2 * b * w * w + 1;  Ly[3][4] = -2 * b * w;
+            Ly[4][0] = b * q - d * v;    Ly[4][1] = -b * u;             Ly[4][2] = -b * v + d;     Ly[4][3] = -b * w;             Ly[4][4] = b;
+        }
     }
-    if (Lx != NULL) {
+    if ((lambdax != NULL) || (Lx != NULL)) {
         Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(NULL, NULL, Uo, k, j, i, U, space, flow);
         const Real u = Uo[1];
@@ -183,11 +204,16 @@ static int ComputeEigenvectorSpaceL(Real Lz[][5], Real Ly[][5], Real Lx[][5],
         const Real q = 0.5 * (u * u + v * v + w * w);
         const Real b = (flow->gamma - 1) / (2 * c * c);
         const Real d = (1 / (2 * c)); 
-        Lz[0][0] = b * q + d * u;   Lz[0][1] = -b * u - d;     Lz[0][2] = -b * v;             Lz[0][3] = -b * w;             Lz[0][4] = b;
-        Lz[1][0] = -2 * b * q + 1;  Lz[1][1] = 2 * b * u;      Lz[1][2] = 2 * b * v;          Lz[1][3] = 2 * b * w;          Lz[1][4] = -2 * b;
-        Lz[2][0] = -2 * b * q * v;  Lz[2][1] = 2 * b * v * u;  Lz[2][2] = 2 * b * v * v + 1;  Lz[2][3] = 2 * b * w * v;      Lz[2][4] = -2 * b * v;
-        Lz[3][0] = -2 * b * q * w;  Lz[3][1] = 2 * b * w * u;  Lz[3][2] = 2 * b * w * v;      Lz[3][3] = 2 * b * w * w + 1;  Lz[3][4] = -2 * b * w;
-        Lz[4][0] = b * q - d * u;   Lz[4][1] = -b * u + d;     Lz[4][2] = -b * v;             Lz[4][3] = -b * w;             Lz[4][4] = b;
+        if (lambdax != NULL) {
+            lambdax[0] = u - c; lambdax[1] = u; lambdax[2] = u; lambdax[3] = u; lambdax[4] = u + c;
+        }
+        if (Lx != NULL) {
+            Lx[0][0] = b * q + d * u;   Lx[0][1] = -b * u - d;     Lx[0][2] = -b * v;             Lx[0][3] = -b * w;             Lx[0][4] = b;
+            Lx[1][0] = -2 * b * q + 1;  Lx[1][1] = 2 * b * u;      Lx[1][2] = 2 * b * v;          Lx[1][3] = 2 * b * w;          Lx[1][4] = -2 * b;
+            Lx[2][0] = -2 * b * q * v;  Lx[2][1] = 2 * b * v * u;  Lx[2][2] = 2 * b * v * v + 1;  Lx[2][3] = 2 * b * w * v;      Lx[2][4] = -2 * b * v;
+            Lx[3][0] = -2 * b * q * w;  Lx[3][1] = 2 * b * w * u;  Lx[3][2] = 2 * b * w * v;      Lx[3][3] = 2 * b * w * w + 1;  Lx[3][4] = -2 * b * w;
+            Lx[4][0] = b * q - d * u;   Lx[4][1] = -b * u + d;     Lx[4][2] = -b * v;             Lx[4][3] = -b * w;             Lx[4][4] = b;
+        }
     }
     return 0;
 }
