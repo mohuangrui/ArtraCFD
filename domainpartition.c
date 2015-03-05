@@ -52,7 +52,7 @@ int DomainPartition(Partition *part, const Space *space)
      * incorporated with surface normal vector. For example, (normalX, normalY,
      * normalZ) is the outer surface normal vector at surface surface point (i,
      * j, k), then its neighbour node (ih, jh, kh) is more inner than current
-     * node if (i-ih)*normalX + (j-jh)*normalY + (k-kh)*normalZ < 0.
+     * node if (ih-i)*normalX + (jh-j)*normalY + (kh-k)*normalZ < 0.
      */
     /* z component */
     part->normalZ[0] = 0;
