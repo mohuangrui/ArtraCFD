@@ -108,11 +108,11 @@ static int ComputeEigenvectorSpaceL(Real *Lz[], Real *Ly[], Real *Lx[],
         const Real q = 0.5 * (u * u + v * v + w * w);
         const Real b = (flow->gamma - 1) / (2 * c * c);
         const Real d = (1 / (2 * c)); 
-        Lz[0][0] = b * q + d * w;    Lz[0][1] = -b * u;             Lz[0][2] = -b * v;             Lz[0][3] = -b * w - d;     Lz[0][4] = b;
-        Lz[1][0] = -2 * b * q * u;   Lz[1][1] = 2 * b * u * u + 1;  Lz[1][2] = 2 * b * v * u;      Lz[1][3] = 2 * b * w * u;  Lz[1][4] = -2 * b * u;
-        Lz[2][0] = -2 * b * q * v;   Lz[2][1] = 2 * b * v * u;      Lz[2][2] = 2 * b * v * v + 1;  Lz[2][3] = 2 * b * w * v;  Lz[2][4] = -2 * b * v;
-        Lz[3][0] = -2 * b * q  + 1;  Lz[3][1] = 2 * b * u;          Lz[3][2] = 2 * b * v;          Lz[3][3] = 2 * b * w;      Lz[3][4] = -2 * b;
-        Lz[4][0] = b * q - d * w;    Lz[4][1] = -b * u;             Lz[4][2] = -b * v;             Lz[4][3] = -b * w + d;     Lz[4][4] = b;
+        Lz[0][0] = b * q + d * w;   Lz[0][1] = -b * u;             Lz[0][2] = -b * v;             Lz[0][3] = -b * w - d;     Lz[0][4] = b;
+        Lz[1][0] = -2 * b * q * u;  Lz[1][1] = 2 * b * u * u + 1;  Lz[1][2] = 2 * b * v * u;      Lz[1][3] = 2 * b * w * u;  Lz[1][4] = -2 * b * u;
+        Lz[2][0] = -2 * b * q * v;  Lz[2][1] = 2 * b * v * u;      Lz[2][2] = 2 * b * v * v + 1;  Lz[2][3] = 2 * b * w * v;  Lz[2][4] = -2 * b * v;
+        Lz[3][0] = -2 * b * q + 1;  Lz[3][1] = 2 * b * u;          Lz[3][2] = 2 * b * v;          Lz[3][3] = 2 * b * w;      Lz[3][4] = -2 * b;
+        Lz[4][0] = b * q - d * w;   Lz[4][1] = -b * u;             Lz[4][2] = -b * v;             Lz[4][3] = -b * w + d;     Lz[4][4] = b;
     }
     if (Ly != NULL) {
         Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
@@ -124,11 +124,11 @@ static int ComputeEigenvectorSpaceL(Real *Lz[], Real *Ly[], Real *Lx[],
         const Real q = 0.5 * (u * u + v * v + w * w);
         const Real b = (flow->gamma - 1) / (2 * c * c);
         const Real d = (1 / (2 * c)); 
-        Lz[0][0] = b * q + d * w;    Lz[0][1] = -b * u;             Lz[0][2] = -b * v;             Lz[0][3] = -b * w - d;     Lz[0][4] = b;
-        Lz[1][0] = -2 * b * q * u;   Lz[1][1] = 2 * b * u * u + 1;  Lz[1][2] = 2 * b * v * u;      Lz[1][3] = 2 * b * w * u;  Lz[1][4] = -2 * b * u;
-        Lz[2][0] = -2 * b * q * v;   Lz[2][1] = 2 * b * v * u;      Lz[2][2] = 2 * b * v * v + 1;  Lz[2][3] = 2 * b * w * v;  Lz[2][4] = -2 * b * v;
-        Lz[3][0] = -2 * b * q  + 1;  Lz[3][1] = 2 * b * u;          Lz[3][2] = 2 * b * v;          Lz[3][3] = 2 * b * w;      Lz[3][4] = -2 * b;
-        Lz[4][0] = b * q - d * w;    Lz[4][1] = -b * u;             Lz[4][2] = -b * v;             Lz[4][3] = -b * w + d;     Lz[4][4] = b;
+        Lz[0][0] = b * q + d * v;    Lz[0][1] = -b * u;             Lz[0][2] = -b * v - d;     Lz[0][3] = -b * w;             Lz[0][4] = b;
+        Lz[1][0] = -2 * b * q * u;   Lz[1][1] = 2 * b * u * u + 1;  Lz[1][2] = 2 * b * v * u;  Lz[1][3] = 2 * b * w * u;      Lz[1][4] = -2 * b * u;
+        Lz[2][0] = -2 * b * q + 1;   Lz[2][1] = 2 * b * u;          Lz[2][2] = 2 * b * v;      Lz[2][3] = 2 * b * w;          Lz[2][4] = -2 * b;
+        Lz[3][0] = -2 * b * q * w;   Lz[3][1] = 2 * b * w * u;      Lz[3][2] = 2 * b * w * v;  Lz[3][3] = 2 * b * w * w + 1;  Lz[3][4] = -2 * b * w;
+        Lz[4][0] = b * q - d * v;    Lz[4][1] = -b * u;             Lz[4][2] = -b * v + d;     Lz[4][3] = -b * w;             Lz[4][4] = b;
     }
     if (Lx != NULL) {
         Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
@@ -140,11 +140,11 @@ static int ComputeEigenvectorSpaceL(Real *Lz[], Real *Ly[], Real *Lx[],
         const Real q = 0.5 * (u * u + v * v + w * w);
         const Real b = (flow->gamma - 1) / (2 * c * c);
         const Real d = (1 / (2 * c)); 
-        Lz[0][0] = b * q + d * w;    Lz[0][1] = -b * u;             Lz[0][2] = -b * v;             Lz[0][3] = -b * w - d;     Lz[0][4] = b;
-        Lz[1][0] = -2 * b * q * u;   Lz[1][1] = 2 * b * u * u + 1;  Lz[1][2] = 2 * b * v * u;      Lz[1][3] = 2 * b * w * u;  Lz[1][4] = -2 * b * u;
-        Lz[2][0] = -2 * b * q * v;   Lz[2][1] = 2 * b * v * u;      Lz[2][2] = 2 * b * v * v + 1;  Lz[2][3] = 2 * b * w * v;  Lz[2][4] = -2 * b * v;
-        Lz[3][0] = -2 * b * q  + 1;  Lz[3][1] = 2 * b * u;          Lz[3][2] = 2 * b * v;          Lz[3][3] = 2 * b * w;      Lz[3][4] = -2 * b;
-        Lz[4][0] = b * q - d * w;    Lz[4][1] = -b * u;             Lz[4][2] = -b * v;             Lz[4][3] = -b * w + d;     Lz[4][4] = b;
+        Lz[0][0] = b * q + d * u;   Lz[0][1] = -b * u - d;     Lz[0][2] = -b * v;             Lz[0][3] = -b * w;             Lz[0][4] = b;
+        Lz[1][0] = -2 * b * q + 1;  Lz[1][1] = 2 * b * u;      Lz[1][2] = 2 * b * v;          Lz[1][3] = 2 * b * w;          Lz[1][4] = -2 * b;
+        Lz[2][0] = -2 * b * q * v;  Lz[2][1] = 2 * b * v * u;  Lz[2][2] = 2 * b * v * v + 1;  Lz[2][3] = 2 * b * w * v;      Lz[2][4] = -2 * b * v;
+        Lz[3][0] = -2 * b * q * w;  Lz[3][1] = 2 * b * w * u;  Lz[3][2] = 2 * b * w * v;      Lz[3][3] = 2 * b * w * w + 1;  Lz[3][4] = -2 * b * w;
+        Lz[4][0] = b * q - d * u;   Lz[4][1] = -b * u + d;     Lz[4][2] = -b * v;             Lz[4][3] = -b * w;             Lz[4][4] = b;
     }
     return 0;
 }
