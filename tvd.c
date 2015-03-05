@@ -19,6 +19,12 @@ static int sign(const Real);
 static Real minmod(const Real, const Real, const Real);
 static Real Min(const Real, const Real);
 static Real Max(const Real, const Real);
+static int ComputeDecompositionCoefficientAlpha(Real alphaz[], Real alphay[], Real alphax[], 
+        const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Flow *flow);
+static int ComputeFluxDecompositionCoefficientPhi(Real Phiz[], Real Phiy[], Real Phix[], 
+        const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Flow *flow);
 static int ComputeEigenvectorSpaceR(Real *Rz[], Real *Ry[], Real *Rx[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
@@ -51,11 +57,42 @@ static int TVDNumericalFluxX(Real H[], const int k, const int j, const int i,
     Real *F = storage[0]; /* flux at current node */
     Real *Fh = storage[1]; /* flux at neighbour */
     Real *R[5] = {storage[2], storage[3], storage[4], storage[5], storage[6]}; /* vector space {Rn} */
-    Real *phi = storage[7]; /* flux projection or decomposition coefficient on vector space {Rn} */
+    Real *Phi = storage[7]; /* flux projection or decomposition coefficients on vector space {Rn} */
     ComputeNonViscousFlux(NULL, NULL, F, k, j, i, U, space, flow);
     ComputeNonViscousFlux(NULL, NULL, Fh, k, j, i+1, U, space, flow);
     ComputeEigenvectorSpaceR(NULL, NULL, R, k, j, i, U, space, flow);
+    ComputeFluxDecompositionCoefficientPhi(NULL, NULL, Phi, k, j, i, U, space, flow);
     return 0;
+}
+static int ComputeFluxDecompositionCoefficientPhi(Real Phiz[], Real Phiy[], Real Phix[], 
+        const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Flow *flow)
+{
+    Real storage[6][5] = {{0}}; /* Storage space for required quantities */
+    Real *g = storage[0]; /* TVD function g at current node */
+    Real *gh = storage[1]; /* TVD function g at neighbour */
+    Real *Q = storage[2]; /* TVD function Q */
+    Real *gamma = storage[3]; /* TVD function gamma */
+    Real *lambda = storage[4]; /* eigenvalues */
+    Real *alpha = storage[5]; /* vector deltaU decomposition coefficients on vector space {Rn} */
+    if (Phiz != NULL) {
+        ComputeDecompositionCoefficientAlpha(alpha, NULL, NULL, k, j, i, U, space, flow);
+    }
+}
+static int ComputeDecompositionCoefficientAlpha(Real alphaz[], Real alphay[], Real alphax[], 
+        const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Flow *flow)
+{
+    const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+    if (alphaz != NULL) {
+        const int idxh = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
+        const Real delta_U[5] = {
+            U[idxh+0] - U[idx+0],
+            U[idxh+1] - U[idx+1],
+            U[idxh+2] - U[idx+2],
+            U[idxh+3] - U[idx+3],
+            U[idxh+4] - U[idx+4]};
+    }
 }
 static int ComputeEigenvectorSpaceR(Real *Rz[], Real *Ry[], Real *Rx[], 
         const int k, const int j, const int i, 
@@ -106,7 +143,7 @@ static int ComputeEigenvectorSpaceR(Real *Rz[], Real *Ry[], Real *Rx[],
         Rx[3][0] = w;           Rx[3][1] = 0;          Rx[3][2] = 0;  Rx[3][3] = 1;  Rx[3][4] = w;
         Rx[4][0] = hT - u * c;  Rx[4][1] = u * u - q;  Rx[4][2] = v;  Rx[4][3] = w;  Rx[4][4] = hT + u * c;
     }
-
+    return 0;
 }
 static int ComputeRoeAverage(Real Uoz[], Real Uoy[], Real Uox[], 
         const int k, const int j, const int i, 
