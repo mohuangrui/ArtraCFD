@@ -25,7 +25,10 @@ static int ComputeDecompositionCoefficientAlpha(Real alphaz[], Real alphay[], Re
 static int ComputeFluxDecompositionCoefficientPhi(Real Phiz[], Real Phiy[], Real Phix[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
-static int ComputeEigenvectorSpaceR(Real *Rz[], Real *Ry[], Real *Rx[], 
+static int ComputeEigenvectorSpaceL(Real Lz[][5], Real Ly[][5], Real Lx[][5], 
+        const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Flow *flow);
+static int ComputeEigenvectorSpaceR(Real Rz[][5], Real Ry[][5], Real Rx[][5], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
 static int ComputeRoeAverage(Real Uoz[], Real Uoy[], Real Uox[], 
@@ -53,11 +56,10 @@ int TVD(Real *U, const Real *Un, const Space *space, const Partition *part, cons
 static int TVDNumericalFluxX(Real H[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    Real storage[8][5] = {{0}}; /* Storage space for required quantities */
-    Real *F = storage[0]; /* flux at current node */
-    Real *Fh = storage[1]; /* flux at neighbour */
-    Real *R[5] = {storage[2], storage[3], storage[4], storage[5], storage[6]}; /* vector space {Rn} */
-    Real *Phi = storage[7]; /* flux projection or decomposition coefficients on vector space {Rn} */
+    Real F[5] = {0.0}; /* flux at current node */
+    Real Fh[5] = {0.0}; /* flux at neighbour */
+    Real R[5][5] = {{0.0}}; /* vector space {Rn} */
+    Real Phi[5] = {0.0}; /* flux projection or decomposition coefficients on vector space {Rn} */
     ComputeNonViscousFlux(NULL, NULL, F, k, j, i, U, space, flow);
     ComputeNonViscousFlux(NULL, NULL, Fh, k, j, i+1, U, space, flow);
     ComputeEigenvectorSpaceR(NULL, NULL, R, k, j, i, U, space, flow);
@@ -68,13 +70,12 @@ static int ComputeFluxDecompositionCoefficientPhi(Real Phiz[], Real Phiy[], Real
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    Real storage[6][5] = {{0}}; /* Storage space for required quantities */
-    Real *g = storage[0]; /* TVD function g at current node */
-    Real *gh = storage[1]; /* TVD function g at neighbour */
-    Real *Q = storage[2]; /* TVD function Q */
-    Real *gamma = storage[3]; /* TVD function gamma */
-    Real *lambda = storage[4]; /* eigenvalues */
-    Real *alpha = storage[5]; /* vector deltaU decomposition coefficients on vector space {Rn} */
+    Real g[5] = {0.0}; /* TVD function g at current node */
+    Real gh[5] = {0.0}; /* TVD function g at neighbour */
+    Real Q[5] = {0.0}; /* TVD function Q */
+    Real gamma[5] = {0.0}; /* TVD function gamma */
+    Real lambda[5] = {0.0}; /* eigenvalues */
+    Real alpha[5] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
     if (Phiz != NULL) {
         ComputeDecompositionCoefficientAlpha(alpha, NULL, NULL, k, j, i, U, space, flow);
     }
@@ -92,9 +93,10 @@ static int ComputeDecompositionCoefficientAlpha(Real alphaz[], Real alphay[], Re
             U[idxh+2] - U[idx+2],
             U[idxh+3] - U[idx+3],
             U[idxh+4] - U[idx+4]};
+        Real L[5][5] = {{0.0}};
     }
 }
-static int ComputeEigenvectorSpaceL(Real *Lz[], Real *Ly[], Real *Lx[], 
+static int ComputeEigenvectorSpaceL(Real Lz[][5], Real Ly[][5], Real Lx[][5], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
@@ -148,7 +150,7 @@ static int ComputeEigenvectorSpaceL(Real *Lz[], Real *Ly[], Real *Lx[],
     }
     return 0;
 }
-static int ComputeEigenvectorSpaceR(Real *Rz[], Real *Ry[], Real *Rx[], 
+static int ComputeEigenvectorSpaceR(Real Rz[][5], Real Ry[][5], Real Rx[][5], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
