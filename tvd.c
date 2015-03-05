@@ -14,15 +14,15 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static Real Q(const Real x);
-static int sgn(const Real x);
-static Real minmod(const Real x, const Real y, const Real z);
-static Real Min(const Real valueA, const Real valueB);
-static Real Max(const Real valueA, const Real valueB);
+static Real Q(const Real);
+static int sign(const Real);
+static Real minmod(const Real, const Real, const Real);
+static Real Min(const Real, const Real);
+static Real Max(const Real, const Real);
 static int ComputeNonviscousFlux(const Real U[], Real Fx[], Real Fy[], Real Fz[],
-        const Flow *flow);
+        const Flow *);
 static int ComputeViscousFlux(const Real *U, Real Gx[], Real Gy[], Real Gz[], 
-        const int k, const int j, const int i, const Space *space, const Flow *flow);
+        const int k, const int j, const int i, const Space *, const Flow *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -66,15 +66,19 @@ static int Lx(Real *U, const Real *Un, const Space *space, const Partition *part
     int idxE = 0; /* index at East */
     return 0;
 }
-static Real Q(const Real x)
+static Real Q(const Real z)
 {
-    const Real e = 0.01;
-    if (fabs(x) >= e) {
-        return fabs(x);
+    const Real delta = 0.01;
+    if (fabs(z) >= delta) {
+        return fabs(z);
     }
-    return (0.5 * (x * x / e + e));
+    return (0.5 * (z * z / delta + delta));
 }
-static int sgn(const Real x)
+static Real sigma(const Real z)
+{
+    
+}
+static int sign(const Real x)
 {
     if (x > 0) {
         return 1;
@@ -89,7 +93,7 @@ static Real minmod(const Real x, const Real y, const Real z)
     if ((x * y <= 0) || (x * z <= 0)) {
         return 0;
     }
-    return (sgn(x) * Min(fabs(x), Min(fabs(y), fabs(z))));
+    return (sign(x) * Min(fabs(x), Min(fabs(y), fabs(z))));
 }
 static Real Min(const Real valueA, const Real valueB)
 {
