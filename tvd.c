@@ -94,6 +94,47 @@ static int ComputeDecompositionCoefficientAlpha(Real alphaz[], Real alphay[], Re
             U[idxh+3] - U[idx+3],
             U[idxh+4] - U[idx+4]};
         Real L[5][5] = {{0.0}};
+        ComputeEigenvectorSpaceL(L, NULL, NULL, k, j, i, U, space, flow);
+        for (int row = 0; row < 5; ++row) {
+            alphaz[row] = 0;
+            for (int col = 0; col < 5; ++col) {
+                alphaz[row] = alphaz[row] + L[row][col] * delta_U[col];
+            }
+        }
+    }
+    if (alphay != NULL) {
+        const int idxh = ((k * space->jMax + j + 1) * space->iMax + i) * 5;
+        const Real delta_U[5] = {
+            U[idxh+0] - U[idx+0],
+            U[idxh+1] - U[idx+1],
+            U[idxh+2] - U[idx+2],
+            U[idxh+3] - U[idx+3],
+            U[idxh+4] - U[idx+4]};
+        Real L[5][5] = {{0.0}};
+        ComputeEigenvectorSpaceL(NULL, L, NULL, k, j, i, U, space, flow);
+        for (int row = 0; row < 5; ++row) {
+            alphay[row] = 0;
+            for (int col = 0; col < 5; ++col) {
+                alphay[row] = alphay[row] + L[row][col] * delta_U[col];
+            }
+        }
+    }
+    if (alphax != NULL) {
+        const int idxh = ((k * space->jMax + j) * space->iMax + i + 1) * 5;
+        const Real delta_U[5] = {
+            U[idxh+0] - U[idx+0],
+            U[idxh+1] - U[idx+1],
+            U[idxh+2] - U[idx+2],
+            U[idxh+3] - U[idx+3],
+            U[idxh+4] - U[idx+4]};
+        Real L[5][5] = {{0.0}};
+        ComputeEigenvectorSpaceL(NULL, NULL, L, k, j, i, U, space, flow);
+        for (int row = 0; row < 5; ++row) {
+            alphax[row] = 0;
+            for (int col = 0; col < 5; ++col) {
+                alphax[row] = alphax[row] + L[row][col] * delta_U[col];
+            }
+        }
     }
 }
 static int ComputeEigenvectorSpaceL(Real Lz[][5], Real Ly[][5], Real Lx[][5], 
