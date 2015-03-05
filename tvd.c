@@ -19,13 +19,16 @@ static int sign(const Real);
 static Real minmod(const Real, const Real, const Real);
 static Real Min(const Real, const Real);
 static Real Max(const Real, const Real);
+static int ComputeEigenvectorSpaceR(Real *Rz[], Real *Ry[], Real *Rx[], 
+        const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Flow *flow);
+static int ComputeRoeAverage(Real Uoz[], Real Uoy[], Real Uox[], 
+        const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Flow *flow);
 static int ComputeNonViscousFlux(Real Fz[], Real Fy[], Real Fx[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
 static int ComputeViscousFlux(Real Gz[], Real Gy[], Real Gx[], 
-        const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Flow *flow);
-static int ComputeRoeAverage(Real Uoz[], Real Uoy[], Real Uox[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
 /****************************************************************************
@@ -51,14 +54,63 @@ static int TVDNumericalFluxX(Real H[], const int k, const int j, const int i,
     Real *phi = storage[7]; /* flux projection or decomposition coefficient on vector space {Rn} */
     ComputeNonViscousFlux(NULL, NULL, F, k, j, i, U, space, flow);
     ComputeNonViscousFlux(NULL, NULL, Fh, k, j, i+1, U, space, flow);
-    ComputeEigenvectorSpaceRx(R, k, j, i, U, space, flow);
+    ComputeEigenvectorSpaceR(NULL, NULL, R, k, j, i, U, space, flow);
     return 0;
 }
-static int ComputeEigenvectorSpaceR(Real *Rz[], *Ry[], *Rx[], const int k, const int j, const int i, const Real *U, const Space *space, const Flow *flow);
+static int ComputeEigenvectorSpaceR(Real *Rz[], Real *Ry[], Real *Rx[], 
+        const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Flow *flow)
 {
+    if (Rz != NULL) {
+        Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
+        ComputeRoeAverage(Uo, NULL, NULL, k, j, i, U, space, flow);
+        const Real u = Uo[1];
+        const Real v = Uo[2];
+        const Real w = Uo[3];
+        const Real hT = Uo[4];
+        const Real c = Uo[5];
+        const Real q = 0.5 * (u * u + v * v + w * w);
+        Rz[0][0] = 1;           Rz[0][1] = 0;  Rz[0][2] = 0;  Rz[0][3] = 1;          Rz[0][4] = 1;
+        Rz[1][0] = u;           Rz[1][1] = 1;  Rz[1][2] = 0;  Rz[1][3] = 0;          Rz[1][4] = u;
+        Rz[2][0] = v;           Rz[2][1] = 0;  Rz[2][2] = 1;  Rz[2][3] = 0;          Rz[2][4] = v;
+        Rz[3][0] = w - c;       Rz[3][1] = 0;  Rz[3][2] = 0;  Rz[3][3] = w;          Rz[3][4] = w + c;
+        Rz[4][0] = hT - w * c;  Rz[4][1] = u;  Rz[4][2] = v;  Rz[4][3] = w * w - q;  Rz[4][4] = hT + w * c;
+    }
+    if (Ry != NULL) {
+        Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
+        ComputeRoeAverage(NULL, Uo, NULL, k, j, i, U, space, flow);
+        const Real u = Uo[1];
+        const Real v = Uo[2];
+        const Real w = Uo[3];
+        const Real hT = Uo[4];
+        const Real c = Uo[5];
+        const Real q = 0.5 * (u * u + v * v + w * w);
+        Ry[0][0] = 1;           Ry[0][1] = 0;  Ry[0][2] = 1;          Ry[0][3] = 0;  Ry[0][4] = 1;
+        Ry[1][0] = u;           Ry[1][1] = 1;  Ry[1][2] = 0;          Ry[1][3] = 0;  Ry[1][4] = u;
+        Ry[2][0] = v - c;       Ry[2][1] = 0;  Ry[2][2] = v;          Ry[2][3] = 0;  Ry[2][4] = v + c;
+        Ry[3][0] = w;           Ry[3][1] = 0;  Ry[3][2] = 0;          Ry[3][3] = 1;  Ry[3][4] = w;
+        Ry[4][0] = hT - v * c;  Ry[4][1] = u;  Ry[4][2] = v * v - q;  Ry[4][3] = w;  Ry[4][4] = hT + v * c;
+    }
+    if (Rx != NULL) {
+        Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
+        ComputeRoeAverage(NULL, NULL, Uo, k, j, i, U, space, flow);
+        const Real u = Uo[1];
+        const Real v = Uo[2];
+        const Real w = Uo[3];
+        const Real hT = Uo[4];
+        const Real c = Uo[5];
+        const Real q = 0.5 * (u * u + v * v + w * w);
+        Rx[0][0] = 1;           Rx[0][1] = 1;          Rx[0][2] = 0;  Rx[0][3] = 0;  Rx[0][4] = 1;
+        Rx[1][0] = u - c;       Rx[1][1] = u;          Rx[1][2] = 0;  Rx[1][3] = 0;  Rx[1][4] = u + c;
+        Rx[2][0] = v;           Rx[2][1] = 0;          Rx[2][2] = 1;  Rx[2][3] = 0;  Rx[2][4] = v;
+        Rx[3][0] = w;           Rx[3][1] = 0;          Rx[3][2] = 0;  Rx[3][3] = 1;  Rx[3][4] = w;
+        Rx[4][0] = hT - u * c;  Rx[4][1] = u * u - q;  Rx[4][2] = v;  Rx[4][3] = w;  Rx[4][4] = hT + u * c;
+    }
 
 }
-static int ComputeRoeAverage(Real Uoz[], Real Uoy[], Real Uox[], const int k, const int j, const int i, const Real *U, const Space *space, const Flow *flow)
+static int ComputeRoeAverage(Real Uoz[], Real Uoy[], Real Uox[], 
+        const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Flow *flow)
 {
     const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
     const Real rho = U[idx+0];
