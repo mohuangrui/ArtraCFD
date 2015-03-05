@@ -60,13 +60,10 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
     /*
      * Initialize the interior field
      */
-    int k = 0; /* loop count */
-    int j = 0; /* loop count */
-    int i = 0; /* loop count */
     int idx = 0; /* linear array index math variable */
-    for (k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (i = part->iSub[0]; i < part->iSup[0]; ++i) {
+    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = ((k * space->jMax + j) * space->iMax + i) * 5;
                 U[idx+0] = rho;
                 U[idx+1] = rho * u;
@@ -79,8 +76,8 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
     /*
      * Regional initializer for specific flow regions
      */
-    for (i = 1; i <= part->typeIC[0]; ++i) {
-        ApplyRegionalInitializer(i, U, space, part, flow);
+    for (int n = 1; n <= part->typeIC[0]; ++n) {
+        ApplyRegionalInitializer(n, U, space, part, flow);
     }
     /*
      * Apply boundary conditions to obtain an entire initialized flow field
@@ -144,14 +141,11 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
     /*
      * Apply initial values for nodes that meets condition
      */
-    int k = 0; /* loop count */
-    int j = 0; /* loop count */
-    int i = 0; /* loop count */
     int idx = 0;
     int flag = 0; /* control flag for whether current node in the region */
-    for (k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (i = part->iSub[0]; i < part->iSup[0]; ++i) {
+    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = ((k * space->jMax + j) * space->iMax + i) * 5;
                 flag = 0; /* always initialize flag to zero */
                 switch (part->typeIC[n]) {

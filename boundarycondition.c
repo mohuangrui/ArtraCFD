@@ -22,8 +22,7 @@ static int ApplyBoundaryCondition(const int, Real *, const Space *,
 int BoundaryCondtion(Real *U, const Space *space, const Particle *particle, 
         const Partition *part, const Flow *flow)
 {
-    int partID = 0; /* part count */
-    for (partID = 1; partID < 7; ++partID) {
+    for (int partID = 1; partID < 7; ++partID) {
         ApplyBoundaryCondition(partID, U, space, part, flow);
     }
     /*
@@ -35,14 +34,6 @@ int BoundaryCondtion(Real *U, const Space *space, const Particle *particle,
 static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space, 
         const Partition *part, const Flow *flow)
 {
-    /*
-     * Indices
-     */
-    int k = 0; /* loop count */
-    int j = 0; /* loop count */
-    int i = 0; /* loop count */
-    int ng = 0; /* ghost layer count */
-    int dim = 0; /* dimension count of vectors */
     int idx = 0; /* linear array index math variable */
     int idxh = 0; /* index at one node distance */
     int idxhh = 0; /* index at two nodes distance */
@@ -55,9 +46,9 @@ static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space,
     const int normalZ = part->normalZ[partID];
     const int normalY = part->normalY[partID];
     const int normalX = part->normalX[partID];
-    for (k = part->kSub[partID]; k < part->kSup[partID]; ++k) {
-        for (j = part->jSub[partID]; j < part->jSup[partID]; ++j) {
-            for (i = part->iSub[partID]; i < part->iSup[partID]; ++i) {
+    for (int k = part->kSub[partID]; k < part->kSup[partID]; ++k) {
+        for (int j = part->jSub[partID]; j < part->jSup[partID]; ++j) {
+            for (int i = part->iSub[partID]; i < part->iSup[partID]; ++i) {
                 idx = ((k * space->jMax + j) * space->iMax + i) * 5;
                 /*
                  * Calculate inner neighbour nodes according to normal vector direction.
@@ -76,7 +67,7 @@ static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space,
                         U[idx+4] = p / (flow->gamma - 1) + 0.5 * rho * (u * u + v * v + w * w);
                         break;
                     case 2: /* outflow */
-                        for (dim = 0; dim < 5; ++dim) {
+                        for (int dim = 0; dim < 5; ++dim) {
                             U[idx+dim] = 2 * U[idxh+dim] - U[idxhh+dim];
                         }
                         break;
@@ -105,12 +96,12 @@ static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space,
                         break;
                     case 5: /* primary periodic pair, apply boundary translation */
                         idxh = (((k - (space->nz - 2) * normalZ) * space->jMax + (j - (space->ny - 2) * normalY)) * space->iMax + i - (space->nx - 2) * normalX) * 5;
-                        for (dim = 0; dim < 5; ++dim) {
+                        for (int dim = 0; dim < 5; ++dim) {
                             U[idx+dim] = U[idxh+dim];
                         }
                         break;
                     case -5: /* auxiliary periodic pair, apply zero gradient flow */
-                        for (dim = 0; dim < 5; ++dim) {
+                        for (int dim = 0; dim < 5; ++dim) {
                             U[idx+dim] = U[idxh+dim];
                         }
                         break;
@@ -120,7 +111,7 @@ static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space,
                 /*
                  * Extrapolate values for exterior ghost nodes of current node
                  */
-                for (ng = 1; ng <= space->ng; ++ng) {
+                for (int ng = 1; ng <= space->ng; ++ng) {
                     idx = (((k + ng * normalZ) * space->jMax + (j + ng * normalY)) * space->iMax + i + ng * normalX) * 5;
                     idxh = (((k + (ng-1) * normalZ) * space->jMax + (j + (ng-1) * normalY)) * space->iMax + i + (ng-1) * normalX) * 5;
                     idxhh = (((k + (ng-2) * normalZ) * space->jMax + (j + (ng-2) * normalY)) * space->iMax + i + (ng-2) * normalX) * 5;
@@ -128,12 +119,12 @@ static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space,
                         case 1: /* inlet */
                         case 5: /* primary periodic pair */
                         case -5: /* auxiliary periodic pair */
-                            for (dim = 0; dim < 5; ++dim) {
+                            for (int dim = 0; dim < 5; ++dim) {
                                 U[idx+dim] = U[idxh+dim];
                             }
                             break;
                         default: /* linear interpolation */
-                            for (dim = 0; dim < 5; ++dim) {
+                            for (int dim = 0; dim < 5; ++dim) {
                                 U[idx+dim] = 2 * U[idxh+dim] - U[idxhh+dim];
                             }
                             break;

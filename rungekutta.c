@@ -105,16 +105,10 @@ static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Time *
      */
     Real velocity = 0;
     Real velocityMax = 1e-38;
-    /*
-     * Indices
-     */
-    int k = 0; /* loop count */
-    int j = 0; /* loop count */
-    int i = 0; /* loop count */
     int idx = 0; /* linear array index math variable */
-    for (k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (i = part->iSub[0]; i < part->iSup[0]; ++i) {
+    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
                 if (space->ghostFlag[idx] == -1) { /* if it's solid node */
                     continue;

@@ -79,14 +79,9 @@ static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,
         const Space *space, const Partition *part, const Flow *flow)
 {
     FILE *filePointer = NULL;
-    int partCount = 0; /* part count starts from 0 */
     int partNum = 1; /* part number starts from 1 */
-    int k = 0; /* loop count */
-    int j = 0; /* loop count */
-    int i = 0; /* loop count */
     int idx = 0; /* linear array index math variable */
     EnsightReal data = 0; /* the ensight data format */
-    int dim = 0; /* dimension count */
     const char nameSuffix[5][10] = {"rho", "u", "v", "w", "p"};
     /*
      * Define the primitive field variables.
@@ -95,20 +90,20 @@ static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,
     Real u = 0;
     Real v = 0;
     Real w = 0;
-    for (dim = 0; dim < 5; ++dim) {
+    for (int dim = 0; dim < 5; ++dim) {
         snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
         filePointer = fopen(enSet->fileName, "rb");
         if (filePointer == NULL) {
             FatalError("failed to open restart data files: restart.***...");
         }
         fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        for (partCount = 0; partCount < part->subN; ++partCount) {
+        for (int partCount = 0; partCount < part->subN; ++partCount) {
             fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
             fread(&partNum, sizeof(int), 1, filePointer);
             fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-            for (k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
-                for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
-                    for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
+            for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
+                for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
+                    for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
                         fread(&data, sizeof(EnsightReal), 1, filePointer);
                         idx = ((k * space->jMax + j) * space->iMax + i) * 5;
                         switch (dim) {

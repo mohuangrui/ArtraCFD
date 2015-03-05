@@ -42,13 +42,10 @@ int InitializeDomainGeometry(Space *space)
     /*
      * Initialize the entire domain to type "2"
      */
-    int k = 0; /* loop count */
-    int j = 0; /* loop count */
-    int i = 0; /* loop count */
     int idx = 0; /* linear array index math variable */
-    for (k = 0; k < space->kMax; ++k) {
-        for (j = 0; j < space->jMax; ++j) {
-            for (i = 0; i < space->iMax; ++i) {
+    for (int k = 0; k < space->kMax; ++k) {
+        for (int j = 0; j < space->jMax; ++j) {
+            for (int i = 0; i < space->iMax; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
                 space->ghostFlag[idx] = 2;
             }
@@ -64,23 +61,19 @@ int ComputeDomainGeometryGCIBM(Space *space, Particle *particle, const Partition
 }
 static int LocateSolidGeometry(Space *space, Particle *particle, const Partition *part)
 {
-    int k = 0; /* loop count */
-    int j = 0; /* loop count */
-    int i = 0; /* loop count */
     int idx = 0; /* linear array index math variable */
     /* geometry computation */
-    int geoCount = 0; /* geometry objects count */
     Real distance = 0;
     Real distX = 0;
     Real distY = 0;
     Real distZ = 0;
     Real radius = 0;
-    for (k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (i = part->iSub[0]; i < part->iSup[0]; ++i) {
+    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
                 space->ghostFlag[idx] = 0; /* reset to fluid */
-                for (geoCount = 0; geoCount < particle->totalN; ++geoCount) {
+                for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
                     radius = particle->r[geoCount];
                     distX = space->xMin + (i - space->ng) * space->dx - particle->x[geoCount];
                     distY = space->yMin + (j - space->ng) * space->dy - particle->y[geoCount];
@@ -98,10 +91,6 @@ static int LocateSolidGeometry(Space *space, Particle *particle, const Partition
 }
 static int IdentifyGhostCells(Space *space, const Partition *part)
 {
-    /* indices */
-    int k = 0; /* loop count */
-    int j = 0; /* loop count */
-    int i = 0; /* loop count */
     int idx = 0; /* linear array index math variable */
     int idxW = 0; /* index at West */
     int idxE = 0; /* index at East */
@@ -111,9 +100,9 @@ static int IdentifyGhostCells(Space *space, const Partition *part)
     int idxB = 0; /* index at Back */
     /* criteria */
     int flag = 0;
-    for (k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (i = part->iSub[0]; i < part->iSup[0]; ++i) {
+    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
                 if (space->ghostFlag[idx] != -1) { /* it's not solid cell */
                     continue;
@@ -141,13 +130,6 @@ static int IdentifyGhostCells(Space *space, const Partition *part)
 int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle, 
         const Partition *part)
 {
-    /*
-     * Indices
-     */
-    int k = 0; /* loop count */
-    int j = 0; /* loop count */
-    int i = 0; /* loop count */
-    int dim = 0; /* dimension count of vectors */
     int idx = 0; /* linear array index math variable */
     int idxW = 0; /* index at West */
     int idxE = 0; /* index at East */
@@ -167,9 +149,9 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
     int imageI = 0; /* node coordinates of the image point of the ghost */
     int imageJ = 0; /* node coordinates of the image point of the ghost */
     int imageK = 0; /* node coordinates of the image point of the ghost */
-    for (k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (i = part->iSub[0]; i < part->iSup[0]; ++i) {
+    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
                 if (space->ghostFlag[idx] != 1) { /* it's not a ghost */
                     continue;

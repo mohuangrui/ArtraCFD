@@ -98,13 +98,12 @@ static int ReadGeometryData(FILE **filePointerPointer, Particle *particle)
     particle->w = particle->headAddress + particle->totalN * 6;
     /* then read and store data per object*/
     char currentLine[200] = {'\0'}; /* store the current read line */
-    int geoCount = 0; /* geometry object count */
     /* set format specifier according to the type of Real */
     char formatVII[40] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg"; /* default is double type */
     if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
         strncpy(formatVII, "%g, %g, %g, %g, %g, %g, %g", sizeof formatVII); /* float type */
     }
-    for (geoCount = 0; geoCount < particle->totalN; ++geoCount) {
+    for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
         fgets(currentLine, sizeof currentLine, filePointer);
         sscanf(currentLine, formatVII, 
                 &(particle->x[geoCount]), &(particle->y[geoCount]),

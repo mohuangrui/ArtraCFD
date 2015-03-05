@@ -181,16 +181,12 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
     /*
      * Begin to write each part
      */
-    int partCount = 0; /* part count starts from 0 */
     int partNum = 1; /* part number starts from 1 */
-    int k = 0; /* loop count */
-    int j = 0; /* loop count */
-    int i = 0; /* loop count */
     int idx = 0; /* linear array index math variable */
     int nodeCount[3] = {0, 0, 0}; /* i j k node number in each part */
     int blankID = 0; /* Ensight geometry iblank entry */
     EnsightReal data = 0; /* the ensight data format */
-    for (partCount = 0, partNum = 1; partCount < part->subN; ++partCount, ++partNum) {
+    for (int partCount = 0, partNum = 1; partCount < part->subN; ++partCount, ++partNum) {
         strncpy(enSet->stringData, "part", sizeof(EnsightString));
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
         fwrite(&partNum, sizeof(int), 1, filePointer);
@@ -204,27 +200,27 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
         nodeCount[2] = (part->kSup[partCount] - part->kSub[partCount]);
         fwrite(nodeCount, sizeof(int), 3, filePointer);
         /* now output the x coordinates of all nodes in current part */
-        for (k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
-            for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
-                for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
+        for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
+            for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
+                for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
                     data = space->xMin + (i - space->ng) * space->dx;
                     fwrite(&data, sizeof(EnsightReal), 1, filePointer);
                 }
             }
         }
         /* now output the y coordinates of all nodes in current part */
-        for (k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
-            for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
-                for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
+        for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
+            for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
+                for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
                     data = space->yMin + (j - space->ng) * space->dy;
                     fwrite(&data, sizeof(EnsightReal), 1, filePointer);
                 }
             }
         }
         /* now output the z coordinates of all nodes in current part */
-        for (k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
-            for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
-                for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
+        for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
+            for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
+                for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
                     data = space->zMin + (k - space->ng) * space->dz;
                     fwrite(&data, sizeof(EnsightReal), 1, filePointer);
                 }
@@ -238,9 +234,9 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
          * blankID>1 are any kind of boundary nodes.
          * To transform from the ghostID to blankID, need to add constant "1"
          */
-        for (k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
-            for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
-                for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
+        for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
+            for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
+                for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
                     idx = (k * space->jMax + j) * space->iMax + i;
                     blankID = space->ghostFlag[idx] + 1;
                     fwrite(&(blankID), sizeof(int), 1, filePointer);
@@ -261,11 +257,7 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
         const Space *space, const Partition *part, const Flow *flow)
 {
     FILE *filePointer = NULL;
-    int partCount = 0; /* part count starts from 0 */
     int partNum = 1; /* part number starts from 1 */
-    int k = 0; /* loop count */
-    int j = 0; /* loop count */
-    int i = 0; /* loop count */
     int idx = 0; /* linear array index math variable */
     EnsightReal data = 0; /* the ensight data format */
     /*
@@ -281,9 +273,8 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
     Real v = 0;
     Real w = 0;
     Real eT = 0;
-    int dim = 0; /* dimension count */
     const char nameSuffix[6][5] = {"rho", "u", "v", "w", "p", "T"};
-    for (dim = 0; dim < 6; ++dim) {
+    for (int dim = 0; dim < 6; ++dim) {
         snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
         filePointer = fopen(enSet->fileName, "wb");
         if (filePointer == NULL) {
@@ -292,7 +283,7 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
         /* first line description per file */
         strncpy(enSet->stringData, "scalar variable", sizeof(EnsightString));
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        for (partCount = 0, partNum = 1; partCount < part->subN; ++partCount, ++partNum) {
+        for (int partCount = 0, partNum = 1; partCount < part->subN; ++partCount, ++partNum) {
             /* binary file format */
             strncpy(enSet->stringData, "part", sizeof(EnsightString));
             fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
@@ -300,9 +291,9 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
             strncpy(enSet->stringData, "block", sizeof(EnsightString));
             fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
             /* now output the scalar value at each node in current part */
-            for (k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
-                for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
-                    for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
+            for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
+                for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
+                    for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
                         idx = ((k * space->jMax + j) * space->iMax + i) * 5;
                         rho = U[idx];
                         switch (dim) {
@@ -353,7 +344,7 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
     /* binary file format */
     strncpy(enSet->stringData, "vector variable", sizeof(EnsightString));
     fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-    for (partCount = 0, partNum = 1; partCount < part->subN; ++partCount, ++partNum) {
+    for (int partCount = 0, partNum = 1; partCount < part->subN; ++partCount, ++partNum) {
         strncpy(enSet->stringData, "part", sizeof(EnsightString));
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
         fwrite(&partNum, sizeof(int), 1, filePointer);
@@ -364,10 +355,10 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
          * dimension index of u, v, w is 1, 2, 3 in U in each part, 
          * write u, v, w sequentially
          */
-        for (dim = 1; dim < 4; ++dim) {
-            for (k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
-                for (j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
-                    for (i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
+        for (int dim = 1; dim < 4; ++dim) {
+            for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
+                for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
+                    for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
                         idx = ((k * space->jMax + j) * space->iMax + i) * 5;
                         rho = U[idx];
                         switch (dim) {
@@ -404,8 +395,7 @@ static int WriteParticleFile(EnsightSet *enSet, const Particle *particle)
         FatalError("faild to write particle data file: ensight.particle***...");
     }
     fprintf(filePointer, "N: %d\n", particle->totalN); /* number of objects */
-    int geoCount = 0;
-    for (geoCount = 0; geoCount < particle->totalN; ++geoCount) {
+    for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
         fprintf(filePointer, "%.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g\n", 
                 particle->x[geoCount], particle->y[geoCount],
                 particle->z[geoCount], particle->r[geoCount],

@@ -511,8 +511,7 @@ static int WriteVerifyData(const Space *space, const Time *time, const Flow *flo
     fprintf(filePointer, "#                  >> Regional Initialization <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    int n = 0;
-    for (n = 1; n <= part->typeIC[0]; ++n) {
+    for (int n = 1; n <= part->typeIC[0]; ++n) {
         fprintf(filePointer, "#\n");
         WriteRegionalInitializerData(&filePointer, part, n);
     }

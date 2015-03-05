@@ -41,8 +41,7 @@ int DomainPartition(Partition *part, const Space *space)
         "West Ghost",        "East Ghost", 
         "South Ghost",       "North Ghost", 
         "Front Ghost",       "Back Ghost"};
-    int partCount = 0; /* count */
-    for (partCount = 0; partCount < part->subN; ++partCount) {
+    for (int partCount = 0; partCount < part->subN; ++partCount) {
         strncpy(part->name[partCount], partName[partCount], sizeof part->name[partCount]);
     }
     /*
