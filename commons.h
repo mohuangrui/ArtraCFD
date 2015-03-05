@@ -567,7 +567,7 @@ typedef struct {
     Real valueBC[7][6]; /* BC values of each inner part */
     char name[13][15]; /* store names of each inner part */
     int typeIC[11]; /* list structure for recording regional initial conditions */
-    Real valueIC[150]; /* queue data structure for storing regional initial values */
+    Real valueIC[11][15]; /* queue data structure for storing regional initial values */
 }Partition;
 /*
  * Program command line arguments and overall control

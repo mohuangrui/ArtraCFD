@@ -18,7 +18,7 @@
  ****************************************************************************/
 static int FirstRunInitializer(Real *U, const Space *, const Particle *,
         const Partition *, const Flow *);
-static int ApplyRegionalInitializer(const int, const Real **, Real *U, const Space *, 
+static int ApplyRegionalInitializer(const int, Real *U, const Space *, 
         const Partition *, const Flow *);
 static int RestartInitializer(Real *U, const Space *, Time *, 
         const Partition *, const Flow *);
@@ -79,9 +79,8 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
     /*
      * Regional initializer for specific flow regions
      */
-    const Real *valueIC = part->valueIC; /* pointer to the value queue of initial values */
     for (i = 1; i <= part->typeIC[0]; ++i) {
-        ApplyRegionalInitializer(part->typeIC[i], &valueIC, U, space, part, flow);
+        ApplyRegionalInitializer(i, U, space, part, flow);
     }
     /*
      * Apply boundary conditions to obtain an entire initialized flow field
@@ -96,29 +95,27 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
  * the first element typeIC[0] as a tally, as well as a pointer to search and 
  * manipulate the array when reading in a type entry.
  * The valueIC array is a queue data structure which stored the information of
- * the corresponding IC type. In order to keep tracking the unused data, an
- * auxiliary pointer is needed.
+ * the corresponding IC type.
  * IC types and corresponding information entries:
  * 1: plane (x, y, z, normalX, normalY, normalZ, rho, u, v, w, p)
  * 2: sphere (x, y, z, r, rho, u, v, w, p)
  * 3: box (xmin, ymin, zmin, xmax, ymax, zmax, rho, u, v, w, p)
  */
-static int ApplyRegionalInitializer(const int typeIC, const Real **valueICPointerPointer,
-        Real *U, const Space *space, const Partition *part, const Flow *flow)
+static int ApplyRegionalInitializer(const int n, Real *U, const Space *space, 
+        const Partition *part, const Flow *flow)
 {
-    const Real *valueIC = *valueICPointerPointer; /* get the current valueIC pointer */
     /*
      * Acquire the specialized information data entries
      */
     /* the fix index part */
-    const Real x = valueIC[0];
-    const Real y = valueIC[1];
-    const Real z = valueIC[2];
-    const Real rho = valueIC[10];
-    const Real u = valueIC[11];
-    const Real v = valueIC[12];
-    const Real w = valueIC[13];
-    const Real p = valueIC[14];
+    const Real x = part->valueIC[n][0];
+    const Real y = part->valueIC[n][1];
+    const Real z = part->valueIC[n][2];
+    const Real rho = part->valueIC[n][10];
+    const Real u = part->valueIC[n][11];
+    const Real v = part->valueIC[n][12];
+    const Real w = part->valueIC[n][13];
+    const Real p = part->valueIC[n][14];
     /* the vary part */
     Real r = 0;
     Real xh = 0;
@@ -127,24 +124,23 @@ static int ApplyRegionalInitializer(const int typeIC, const Real **valueICPointe
     Real normalZ = 0;
     Real normalY = 0;
     Real normalX = 0;
-    switch (typeIC) {
+    switch (part->typeIC[n]) {
         case 1: /* plane */
-            normalX = valueIC[3];
-            normalY = valueIC[4];
-            normalZ = valueIC[5];
+            normalX = part->valueIC[n][3];
+            normalY = part->valueIC[n][4];
+            normalZ = part->valueIC[n][5];
             break;
         case 2: /* sphere */
-            r = valueIC[3];
+            r = part->valueIC[n][3];
             break;
         case 3: /* box */
-            xh = valueIC[3];
-            yh = valueIC[4];
-            zh = valueIC[5];
+            xh = part->valueIC[n][3];
+            yh = part->valueIC[n][4];
+            zh = part->valueIC[n][5];
             break;
         default:
             break;
     }
-    *valueICPointerPointer = valueIC + 15; /* update pointer of valueIC queue */
     /*
      * Apply initial values for nodes that meets condition
      */
@@ -158,7 +154,7 @@ static int ApplyRegionalInitializer(const int typeIC, const Real **valueICPointe
             for (i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = ((k * space->jMax + j) * space->iMax + i) * 5;
                 flag = 0; /* always initialize flag to zero */
-                switch (typeIC) {
+                switch (part->typeIC[n]) {
                     case 1: /* plane */
                         xh = (space->xMin + (i - space->ng) * space->dx - x) * normalX;
                         yh = (space->yMin + (j - space->ng) * space->dy - y) * normalY;

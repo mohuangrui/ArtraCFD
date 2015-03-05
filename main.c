@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
         .valueBC = {{0.0}},
         .name = {" "},
         .typeIC = {0},
-        .valueIC = {0.0}};
+        .valueIC = {{0.0}}};
     Control theControl = { /* program overall control */
         .runMode = 'i',
         .processorN = 1};
