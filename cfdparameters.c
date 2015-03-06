@@ -103,17 +103,17 @@ static int InitializeCFDParameters(Space *space, Time *time, Flow *flow)
     space->xMin = space->xMin / flow->refLength;
     space->yMin = space->yMin / flow->refLength;
     space->zMin = space->zMin / flow->refLength;
-    if (0 > space->dx) {
+    if (0 < space->dx) {
         space->ddx = 1 / space->dx;
     } else { /* zero mesh size has zero reciprocal */
         space->ddx = 0;
     }
-    if (0 > space->dy) {
+    if (0 < space->dy) {
         space->ddy = 1 / space->dy;
     } else { /* zero mesh size has zero reciprocal */
         space->ddy = 0;
     }
-    if (0 > space->dz) {
+    if (0 < space->dz) {
         space->ddz = 1 / space->dz;
     } else { /* zero mesh size has zero reciprocal */
         space->ddz = 0;

@@ -25,7 +25,7 @@ static int ReadGeometryData(FILE **, Particle *);
  */
 int LoadGeometryData(Particle *particle, const Time *time)
 {
-    if (time->restart == 0) { /* if non-restart, read input file */
+    if (0 == time->restart) { /* if non-restart, read input file */
         NonrestartGeometryLoader(particle);
     } else { /* if restart, read the particle file */
         RestartGeometryLoader(particle);
@@ -36,21 +36,21 @@ static int NonrestartGeometryLoader(Particle *particle)
 {
     ShowInformation("Loading inputed geometry data ...");
     FILE *filePointer = fopen("artracfd.geo", "r");
-    if (filePointer == NULL) {
+    if (NULL == filePointer) {
         FatalError("failed to open geometry file: artracfd.geo...");
     }
     /* read and process file line by line */
     char currentLine[200] = {'\0'}; /* store the current read line */
     int entryCount = 0; /* entry count */
-    while (fgets(currentLine, sizeof currentLine, filePointer) != NULL) {
+    while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
         CommandLineProcessor(currentLine); /* process current line */
-        if (strncmp(currentLine, "sphere count begin", sizeof currentLine) == 0) {
+        if (0 == strncmp(currentLine, "sphere count begin", sizeof currentLine)) {
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d", &(particle->totalN)); 
             continue;
         }
-        if (strncmp(currentLine, "sphere begin", sizeof currentLine) == 0) {
+        if (0 == strncmp(currentLine, "sphere begin", sizeof currentLine)) {
             ++entryCount;
             ReadGeometryData(&filePointer, particle);
         }
@@ -58,7 +58,7 @@ static int NonrestartGeometryLoader(Particle *particle)
     }
     fclose(filePointer); /* close current opened file */
     /* Check missing information section in configuration */
-    if (entryCount != 2) {
+    if (2 != entryCount) {
         FatalError("missing or repeated necessary information section");
     }
     ShowInformation("Session End");
@@ -69,7 +69,7 @@ static int RestartGeometryLoader(Particle *particle)
     ShowInformation("Restore geometry data ...");
     /* restore geometry information from particle file. */
     FILE *filePointer = fopen("restart.particle", "r");
-    if (filePointer == NULL) {
+    if (NULL == filePointer) {
         FatalError("failed to open restart particle file: restart.particle...");
     }
     /* read and process file line by line */
@@ -84,7 +84,7 @@ static int RestartGeometryLoader(Particle *particle)
 static int ReadGeometryData(FILE **filePointerPointer, Particle *particle)
 {
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
-    if (particle->totalN == 0) { /* no internal geometries */
+    if (0 == particle->totalN) { /* no internal geometries */
         return 0;
     }
     /* first assign storage to particle pointers */
