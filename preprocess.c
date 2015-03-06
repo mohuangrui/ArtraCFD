@@ -57,8 +57,7 @@ static int ProgramMemoryAllocate(Field *field, Space *space)
      * Node type identifier
      */
     idxMax = space->nMax; /* max index */
-    space->ghostFlag = AssignStorage(idxMax, "int");
-    space->geoID = AssignStorage(idxMax, "int");
+    space->nodeFlag = AssignStorage(idxMax, "int");
     ShowInformation("Session End");
     return 0;
 }

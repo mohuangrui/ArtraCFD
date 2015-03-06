@@ -31,7 +31,7 @@ int RungeKuttaTimeMarching(Field *field, Space *space, Particle *particle,
     ShowInformation("Time marching...");
     Real exportTimeInterval = (time->totalTime - time->currentTime);
     /* check whether current time is equal to or larger than the total time */
-    if (exportTimeInterval <= 0) {
+    if (0 >= exportTimeInterval) {
         ShowInformation("  current time is equal to or larger than total time...");
         ShowInformation("Session End");
         return 1;
@@ -72,7 +72,7 @@ int RungeKuttaTimeMarching(Field *field, Space *space, Particle *particle,
          */
         accumulatedTime = accumulatedTime + time->dt;
         if ((accumulatedTime >=  exportTimeInterval) || 
-                (time->currentTime - time->totalTime == 0 ) ||
+                (0 == time->currentTime - time->totalTime) ||
                 (time->stepCount == time->totalStep)) {
             ++(time->outputCount); /* export count increase */
             TickTime(&operationTimer);
@@ -110,7 +110,7 @@ static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Time *
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
-                if (space->ghostFlag[idx] == -1) { /* if it's solid node */
+                if (-10 >= space->nodeFlag[idx]) { /* if it's solid node */
                     continue;
                 }
                 idx = idx * 5; /* change idx to field variable */
@@ -132,13 +132,13 @@ static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Time *
 }
 static Real MinPositive(const Real valueA, const Real valueB)
 {
-    if ((valueA <= 0) && (valueB <= 0)) {
+    if ((0 >= valueA) && (0 >= valueB)) {
         return 1e10;
     }
-    if (valueA <= 0) {
+    if (0 >= valueA) {
         return valueB;
     }
-    if (valueB <= 0) {
+    if (0 >= valueB) {
         return valueA;
     }
     if (valueA < valueB) {

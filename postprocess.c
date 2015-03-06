@@ -40,8 +40,7 @@ static int ProgramMemoryRelease(Field *field, Space *space, Particle *particle)
     RetrieveStorage(field->Un);
     RetrieveStorage(field->Um);
     /* space related */
-    RetrieveStorage(space->geoID);
-    RetrieveStorage(space->ghostFlag);
+    RetrieveStorage(space->nodeFlag);
     /* particle related */
     RetrieveStorage(particle->headAddress);
     ShowInformation("Session End");
