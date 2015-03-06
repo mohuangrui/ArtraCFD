@@ -67,13 +67,13 @@ int ComputeCFDParameters(Space *space, Time *time, Flow *flow)
  */
 static int NodeBasedMeshNumberRefine(Space *space)
 {
-    if (space->nz < 2) {
+    if (2 > space->nz) {
         space->nz = 2; /* at least two cells are required */
     }
-    if (space->ny < 2) {
+    if (2 > space->ny) {
         space->ny = 2; /* at least two cells are required */
     }
-    if (space->nx < 2) {
+    if (2 > space->nx) {
         space->nx = 2; /* at least two cells are required */
     }
     /* change from number of cells to number of node layers */
@@ -103,17 +103,17 @@ static int InitializeCFDParameters(Space *space, Time *time, Flow *flow)
     space->xMin = space->xMin / flow->refLength;
     space->yMin = space->yMin / flow->refLength;
     space->zMin = space->zMin / flow->refLength;
-    if (space->dx > 0) {
+    if (0 > space->dx) {
         space->ddx = 1 / space->dx;
     } else { /* zero mesh size has zero reciprocal */
         space->ddx = 0;
     }
-    if (space->dy > 0) {
+    if (0 > space->dy) {
         space->ddy = 1 / space->dy;
     } else { /* zero mesh size has zero reciprocal */
         space->ddy = 0;
     }
-    if (space->dz > 0) {
+    if (0 > space->dz) {
         space->ddz = 1 / space->dz;
     } else { /* zero mesh size has zero reciprocal */
         space->ddz = 0;

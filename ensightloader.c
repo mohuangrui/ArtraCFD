@@ -41,7 +41,7 @@ static int LoadEnsightCaseFile(EnsightSet *enSet, Time *time)
     /* current filename */
     snprintf(enSet->fileName, sizeof(EnsightString), "%s.case", enSet->baseName); 
     filePointer = fopen(enSet->fileName, "r");
-    if (filePointer == NULL) {
+    if (NULL == filePointer) {
         FatalError("failed to open restart case file: restart.case...");
     }
     /* read information from file */
@@ -82,9 +82,6 @@ static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,
     int idx = 0; /* linear array index math variable */
     EnsightReal data = 0; /* the ensight data format */
     const char nameSuffix[5][10] = {"rho", "u", "v", "w", "p"};
-    /*
-     * Define the primitive field variables.
-     */
     Real rho = 0; 
     Real u = 0;
     Real v = 0;
@@ -92,7 +89,7 @@ static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,
     for (int dim = 0; dim < 5; ++dim) {
         snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
         filePointer = fopen(enSet->fileName, "rb");
-        if (filePointer == NULL) {
+        if (NULL == filePointer) {
             FatalError("failed to open restart data files: restart.***...");
         }
         fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);

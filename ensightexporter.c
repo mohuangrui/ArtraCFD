@@ -231,13 +231,19 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
          * blankID = 0 is exterior type, they are blanked-out nodes 
          * and will not be created in the geometry.
          * blankID > 1 or < 0 are any kind of boundary nodes.
-         * To transform from the nodeFlag to blankID, need to add constant "1"
+         * Transforming from the nodeFlag to blankID are required.
          */
         for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
             for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                 for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
                     idx = (k * space->jMax + j) * space->iMax + i;
-                    blankID = space->nodeFlag[idx] + 1;
+                    if (-10 >= space->nodeFlag[idx]) { /* solid region */
+                        blankID = 1;
+                    } else {
+                        if (0 == space->nodeFlag[idx]) { /* fluid */
+                            blankID = 1;
+                        }
+                    }
                     fwrite(&(blankID), sizeof(int), 1, filePointer);
                 }
             }
