@@ -429,14 +429,13 @@ static int ComputeNonViscousFlux(
     const Real eT = U[idx+4] / rho;
     const Real p = (flow->gamma - 1) * rho * (eT - 0.5 * (u * u + v * v + w * w));
 
-    if (NULL != Fx) {
-        Fx[0] = rho * u;
-        Fx[1] = rho * u * u + p;
-        Fx[2] = rho * u * v;
-        Fx[3] = rho * u * w;
-        Fx[4] = (rho * eT + p) * u;
+    if (NULL != Fz) {
+        Fz[0] = rho * w;
+        Fz[1] = rho * w * u;
+        Fz[2] = rho * w * v;
+        Fz[3] = rho * w * w + p;
+        Fz[4] = (rho * eT + p) * w;
     }
-
     if (NULL != Fy) {
         Fy[0] = rho * v;
         Fy[1] = rho * v * u;
@@ -444,13 +443,12 @@ static int ComputeNonViscousFlux(
         Fy[3] = rho * v * w;
         Fy[4] = (rho * eT + p) * v;
     }
-
-    if (NULL != Fz) {
-        Fz[0] = rho * w;
-        Fz[1] = rho * w * u;
-        Fz[2] = rho * w * v;
-        Fz[3] = rho * w * w + p;
-        Fz[4] = (rho * eT + p) * w;
+    if (NULL != Fx) {
+        Fx[0] = rho * u;
+        Fx[1] = rho * u * u + p;
+        Fx[2] = rho * u * v;
+        Fx[3] = rho * u * w;
+        Fx[4] = (rho * eT + p) * u;
     }
     return 0;
 }
@@ -585,26 +583,7 @@ static int ComputeViscousFlux(
     /* Calculate dynamic viscosity and heat conductivity */
     const Real mu = flow->refMu * 1.45e-6 * (pow(T * flow->refTemperature, 1.5) / (T * flow->refTemperature + 110));
     const Real heatK = flow->gamma * flow->cv * mu / flow->refPr;
-
     const Real divV = du_dx + dv_dy + dw_dz;
-
-    if (NULL != Gx) {
-        Gx[0] = 0;
-        Gx[1] = mu * (2 * du_dx - (2/3) * divV);
-        Gx[2] = mu * (du_dy + dv_dx);
-        Gx[3] = mu * (du_dz + dw_dx);
-        Gx[4] = heatK * dT_dx + 
-            u * Gx[1] + v * Gx[2] + w * Gx[3];
-    }
-
-    if (NULL != Gy) {
-        Gy[0] = 0;
-        Gy[1] = mu * (dv_dx + du_dy);
-        Gy[2] = mu * (2 * dv_dy - (2/3) * divV);
-        Gy[3] = mu * (dv_dz + dw_dy);
-        Gy[4] = heatK * dT_dy + 
-            u * Gy[1] + v * Gy[2] + w * Gy[3];
-    }
 
     if (NULL != Gz) {
         Gz[0] = 0;
@@ -613,6 +592,22 @@ static int ComputeViscousFlux(
         Gz[3] = mu * (2 * dw_dz - (2/3) * divV);
         Gz[4] = heatK * dT_dz + 
             u * Gz[1] + v * Gz[2] + w * Gz[3];
+    }
+    if (NULL != Gy) {
+        Gy[0] = 0;
+        Gy[1] = mu * (dv_dx + du_dy);
+        Gy[2] = mu * (2 * dv_dy - (2/3) * divV);
+        Gy[3] = mu * (dv_dz + dw_dy);
+        Gy[4] = heatK * dT_dy + 
+            u * Gy[1] + v * Gy[2] + w * Gy[3];
+    }
+    if (NULL != Gx) {
+        Gx[0] = 0;
+        Gx[1] = mu * (2 * du_dx - (2/3) * divV);
+        Gx[2] = mu * (du_dy + dv_dx);
+        Gx[3] = mu * (du_dz + dw_dx);
+        Gx[4] = heatK * dT_dx + 
+            u * Gx[1] + v * Gx[2] + w * Gx[3];
     }
     return 0;
 }
