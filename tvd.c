@@ -59,8 +59,8 @@ int TVD(Real *U, const Real *Un, const Space *space, const Partition *part, cons
      */
     return 0;
 }
-static int TVDNumericalFlux(
-        Real Hz[], Real Hy[], Real Hx[], 
+static int ReconstructedFluxTVD(
+        Real Fhatz[], Real Fhaty[], Real Fhatx[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
@@ -69,7 +69,7 @@ static int TVDNumericalFlux(
     Real R[5][5] = {{0.0}}; /* vector space {Rn} */
     Real Phi[5] = {0.0}; /* flux projection or decomposition coefficients on vector space {Rn} */
     Real RPhi[5] = {0.0}; /* R x Phi */
-    if (NULL != Hz) {
+    if (NULL != Fhatz) {
         ComputeNonViscousFlux(F, NULL, NULL, k, j, i, U, space, flow);
         ComputeNonViscousFlux(Fh, NULL, NULL, k+1, j, i, U, space, flow);
         ComputeEigenvectorSpaceR(R, NULL, NULL, k, j, i, U, space, flow);
@@ -81,10 +81,10 @@ static int TVDNumericalFlux(
             }
         }
         for (int row = 0; row < 5; ++row) {
-            Hz[row] = 0.5 * (F[row] + Fh[row] + RPhi[row]);
+            Fhatz[row] = 0.5 * (F[row] + Fh[row] + RPhi[row]);
         }
     }
-    if (NULL != Hy) {
+    if (NULL != Fhaty) {
         ComputeNonViscousFlux(NULL, F, NULL, k, j, i, U, space, flow);
         ComputeNonViscousFlux(NULL, Fh, NULL, k, j+1, i, U, space, flow);
         ComputeEigenvectorSpaceR(NULL, R, NULL, k, j, i, U, space, flow);
@@ -96,10 +96,10 @@ static int TVDNumericalFlux(
             }
         }
         for (int row = 0; row < 5; ++row) {
-            Hy[row] = 0.5 * (F[row] + Fh[row] + RPhi[row]);
+            Fhaty[row] = 0.5 * (F[row] + Fh[row] + RPhi[row]);
         }
     }
-    if (NULL != Hx) {
+    if (NULL != Fhatx) {
         ComputeNonViscousFlux(NULL, NULL, F, k, j, i, U, space, flow);
         ComputeNonViscousFlux(NULL, NULL, Fh, k, j, i+1, U, space, flow);
         ComputeEigenvectorSpaceR(NULL, NULL, R, k, j, i, U, space, flow);
@@ -111,7 +111,7 @@ static int TVDNumericalFlux(
             }
         }
         for (int row = 0; row < 5; ++row) {
-            Hx[row] = 0.5 * (F[row] + Fh[row] + RPhi[row]);
+            Fhatx[row] = 0.5 * (F[row] + Fh[row] + RPhi[row]);
         }
     }
     return 0;

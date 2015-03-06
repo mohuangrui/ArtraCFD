@@ -45,11 +45,11 @@ int DomainPartition(Partition *part, const Space *space)
         strncpy(part->name[partCount], partName[partCount], sizeof part->name[partCount]);
     }
     /*
-     * Specify the outer surface normal vector values of each inner part, the
+     * Outward facing surface unit normal vector values of each inner part, the
      * introducing of surface normal vector can provide great advantange: every
      * surface can be handled uniformly if manipulations and calculations are
      * incorporated with surface normal vector. For example, (normalX, normalY,
-     * normalZ) is the outer surface normal vector at surface surface point (i,
+     * normalZ) is the outward facing unit normal vector at surface point (i,
      * j, k), then its neighbour node (ih, jh, kh) is more inner than current
      * node if (ih-i)*normalX + (jh-j)*normalY + (kh-k)*normalZ < 0.
      */
