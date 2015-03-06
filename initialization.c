@@ -33,7 +33,7 @@ int InitializeFlowField(Real *U, const Space *space, const Particle *particle,
         Time *time, const Partition *part, const Flow *flow)
 {
     ShowInformation("Initializing flow field...");
-    if (time->restart == 0) { /* non restart */
+    if (0 == time->restart) { /* non restart */
         FirstRunInitializer(U, space, particle, part, flow);
         /* if this is a first run, output initial data */
         InitializeEnsightTransientCaseFile(time);
@@ -153,7 +153,7 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
                         xh = (space->xMin + (i - space->ng) * space->dx - x) * normalX;
                         yh = (space->yMin + (j - space->ng) * space->dy - y) * normalY;
                         zh = (space->zMin + (k - space->ng) * space->dz - z) * normalZ;
-                        if ((xh + yh + zh) > 0) { /* on the normal direction */
+                        if (0 < (xh + yh + zh)) { /* on the normal direction */
                             flag = 1; /* set flag to true */
                         }
                         break;
@@ -161,7 +161,7 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
                         xh = (space->xMin + (i - space->ng) * space->dx - x);
                         yh = (space->yMin + (j - space->ng) * space->dy - y);
                         zh = (space->zMin + (k - space->ng) * space->dz - z);
-                        if ((xh * xh + yh * yh + zh * zh - r * r) < 0) { /* in the sphere */
+                        if (0 > (xh * xh + yh * yh + zh * zh - r * r)) { /* in the sphere */
                             flag = 1; /* set flag to true */
                         }
                         break;
@@ -169,14 +169,14 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
                         normalX = (space->xMin + (i - space->ng) * space->dx - x) * (space->xMin + (i - space->ng) * space->dx - xh);
                         normalY = (space->yMin + (j - space->ng) * space->dy - y) * (space->yMin + (j - space->ng) * space->dy - yh);
                         normalZ = (space->zMin + (k - space->ng) * space->dz - z) * (space->zMin + (k - space->ng) * space->dz - zh);
-                        if ((normalX <= 0) && (normalY <= 0) && (normalZ <= 0)) { /* in the box, equal sign is needed for collapse */
+                        if ((0 >= normalX) && (0 >= normalY) && (0 >= normalZ)) { /* in the box, equal sign is needed for collapse */
                             flag = 1; /* set flag to true */
                         }
                         break;
                     default:
                         break;
                 }
-                if (flag == 1) { /* current node meets the condition */
+                if (1 == flag) { /* current node meets the condition */
                     U[idx+0] = rho;
                     U[idx+1] = rho * u;
                     U[idx+2] = rho * v;
