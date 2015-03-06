@@ -33,7 +33,7 @@ int InitializeEnsightTransientCaseFile(const Time *time)
 {
     ShowInformation("  Initialize Ensight transient case file...");
     FILE *filePointer = fopen("transient.case", "w");
-    if (filePointer == NULL) {
+    if (NULL == filePointer) {
         FatalError("failed to write data to ensight case file: transient.case...");
     }
     /* output information to file */
@@ -107,7 +107,7 @@ static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
     /* current filename */
     snprintf(enSet->fileName, sizeof(EnsightString), "%s.case", enSet->baseName); 
     FILE *filePointer = fopen(enSet->fileName, "w");
-    if (filePointer == NULL) {
+    if (NULL == filePointer) {
         FatalError("failed to write data to ensight case file: ensight.case***...");
     }
     /* output information to file */
@@ -134,7 +134,7 @@ static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
      * Add the time flag of current export to the transient case
      */
     filePointer = fopen("transient.case", "a");
-    if (filePointer == NULL) {
+    if (NULL == filePointer) {
         FatalError("failed to add data to ensight case file: transient.case...");
     }
     if ((time->outputCount % 5) == 0) { /* print to a new line every x outputs */
@@ -155,7 +155,7 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
      */
     snprintf(enSet->fileName, sizeof(EnsightString), "%s.geo", enSet->baseName);
     FILE *filePointer = fopen(enSet->fileName, "wb");
-    if (filePointer == NULL) {
+    if (NULL == filePointer) {
         FatalError("failed to write data to ensight geometry file: ensight.geo***...");
     }
     /*
@@ -227,17 +227,17 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
         }
         /*
          * Now output the iblanked array of all nodes in current part
-         * blankID=1 is interior type, will be created and used.
-         * blankID=0 is exterior type, they are blanked-out nodes 
+         * blankID = 1 is interior type, will be created and used.
+         * blankID = 0 is exterior type, they are blanked-out nodes 
          * and will not be created in the geometry.
-         * blankID>1 are any kind of boundary nodes.
-         * To transform from the ghostID to blankID, need to add constant "1"
+         * blankID > 1 or < 0 are any kind of boundary nodes.
+         * To transform from the nodeFlag to blankID, need to add constant "1"
          */
         for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
             for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                 for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
                     idx = (k * space->jMax + j) * space->iMax + i;
-                    blankID = space->ghostFlag[idx] + 1;
+                    blankID = space->nodeFlag[idx] + 1;
                     fwrite(&(blankID), sizeof(int), 1, filePointer);
                 }
             }
@@ -275,7 +275,7 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
     for (int dim = 0; dim < 6; ++dim) {
         snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
         filePointer = fopen(enSet->fileName, "wb");
-        if (filePointer == NULL) {
+        if (NULL == filePointer) {
             FatalError("failed to write data to ensight data file: ensight.***...");
         }
         /* first line description per file */
@@ -336,7 +336,7 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
      */
     snprintf(enSet->fileName, sizeof(EnsightString), "%s.Vel", enSet->baseName);
     filePointer = fopen(enSet->fileName, "wb");
-    if (filePointer == NULL) {
+    if (NULL == filePointer) {
         FatalError("failed to write ensight data file: ensight.Vel***...");
     }
     /* binary file format */
@@ -389,7 +389,7 @@ static int WriteParticleFile(EnsightSet *enSet, const Particle *particle)
 {
     snprintf(enSet->fileName, sizeof(EnsightString), "%s.particle", enSet->baseName);
     FILE *filePointer = fopen(enSet->fileName, "w");
-    if (filePointer == NULL) {
+    if (NULL == filePointer) {
         FatalError("faild to write particle data file: ensight.particle***...");
     }
     fprintf(filePointer, "N: %d\n", particle->totalN); /* number of objects */

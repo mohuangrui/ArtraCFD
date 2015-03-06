@@ -507,8 +507,7 @@ typedef struct {
     Real xMax; /* coordinates define the space domain */
     Real yMax; /* coordinates define the space domain */
     Real zMax; /* coordinates define the space domain */
-    int *ghostFlag; /* node type integer flag: normal, ghost, solid, etc. */
-    int *geoID; /* store the ID of geometry object for each ghost cell */
+    int *nodeFlag; /* node type integer flag: normal, ghost, solid, etc. */
 }Space;
 /*
  * Particle Entities

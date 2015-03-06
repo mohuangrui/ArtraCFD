@@ -19,29 +19,29 @@ int CommandLineProcessor(char *lineCommand)
     char *scanner = lineCommand; /* copy the address to scanner */
     char *receiver = lineCommand; /* copy the address to receiver */
     /* check whether is a NULL command pointer */
-    if (lineCommand == NULL) {
+    if (NULL == lineCommand) {
         fprintf(stderr, "warning: process a NULL command line pointer\n");
         return 0;
     }
     /* check whether is a empty command line */
-    if (lineCommand[0] == '\0') {
+    if ('\0' == lineCommand[0]) {
         return 0;
     }
     /* then get rid of before tabs and spaces */
-    while ((scanner[0] == ' ') || (scanner[0] == '\t')) {
+    while ((' ' == scanner[0]) || ('\t' == scanner[0])) {
         scanner[0] = ' '; /* replace tab with space */
         ++scanner; /* update scanner */
     }
-    while (scanner[0] != '\0') { /* until reach the end of original command */
-        if ((scanner[0] == '\r') || (scanner[0] == '\n')) {
+    while ('\0' != scanner[0]) { /* until reach the end of original command */
+        if (('\r' == scanner[0]) || ('\n' == scanner[0])) {
             ++scanner; /* scan the next character */
             continue; /* go to next loop */
         }
-        if (scanner[0] == '#') {
+        if ('#' == scanner[0]) {
             break; /* no more scan */
         }
-        if ((scanner[0] == ' ') || (scanner[0] == '\t')) { /* a space or tab */
-            if (scanner[-1] != ' ') { /* check space, tabs are all replaced */
+        if ((' ' == scanner[0]) || ('\t' == scanner[0])) { /* a space or tab */
+            if (' ' != scanner[-1]) { /* only check space; tabs are all replaced */
                 /* now its a first space or tab between words */
                 scanner[0] = ' '; /* replace tab with space */
                 receiver[0] = ' '; /* receive a space */
@@ -65,7 +65,7 @@ int CommandLineProcessor(char *lineCommand)
         return 0;
     }
     /* if received something and also ended with a space */
-    if (receiver[-1] == ' ') {
+    if (' ' == receiver[-1]) {
         receiver[-1] = '\0';
         return 0;
     }
@@ -79,7 +79,7 @@ void FatalError(const char *statement)
 }
 int ShowInformation(const char *statement)
 {
-    if (strcmp(statement, "Session End") == 0) {
+    if (0 == strcmp(statement, "Session End")) {
         fprintf(stdout, "\n**********************************************************\n\n");
         return 0;
     }
@@ -116,22 +116,22 @@ int ShowInformation(const char *statement)
 void *AssignStorage(const int idxMax, const char *dataType)
 {
     void *pointer = NULL;
-    if (strcmp(dataType, "double") == 0) {
+    if (0 == strcmp(dataType, "double")) {
         pointer = malloc(idxMax * sizeof(double));
     }
-    if (strcmp(dataType, "Real") == 0) {
+    if (0 == strcmp(dataType, "Real")) {
         pointer = malloc(idxMax * sizeof(Real));
     }
-    if (strcmp(dataType, "float") == 0) {
+    if (0 == strcmp(dataType, "float")) {
         pointer = malloc(idxMax * sizeof(float));
     }
-    if (strcmp(dataType, "char") == 0) {
+    if (0 == strcmp(dataType, "char")) {
         pointer = malloc(idxMax * sizeof(char));
     }
-    if (strcmp(dataType, "int") == 0) {
+    if (0 == strcmp(dataType, "int")) {
         pointer = malloc(idxMax * sizeof(int));
     }
-    if (pointer == NULL) {
+    if (NULL == pointer) {
         FatalError("memory allocation failed");
     }
     return pointer;
@@ -151,7 +151,7 @@ void *AssignStorage(const int idxMax, const char *dataType)
  */
 int RetrieveStorage(void *pointer)
 {
-    if (pointer != NULL) {
+    if (NULL != pointer) {
         free(pointer);
     }
     return 0;
