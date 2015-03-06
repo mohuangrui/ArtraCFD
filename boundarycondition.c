@@ -51,11 +51,6 @@ static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space,
             for (int i = part->iSub[partID]; i < part->iSup[partID]; ++i) {
                 idx = ((k * space->jMax + j) * space->iMax + i) * 5;
                 /*
-                 * Calculate inner neighbour nodes according to normal vector direction.
-                 */
-                idxh = (((k - normalZ) * space->jMax + (j - normalY)) * space->iMax + i - normalX) * 5;
-                idxhh = (((k - 2 * normalZ) * space->jMax + (j - 2 * normalY)) * space->iMax + i - 2 * normalX) * 5;
-                /*
                  * apply boundary condition for current node
                  */
                 switch (part->typeBC[partID]) {
@@ -67,11 +62,15 @@ static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space,
                         U[idx+4] = p / (flow->gamma - 1) + 0.5 * rho * (u * u + v * v + w * w);
                         break;
                     case 2: /* outflow */
+                        /* Calculate inner neighbour nodes according to normal vector direction. */
+                        idxh = (((k - normalZ) * space->jMax + (j - normalY)) * space->iMax + i - normalX) * 5;
+                        idxhh = (((k - 2 * normalZ) * space->jMax + (j - 2 * normalY)) * space->iMax + i - 2 * normalX) * 5;
                         for (int dim = 0; dim < 5; ++dim) {
                             U[idx+dim] = 2 * U[idxh+dim] - U[idxhh+dim];
                         }
                         break;
                     case 3: /* slip wall */
+                        idxh = (((k - normalZ) * space->jMax + (j - normalY)) * space->iMax + i - normalX) * 5;
                         U[idx+0] = U[idxh+0];
                         U[idx+1] = (!normalX) * U[idxh+1];
                         U[idx+2] = (!normalY) * U[idxh+2];
@@ -84,6 +83,7 @@ static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space,
                         }
                         break;
                     case 4: /* nonslip wall */
+                        idxh = (((k - normalZ) * space->jMax + (j - normalY)) * space->iMax + i - normalX) * 5;
                         U[idx+0] = U[idxh+0];
                         U[idx+1] = 0;
                         U[idx+2] = 0;
@@ -101,6 +101,7 @@ static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space,
                         }
                         break;
                     case -5: /* auxiliary periodic pair, apply zero gradient flow */
+                        idxh = (((k - normalZ) * space->jMax + (j - normalY)) * space->iMax + i - normalX) * 5;
                         for (int dim = 0; dim < 5; ++dim) {
                             U[idx+dim] = U[idxh+dim];
                         }
