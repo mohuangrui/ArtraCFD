@@ -31,8 +31,8 @@ int ProgramEntrance(int argc, char *argv[], Control *control)
     /*
      * Loop for command line options
      */
-    while ((argc > 1) && (argv[1][0] == '-')) {
-        if (argc < 3) { /* not enough arguments */
+    while ((1 < argc) && ('-' == argv[1][0])) {
+        if (3 > argc) { /* not enough arguments */
             fprintf(stderr,"error, empty entry after %s\n", argv[1]);
             exit(EXIT_FAILURE);
         }
@@ -46,23 +46,23 @@ int ProgramEntrance(int argc, char *argv[], Control *control)
             case 'm':
                 ++argv;
                 --argc;
-                if (strcmp(argv[1], "serial") == 0) {
+                if (0 == strcmp(argv[1], "serial")) {
                     control->runMode = 's';
                     break;
                 }
-                if (strcmp(argv[1], "interact") == 0) {
+                if (0 == strcmp(argv[1], "interact")) {
                     control->runMode = 'i';
                     break;
                 }
-                if (strcmp(argv[1], "threaded") == 0) {
+                if (0 == strcmp(argv[1], "threaded")) {
                     control->runMode = 't';
                     break;
                 }
-                if (strcmp(argv[1], "mpi") == 0) {
+                if (0 == strcmp(argv[1], "mpi")) {
                     control->runMode = 'm';
                     break;
                 }
-                if (strcmp(argv[1], "gpu") == 0) {
+                if (0 == strcmp(argv[1], "gpu")) {
                     control->runMode = 'g';
                     break;
                 }
@@ -90,15 +90,15 @@ int ProgramEntrance(int argc, char *argv[], Control *control)
      * At this point, all the options have been processed.
      * Check to see whether some other information left.
      */
-    if (argc != 1) {
+    if (1 != argc) {
         fprintf(stderr,"warning, unidentified arguments ignored: %s...\n", argv[1]);
     } 
     /*
      * Check the consistency of run mode and number of processors
      */
-    if ((control->runMode == 't') || (control->runMode == 'm') ||
-            (control->runMode == 'g')) {
-        if (control->processorN <= 1) {
+    if (('t' == control->runMode) || ('m' == control->runMode) ||
+            ('g' == control->runMode)) {
+        if (1 >= control->processorN) {
             fprintf(stderr,"error, illegal number of processors %d\n", control->processorN);
             exit(EXIT_FAILURE);
         }
@@ -113,7 +113,7 @@ int ProgramEntrance(int argc, char *argv[], Control *control)
 }
 static int ConfigureProgram(const Control *control)
 {
-    if (control->runMode == 'i') {
+    if ('i' == control->runMode) {
         Preamble();
     }
     return 0;
@@ -135,7 +135,7 @@ static int Preamble(void)
         fgets(currentLine, sizeof currentLine, stdin); /* read a line */
         CommandLineProcessor(currentLine); /* process current line */
         fprintf(stdout, "\n");
-        if (strncmp(currentLine, "help", sizeof currentLine) == 0) {
+        if (0 == strncmp(currentLine, "help", sizeof currentLine)) {
             fprintf(stdout, "Options under interactive environment:\n\n");
             fprintf(stdout, "[help]    show this information\n");
             fprintf(stdout, "[init]    generate the initial case input files\n");
@@ -145,28 +145,28 @@ static int Preamble(void)
             fprintf(stdout, "[exit]    exit program\n");
             continue;
         }
-        if (strncmp(currentLine, "init", sizeof currentLine) == 0) {
+        if (0 == strncmp(currentLine, "init", sizeof currentLine)) {
             GenerateCaseSettingFiles();
             fprintf(stdout, "case files generated successfully\n");
             continue;
         }
-        if (strncmp(currentLine, "calc", sizeof currentLine) == 0) {
+        if (0 == strncmp(currentLine, "calc", sizeof currentLine)) {
             ExpressionCalculator();
             continue;
         }
-        if (strncmp(currentLine, "manual", sizeof currentLine) == 0) {
+        if (0 == strncmp(currentLine, "manual", sizeof currentLine)) {
             ProgramManual();
             continue;
         }
-        if (currentLine[0] == '\0') { /* no useful information in the command */
+        if ('\0' == currentLine[0]) { /* no useful information in the command */
             fprintf(stdout, "\n");
             continue;
         }
-        if (strncmp(currentLine, "solve", sizeof currentLine) == 0) {
+        if (0 == strncmp(currentLine, "solve", sizeof currentLine)) {
             ShowInformation("Session End");
             return 0;
         }
-        if (strncmp(currentLine, "exit", sizeof currentLine) == 0) {
+        if (0 == strncmp(currentLine, "exit", sizeof currentLine)) {
             ShowInformation("Session End");
             exit(EXIT_SUCCESS);
         } 

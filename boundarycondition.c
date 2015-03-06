@@ -76,7 +76,7 @@ static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space,
                         U[idx+1] = (!normalX) * U[idxh+1];
                         U[idx+2] = (!normalY) * U[idxh+2];
                         U[idx+3] = (!normalZ) * U[idxh+3];
-                        if (T < 0) { /* adiabatic */
+                        if (0 > T) { /* adiabatic */
                             U[idx+4] = U[idxh+4];
                         } else {
                             U[idx+4] = U[idx+0] * flow->cv * T + 
@@ -88,7 +88,7 @@ static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space,
                         U[idx+1] = 0;
                         U[idx+2] = 0;
                         U[idx+3] = 0;
-                        if (T < 0) { /* adiabatic */
+                        if (0 > T) { /* adiabatic */
                             U[idx+4] = U[idxh+4];
                         } else {
                             U[idx+4] = U[idx+0] * flow->cv * T;

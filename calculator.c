@@ -128,18 +128,18 @@ int ExpressionCalculator(void)
         fgets(currentLine, sizeof currentLine, stdin); /* read a line */
         CommandLineProcessor(currentLine); /* process current command */
         fprintf(stdout, "\n");
-        if (strncmp(currentLine, "help", sizeof currentLine) == 0) {
+        if (0 == strncmp(currentLine, "help", sizeof currentLine)) {
             HelpCalculator();
             continue;
         }
-        if (strncmp(currentLine, "set", sizeof currentLine) == 0) {
+        if (0 == strncmp(currentLine, "set", sizeof currentLine)) {
             SetAngleMode(&theParameter);
             continue;
         }
-        if (strncmp(currentLine, "quit", sizeof currentLine) == 0) {
+        if (0 == strncmp(currentLine, "quit", sizeof currentLine)) {
             return 0;
         } 
-        if (currentLine[0] == '\0') { /* no useful information in the command */
+        if ('\0' == currentLine[0]) { /* no useful information in the command */
             fprintf(stdout, "\n");
             continue;
         }
@@ -180,7 +180,7 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
     /*
      * Translate the command to math expression
      */
-    if (TranslateCommandToMathExpression(command) != 0) {
+    if (0 != TranslateCommandToMathExpression(command)) {
         return 1; /* failed */
     }
     char *pointer = command; /* pointer to point the expression */
@@ -198,25 +198,25 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
     /*
      * Calculation loop
      */
-    while ((pointer[0] != '\0') || (PeakTopElementOfOperatorStack(operatorStack) != '\0')) {
-        if (IsDigit(pointer[0]) == 0) { /* find a operand */
+    while (('\0' != pointer[0]) || ('\0' != PeakTopElementOfOperatorStack(operatorStack))) {
+        if (0 == IsDigit(pointer[0])) { /* find a operand */
             /* 
              * Read this float to current operand, note the read function will
              * update the pointer to the first character after the float data.
              */
             currentOperand = ReadFirstFloat(&pointer); 
-            if (PushOperandToStack(operandStack, currentOperand) != 0) {
+            if (0 != PushOperandToStack(operandStack, currentOperand)) {
                 return 1; /* failed */
             }
             continue;
         }
-        if (IsConstant(pointer[0]) == 0) { /* find a constant */
+        if (0 == IsConstant(pointer[0])) { /* find a constant */
             /* 
              * Read this constant to current operand, note the read function will
              * update the pointer to the first character after the constant.
              */
             currentOperand = ReadConstant(parameter, &pointer);
-            if (PushOperandToStack(operandStack, currentOperand) != 0) {
+            if (0 != PushOperandToStack(operandStack, currentOperand)) {
                 return 1; /* failed */
             }
             continue;
@@ -224,7 +224,7 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
         /*
          * Now, treat everything left as an operator
          */
-        if (IsOperator(pointer[0]) != 0) {
+        if (0 != IsOperator(pointer[0])) {
             ShowInformation("undefined operator in expression");
             return 1;
         }
@@ -236,17 +236,17 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
                  * than current operator in command, thus need to push
                  * current operator into stack.
                  */
-                if (IsDualOperatorActAsUnary(pointer) == 0) {
+                if (0 == IsDualOperatorActAsUnary(pointer)) {
                     /*
                      * Dual operator (they can both be unary and binary )
                      * '+' '-' show as a unary operator, then push a 0 to
                      * operand stack to make them become binary operator 
                      */
-                    if (PushOperandToStack(operandStack, 0) != 0) {
+                    if (0 != PushOperandToStack(operandStack, 0)) {
                         return 1;
                     }
                 }
-                if (PushOperatorToStack(operatorStack, currentOperator) != 0) {
+                if (0 != PushOperatorToStack(operatorStack, currentOperator)) {
                     return 1;
                 }
                 ++pointer;
@@ -258,7 +258,7 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
                  * dumped since they are control operators like parentheses
                  * and end tag.
                  */
-                if (PopOperatorFromStack(operatorStack, &currentOperator) != 0) {
+                if (0 != PopOperatorFromStack(operatorStack, &currentOperator)) {
                     return 1;
                 }
                 ++pointer;
@@ -271,30 +271,30 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
                  * At the same time, the head operator need to finish its
                  * calculation.
                  */
-                if (PopOperatorFromStack(operatorStack, &headOperator) != 0) {
+                if (0 != PopOperatorFromStack(operatorStack, &headOperator)) {
                     return 1;
                 }
-                if (IsPureUnaryOperator(headOperator) == 0) { /* unary operator */
-                    if (PopOperandFromStack(operandStack, &operandA) != 0) {
+                if (0 == IsPureUnaryOperator(headOperator)) { /* unary operator */
+                    if (0 != PopOperandFromStack(operandStack, &operandA)) {
                         return 1;
                     }
-                    if (UnaryOperation(parameter, headOperator, operandA, &currentOperand) !=  0) {
+                    if (0 != UnaryOperation(parameter, headOperator, operandA, &currentOperand)) {
                         return 1;
                     }
-                    if (PushOperandToStack(operandStack, currentOperand) != 0) {
+                    if (0 != PushOperandToStack(operandStack, currentOperand)) {
                         return 1;
                     }
                 } else {/* binary operator */
-                    if (PopOperandFromStack(operandStack, &operandA) != 0) {
+                    if (0 != PopOperandFromStack(operandStack, &operandA)) {
                         return 1;
                     }
-                    if (PopOperandFromStack(operandStack, &operandB) != 0) {
+                    if (0 != PopOperandFromStack(operandStack, &operandB)) {
                         return 1;
                     }
-                    if (BinaryOperation(operandB, headOperator, operandA, &currentOperand) !=  0) {
+                    if (0 != BinaryOperation(operandB, headOperator, operandA, &currentOperand)) {
                         return 1;
                     }
-                    if (PushOperandToStack(operandStack, currentOperand) != 0) {
+                    if (0 != PushOperandToStack(operandStack, currentOperand)) {
                         return 1;
                     }
                 }
@@ -310,7 +310,7 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
      * operand stack, if there are more than one element left, 
      * it means something wrong happened.
      */
-    if ((operandStack->top - operandStack->base) != 1) {
+    if (1 != (operandStack->top - operandStack->base)) {
         ShowInformation("error, wrong expression");
         parameter->answer = 0; /* reset answer */
         return 1;
@@ -459,10 +459,10 @@ static int TranslateCommandToMathExpression(char *command)
     char *scanner = command; /* scanner of the string */
     char *receiver = command; /* receiver to rewrite the string */
     int test = 1; /* test condition, default is false 1 */
-    while (scanner[0] != '\0') {
+    while ('\0' != scanner[0]) {
         switch (scanner[0]) {
             case 'e': 
-                if ((scanner[1] == 'x') && (scanner[2] == 'p')) { /* use "e" stands for "exp" */
+                if (('x' == scanner[1]) && ('p' == scanner[2])) { /* use "e" stands for "exp" */
                     receiver[0] = 'e';
                     ++receiver; /* update receiver to newest receiving position */
                     scanner = scanner + 3; /* update scanner to newest scanning position */
@@ -472,12 +472,12 @@ static int TranslateCommandToMathExpression(char *command)
                 }
                 break;
             case 'l':
-                if ((scanner[1] == 'n')) {/* use "n" stands for "ln" */
+                if (('n' == scanner[1])) {/* use "n" stands for "ln" */
                     receiver[0] = 'n';
                     ++receiver;
                     scanner = scanner + 2;
                 } else {
-                    if ((scanner[1] == 'g')) { /* use "g" stands for "lg" */
+                    if (('g' == scanner[1])) { /* use "g" stands for "lg" */
                         receiver[0] = 'g';
                         ++receiver;
                         scanner = scanner + 2;
@@ -488,12 +488,12 @@ static int TranslateCommandToMathExpression(char *command)
                 }
                 break;
             case 'a': 
-                if ((scanner[1] == 'b') && (scanner[2] == 's')) { /* use "a" stands for "abs" */
+                if (('b' == scanner[1]) && ('s' == scanner[2])) { /* use "a" stands for "abs" */
                     receiver[0] = 'a';
                     ++receiver;
                     scanner = scanner + 3;
                 } else {
-                    if ((scanner[1] == 'n') && (scanner[2] == 's')) { /* use 'q' for keyword "ans" */
+                    if (('n' == scanner[1]) && ('s' == scanner[2])) { /* use 'q' for keyword "ans" */
                         receiver[0] = 'q';
                         ++receiver;
                         scanner = scanner + 3;
@@ -504,7 +504,7 @@ static int TranslateCommandToMathExpression(char *command)
                 }
                 break;
             case 's': 
-                if ((scanner[1] == 'i') && (scanner[2] == 'n')) { /* use "s" stands for "sin" */
+                if (('i' == scanner[1]) && ('n' == scanner[2])) { /* use "s" stands for "sin" */
                     receiver[0] = 's';
                     ++receiver;
                     scanner = scanner + 3;
@@ -514,7 +514,7 @@ static int TranslateCommandToMathExpression(char *command)
                 }
                 break;
             case 'c': 
-                if ((scanner[1] == 'o') && (scanner[2] == 's')) { /* use "c" stands for "cos" */
+                if (('o' == scanner[1]) && ('s' == scanner[2])) { /* use "c" stands for "cos" */
                     receiver[0] = 'c';
                     ++receiver;
                     scanner = scanner + 3;
@@ -524,7 +524,7 @@ static int TranslateCommandToMathExpression(char *command)
                 }
                 break;
             case 't': 
-                if ((scanner[1] == 'a') && (scanner[2] == 'n')) { /* use "t" stands for "tan" */
+                if (('a' == scanner[1]) && ('n' == scanner[2])) { /* use "t" stands for "tan" */
                     receiver[0] = 't';
                     ++receiver;
                     scanner = scanner + 3;
@@ -534,7 +534,7 @@ static int TranslateCommandToMathExpression(char *command)
                 }
                 break;
             case 'p': 
-                if ((scanner[1] == 'i')) { /* use "p" stands for "pi" */
+                if (('i' == scanner[1])) { /* use "p" stands for "pi" */
                     receiver[0] = 'p';
                     ++receiver;
                     scanner = scanner + 2;
@@ -544,7 +544,7 @@ static int TranslateCommandToMathExpression(char *command)
                 }
                 break;
             case '.':
-                if ((IsDigit(scanner[1]) + IsDigit(scanner[-1])) != 0) {
+                if (0 != (IsDigit(scanner[1]) + IsDigit(scanner[-1]))) {
                     ShowInformation(". is preceded or followed by non digits");
                     return 1;
                 }
@@ -559,7 +559,7 @@ static int TranslateCommandToMathExpression(char *command)
                 test = IsDigit(scanner[0]) * IsPureBinaryOperator(scanner[0]) * 
                     IsDualOperator(scanner[0]) * IsLeftParentheses(scanner[0]) * 
                     IsRightParentheses(scanner[0]); /* if any one is true, it's true */
-                if (test == 0) { /* legal input single character */
+                if (0 == test) { /* legal input single character */
                     receiver[0] = scanner[0];
                     ++receiver;
                     ++scanner;
@@ -581,23 +581,23 @@ static int IsOperator(const char character)
         IsPureBinaryOperator(character) * IsDualOperator(character) *
         IsLeftParentheses(character) * IsRightParentheses(character) *
         IsEndTag(character); /* if any one is true, it's true */
-    if (testCondition == 0) {
+    if (0 == testCondition) {
         return 0;
     }
     return 1;
 }
 static int IsPureUnaryOperator(const char character)
 {
-    if ((character == 'e') || (character == 'n') || (character == 'g') ||
-            (character == 'a') || (character == 's') ||
-            (character == 'c') || (character == 't')) {
+    if (('e' == character) || ('n' == character) || ('g' == character) ||
+            ('a' == character) || ('s' == character) ||
+            ('c' == character) || ('t' == character)) {
         return 0;
     }
     return 1;
 }
 static int IsDualOperator(const char character)
 {
-    if ((character == '+') || (character == '-')) {
+    if (('+' == character) || ('-' == character)) {
         return 0;
     }
     return 1;
@@ -606,57 +606,57 @@ static int IsDualOperatorActAsUnary(const char *pointer)
 {
     int testCondition = IsDualOperator(pointer[0]) + 
         IsLeftParentheses(pointer[-1]); /* if both are true, it's true */
-    if (testCondition == 0) { /* it means is a unary operator */
+    if (0 == testCondition) { /* it means is a unary operator */
         return 0;
     }
     return 1;
 }
 static int IsPureBinaryOperator(const char character)
 {
-    if ((character == '*') || (character == '/')
-            || (character == '^')) {
+    if (('*' == character) || ('/' == character)
+            || ('^' == character)) {
         return 0;
     }
     return 1;
 }
 static int IsLeftParentheses(const char character)
 {
-    if ((character == '(') || (character == '[') || (character == '{')) {
+    if (('(' == character) || ('[' == character) || ('{' == character)) {
         return 0;
     }
     return 1;
 }
 static int IsRightParentheses(const char character)
 {
-    if ((character == ')') || (character == ']') || (character == '}')) {
+    if ((')' == character) || (']' == character) || ('}' == character)) {
         return 0;
     }
     return 1;
 }
 static int IsConstant(const char character)
 {
-    if ((character == 'p') || (character == 'q')) {
+    if (('p' == character) || ('q' == character)) {
         return 0;
     }
     return 1;
 }
 static int IsEndTag(const char character)
 {
-    if ((character == '\0')) {
+    if (('\0' == character)) {
         return 0;
     }
     return 1;
 }
 static int IsDigit(const char character)
 {
-    if ((character >= '0') && (character <= '9')) {
+    if (('0' <= character) && ('9' >= character)) {
         return 0;
     } 
     return 1;
 }
 static int IsDot(const char character)
 {
-    if (character == '.') {
+    if ('.' == character) {
         return 0;
     }
     return 1;
@@ -668,13 +668,13 @@ static double ReadFirstFloat(char **pointerAddress)
     /* first, use sscanf read a float to operand */
     sscanf(string, "%lg", &operand);
     /* then update the pointer to latest position*/
-    while (IsDigit(string[0]) == 0) {
+    while (0 == IsDigit(string[0])) {
         ++string;
     }
-    if (IsDot(string[0]) == 0) {
+    if (0 == IsDot(string[0])) {
         ++string;
     }
-    while (IsDigit(string[0]) == 0) {
+    while (0 == IsDigit(string[0])) {
         ++string;
     }
     *pointerAddress = string; /* get the updated address */
@@ -708,7 +708,7 @@ static int UnaryOperation(const Parameter *parameter,
             currentOperandAddress[0] = exp(operandA);
             break;
         case 'n':
-            if (operandA <= 0) {
+            if (0 >= operandA) {
                 ShowInformation("negative argument of ln(x)");
                 currentOperandAddress[0] = 0;
                 return 1;
@@ -716,7 +716,7 @@ static int UnaryOperation(const Parameter *parameter,
             currentOperandAddress[0] = log(operandA);
             break;
         case 'g':
-            if (operandA <= 0) {
+            if (0 >= operandA) {
                 ShowInformation("negative argument of lg(x)");
                 currentOperandAddress[0] = 0;
                 return 1;
@@ -733,7 +733,7 @@ static int UnaryOperation(const Parameter *parameter,
             currentOperandAddress[0] = cos(operandA * parameter->angleFactor);
             break;
         case 't':
-            if (cos(operandA * parameter->angleFactor) == 0) {
+            if (0 == cos(operandA * parameter->angleFactor)) {
                 ShowInformation("negative argument of tangent");
                 currentOperandAddress[0] = 0;
                 return 1;
@@ -761,7 +761,7 @@ static int BinaryOperation(const double operandB,
             currentOperandAddress[0] = operandB * operandA;
             break;
         case '/':
-            if (operandA == 0) {
+            if (0 == operandA) {
                 ShowInformation("negative argument of divide");
                 currentOperandAddress[0] = 0;
                 return 1;
@@ -785,11 +785,11 @@ static int SetAngleMode(Parameter *parameter)
     fgets(currentLine, sizeof currentLine, stdin); /* read a line */
     sscanf(currentLine, "%d", &(parameter->radianMode));
     fprintf(stdout, "\n");
-    if (parameter->radianMode == 1) {
+    if (1 == parameter->radianMode) {
         parameter->angleFactor = 1;
         ShowInformation("*** Set mode: angle in radian ***");
     } else {
-        if (parameter->radianMode == 2) {
+        if (2 == parameter->radianMode) {
             parameter->angleFactor = parameter->pi / 180;
             ShowInformation("*** Set mode: angle in degree ***");
         } else {

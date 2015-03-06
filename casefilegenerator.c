@@ -27,7 +27,7 @@ int GenerateCaseSettingFiles(void)
 static int CaseSettingFileGenerator(void)
 {
     FILE *filePointer = fopen("artracfd.case", "w");
-    if (filePointer == NULL) {
+    if (NULL == filePointer) {
         FatalError("failed to write case data file: artracfd.case...");
     }
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
@@ -190,7 +190,7 @@ static int CaseSettingFileGenerator(void)
 static int CaseGeometryFileGenerator(void)
 {
     FILE *filePointer = fopen("artracfd.geo", "w");
-    if (filePointer == NULL) {
+    if (NULL == filePointer) {
         FatalError("failed to write case geometry file: artracfd.geo...");
     }
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
