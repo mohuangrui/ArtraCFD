@@ -59,7 +59,8 @@ int TVD(Real *U, const Real *Un, const Space *space, const Partition *part, cons
      */
     return 0;
 }
-static int TVDNumericalFluxX(Real Hz[], Real Hy[], Real Hx[], 
+static int TVDNumericalFlux(
+        Real Hz[], Real Hy[], Real Hx[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
@@ -68,7 +69,7 @@ static int TVDNumericalFluxX(Real Hz[], Real Hy[], Real Hx[],
     Real R[5][5] = {{0.0}}; /* vector space {Rn} */
     Real Phi[5] = {0.0}; /* flux projection or decomposition coefficients on vector space {Rn} */
     Real RPhi[5] = {0.0}; /* R x Phi */
-    if (Hz != NULL) {
+    if (NULL != Hz) {
         ComputeNonViscousFlux(F, NULL, NULL, k, j, i, U, space, flow);
         ComputeNonViscousFlux(Fh, NULL, NULL, k+1, j, i, U, space, flow);
         ComputeEigenvectorSpaceR(R, NULL, NULL, k, j, i, U, space, flow);
@@ -83,7 +84,7 @@ static int TVDNumericalFluxX(Real Hz[], Real Hy[], Real Hx[],
             Hz[row] = 0.5 * (F[row] + Fh[row] + RPhi[row]);
         }
     }
-    if (Hy != NULL) {
+    if (NULL != Hy) {
         ComputeNonViscousFlux(NULL, F, NULL, k, j, i, U, space, flow);
         ComputeNonViscousFlux(NULL, Fh, NULL, k, j+1, i, U, space, flow);
         ComputeEigenvectorSpaceR(NULL, R, NULL, k, j, i, U, space, flow);
@@ -98,7 +99,7 @@ static int TVDNumericalFluxX(Real Hz[], Real Hy[], Real Hx[],
             Hy[row] = 0.5 * (F[row] + Fh[row] + RPhi[row]);
         }
     }
-    if (Hx != NULL) {
+    if (NULL != Hx) {
         ComputeNonViscousFlux(NULL, NULL, F, k, j, i, U, space, flow);
         ComputeNonViscousFlux(NULL, NULL, Fh, k, j, i+1, U, space, flow);
         ComputeEigenvectorSpaceR(NULL, NULL, R, k, j, i, U, space, flow);
@@ -115,7 +116,8 @@ static int TVDNumericalFluxX(Real Hz[], Real Hy[], Real Hx[],
     }
     return 0;
 }
-static int ComputeFluxDecompositionCoefficientPhi(Real Phiz[], Real Phiy[], Real Phix[], 
+static int ComputeFluxDecompositionCoefficientPhi(
+        Real Phiz[], Real Phiy[], Real Phix[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
@@ -125,7 +127,7 @@ static int ComputeFluxDecompositionCoefficientPhi(Real Phiz[], Real Phiy[], Real
     Real gamma[5] = {0.0}; /* TVD function gamma */
     Real lambda[5] = {0.0}; /* eigenvalues */
     Real alpha[5] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
-    if (Phiz != NULL) {
+    if (NULL != Phiz) {
         ComputeEigenvaluesAndDecompositionCoefficientAlpha(lambda, NULL, NULL, alpha, NULL, NULL, k, j, i, U, space, flow);
     }
 }
@@ -136,7 +138,7 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
         const Real *U, const Space *space, const Flow *flow)
 {
     const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
-    if (alphaz != NULL) {
+    if (NULL != alphaz) {
         const int idxh = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
         const Real delta_U[5] = {
             U[idxh+0] - U[idx+0],
@@ -153,7 +155,7 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
             }
         }
     }
-    if (alphay != NULL) {
+    if (NULL != alphay) {
         const int idxh = ((k * space->jMax + j + 1) * space->iMax + i) * 5;
         const Real delta_U[5] = {
             U[idxh+0] - U[idx+0],
@@ -170,7 +172,7 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
             }
         }
     }
-    if (alphax != NULL) {
+    if (NULL != alphax) {
         const int idxh = ((k * space->jMax + j) * space->iMax + i + 1) * 5;
         const Real delta_U[5] = {
             U[idxh+0] - U[idx+0],
@@ -195,7 +197,7 @@ static int ComputeEigenvaluesAndEigenvectorSpaceL(
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    if ((lambdaz != NULL) || (Lz != NULL)) {
+    if ((NULL != lambdaz) || (NULL != Lz)) {
         Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(Uo, NULL, NULL, k, j, i, U, space, flow);
         const Real u = Uo[1];
@@ -205,10 +207,10 @@ static int ComputeEigenvaluesAndEigenvectorSpaceL(
         const Real q = 0.5 * (u * u + v * v + w * w);
         const Real b = (flow->gamma - 1) / (2 * c * c);
         const Real d = (1 / (2 * c)); 
-        if (lambdaz != NULL) {
+        if (NULL != lambdaz) {
             lambdaz[0] = w - c; lambdaz[1] = w; lambdaz[2] = w; lambdaz[3] = w; lambdaz[4] = w + c;
         }
-        if (Lz != NULL) {
+        if (NULL != Lz) {
             Lz[0][0] = b * q + d * w;   Lz[0][1] = -b * u;             Lz[0][2] = -b * v;             Lz[0][3] = -b * w - d;     Lz[0][4] = b;
             Lz[1][0] = -2 * b * q * u;  Lz[1][1] = 2 * b * u * u + 1;  Lz[1][2] = 2 * b * v * u;      Lz[1][3] = 2 * b * w * u;  Lz[1][4] = -2 * b * u;
             Lz[2][0] = -2 * b * q * v;  Lz[2][1] = 2 * b * v * u;      Lz[2][2] = 2 * b * v * v + 1;  Lz[2][3] = 2 * b * w * v;  Lz[2][4] = -2 * b * v;
@@ -216,7 +218,7 @@ static int ComputeEigenvaluesAndEigenvectorSpaceL(
             Lz[4][0] = b * q - d * w;   Lz[4][1] = -b * u;             Lz[4][2] = -b * v;             Lz[4][3] = -b * w + d;     Lz[4][4] = b;
         }
     }
-    if ((lambday != NULL) || (Ly != NULL)) {
+    if ((NULL != lambday) || (NULL != Ly)) {
         Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(NULL, Uo, NULL, k, j, i, U, space, flow);
         const Real u = Uo[1];
@@ -226,10 +228,10 @@ static int ComputeEigenvaluesAndEigenvectorSpaceL(
         const Real q = 0.5 * (u * u + v * v + w * w);
         const Real b = (flow->gamma - 1) / (2 * c * c);
         const Real d = (1 / (2 * c)); 
-        if (lambday != NULL) {
+        if (NULL != lambday) {
             lambday[0] = v - c; lambday[1] = v; lambday[2] = v; lambday[3] = v; lambday[4] = v + c;
         }
-        if (Ly != NULL) {
+        if (NULL != Ly) {
             Ly[0][0] = b * q + d * v;    Ly[0][1] = -b * u;             Ly[0][2] = -b * v - d;     Ly[0][3] = -b * w;             Ly[0][4] = b;
             Ly[1][0] = -2 * b * q * u;   Ly[1][1] = 2 * b * u * u + 1;  Ly[1][2] = 2 * b * v * u;  Ly[1][3] = 2 * b * w * u;      Ly[1][4] = -2 * b * u;
             Ly[2][0] = -2 * b * q + 1;   Ly[2][1] = 2 * b * u;          Ly[2][2] = 2 * b * v;      Ly[2][3] = 2 * b * w;          Ly[2][4] = -2 * b;
@@ -237,7 +239,7 @@ static int ComputeEigenvaluesAndEigenvectorSpaceL(
             Ly[4][0] = b * q - d * v;    Ly[4][1] = -b * u;             Ly[4][2] = -b * v + d;     Ly[4][3] = -b * w;             Ly[4][4] = b;
         }
     }
-    if ((lambdax != NULL) || (Lx != NULL)) {
+    if ((NULL != lambdax) || (NULL != Lx)) {
         Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(NULL, NULL, Uo, k, j, i, U, space, flow);
         const Real u = Uo[1];
@@ -247,10 +249,10 @@ static int ComputeEigenvaluesAndEigenvectorSpaceL(
         const Real q = 0.5 * (u * u + v * v + w * w);
         const Real b = (flow->gamma - 1) / (2 * c * c);
         const Real d = (1 / (2 * c)); 
-        if (lambdax != NULL) {
+        if (NULL != lambdax) {
             lambdax[0] = u - c; lambdax[1] = u; lambdax[2] = u; lambdax[3] = u; lambdax[4] = u + c;
         }
-        if (Lx != NULL) {
+        if (NULL != Lx) {
             Lx[0][0] = b * q + d * u;   Lx[0][1] = -b * u - d;     Lx[0][2] = -b * v;             Lx[0][3] = -b * w;             Lx[0][4] = b;
             Lx[1][0] = -2 * b * q + 1;  Lx[1][1] = 2 * b * u;      Lx[1][2] = 2 * b * v;          Lx[1][3] = 2 * b * w;          Lx[1][4] = -2 * b;
             Lx[2][0] = -2 * b * q * v;  Lx[2][1] = 2 * b * v * u;  Lx[2][2] = 2 * b * v * v + 1;  Lx[2][3] = 2 * b * w * v;      Lx[2][4] = -2 * b * v;
@@ -260,11 +262,12 @@ static int ComputeEigenvaluesAndEigenvectorSpaceL(
     }
     return 0;
 }
-static int ComputeEigenvectorSpaceR(Real Rz[][5], Real Ry[][5], Real Rx[][5], 
+static int ComputeEigenvectorSpaceR(
+        Real Rz[][5], Real Ry[][5], Real Rx[][5], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    if (Rz != NULL) {
+    if (NULL != Rz) {
         Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(Uo, NULL, NULL, k, j, i, U, space, flow);
         const Real u = Uo[1];
@@ -279,7 +282,7 @@ static int ComputeEigenvectorSpaceR(Real Rz[][5], Real Ry[][5], Real Rx[][5],
         Rz[3][0] = w - c;       Rz[3][1] = 0;  Rz[3][2] = 0;  Rz[3][3] = w;          Rz[3][4] = w + c;
         Rz[4][0] = hT - w * c;  Rz[4][1] = u;  Rz[4][2] = v;  Rz[4][3] = w * w - q;  Rz[4][4] = hT + w * c;
     }
-    if (Ry != NULL) {
+    if (NULL != Ry) {
         Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(NULL, Uo, NULL, k, j, i, U, space, flow);
         const Real u = Uo[1];
@@ -294,7 +297,7 @@ static int ComputeEigenvectorSpaceR(Real Rz[][5], Real Ry[][5], Real Rx[][5],
         Ry[3][0] = w;           Ry[3][1] = 0;  Ry[3][2] = 0;          Ry[3][3] = 1;  Ry[3][4] = w;
         Ry[4][0] = hT - v * c;  Ry[4][1] = u;  Ry[4][2] = v * v - q;  Ry[4][3] = w;  Ry[4][4] = hT + v * c;
     }
-    if (Rx != NULL) {
+    if (NULL != Rx) {
         Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(NULL, NULL, Uo, k, j, i, U, space, flow);
         const Real u = Uo[1];
@@ -311,7 +314,8 @@ static int ComputeEigenvectorSpaceR(Real Rz[][5], Real Ry[][5], Real Rx[][5],
     }
     return 0;
 }
-static int ComputeRoeAverage(Real Uoz[], Real Uoy[], Real Uox[], 
+static int ComputeRoeAverage(
+        Real Uoz[], Real Uoy[], Real Uox[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
@@ -321,7 +325,7 @@ static int ComputeRoeAverage(Real Uoz[], Real Uoy[], Real Uox[],
     const Real v = U[idx+2] / rho;
     const Real w = U[idx+3] / rho;
     const Real hT = flow->gamma * U[idx+4] / rho - 0.5 * (u * u + v * v + w * w) * (flow->gamma - 1);
-    if (Uoz != NULL) {
+    if (NULL != Uoz) {
         const int idxh = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
         const Real  rho_h = U[idxh+0];
         const Real  u_h = U[idxh+1] / rho_h;
@@ -335,7 +339,7 @@ static int ComputeRoeAverage(Real Uoz[], Real Uoy[], Real Uox[],
         Uoz[4] = (sqrt(rho) * hT + sqrt(rho_h) * hT_h) / (sqrt(rho) + sqrt(rho_h)); /* hT average */
         Uoz[5] = sqrt((flow->gamma - 1) * (Uoz[4] - 0.5 * (Uoz[1] * Uoz[1] + Uoz[2] * Uoz[2] + Uoz[3] * Uoz[3]))); /* the speed of sound */
     }
-    if (Uoy != NULL) {
+    if (NULL != Uoy) {
         const int idxh = ((k * space->jMax + j + 1) * space->iMax + i) * 5;
         const Real  rho_h = U[idxh+0];
         const Real  u_h = U[idxh+1] / rho_h;
@@ -349,7 +353,7 @@ static int ComputeRoeAverage(Real Uoz[], Real Uoy[], Real Uox[],
         Uoy[4] = (sqrt(rho) * hT + sqrt(rho_h) * hT_h) / (sqrt(rho) + sqrt(rho_h)); /* hT average */
         Uoy[5] = sqrt((flow->gamma - 1) * (Uoy[4] - 0.5 * (Uoy[1] * Uoy[1] + Uoy[2] * Uoy[2] + Uoy[3] * Uoy[3]))); /* the speed of sound */
     }
-    if (Uox != NULL) {
+    if (NULL != Uox) {
         const int idxh = ((k * space->jMax + j) * space->iMax + i + 1) * 5;
         const Real  rho_h = U[idxh+0];
         const Real  u_h = U[idxh+1] / rho_h;
@@ -383,17 +387,17 @@ static Real sigma(const Real z)
 }
 static int sign(const Real x)
 {
-    if (x > 0) {
+    if (0 < x) {
         return 1;
     }
-    if (x < 0) {
+    if (0 > x) {
         return -1;
     }
     return 0;
 }
 static Real minmod(const Real x, const Real y, const Real z)
 {
-    if ((x * y <= 0) || (x * z <= 0)) {
+    if ((0 >= x * y) || (0 >= x * z)) {
         return 0;
     }
     return (sign(x) * Min(fabs(x), Min(fabs(y), fabs(z))));
@@ -412,7 +416,8 @@ static Real Max(const Real valueA, const Real valueB)
     }
     return valueB;
 }
-static int ComputeNonViscousFlux(Real Fz[], Real Fy[], Real Fx[], 
+static int ComputeNonViscousFlux(
+        Real Fz[], Real Fy[], Real Fx[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
@@ -424,7 +429,7 @@ static int ComputeNonViscousFlux(Real Fz[], Real Fy[], Real Fx[],
     const Real eT = U[idx+4] / rho;
     const Real p = (flow->gamma - 1) * rho * (eT - 0.5 * (u * u + v * v + w * w));
 
-    if (Fx != NULL) {
+    if (NULL != Fx) {
         Fx[0] = rho * u;
         Fx[1] = rho * u * u + p;
         Fx[2] = rho * u * v;
@@ -432,7 +437,7 @@ static int ComputeNonViscousFlux(Real Fz[], Real Fy[], Real Fx[],
         Fx[4] = (rho * eT + p) * u;
     }
 
-    if (Fy != NULL) {
+    if (NULL != Fy) {
         Fy[0] = rho * v;
         Fy[1] = rho * v * u;
         Fy[2] = rho * v * v + p;
@@ -440,7 +445,7 @@ static int ComputeNonViscousFlux(Real Fz[], Real Fy[], Real Fx[],
         Fy[4] = (rho * eT + p) * v;
     }
 
-    if (Fz != NULL) {
+    if (NULL != Fz) {
         Fz[0] = rho * w;
         Fz[1] = rho * w * u;
         Fz[2] = rho * w * v;
@@ -449,7 +454,8 @@ static int ComputeNonViscousFlux(Real Fz[], Real Fy[], Real Fx[],
     }
     return 0;
 }
-static int ComputeViscousFlux(Real Gz[], Real Gy[], Real Gx[], 
+static int ComputeViscousFlux(
+        Real Gz[], Real Gy[], Real Gx[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
@@ -479,23 +485,23 @@ static int ComputeViscousFlux(Real Gz[], Real Gy[], Real Gx[],
     int idxN = (k * space->jMax + j + 1) * space->iMax + i;
     int idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
     int idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
-    if (space->ghostFlag[idx] == 1) { /* interior ghost used Forward or Backward scheme */
-        if (space->ghostFlag[idxW] == -1) { 
+    if (10 <= space->nodeFlag[idx]) { /* interior ghost used Forward or Backward scheme */
+        if (-10 >= space->nodeFlag[idxW]) { 
             idxW = idx;
         }
-        if (space->ghostFlag[idxE] == -1) {
+        if (-10 >= space->nodeFlag[idxE]) {
             idxE = idx;
         }
-        if (space->ghostFlag[idxS] == -1) {
+        if (-10 >= space->nodeFlag[idxS]) {
             idxS = idx;
         }
-        if (space->ghostFlag[idxN] == -1) {
+        if (-10 >= space->nodeFlag[idxN]) {
             idxN = idx;
         }
-        if (space->ghostFlag[idxF] == -1) {
+        if (-10 >= space->nodeFlag[idxF]) {
             idxF = idx;
         }
-        if (space->ghostFlag[idxB] == -1) {
+        if (-10 >= space->nodeFlag[idxB]) {
             idxB = idx;
         }
     }
@@ -582,7 +588,7 @@ static int ComputeViscousFlux(Real Gz[], Real Gy[], Real Gx[],
 
     const Real divV = du_dx + dv_dy + dw_dz;
 
-    if (Gx != NULL) {
+    if (NULL != Gx) {
         Gx[0] = 0;
         Gx[1] = mu * (2 * du_dx - (2/3) * divV);
         Gx[2] = mu * (du_dy + dv_dx);
@@ -591,7 +597,7 @@ static int ComputeViscousFlux(Real Gz[], Real Gy[], Real Gx[],
             u * Gx[1] + v * Gx[2] + w * Gx[3];
     }
 
-    if (Gy != NULL) {
+    if (NULL != Gy) {
         Gy[0] = 0;
         Gy[1] = mu * (dv_dx + du_dy);
         Gy[2] = mu * (2 * dv_dy - (2/3) * divV);
@@ -600,7 +606,7 @@ static int ComputeViscousFlux(Real Gz[], Real Gy[], Real Gx[],
             u * Gy[1] + v * Gy[2] + w * Gy[3];
     }
 
-    if (Gz != NULL) {
+    if (NULL != Gz) {
         Gz[0] = 0;
         Gz[1] = mu * (dw_dx + du_dz);
         Gz[2] = mu * (dw_dy + dv_dz);
