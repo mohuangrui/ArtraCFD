@@ -332,11 +332,12 @@ static int ComputeRoeAverage(
         const Real  v_h = U[idxh+2] / rho_h;
         const Real  w_h = U[idxh+3] / rho_h;
         const Real  hT_h = flow->gamma * U[idxh+4] / rho_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h) * (flow->gamma - 1);
-        Uoz[0] = (0.5 * (sqrt(rho) + sqrt(rho_h))) * (0.5 * (sqrt(rho) + sqrt(rho_h))); /* rho average */
-        Uoz[1] = (sqrt(rho) * u + sqrt(rho_h) * u_h) / (sqrt(rho) + sqrt(rho_h)); /* u average */
-        Uoz[2] = (sqrt(rho) * v + sqrt(rho_h) * v_h) / (sqrt(rho) + sqrt(rho_h)); /* v average */
-        Uoz[3] = (sqrt(rho) * w + sqrt(rho_h) * w_h) / (sqrt(rho) + sqrt(rho_h)); /* w average */
-        Uoz[4] = (sqrt(rho) * hT + sqrt(rho_h) * hT_h) / (sqrt(rho) + sqrt(rho_h)); /* hT average */
+        const Real D = sqrt(rho_h / rho);
+        Uoz[0] = rho * (0.5 * (1 + D)) * (0.5 * (1 + D)); /* rho average */
+        Uoz[1] = (u + D * u_h) / (1 + D); /* u average */
+        Uoz[2] = (v + D * v_h) / (1 + D); /* v average */
+        Uoz[3] = (w + D * w_h) / (1 + D); /* w average */
+        Uoz[4] = (hT + D * hT_h) / (1 + D); /* hT average */
         Uoz[5] = sqrt((flow->gamma - 1) * (Uoz[4] - 0.5 * (Uoz[1] * Uoz[1] + Uoz[2] * Uoz[2] + Uoz[3] * Uoz[3]))); /* the speed of sound */
     }
     if (NULL != Uoy) {
@@ -346,11 +347,12 @@ static int ComputeRoeAverage(
         const Real  v_h = U[idxh+2] / rho_h;
         const Real  w_h = U[idxh+3] / rho_h;
         const Real  hT_h = flow->gamma * U[idxh+4] / rho_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h) * (flow->gamma - 1);
-        Uoy[0] = (0.5 * (sqrt(rho) + sqrt(rho_h))) * (0.5 * (sqrt(rho) + sqrt(rho_h))); /* rho average */
-        Uoy[1] = (sqrt(rho) * u + sqrt(rho_h) * u_h) / (sqrt(rho) + sqrt(rho_h)); /* u average */
-        Uoy[2] = (sqrt(rho) * v + sqrt(rho_h) * v_h) / (sqrt(rho) + sqrt(rho_h)); /* v average */
-        Uoy[3] = (sqrt(rho) * w + sqrt(rho_h) * w_h) / (sqrt(rho) + sqrt(rho_h)); /* w average */
-        Uoy[4] = (sqrt(rho) * hT + sqrt(rho_h) * hT_h) / (sqrt(rho) + sqrt(rho_h)); /* hT average */
+        const Real D = sqrt(rho_h / rho);
+        Uoy[0] = rho * (0.5 * (1 + D)) * (0.5 * (1 + D)); /* rho average */
+        Uoy[1] = (u + D * u_h) / (1 + D); /* u average */
+        Uoy[2] = (v + D * v_h) / (1 + D); /* v average */
+        Uoy[3] = (w + D * w_h) / (1 + D); /* w average */
+        Uoy[4] = (hT + D * hT_h) / (1 + D); /* hT average */
         Uoy[5] = sqrt((flow->gamma - 1) * (Uoy[4] - 0.5 * (Uoy[1] * Uoy[1] + Uoy[2] * Uoy[2] + Uoy[3] * Uoy[3]))); /* the speed of sound */
     }
     if (NULL != Uox) {
@@ -360,11 +362,12 @@ static int ComputeRoeAverage(
         const Real  v_h = U[idxh+2] / rho_h;
         const Real  w_h = U[idxh+3] / rho_h;
         const Real  hT_h = flow->gamma * U[idxh+4] / rho_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h) * (flow->gamma - 1);
-        Uox[0] = (0.5 * (sqrt(rho) + sqrt(rho_h))) * (0.5 * (sqrt(rho) + sqrt(rho_h))); /* rho average */
-        Uox[1] = (sqrt(rho) * u + sqrt(rho_h) * u_h) / (sqrt(rho) + sqrt(rho_h)); /* u average */
-        Uox[2] = (sqrt(rho) * v + sqrt(rho_h) * v_h) / (sqrt(rho) + sqrt(rho_h)); /* v average */
-        Uox[3] = (sqrt(rho) * w + sqrt(rho_h) * w_h) / (sqrt(rho) + sqrt(rho_h)); /* w average */
-        Uox[4] = (sqrt(rho) * hT + sqrt(rho_h) * hT_h) / (sqrt(rho) + sqrt(rho_h)); /* hT average */
+        const Real D = sqrt(rho_h / rho);
+        Uox[0] = rho * (0.5 * (1 + D)) * (0.5 * (1 + D)); /* rho average */
+        Uox[1] = (u + D * u_h) / (1 + D); /* u average */
+        Uox[2] = (v + D * v_h) / (1 + D); /* v average */
+        Uox[3] = (w + D * w_h) / (1 + D); /* w average */
+        Uox[4] = (hT + D * hT_h) / (1 + D); /* hT average */
         Uox[5] = sqrt((flow->gamma - 1) * (Uox[4] - 0.5 * (Uox[1] * Uox[1] + Uox[2] * Uox[2] + Uox[3] * Uox[3]))); /* the speed of sound */
     }
     return 0;
