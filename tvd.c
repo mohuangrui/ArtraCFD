@@ -14,11 +14,8 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static Real Q(const Real);
-static int sign(const Real);
-static Real minmod(const Real, const Real, const Real);
-static Real Min(const Real, const Real);
-static Real Max(const Real, const Real);
+static int CalculateReconstructedFlux(
+        Real Fhat[], const Real F[], const Real Fh[], Real R[][5], const Real Phi[]);
 static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
         Real lambdaz[], Real lambday[], Real lambdax[], 
         Real alphaz[], Real alphay[], Real alphax[], 
@@ -27,7 +24,7 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
 static int ComputeFluxDecompositionCoefficientPhi(
         Real Phiz[], Real Phiy[], Real Phix[], 
         const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Flow *flow);
+        const Real *U, const Space *space, const Flow *flow, const Real dt);
 static int ComputeEigenvaluesAndEigenvectorSpaceL(
         Real lambdaz[], Real lambday[], Real lambdax[],
         Real Lz[][5], Real Ly[][5], Real Lx[][5], 
@@ -46,6 +43,11 @@ static int ComputeNonViscousFlux(Real Fz[], Real Fy[], Real Fx[],
 static int ComputeViscousFlux(Real Gz[], Real Gy[], Real Gx[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
+static Real Q(const Real z);
+static Real minmod(const Real x, const Real y);
+static int sign(const Real x);
+static Real min(const Real x, const Real y);
+static Real max(const Real x, const Real y);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -59,77 +61,76 @@ int TVD(Real *U, const Real *Un, const Space *space, const Partition *part, cons
      */
     return 0;
 }
-static int ReconstructedFluxTVD(
+static int ComputeReconstructedFluxTVD(
         Real Fhatz[], Real Fhaty[], Real Fhatx[], 
         const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Flow *flow)
+        const Real *U, const Space *space, const Flow *flow, const Real dt)
 {
     Real F[5] = {0.0}; /* flux at current node */
     Real Fh[5] = {0.0}; /* flux at neighbour */
     Real R[5][5] = {{0.0}}; /* vector space {Rn} */
     Real Phi[5] = {0.0}; /* flux projection or decomposition coefficients on vector space {Rn} */
-    Real RPhi[5] = {0.0}; /* R x Phi */
     if (NULL != Fhatz) {
         ComputeNonViscousFlux(F, NULL, NULL, k, j, i, U, space, flow);
         ComputeNonViscousFlux(Fh, NULL, NULL, k+1, j, i, U, space, flow);
         ComputeEigenvectorSpaceR(R, NULL, NULL, k, j, i, U, space, flow);
-        ComputeFluxDecompositionCoefficientPhi(Phi, NULL, NULL, k, j, i, U, space, flow);
-        for (int row = 0; row < 5; ++row) {
-            RPhi[row] = 0;
-            for (int col = 0; col < 5; ++col) {
-                RPhi[row] = RPhi[row] + R[row][col] * Phi[col];
-            }
-        }
-        for (int row = 0; row < 5; ++row) {
-            Fhatz[row] = 0.5 * (F[row] + Fh[row] + RPhi[row]);
-        }
+        ComputeFluxDecompositionCoefficientPhi(Phi, NULL, NULL, k, j, i, U, space, flow, dt);
+        CalculateReconstructedFlux(Fhatz, F, Fh, R, Phi);
     }
     if (NULL != Fhaty) {
         ComputeNonViscousFlux(NULL, F, NULL, k, j, i, U, space, flow);
         ComputeNonViscousFlux(NULL, Fh, NULL, k, j+1, i, U, space, flow);
         ComputeEigenvectorSpaceR(NULL, R, NULL, k, j, i, U, space, flow);
-        ComputeFluxDecompositionCoefficientPhi(NULL, Phi, NULL, k, j, i, U, space, flow);
-        for (int row = 0; row < 5; ++row) {
-            RPhi[row] = 0;
-            for (int col = 0; col < 5; ++col) {
-                RPhi[row] = RPhi[row] + R[row][col] * Phi[col];
-            }
-        }
-        for (int row = 0; row < 5; ++row) {
-            Fhaty[row] = 0.5 * (F[row] + Fh[row] + RPhi[row]);
-        }
+        ComputeFluxDecompositionCoefficientPhi(NULL, Phi, NULL, k, j, i, U, space, flow, dt);
+        CalculateReconstructedFlux(Fhaty, F, Fh, R, Phi);
     }
     if (NULL != Fhatx) {
         ComputeNonViscousFlux(NULL, NULL, F, k, j, i, U, space, flow);
         ComputeNonViscousFlux(NULL, NULL, Fh, k, j, i+1, U, space, flow);
         ComputeEigenvectorSpaceR(NULL, NULL, R, k, j, i, U, space, flow);
-        ComputeFluxDecompositionCoefficientPhi(NULL, NULL, Phi, k, j, i, U, space, flow);
-        for (int row = 0; row < 5; ++row) {
-            RPhi[row] = 0;
-            for (int col = 0; col < 5; ++col) {
-                RPhi[row] = RPhi[row] + R[row][col] * Phi[col];
-            }
+        ComputeFluxDecompositionCoefficientPhi(NULL, NULL, Phi, k, j, i, U, space, flow, dt);
+        CalculateReconstructedFlux(Fhatx, F, Fh, R, Phi);
+    }
+    return 0;
+}
+static int CalculateReconstructedFlux(
+        Real Fhat[], const Real F[], const Real Fh[], Real R[][5], const Real Phi[])
+{
+    Real RPhi[5] = {0.0}; /* R x Phi */
+    for (int row = 0; row < 5; ++row) {
+        RPhi[row] = 0;
+        for (int dummy = 0; dummy < 5; ++dummy) {
+            RPhi[row] = RPhi[row] + R[row][dummy] * Phi[dummy];
         }
-        for (int row = 0; row < 5; ++row) {
-            Fhatx[row] = 0.5 * (F[row] + Fh[row] + RPhi[row]);
-        }
+    }
+    for (int row = 0; row < 5; ++row) {
+        Fhat[row] = 0.5 * (F[row] + Fh[row] + RPhi[row]);
     }
     return 0;
 }
 static int ComputeFluxDecompositionCoefficientPhi(
         Real Phiz[], Real Phiy[], Real Phix[], 
         const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Flow *flow)
+        const Real *U, const Space *space, const Flow *flow, const Real dt)
 {
     Real g[5] = {0.0}; /* TVD function g at current node */
     Real gh[5] = {0.0}; /* TVD function g at neighbour */
-    Real Q[5] = {0.0}; /* TVD function Q */
     Real gamma[5] = {0.0}; /* TVD function gamma */
+    Real sigma[5] = {0.0}; /* TVD function sigma */
     Real lambda[5] = {0.0}; /* eigenvalues */
     Real alpha[5] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
     if (NULL != Phiz) {
+        const Real r = dt * space->ddz;
         ComputeEigenvaluesAndDecompositionCoefficientAlpha(lambda, NULL, NULL, alpha, NULL, NULL, k, j, i, U, space, flow);
     }
+}
+static int CalculateSigma(
+        Real sigma[], const Real lambda[], const Real r)
+{
+    for (int row = 0; row < 5; ++row) {
+        sigma[row] = 0.5 * (Q(lambda[row]) - r * lambda[row] * lambda[row]);
+    }
+    return 0;
 }
 static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
         Real lambdaz[], Real lambday[], Real lambdax[], 
@@ -150,8 +151,8 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
         ComputeEigenvaluesAndEigenvectorSpaceL(lambdaz, NULL, NULL, L, NULL, NULL, k, j, i, U, space, flow);
         for (int row = 0; row < 5; ++row) {
             alphaz[row] = 0;
-            for (int col = 0; col < 5; ++col) {
-                alphaz[row] = alphaz[row] + L[row][col] * delta_U[col];
+            for (int dummy = 0; dummy < 5; ++dummy) {
+                alphaz[row] = alphaz[row] + L[row][dummy] * delta_U[dummy];
             }
         }
     }
@@ -167,8 +168,8 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
         ComputeEigenvaluesAndEigenvectorSpaceL(NULL, lambday, NULL, NULL, L, NULL, k, j, i, U, space, flow);
         for (int row = 0; row < 5; ++row) {
             alphay[row] = 0;
-            for (int col = 0; col < 5; ++col) {
-                alphay[row] = alphay[row] + L[row][col] * delta_U[col];
+            for (int dummy = 0; dummy < 5; ++dummy) {
+                alphay[row] = alphay[row] + L[row][dummy] * delta_U[dummy];
             }
         }
     }
@@ -184,8 +185,8 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
         ComputeEigenvaluesAndEigenvectorSpaceL(NULL, NULL, lambdax, NULL, NULL, L, k, j, i, U, space, flow);
         for (int row = 0; row < 5; ++row) {
             alphax[row] = 0;
-            for (int col = 0; col < 5; ++col) {
-                alphax[row] = alphax[row] + L[row][col] * delta_U[col];
+            for (int dummy = 0; dummy < 5; ++dummy) {
+                alphax[row] = alphax[row] + L[row][dummy] * delta_U[dummy];
             }
         }
     }
@@ -371,53 +372,6 @@ static int ComputeRoeAverage(
         Uox[5] = sqrt((flow->gamma - 1) * (Uox[4] - 0.5 * (Uox[1] * Uox[1] + Uox[2] * Uox[2] + Uox[3] * Uox[3]))); /* the speed of sound */
     }
     return 0;
-}
-static int Lx(Real *U, const Real *Un, const Space *space, const Partition *part, const Flow *flow)
-{
-    return 0;
-}
-static Real Q(const Real z)
-{
-    const Real delta = 0.01;
-    if (fabs(z) >= delta) {
-        return fabs(z);
-    }
-    return (0.5 * (z * z / delta + delta));
-}
-static Real sigma(const Real z)
-{
-
-}
-static int sign(const Real x)
-{
-    if (0 < x) {
-        return 1;
-    }
-    if (0 > x) {
-        return -1;
-    }
-    return 0;
-}
-static Real minmod(const Real x, const Real y, const Real z)
-{
-    if ((0 >= x * y) || (0 >= x * z)) {
-        return 0;
-    }
-    return (sign(x) * Min(fabs(x), Min(fabs(y), fabs(z))));
-}
-static Real Min(const Real valueA, const Real valueB)
-{
-    if (valueA < valueB) {
-        return valueA;
-    }
-    return valueB;
-}
-static Real Max(const Real valueA, const Real valueB)
-{
-    if (valueA > valueB) {
-        return valueA;
-    }
-    return valueB;
 }
 static int ComputeNonViscousFlux(
         Real Fz[], Real Fy[], Real Fx[], 
@@ -613,6 +567,42 @@ static int ComputeViscousFlux(
             u * Gx[1] + v * Gx[2] + w * Gx[3];
     }
     return 0;
+}
+static Real Q(const Real z)
+{
+    const Real delta = 0.05; /* delta in [0.05, 0.5] */
+    if (fabs(z) >= delta) {
+        return fabs(z);
+    }
+    return (0.5 * (z * z / delta + delta));
+}
+static Real minmod(const Real x, const Real y)
+{
+    return (sign(x) * max(0, min(fabs(x), y * sign(x))));
+}
+static int sign(const Real x)
+{
+    if (0 < x) {
+        return 1;
+    }
+    if (0 > x) {
+        return -1;
+    }
+    return 0;
+}
+static Real min(const Real x, const Real y)
+{
+    if (x < y) {
+        return x;
+    }
+    return y;
+}
+static Real max(const Real x, const Real y)
+{
+    if (x > y) {
+        return x;
+    }
+    return y;
 }
 /* a good practice: end file with a newline */
 
