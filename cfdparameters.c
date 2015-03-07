@@ -28,18 +28,15 @@ int ComputeCFDParameters(Space *space, Time *time, Flow *flow)
     return 0;
 }
 /*
- * Calculations in this program is node based. Instead of implicitly 
- * adding a calculation node at each cell center as in cell based 
- * program does and resulting grid size inconsistency at the boundaries,
- * we simply use available node layers in the original cell configurations. 
- * Therefore, at least two cells are required in each direction.
+ * Calculations in this program is node based, we first construct the
+ * distribution of nodes with the first node and last node placing at
+ * boundaries. Then cells are constructed based on the node distribution.
+ * Therefore, boundaries are aligned with the nodes, or say, cell centers.
  *
- * Moreover, if we have m cells without adding nodes at cell center but using
- * original nodes layers as computational domain, the total number of node
- * layers will be (m+1).
+ * Consequently, if we have m cells, we will have m + 2 node layers.
  *
- * After these operations, the member n(x,y,z) in Space is the total number of
- * normal node layers. Considering the exterior ghost cells, The detailed 
+ * After these operations, member nx, ny, nz in Space is the total number of
+ * node layers. Considering the exterior ghost cells, The detailed 
  * node range of the domain will be the following:
  *
  * (In this program, Sub and Sup are used for domain range identifying,
@@ -57,29 +54,20 @@ int ComputeCFDParameters(Space *space, Time *time, Flow *flow)
  *
  * In this program, 2D and 3D space are unified, that is, a 2D space
  * will automatically transfer to a zero-thickness 3D space with
- * 2 cells(that is, three node layers) in the collapsed direction.
+ * 1 cells(that is, three node layers) in the collapsed direction.
  * These three node layers are treated as Domain Boundary, 
- * inner cell, Domain Boundary respectively. Periodic boundary 
+ * inner node, Domain Boundary respectively. Periodic boundary 
  * condition will be forced on these two boundaries. Here the concept
  * that a zero-thickness 3D space with 2 cells is that the space is 
  * physically zero-thickness(it's still 2D), but numerically has
- * two cells(three node layers) in this direction.  
+ * one cells(three node layers) in this direction.  
  */
 static int NodeBasedMeshNumberRefine(Space *space)
 {
-    if (2 > space->nz) {
-        space->nz = 2; /* at least two cells are required */
-    }
-    if (2 > space->ny) {
-        space->ny = 2; /* at least two cells are required */
-    }
-    if (2 > space->nx) {
-        space->nx = 2; /* at least two cells are required */
-    }
     /* change from number of cells to number of node layers */
-    space->nz = space->nz + 1;
-    space->ny = space->ny + 1;
-    space->nx = space->nx + 1;
+    space->nz = space->nz + 2;
+    space->ny = space->ny + 2;
+    space->nx = space->nx + 2;
     space->kMax = space->nz + 2 * space->ng; /* nz nodes + 2*ng ghosts */
     space->jMax = space->ny + 2 * space->ng; /* ny nodes + 2*ng ghosts */
     space->iMax = space->nx + 2 * space->ng; /* nx nodes + 2*ng ghosts */
@@ -94,9 +82,9 @@ static int NodeBasedMeshNumberRefine(Space *space)
 static int InitializeCFDParameters(Space *space, Time *time, Flow *flow)
 {
     /* space */
-    space->dx = ((space->xMax - space->xMin) / (space->nx - 1)) / flow->refLength;
-    space->dy = ((space->yMax - space->yMin) / (space->ny - 1)) / flow->refLength;
     space->dz = ((space->zMax - space->zMin) / (space->nz - 1)) / flow->refLength;
+    space->dy = ((space->yMax - space->yMin) / (space->ny - 1)) / flow->refLength;
+    space->dx = ((space->xMax - space->xMin) / (space->nx - 1)) / flow->refLength;
     space->xMax = space->xMax / flow->refLength;
     space->yMax = space->yMax / flow->refLength;
     space->zMax = space->zMax / flow->refLength;
