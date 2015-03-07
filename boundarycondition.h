@@ -22,9 +22,9 @@
  * Boundary condition
  *
  * Function
- *      Apply boundary condition for the flow field variable.
+ *      Apply boundary conditions and treatments for the flow field variable.
  */
-extern int BoundaryCondtion(Real *U, const Space *, const Particle *,
+extern int BoundaryCondtionsAndTreatments(Real *U, const Space *, const Particle *,
         const Partition *, const Flow *);
 #endif
 /* a good practice: end file with a newline */

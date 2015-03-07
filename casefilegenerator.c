@@ -109,7 +109,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                     >> Boundary Condition <<\n");
     fprintf(filePointer, "#\n");
-    fprintf(filePointer, "# Available types: [inlet], [outflow], [slip wall], [nonslip wall], [periodic]\n");
+    fprintf(filePointer, "# Available types: [inlet], [outflow], [slip wall], [noslip wall], [periodic]\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "west boundary begin\n");
     fprintf(filePointer, "inlet              # boundary type\n");

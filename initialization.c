@@ -80,9 +80,9 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
         ApplyRegionalInitializer(n, U, space, part, flow);
     }
     /*
-     * Apply boundary conditions to obtain an entire initialized flow field
+     * Boundary conditions and treatments to obtain an entire initialized flow field
      */
-    BoundaryCondtion(U, space, particle, part, flow);
+    BoundaryCondtionsAndTreatments(U, space, particle, part, flow);
     return 0;
 }
 /*

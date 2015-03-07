@@ -260,7 +260,7 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
  * 1: inlet
  * 2: outflow
  * 3: slip wall
- * 4: nonslip wall
+ * 4: noslip wall
  * 5: periodic
  * -5: periodic pair
  */
@@ -304,7 +304,7 @@ static int ReadBoundaryData(FILE **filePointerPointer, Partition *part, const in
         *filePointerPointer = filePointer; /* return a updated value of file pointer */
         return 0;
     }
-    if (0 == strncmp(currentLine, "nonslip wall", sizeof currentLine)) {
+    if (0 == strncmp(currentLine, "noslip wall", sizeof currentLine)) {
         part->typeBC[partID] = 4;
         fgets(currentLine, sizeof currentLine, filePointer);
         sscanf(currentLine, formatI, &(part->valueBC[partID][5])); 
@@ -350,7 +350,7 @@ static int WriteBoundaryData(FILE **filePointerPointer, const Partition *part, c
         return 0;
     }
     if (4 == part->typeBC[partID]) {
-        fprintf(filePointer, "boundary type: nonslip wall\n"); 
+        fprintf(filePointer, "boundary type: noslip wall\n"); 
         fprintf(filePointer, "temperature: %.6g\n", part->valueBC[partID][5]);
         *filePointerPointer = filePointer; /* return a updated value of file pointer */
         return 0;

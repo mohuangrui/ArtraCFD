@@ -2,7 +2,7 @@
  * Boundary Condition                                                       *
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide.                                 *
- * - This file defines the boundary conditions of the flow.                 *
+ * - This file defines the boundary conditions and treatments of the flow.  *
  ****************************************************************************/
 /****************************************************************************
  * Required Header Files
@@ -14,24 +14,22 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ApplyBoundaryCondition(const int, Real *, const Space *, 
+static int ApplyBoundaryConditions(const int, Real *, const Space *, 
         const Partition *, const Flow *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int BoundaryCondtion(Real *U, const Space *space, const Particle *particle, 
-        const Partition *part, const Flow *flow)
+int BoundaryCondtionsAndTreatments(Real *U, const Space *space, 
+        const Particle *particle, const Partition *part, const Flow *flow)
 {
     for (int partID = 1; partID < 7; ++partID) {
-        ApplyBoundaryCondition(partID, U, space, part, flow);
+        ApplyBoundaryConditions(partID, U, space, part, flow);
     }
-    /*
-     * Boundary condition for interior ghost cells
-     */
+    /* Boundary conditions and treatments for interior ghost cells */
     BoundaryConditionGCIBM(U, space, particle, part);
     return 0;
 }
-static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space, 
+static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space, 
         const Partition *part, const Flow *flow)
 {
     int idx = 0; /* linear array index math variable */
@@ -60,7 +58,7 @@ static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space,
             for (int i = part->iSub[partID]; i < part->iSup[partID]; ++i) {
                 idx = ((k * space->jMax + j) * space->iMax + i) * 5;
                 /*
-                 * apply boundary condition for current node, always remember
+                 * apply boundary conditions for current node, always remember
                  * that boundary conditions should be based on primitive
                  * variables rather than conservative variables.
                  */
@@ -109,7 +107,7 @@ static int ApplyBoundaryCondition(const int partID, Real *U, const Space *space,
                             U[idx+4] = rho_h * flow->cv * T + 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx+0];
                         }
                         break;
-                    case 4: /* nonslip wall */
+                    case 4: /* noslip wall */
                         idxh = (((k - normalZ) * space->jMax + (j - normalY)) * space->iMax + i - normalX) * 5;
                         rho_h = U[idxh+0];
                         u_h = U[idxh+1] / rho_h;
