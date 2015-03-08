@@ -58,7 +58,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
             for (int i = part->iSub[partID]; i < part->iSup[partID]; ++i) {
                 idx = ((k * space->jMax + j) * space->iMax + i) * 5;
                 /*
-                 * apply boundary conditions for current node, always remember
+                 * Apply boundary conditions for current node, always remember
                  * that boundary conditions should be based on primitive
                  * variables rather than conservative variables.
                  */

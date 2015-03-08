@@ -634,52 +634,67 @@ static int ComputeViscousFlux(
      * difference scheme can't be applied because of lacking stencil. Thus,
      * they also need to be identified and modified.
      */
-    if (space->ng == k) {
-        ++k;
-    } else {
-        if (space->nz + space->ng - 1 == k) {
-            --k;
+    if (NULL != Gz) {
+        if (space->ng == k) {
+            ++k;
+        } else {
+            if (space->nz + space->ng - 1 == k) {
+                --k;
+            }
         }
     }
-    if (space->ng == j) {
-        ++j;
-    } else {
-        if (space->ny + space->ng - 1 == j) {
-            --j;
+    if (NULL != Gy) {
+        if (space->ng == j) {
+            ++j;
+        } else {
+            if (space->ny + space->ng - 1 == j) {
+                --j;
+            }
         }
     }
-    if (space->ng == i) {
-        ++i;
-    } else {
-        if (space->nx + space->ng - 1 == i) {
-            --i;
+    if (NULL != Gx) {
+        if (space->ng == i) {
+            ++i;
+        } else {
+            if (space->nx + space->ng - 1 == i) {
+                --i;
+            }
         }
     }
     const int idx = (k * space->jMax + j) * space->iMax + i;
     if (10 <= space->nodeFlag[idx]) { /* interior ghost used Forward or Backward scheme */
-        const int idxW = (k * space->jMax + j) * space->iMax + i - 1;
-        const int idxE = (k * space->jMax + j) * space->iMax + i + 1;
-        const int idxS = (k * space->jMax + j - 1) * space->iMax + i;
-        const int idxN = (k * space->jMax + j + 1) * space->iMax + i;
-        const int idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
-        const int idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
-        if (-10 >= space->nodeFlag[idxW]) { 
-            ++i;
+        if (NULL != Gz) {
+            const int idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
+            const int idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
+            if (-10 >= space->nodeFlag[idxF]) {
+                ++k;
+            } else {
+                if (-10 >= space->nodeFlag[idxB]) {
+                    --k;
+                }
+            }
         }
-        if (-10 >= space->nodeFlag[idxE]) {
-            --i;
+        if (NULL != Gy) {
+            const int idxS = (k * space->jMax + j - 1) * space->iMax + i;
+            const int idxN = (k * space->jMax + j + 1) * space->iMax + i;
+            if (-10 >= space->nodeFlag[idxS]) {
+                ++j;
+            } else {
+                if (-10 >= space->nodeFlag[idxN]) {
+                    --j;
+                }
+            }
         }
-        if (-10 >= space->nodeFlag[idxS]) {
-            ++j;
-        }
-        if (-10 >= space->nodeFlag[idxN]) {
-            --j;
-        }
-        if (-10 >= space->nodeFlag[idxF]) {
-            ++k;
-        }
-        if (-10 >= space->nodeFlag[idxB]) {
-            --k;
+        if (NULL != Gx) {
+            const int idxW = (k * space->jMax + j) * space->iMax + i - 1;
+            const int idxE = (k * space->jMax + j) * space->iMax + i + 1;
+            if (-10 >= space->nodeFlag[idxW]) { 
+                ++i;
+            } else {
+                if (-10 >= space->nodeFlag[idxE]) {
+                    --i;
+                }
+            }
         }
     }
     CalculateViscousFlux(Gz, Gy, Gx, k, j, i, U, space, flow);
