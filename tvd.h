@@ -22,8 +22,10 @@
  * Numerical scheme of the space domain
  *
  * Function
- *      Compute field data in the space domain by TVD approach.
+ *      Compute field data in the space domain.
  */
+extern int SpatialDiscretizationAndComputation(Real *U, Real *Un, 
+        const Space *, const Particle *, const Partition *, const Flow *, const Real dt);
 #endif
 /* a good practice: end file with a newline */
 

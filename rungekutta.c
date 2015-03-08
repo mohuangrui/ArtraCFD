@@ -62,6 +62,7 @@ int RungeKuttaTimeMarching(Field *field, Space *space, Particle *particle,
         /*
          * Compute field data in current time step
          */
+        SpatialDiscretizationAndComputation(field->U, field->Un, space, particle, part, flow, time->dt);
         /*
          * Export computed data. Use accumulatedTime as a flag, if
          * accumulatedTime increases to anticipated export interval,
