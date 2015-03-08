@@ -177,6 +177,7 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
                 imageJ = j + (int)(2 * distToSurface * normalY * space->ddy);
                 imageK = k + (int)(2 * distToSurface * normalZ * space->ddz);
             }
+            /* integrate the forces on current particle */
         }
     }
     return 0;

@@ -10,32 +10,56 @@
 #include "tvd.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
+#include "boundarycondition.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
+static int Lz(Real *U, const Real *Un, const Space *space, 
+        const Partition *part, const Flow *flow, const Real dt);
+static int Ly(Real *U, const Real *Un, const Space *space, 
+        const Partition *part, const Flow *flow, const Real dt);
+static int Lx(Real *U, const Real *Un, const Space *space, 
+        const Partition *part, const Flow *flow, const Real dt);
+static int ComputeReconstructedFluxTVD(
+        Real Fhatz[], Real Fhaty[], Real Fhatx[], 
+        const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Flow *flow, const Real dt);
 static int CalculateReconstructedFlux(
         Real Fhat[], const Real F[], const Real Fh[], Real R[][5], const Real Phi[]);
-static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
-        Real lambdaz[], Real lambday[], Real lambdax[], 
-        Real alphaz[], Real alphay[], Real alphax[], 
+static int ComputeEigenvectorSpaceR(
+        Real Rz[][5], Real Ry[][5], Real Rx[][5], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
 static int ComputeFluxDecompositionCoefficientPhi(
         Real Phiz[], Real Phiy[], Real Phix[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow, const Real dt);
+static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
+        Real lambdaz[], Real lambday[], Real lambdax[], 
+        Real alphaz[], Real alphay[], Real alphax[], 
+        const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Flow *flow);
+static int CalculateAlpha(
+        Real alpha[], Real L[][5], const Real deltaU[]);
 static int ComputeEigenvaluesAndEigenvectorSpaceL(
         Real lambdaz[], Real lambday[], Real lambdax[],
         Real Lz[][5], Real Ly[][5], Real Lx[][5], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
-static int ComputeEigenvectorSpaceR(
-        Real Rz[][5], Real Ry[][5], Real Rx[][5], 
+static int ComputeFunctionG(
+        Real gz[], Real gy[], Real gx[], 
         const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Flow *flow);
+        const Real *U, const Space *space, const Flow *flow, const Real dt);
+static int CalculateGamma(
+        Real gamma[], const Real g[], const Real gh[], const Real alpha[]);
+static int CalculateSigma(
+        Real sigma[], const Real lambda[], const Real r);
 static int ComputeRoeAverage(Real Uoz[], Real Uoy[], Real Uox[], 
         const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Flow *flow);
+static int CalculateRoeAverageUo(
+        Real Uo[], const int idx, const int idxh, 
         const Real *U, const Space *space, const Flow *flow);
 static int ComputeNonViscousFlux(Real Fz[], Real Fy[], Real Fx[], 
         const int k, const int j, const int i, 
@@ -51,15 +75,134 @@ static Real max(const Real x, const Real y);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int TVD(Real *U, const Real *Un, const Space *space, const Partition *part, const Flow *flow)
+int SpatialDiscretizationAndComputation(Real *U, Real *Un, 
+        const Space *space, const Particle *particle, 
+        const Partition *part, const Flow *flow, const Real dt)
 {
+    Real *exchanger = Un;
     /*
      * When exchange a large bunch of data between two arrays, if there is no
      * new data generation but just data exchange and update, then the rational
      * way is to exchange the head address that they  points rather than values
      * of data entries.
      */
+    Lz(U, Un, space, part, flow, 0.5 * dt);
+    BoundaryCondtionsAndTreatments(U, space, particle, part, flow);
+    exchanger = Un; /* preserve the address of Un */
+    Un = U; /* update flow field */
+    U = exchanger; /* regain the used space as new space */
+
+    Ly(U, Un, space, part, flow, 0.5 * dt);
+    BoundaryCondtionsAndTreatments(U, space, particle, part, flow);
+    exchanger = Un; /* preserve the address of Un */
+    Un = U; /* update flow field */
+    U = exchanger; /* regain the used space as new space */
+
+    Lx(U, Un, space, part, flow, 0.5 * dt);
+    BoundaryCondtionsAndTreatments(U, space, particle, part, flow);
+    exchanger = Un; /* preserve the address of Un */
+    Un = U; /* update flow field */
+    U = exchanger; /* regain the used space as new space */
+
+    Lx(U, Un, space, part, flow, 0.5 * dt);
+    BoundaryCondtionsAndTreatments(U, space, particle, part, flow);
+    exchanger = Un; /* preserve the address of Un */
+    Un = U; /* update flow field */
+    U = exchanger; /* regain the used space as new space */
+
+    Ly(U, Un, space, part, flow, 0.5 * dt);
+    BoundaryCondtionsAndTreatments(U, space, particle, part, flow);
+    exchanger = Un; /* preserve the address of Un */
+    Un = U; /* update flow field */
+    U = exchanger; /* regain the used space as new space */
+
+    Lz(U, Un, space, part, flow, 0.5 * dt);
+    BoundaryCondtionsAndTreatments(U, space, particle, part, flow);
+    exchanger = Un; /* preserve the address of Un */
+    Un = U; /* update flow field */
+    U = exchanger; /* regain the used space as new space */
     return 0;
+}
+static int Lz(Real *U, const Real *Un, const Space *space, const Partition *part, const Flow *flow, const Real dt)
+{
+    Real Fhat[5] = {0.0}; /* reconstructed flux vector */
+    Real Fhath[5] = {0.0}; /* reconstructed flux vector at neighbour */
+    Real G[5] = {0.0}; /* viscous flux vector */
+    Real Gh[5] = {0.0}; /* viscous flux vector at neighbour */
+    int idx = 0; /* linear array index math variable */
+    const Real r = dt * space->ddz;
+    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
+                idx = ((k * space->jMax + j) * space->iMax + i);
+                if (0 != space->nodeFlag[idx]) { /* it's not a fluid */
+                    continue;
+                }
+                idx = idx * 5; /* change idx to field variable */
+                ComputeReconstructedFluxTVD(Fhat, NULL, NULL, k, j, i, Un, space, flow, dt);
+                ComputeReconstructedFluxTVD(Fhath, NULL, NULL, k - 1, j, i, Un, space, flow, dt);
+                ComputeViscousFlux(G, NULL, NULL, k + 1, j, i, Un, space, flow);
+                ComputeViscousFlux(Gh, NULL, NULL, k - 1, j, i, Un, space, flow);
+                for (int dim = 0; dim < 5; ++dim) {
+                    U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + 0.5 * r * (G[dim] - Gh[dim]);
+                }
+            }
+        }
+    }
+}
+static int Ly(Real *U, const Real *Un, const Space *space, const Partition *part, const Flow *flow, const Real dt)
+{
+    Real Fhat[5] = {0.0}; /* reconstructed flux vector */
+    Real Fhath[5] = {0.0}; /* reconstructed flux vector at neighbour */
+    Real G[5] = {0.0}; /* viscous flux vector */
+    Real Gh[5] = {0.0}; /* viscous flux vector at neighbour */
+    int idx = 0; /* linear array index math variable */
+    const Real r = dt * space->ddy;
+    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
+                idx = ((k * space->jMax + j) * space->iMax + i);
+                if (0 != space->nodeFlag[idx]) { /* it's not a fluid */
+                    continue;
+                }
+                idx = idx * 5; /* change idx to field variable */
+                ComputeReconstructedFluxTVD(NULL, Fhat, NULL, k, j, i, Un, space, flow, dt);
+                ComputeReconstructedFluxTVD(NULL, Fhath, NULL, k, j - 1, i, Un, space, flow, dt);
+                ComputeViscousFlux(NULL, G, NULL, k, j + 1, i, Un, space, flow);
+                ComputeViscousFlux(NULL, Gh, NULL, k, j - 1, i, Un, space, flow);
+                for (int dim = 0; dim < 5; ++dim) {
+                    U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + 0.5 * r * (G[dim] - Gh[dim]);
+                }
+            }
+        }
+    }
+}
+static int Lx(Real *U, const Real *Un, const Space *space, const Partition *part, const Flow *flow, const Real dt)
+{
+    Real Fhat[5] = {0.0}; /* reconstructed flux vector */
+    Real Fhath[5] = {0.0}; /* reconstructed flux vector at neighbour */
+    Real G[5] = {0.0}; /* viscous flux vector */
+    Real Gh[5] = {0.0}; /* viscous flux vector at neighbour */
+    int idx = 0; /* linear array index math variable */
+    const Real r = dt * space->ddx;
+    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
+                idx = ((k * space->jMax + j) * space->iMax + i);
+                if (0 != space->nodeFlag[idx]) { /* it's not a fluid */
+                    continue;
+                }
+                idx = idx * 5; /* change idx to field variable */
+                ComputeReconstructedFluxTVD(NULL, NULL, Fhat, k, j, i, Un, space, flow, dt);
+                ComputeReconstructedFluxTVD(NULL, NULL, Fhath, k, j, i - 1, Un, space, flow, dt);
+                ComputeViscousFlux(NULL, NULL, G, k, j, i + 1, Un, space, flow);
+                ComputeViscousFlux(NULL, NULL, Gh, k, j, i - 1, Un, space, flow);
+                for (int dim = 0; dim < 5; ++dim) {
+                    U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + 0.5 * r * (G[dim] - Gh[dim]);
+                }
+            }
+        }
+    }
 }
 static int ComputeReconstructedFluxTVD(
         Real Fhatz[], Real Fhaty[], Real Fhatx[], 
@@ -72,21 +215,21 @@ static int ComputeReconstructedFluxTVD(
     Real Phi[5] = {0.0}; /* flux projection or decomposition coefficients on vector space {Rn} */
     if (NULL != Fhatz) {
         ComputeNonViscousFlux(F, NULL, NULL, k, j, i, U, space, flow);
-        ComputeNonViscousFlux(Fh, NULL, NULL, k+1, j, i, U, space, flow);
+        ComputeNonViscousFlux(Fh, NULL, NULL, k + 1, j, i, U, space, flow);
         ComputeEigenvectorSpaceR(R, NULL, NULL, k, j, i, U, space, flow);
         ComputeFluxDecompositionCoefficientPhi(Phi, NULL, NULL, k, j, i, U, space, flow, dt);
         CalculateReconstructedFlux(Fhatz, F, Fh, R, Phi);
     }
     if (NULL != Fhaty) {
         ComputeNonViscousFlux(NULL, F, NULL, k, j, i, U, space, flow);
-        ComputeNonViscousFlux(NULL, Fh, NULL, k, j+1, i, U, space, flow);
+        ComputeNonViscousFlux(NULL, Fh, NULL, k, j + 1, i, U, space, flow);
         ComputeEigenvectorSpaceR(NULL, R, NULL, k, j, i, U, space, flow);
         ComputeFluxDecompositionCoefficientPhi(NULL, Phi, NULL, k, j, i, U, space, flow, dt);
         CalculateReconstructedFlux(Fhaty, F, Fh, R, Phi);
     }
     if (NULL != Fhatx) {
         ComputeNonViscousFlux(NULL, NULL, F, k, j, i, U, space, flow);
-        ComputeNonViscousFlux(NULL, NULL, Fh, k, j, i+1, U, space, flow);
+        ComputeNonViscousFlux(NULL, NULL, Fh, k, j, i + 1, U, space, flow);
         ComputeEigenvectorSpaceR(NULL, NULL, R, k, j, i, U, space, flow);
         ComputeFluxDecompositionCoefficientPhi(NULL, NULL, Phi, k, j, i, U, space, flow, dt);
         CalculateReconstructedFlux(Fhatx, F, Fh, R, Phi);
@@ -116,13 +259,91 @@ static int ComputeFluxDecompositionCoefficientPhi(
     Real g[5] = {0.0}; /* TVD function g at current node */
     Real gh[5] = {0.0}; /* TVD function g at neighbour */
     Real gamma[5] = {0.0}; /* TVD function gamma */
-    Real sigma[5] = {0.0}; /* TVD function sigma */
     Real lambda[5] = {0.0}; /* eigenvalues */
     Real alpha[5] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
     if (NULL != Phiz) {
+        ComputeEigenvaluesAndDecompositionCoefficientAlpha(lambda, NULL, NULL, alpha, NULL, NULL, k, j, i, U, space, flow);
+        ComputeFunctionG(g, NULL, NULL, k, j, i, U, space, flow, dt);
+        ComputeFunctionG(gh, NULL, NULL, k + 1, j, i, U, space, flow, dt);
+        CalculateGamma(gamma, g, gh, alpha);
+        for (int row = 0; row < 5; ++row) {
+            Phiz[row] = g[row] + gh[row] - Q(lambda[row] + gamma[row]) * alpha[row];
+        }
+    }
+    if (NULL != Phiy) {
+        ComputeEigenvaluesAndDecompositionCoefficientAlpha(NULL, lambda, NULL, NULL, alpha, NULL, k, j, i, U, space, flow);
+        ComputeFunctionG(NULL, g, NULL, k, j, i, U, space, flow, dt);
+        ComputeFunctionG(NULL, gh, NULL, k, j + 1, i, U, space, flow, dt);
+        CalculateGamma(gamma, g, gh, alpha);
+        for (int row = 0; row < 5; ++row) {
+            Phiy[row] = g[row] + gh[row] - Q(lambda[row] + gamma[row]) * alpha[row];
+        }
+    }
+    if (NULL != Phix) {
+        ComputeEigenvaluesAndDecompositionCoefficientAlpha(NULL, NULL, lambda, NULL, NULL, alpha, k, j, i, U, space, flow);
+        ComputeFunctionG(NULL, NULL, g, k, j, i, U, space, flow, dt);
+        ComputeFunctionG(NULL, NULL, gh, k, j, i + 1, U, space, flow, dt);
+        CalculateGamma(gamma, g, gh, alpha);
+        for (int row = 0; row < 5; ++row) {
+            Phix[row] = g[row] + gh[row] - Q(lambda[row] + gamma[row]) * alpha[row];
+        }
+    }
+}
+static int ComputeFunctionG(
+        Real gz[], Real gy[], Real gx[], 
+        const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Flow *flow, const Real dt)
+{
+    Real lambda[5] = {0.0}; /* eigenvalues */
+    Real lambdah[5] = {0.0}; /* eigenvalues at neighbour */
+    Real alpha[5] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
+    Real alphah[5] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
+    Real sigma[5] = {0.0}; /* TVD function sigma */
+    Real sigmah[5] = {0.0}; /* TVD function sigma at neighbour */
+    if (NULL != gz) {
         const Real r = dt * space->ddz;
         ComputeEigenvaluesAndDecompositionCoefficientAlpha(lambda, NULL, NULL, alpha, NULL, NULL, k, j, i, U, space, flow);
+        CalculateSigma(sigma, lambda, r);
+        ComputeEigenvaluesAndDecompositionCoefficientAlpha(lambdah, NULL, NULL, alphah, NULL, NULL, k - 1, j, i, U, space, flow);
+        CalculateSigma(sigmah, lambdah, r);
+        for (int row = 0; row < 5; ++row) {
+            gz[row] = minmod(sigma[row] * alpha[row], sigmah[row] * alphah[row]);
+        }
     }
+    if (NULL != gy) {
+        const Real r = dt * space->ddy;
+        ComputeEigenvaluesAndDecompositionCoefficientAlpha(NULL, lambda, NULL, NULL, alpha, NULL, k, j, i, U, space, flow);
+        CalculateSigma(sigma, lambda, r);
+        ComputeEigenvaluesAndDecompositionCoefficientAlpha(NULL, lambdah, NULL, NULL, alphah, NULL, k, j - 1, i, U, space, flow);
+        CalculateSigma(sigmah, lambdah, r);
+        for (int row = 0; row < 5; ++row) {
+            gy[row] = minmod(sigma[row] * alpha[row], sigmah[row] * alphah[row]);
+        }
+    }
+    if (NULL != gx) {
+        const Real r = dt * space->ddx;
+        ComputeEigenvaluesAndDecompositionCoefficientAlpha(NULL, NULL, lambda, NULL, NULL, alpha, k, j, i, U, space, flow);
+        CalculateSigma(sigma, lambda, r);
+        ComputeEigenvaluesAndDecompositionCoefficientAlpha(NULL, NULL, lambdah, NULL, NULL, alphah, k, j, i - 1, U, space, flow);
+        CalculateSigma(sigmah, lambdah, r);
+        for (int row = 0; row < 5; ++row) {
+            gx[row] = minmod(sigma[row] * alpha[row], sigmah[row] * alphah[row]);
+        }
+    }
+    return 0;
+}
+static int CalculateGamma(
+        Real gamma[], const Real g[], const Real gh[], const Real alpha[])
+{
+    for (int row = 0; row < 5; ++row) {
+        if (0 != alpha[row]) {
+            gamma[row] = (gh[row] - g[row]) / alpha[row];
+        }
+        else {
+            gamma[row] = 0;
+        }
+    }
+    return 0;
 }
 static int CalculateSigma(
         Real sigma[], const Real lambda[], const Real r)
@@ -141,7 +362,7 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
     const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
     if (NULL != alphaz) {
         const int idxh = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
-        const Real delta_U[5] = {
+        const Real deltaU[5] = {
             U[idxh+0] - U[idx+0],
             U[idxh+1] - U[idx+1],
             U[idxh+2] - U[idx+2],
@@ -149,16 +370,11 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
             U[idxh+4] - U[idx+4]};
         Real L[5][5] = {{0.0}};
         ComputeEigenvaluesAndEigenvectorSpaceL(lambdaz, NULL, NULL, L, NULL, NULL, k, j, i, U, space, flow);
-        for (int row = 0; row < 5; ++row) {
-            alphaz[row] = 0;
-            for (int dummy = 0; dummy < 5; ++dummy) {
-                alphaz[row] = alphaz[row] + L[row][dummy] * delta_U[dummy];
-            }
-        }
+        CalculateAlpha(alphaz, L, deltaU);
     }
     if (NULL != alphay) {
         const int idxh = ((k * space->jMax + j + 1) * space->iMax + i) * 5;
-        const Real delta_U[5] = {
+        const Real deltaU[5] = {
             U[idxh+0] - U[idx+0],
             U[idxh+1] - U[idx+1],
             U[idxh+2] - U[idx+2],
@@ -166,16 +382,11 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
             U[idxh+4] - U[idx+4]};
         Real L[5][5] = {{0.0}};
         ComputeEigenvaluesAndEigenvectorSpaceL(NULL, lambday, NULL, NULL, L, NULL, k, j, i, U, space, flow);
-        for (int row = 0; row < 5; ++row) {
-            alphay[row] = 0;
-            for (int dummy = 0; dummy < 5; ++dummy) {
-                alphay[row] = alphay[row] + L[row][dummy] * delta_U[dummy];
-            }
-        }
+        CalculateAlpha(alphay, L, deltaU);
     }
     if (NULL != alphax) {
         const int idxh = ((k * space->jMax + j) * space->iMax + i + 1) * 5;
-        const Real delta_U[5] = {
+        const Real deltaU[5] = {
             U[idxh+0] - U[idx+0],
             U[idxh+1] - U[idx+1],
             U[idxh+2] - U[idx+2],
@@ -183,11 +394,17 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
             U[idxh+4] - U[idx+4]};
         Real L[5][5] = {{0.0}};
         ComputeEigenvaluesAndEigenvectorSpaceL(NULL, NULL, lambdax, NULL, NULL, L, k, j, i, U, space, flow);
-        for (int row = 0; row < 5; ++row) {
-            alphax[row] = 0;
-            for (int dummy = 0; dummy < 5; ++dummy) {
-                alphax[row] = alphax[row] + L[row][dummy] * delta_U[dummy];
-            }
+        CalculateAlpha(alphax, L, deltaU);
+    }
+    return 0;
+}
+static int CalculateAlpha(
+        Real alpha[], Real L[][5], const Real deltaU[])
+{
+    for (int row = 0; row < 5; ++row) {
+        alpha[row] = 0;
+        for (int dummy = 0; dummy < 5; ++dummy) {
+            alpha[row] = alpha[row] + L[row][dummy] * deltaU[dummy];
         }
     }
     return 0;
@@ -321,57 +538,41 @@ static int ComputeRoeAverage(
         const Real *U, const Space *space, const Flow *flow)
 {
     const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+    if (NULL != Uoz) {
+        const int idxh = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
+        CalculateRoeAverageUo(Uoz, idx, idxh, U, space, flow);
+    }
+    if (NULL != Uoy) {
+        const int idxh = ((k * space->jMax + j + 1) * space->iMax + i) * 5;
+        CalculateRoeAverageUo(Uoy, idx, idxh, U, space, flow);
+    }
+    if (NULL != Uox) {
+        const int idxh = ((k * space->jMax + j) * space->iMax + i + 1) * 5;
+        CalculateRoeAverageUo(Uox, idx, idxh, U, space, flow);
+    }
+    return 0;
+}
+static int CalculateRoeAverageUo(
+        Real Uo[], const int idx, const int idxh, 
+        const Real *U, const Space *space, const Flow *flow)
+{
     const Real rho = U[idx+0];
     const Real u = U[idx+1] / rho;
     const Real v = U[idx+2] / rho;
     const Real w = U[idx+3] / rho;
     const Real hT = flow->gamma * U[idx+4] / rho - 0.5 * (u * u + v * v + w * w) * (flow->gamma - 1);
-    if (NULL != Uoz) {
-        const int idxh = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
-        const Real  rho_h = U[idxh+0];
-        const Real  u_h = U[idxh+1] / rho_h;
-        const Real  v_h = U[idxh+2] / rho_h;
-        const Real  w_h = U[idxh+3] / rho_h;
-        const Real  hT_h = flow->gamma * U[idxh+4] / rho_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h) * (flow->gamma - 1);
-        const Real D = sqrt(rho_h / rho);
-        Uoz[0] = rho * (0.5 * (1 + D)) * (0.5 * (1 + D)); /* rho average */
-        Uoz[1] = (u + D * u_h) / (1 + D); /* u average */
-        Uoz[2] = (v + D * v_h) / (1 + D); /* v average */
-        Uoz[3] = (w + D * w_h) / (1 + D); /* w average */
-        Uoz[4] = (hT + D * hT_h) / (1 + D); /* hT average */
-        Uoz[5] = sqrt((flow->gamma - 1) * (Uoz[4] - 0.5 * (Uoz[1] * Uoz[1] + Uoz[2] * Uoz[2] + Uoz[3] * Uoz[3]))); /* the speed of sound */
-    }
-    if (NULL != Uoy) {
-        const int idxh = ((k * space->jMax + j + 1) * space->iMax + i) * 5;
-        const Real  rho_h = U[idxh+0];
-        const Real  u_h = U[idxh+1] / rho_h;
-        const Real  v_h = U[idxh+2] / rho_h;
-        const Real  w_h = U[idxh+3] / rho_h;
-        const Real  hT_h = flow->gamma * U[idxh+4] / rho_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h) * (flow->gamma - 1);
-        const Real D = sqrt(rho_h / rho);
-        Uoy[0] = rho * (0.5 * (1 + D)) * (0.5 * (1 + D)); /* rho average */
-        Uoy[1] = (u + D * u_h) / (1 + D); /* u average */
-        Uoy[2] = (v + D * v_h) / (1 + D); /* v average */
-        Uoy[3] = (w + D * w_h) / (1 + D); /* w average */
-        Uoy[4] = (hT + D * hT_h) / (1 + D); /* hT average */
-        Uoy[5] = sqrt((flow->gamma - 1) * (Uoy[4] - 0.5 * (Uoy[1] * Uoy[1] + Uoy[2] * Uoy[2] + Uoy[3] * Uoy[3]))); /* the speed of sound */
-    }
-    if (NULL != Uox) {
-        const int idxh = ((k * space->jMax + j) * space->iMax + i + 1) * 5;
-        const Real  rho_h = U[idxh+0];
-        const Real  u_h = U[idxh+1] / rho_h;
-        const Real  v_h = U[idxh+2] / rho_h;
-        const Real  w_h = U[idxh+3] / rho_h;
-        const Real  hT_h = flow->gamma * U[idxh+4] / rho_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h) * (flow->gamma - 1);
-        const Real D = sqrt(rho_h / rho);
-        Uox[0] = rho * (0.5 * (1 + D)) * (0.5 * (1 + D)); /* rho average */
-        Uox[1] = (u + D * u_h) / (1 + D); /* u average */
-        Uox[2] = (v + D * v_h) / (1 + D); /* v average */
-        Uox[3] = (w + D * w_h) / (1 + D); /* w average */
-        Uox[4] = (hT + D * hT_h) / (1 + D); /* hT average */
-        Uox[5] = sqrt((flow->gamma - 1) * (Uox[4] - 0.5 * (Uox[1] * Uox[1] + Uox[2] * Uox[2] + Uox[3] * Uox[3]))); /* the speed of sound */
-    }
-    return 0;
+    const Real rho_h = U[idxh+0];
+    const Real u_h = U[idxh+1] / rho_h;
+    const Real v_h = U[idxh+2] / rho_h;
+    const Real w_h = U[idxh+3] / rho_h;
+    const Real hT_h = flow->gamma * U[idxh+4] / rho_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h) * (flow->gamma - 1);
+    const Real D = sqrt(rho_h / rho);
+    //Uo[0] = rho * (0.5 * (1 + D)) * (0.5 * (1 + D)); /* rho average, not required */
+    Uo[1] = (u + D * u_h) / (1 + D); /* u average */
+    Uo[2] = (v + D * v_h) / (1 + D); /* v average */
+    Uo[3] = (w + D * w_h) / (1 + D); /* w average */
+    Uo[4] = (hT + D * hT_h) / (1 + D); /* hT average */
+    Uo[5] = sqrt((flow->gamma - 1) * (Uo[4] - 0.5 * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]))); /* the speed of sound */
 }
 static int ComputeNonViscousFlux(
         Real Fz[], Real Fy[], Real Fx[], 

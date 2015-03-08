@@ -110,7 +110,7 @@ static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Time *
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
-                if (-10 >= space->nodeFlag[idx]) { /* if it's solid node */
+                if (0 != space->nodeFlag[idx]) { /* if it's not fluid */
                     continue;
                 }
                 idx = idx * 5; /* change idx to field variable */
