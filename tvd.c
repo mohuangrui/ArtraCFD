@@ -60,7 +60,7 @@ static int ComputeRoeAverage(Real Uoz[], Real Uoy[], Real Uox[],
         const Real *U, const Space *space, const Flow *flow);
 static int CalculateRoeAverageUo(
         Real Uo[], const int idx, const int idxh, 
-        const Real *U, const Space *space, const Flow *flow);
+        const Real *U, const Flow *flow);
 static int ComputeNonViscousFlux(Real Fz[], Real Fy[], Real Fx[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
@@ -291,6 +291,7 @@ static int ComputeFluxDecompositionCoefficientPhi(
             Phix[row] = g[row] + gh[row] - Q(lambda[row] + gamma[row]) * alpha[row];
         }
     }
+    return 0;
 }
 static int ComputeFunctionG(
         Real gz[], Real gy[], Real gx[], 
@@ -543,21 +544,21 @@ static int ComputeRoeAverage(
     const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
     if (NULL != Uoz) {
         const int idxh = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
-        CalculateRoeAverageUo(Uoz, idx, idxh, U, space, flow);
+        CalculateRoeAverageUo(Uoz, idx, idxh, U, flow);
     }
     if (NULL != Uoy) {
         const int idxh = ((k * space->jMax + j + 1) * space->iMax + i) * 5;
-        CalculateRoeAverageUo(Uoy, idx, idxh, U, space, flow);
+        CalculateRoeAverageUo(Uoy, idx, idxh, U, flow);
     }
     if (NULL != Uox) {
         const int idxh = ((k * space->jMax + j) * space->iMax + i + 1) * 5;
-        CalculateRoeAverageUo(Uox, idx, idxh, U, space, flow);
+        CalculateRoeAverageUo(Uox, idx, idxh, U, flow);
     }
     return 0;
 }
 static int CalculateRoeAverageUo(
         Real Uo[], const int idx, const int idxh, 
-        const Real *U, const Space *space, const Flow *flow)
+        const Real *U, const Flow *flow)
 {
     const Real rho = U[idx+0];
     const Real u = U[idx+1] / rho;
@@ -576,6 +577,7 @@ static int CalculateRoeAverageUo(
     Uo[3] = (w + D * w_h) / (1 + D); /* w average */
     Uo[4] = (hT + D * hT_h) / (1 + D); /* hT average */
     Uo[5] = sqrt((flow->gamma - 1) * (Uo[4] - 0.5 * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]))); /* the speed of sound */
+    return 0;
 }
 static int ComputeNonViscousFlux(
         Real Fz[], Real Fy[], Real Fx[], 
