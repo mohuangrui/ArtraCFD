@@ -149,6 +149,7 @@ static int Lz(Real *U, const Real *Un, const Space *space, const Partition *part
             }
         }
     }
+    return 0;
 }
 static int Ly(Real *U, const Real *Un, const Space *space, const Partition *part, const Flow *flow, const Real dt)
 {
@@ -176,6 +177,7 @@ static int Ly(Real *U, const Real *Un, const Space *space, const Partition *part
             }
         }
     }
+    return 0;
 }
 static int Lx(Real *U, const Real *Un, const Space *space, const Partition *part, const Flow *flow, const Real dt)
 {
@@ -203,6 +205,7 @@ static int Lx(Real *U, const Real *Un, const Space *space, const Partition *part
             }
         }
     }
+    return 0;
 }
 static int ComputeReconstructedFluxTVD(
         Real Fhatz[], Real Fhaty[], Real Fhatx[], 
