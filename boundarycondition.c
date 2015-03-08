@@ -89,7 +89,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         U[idx+3] = rho_h * (2 * w_h - w_hh);
                         U[idx+4] = p_h / (flow->gamma - 1) + 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx+0];
                         break;
-                    case 3: /* slip wall */
+                    case 3: /* slip wall, the method of image, copy scalar, flip vector */
                         idxh = (((k - normalZ) * space->jMax + (j - normalY)) * space->iMax + i - normalX) * 5;
                         rho_h = U[idxh+0];
                         u_h = U[idxh+1] / rho_h;
@@ -101,9 +101,9 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         U[idx+1] = (!normalX) * rho_h * u_h;
                         U[idx+2] = (!normalY) * rho_h * v_h;
                         U[idx+3] = (!normalZ) * rho_h * w_h;
-                        if (0 > T) { /* adiabatic */
+                        if (0 > T) { /* adiabatic, dT/dn = 0 */
                             U[idx+4] = p_h / (flow->gamma - 1) + 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx+0];
-                        } else {
+                        } else { /* constant wall temperature, T = Tw */
                             U[idx+4] = rho_h * flow->cv * T + 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx+0];
                         }
                         break;
@@ -119,9 +119,9 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         U[idx+1] = 0;
                         U[idx+2] = 0;
                         U[idx+3] = 0;
-                        if (0 > T) { /* adiabatic */
+                        if (0 > T) { /* adiabatic, dT/dn = 0 */
                             U[idx+4] = p_h / (flow->gamma - 1);
-                        } else {
+                        } else { /* constant wall temperature, T = Tw */
                             U[idx+4] = rho_h * flow->cv * T;
                         }
                         break;
