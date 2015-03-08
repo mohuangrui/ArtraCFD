@@ -624,6 +624,7 @@ static int ComputeViscousFluxGradient(
      */
     Real hG[5] = {0.0}; /* viscous flux vector */
     Real Gh[5] = {0.0}; /* viscous flux vector */
+    Real h = 0; /* reciprocal of differencing distance */
     if (NULL != gradGz) {
         /* default is central scheme */
         int hl = k - 1;
@@ -643,9 +644,13 @@ static int ComputeViscousFluxGradient(
         if (10 <= space->nodeFlag[idxr]) {
             --hr;
         }
-        ComputeViscousFlux(hG, NULL, NULL, hl, j, i, U, space, flow);
-        ComputeViscousFlux(Gh, NULL, NULL, hr, j, i, U, space, flow);
-        const Real h = space->ddz / (hr - hl);
+        if (0 != (hr - hl)) { /* only do calculation when needed */
+            h = space->ddz / (hr - hl);
+            ComputeViscousFlux(hG, NULL, NULL, hl, j, i, U, space, flow);
+            ComputeViscousFlux(Gh, NULL, NULL, hr, j, i, U, space, flow);
+        } else {
+            h = 0;
+        }
         for (int row = 0; row < 5; ++row) {
             gradGz[row] = h * (Gh[row] - hG[row]);
         }
@@ -669,9 +674,13 @@ static int ComputeViscousFluxGradient(
         if (10 <= space->nodeFlag[idxr]) {
             --hr;
         }
-        ComputeViscousFlux(NULL, hG, NULL, k, hl, i, U, space, flow);
-        ComputeViscousFlux(NULL, Gh, NULL, k, hr, i, U, space, flow);
-        const Real h = space->ddy / (hr - hl);
+        if (0 != (hr - hl)) { /* only do calculation when needed */
+            h = space->ddy / (hr - hl);
+            ComputeViscousFlux(NULL, hG, NULL, k, hl, i, U, space, flow);
+            ComputeViscousFlux(NULL, Gh, NULL, k, hr, i, U, space, flow);
+        } else {
+            h = 0;
+        }
         for (int row = 0; row < 5; ++row) {
             gradGy[row] = h * (Gh[row] - hG[row]);
         }
@@ -695,9 +704,13 @@ static int ComputeViscousFluxGradient(
         if (10 <= space->nodeFlag[idxr]) {
             --hr;
         }
-        ComputeViscousFlux(NULL, NULL, hG, k, j, hl, U, space, flow);
-        ComputeViscousFlux(NULL, NULL, Gh, k, j, hr, U, space, flow);
-        const Real h = space->ddx / (hr - hl);
+        if (0 != (hr - hl)) { /* only do calculation when needed */
+            h = space->ddx / (hr - hl);
+            ComputeViscousFlux(NULL, NULL, hG, k, j, hl, U, space, flow);
+            ComputeViscousFlux(NULL, NULL, Gh, k, j, hr, U, space, flow);
+        } else {
+            h = 0;
+        }
         for (int row = 0; row < 5; ++row) {
             gradGx[row] = h * (Gh[row] - hG[row]);
         }
