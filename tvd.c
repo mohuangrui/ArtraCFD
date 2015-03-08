@@ -65,6 +65,9 @@ static int ComputeNonViscousFlux(Real Fz[], Real Fy[], Real Fx[],
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
 static int ComputeViscousFlux(Real Gz[], Real Gy[], Real Gx[], 
+        int k, int j, int i, 
+        const Real *U, const Space *space, const Flow *flow);
+static int CalculateViscousFlux(Real Gz[], Real Gy[], Real Gx[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
 static Real Q(const Real z);
@@ -617,6 +620,73 @@ static int ComputeNonViscousFlux(
 }
 static int ComputeViscousFlux(
         Real Gz[], Real Gy[], Real Gx[], 
+        int k, int j, int i, 
+        const Real *U, const Space *space, const Flow *flow)
+{
+    /*
+     * Generally the viscous terms will only be discretized by central
+     * difference scheme. However, for outermost layer of interior nodes, the
+     * central scheme of them require the viscous flux vector at boundaries, 
+     * because the corners of current computational domain haven't set with any
+     * values, the viscous flux vector at boundaries can not be interpolated
+     * with central scheme, therefore, need to change to forward or backward. 
+     * This situation is the same to interior ghost nodes the central
+     * difference scheme can't be applied because of lacking stencil. Thus,
+     * they also need to be identified and modified.
+     */
+    if (space->ng == k) {
+        ++k;
+    } else {
+        if (space->nz + space->ng - 1 == k) {
+            --k;
+        }
+    }
+    if (space->ng == j) {
+        ++j;
+    } else {
+        if (space->ny + space->ng - 1 == j) {
+            --j;
+        }
+    }
+    if (space->ng == i) {
+        ++i;
+    } else {
+        if (space->nx + space->ng - 1 == i) {
+            --i;
+        }
+    }
+    const int idx = (k * space->jMax + j) * space->iMax + i;
+    if (10 <= space->nodeFlag[idx]) { /* interior ghost used Forward or Backward scheme */
+        const int idxW = (k * space->jMax + j) * space->iMax + i - 1;
+        const int idxE = (k * space->jMax + j) * space->iMax + i + 1;
+        const int idxS = (k * space->jMax + j - 1) * space->iMax + i;
+        const int idxN = (k * space->jMax + j + 1) * space->iMax + i;
+        const int idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
+        const int idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
+        if (-10 >= space->nodeFlag[idxW]) { 
+            ++i;
+        }
+        if (-10 >= space->nodeFlag[idxE]) {
+            --i;
+        }
+        if (-10 >= space->nodeFlag[idxS]) {
+            ++j;
+        }
+        if (-10 >= space->nodeFlag[idxN]) {
+            --j;
+        }
+        if (-10 >= space->nodeFlag[idxF]) {
+            ++k;
+        }
+        if (-10 >= space->nodeFlag[idxB]) {
+            --k;
+        }
+    }
+    CalculateViscousFlux(Gz, Gy, Gx, k, j, i, U, space, flow);
+    return 0;
+}
+static int CalculateViscousFlux(
+        Real Gz[], Real Gy[], Real Gx[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
@@ -632,48 +702,13 @@ static int ComputeViscousFlux(
     Real eT_h = 0;
     Real T = 0;
     Real T_h = 0;
-    /*
-     * Generally the viscous terms will only be discretized by central
-     * difference scheme, and the calculation will be conducted on boundary
-     * nodes and interior nodes. However, for interior ghost nodes the central
-     * difference scheme can't be applied because of lacking stencil. Thus,
-     * they need to be identified and modified.
-     */
-    int idx = (k * space->jMax + j) * space->iMax + i;
-    int idxW = (k * space->jMax + j) * space->iMax + i - 1;
-    int idxE = (k * space->jMax + j) * space->iMax + i + 1;
-    int idxS = (k * space->jMax + j - 1) * space->iMax + i;
-    int idxN = (k * space->jMax + j + 1) * space->iMax + i;
-    int idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
-    int idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
-    if (10 <= space->nodeFlag[idx]) { /* interior ghost used Forward or Backward scheme */
-        if (-10 >= space->nodeFlag[idxW]) { 
-            idxW = idx;
-        }
-        if (-10 >= space->nodeFlag[idxE]) {
-            idxE = idx;
-        }
-        if (-10 >= space->nodeFlag[idxS]) {
-            idxS = idx;
-        }
-        if (-10 >= space->nodeFlag[idxN]) {
-            idxN = idx;
-        }
-        if (-10 >= space->nodeFlag[idxF]) {
-            idxF = idx;
-        }
-        if (-10 >= space->nodeFlag[idxB]) {
-            idxB = idx;
-        }
-    }
-    /* Now transform indices to refer field variables */
-    idx = idx * 5;
-    idxW = idxW * 5;
-    idxE = idxE * 5;
-    idxS = idxS * 5;
-    idxN = idxN * 5;
-    idxF = idxF * 5;
-    idxB = idxB * 5;
+    const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+    const int idxW = ((k * space->jMax + j) * space->iMax + i - 1) * 5;
+    const int idxE = ((k * space->jMax + j) * space->iMax + i + 1) * 5;
+    const int idxS = ((k * space->jMax + j - 1) * space->iMax + i) * 5;
+    const int idxN = ((k * space->jMax + j + 1) * space->iMax + i) * 5;
+    const int idxF = (((k - 1) * space->jMax + j) * space->iMax + i) * 5;
+    const int idxB = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
 
     /* calculate derivatives in z direction */
     rho_h = U[idxB+0];

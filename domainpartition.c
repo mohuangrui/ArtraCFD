@@ -76,9 +76,20 @@ int DomainPartition(Partition *part, const Space *space)
      * unreachable value in for loop.
      *
      * Note that for each direction, its boundary nodes and exterior ghost 
-     * nodes only need to extent out from the interior cells at that direction
-     * and do not need to extent on other directions, that is, they form cross
+     * nodes will only extent out from the interior cells at that direction
+     * and will not extent on other directions, that is, they form cross
      * like shapes in space without corner parts.
+     *
+     * Apparently it represents a certain problem, since it is not quite clear
+     * how to set corner values (if there is no adjacent grid block). The values
+     * are not required by the standard cross-type discretisation stencil.
+     * However, they may become necessary for the computation of gradients
+     * (viscous fluxes), or for transfer operators within multigrid.
+     * Usually, an averaging of the values from the adjacent “regular” dummy
+     * cells is sufficient. However, it's really complicated for 3D domian with
+     * multiple ghost layers: there are 12 edge corner blocks and 8 vertex
+     * corner block need to be handled. This problem is left here.
+     *
      */
     /* kSub */
     part->kSub[0]  = space->ng + 1;
