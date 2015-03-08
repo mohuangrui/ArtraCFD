@@ -64,10 +64,10 @@ static int CalculateRoeAverageUo(
 static int ComputeNonViscousFlux(Real Fz[], Real Fy[], Real Fx[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
-static int ComputeViscousFlux(Real Gz[], Real Gy[], Real Gx[], 
-        int k, int j, int i, 
+static int ComputeViscousFluxGradient(Real gradGz[], Real gradGy[], Real gradGx[], 
+        const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
-static int CalculateViscousFlux(Real Gz[], Real Gy[], Real Gx[], 
+static int ComputeViscousFlux(Real Gz[], Real Gy[], Real Gx[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
 static Real Q(const Real z);
@@ -130,8 +130,7 @@ static int Lz(Real *U, const Real *Un, const Space *space, const Partition *part
 {
     Real Fhat[5] = {0.0}; /* reconstructed flux vector */
     Real Fhath[5] = {0.0}; /* reconstructed flux vector at neighbour */
-    Real G[5] = {0.0}; /* viscous flux vector */
-    Real Gh[5] = {0.0}; /* viscous flux vector at neighbour */
+    Real gradG[5] = {0.0}; /* spatial gradient of viscous flux vector */
     int idx = 0; /* linear array index math variable */
     const Real r = dt * space->ddz;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
@@ -144,10 +143,9 @@ static int Lz(Real *U, const Real *Un, const Space *space, const Partition *part
                 idx = idx * 5; /* change idx to field variable */
                 ComputeReconstructedFluxTVD(Fhat, NULL, NULL, k, j, i, Un, space, flow, dt);
                 ComputeReconstructedFluxTVD(Fhath, NULL, NULL, k - 1, j, i, Un, space, flow, dt);
-                ComputeViscousFlux(G, NULL, NULL, k + 1, j, i, Un, space, flow);
-                ComputeViscousFlux(Gh, NULL, NULL, k - 1, j, i, Un, space, flow);
+                ComputeViscousFluxGradient(gradG, NULL, NULL, k, j, i, Un, space, flow);
                 for (int dim = 0; dim < 5; ++dim) {
-                    U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + 0.5 * r * (G[dim] - Gh[dim]);
+                    U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
                 }
             }
         }
@@ -158,8 +156,7 @@ static int Ly(Real *U, const Real *Un, const Space *space, const Partition *part
 {
     Real Fhat[5] = {0.0}; /* reconstructed flux vector */
     Real Fhath[5] = {0.0}; /* reconstructed flux vector at neighbour */
-    Real G[5] = {0.0}; /* viscous flux vector */
-    Real Gh[5] = {0.0}; /* viscous flux vector at neighbour */
+    Real gradG[5] = {0.0}; /* spatial gradient of viscous flux vector */
     int idx = 0; /* linear array index math variable */
     const Real r = dt * space->ddy;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
@@ -172,10 +169,9 @@ static int Ly(Real *U, const Real *Un, const Space *space, const Partition *part
                 idx = idx * 5; /* change idx to field variable */
                 ComputeReconstructedFluxTVD(NULL, Fhat, NULL, k, j, i, Un, space, flow, dt);
                 ComputeReconstructedFluxTVD(NULL, Fhath, NULL, k, j - 1, i, Un, space, flow, dt);
-                ComputeViscousFlux(NULL, G, NULL, k, j + 1, i, Un, space, flow);
-                ComputeViscousFlux(NULL, Gh, NULL, k, j - 1, i, Un, space, flow);
+                ComputeViscousFluxGradient(NULL, gradG, NULL, k, j, i, Un, space, flow);
                 for (int dim = 0; dim < 5; ++dim) {
-                    U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + 0.5 * r * (G[dim] - Gh[dim]);
+                    U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
                 }
             }
         }
@@ -186,8 +182,7 @@ static int Lx(Real *U, const Real *Un, const Space *space, const Partition *part
 {
     Real Fhat[5] = {0.0}; /* reconstructed flux vector */
     Real Fhath[5] = {0.0}; /* reconstructed flux vector at neighbour */
-    Real G[5] = {0.0}; /* viscous flux vector */
-    Real Gh[5] = {0.0}; /* viscous flux vector at neighbour */
+    Real gradG[5] = {0.0}; /* spatial gradient of viscous flux vector */
     int idx = 0; /* linear array index math variable */
     const Real r = dt * space->ddx;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
@@ -200,10 +195,9 @@ static int Lx(Real *U, const Real *Un, const Space *space, const Partition *part
                 idx = idx * 5; /* change idx to field variable */
                 ComputeReconstructedFluxTVD(NULL, NULL, Fhat, k, j, i, Un, space, flow, dt);
                 ComputeReconstructedFluxTVD(NULL, NULL, Fhath, k, j, i - 1, Un, space, flow, dt);
-                ComputeViscousFlux(NULL, NULL, G, k, j, i + 1, Un, space, flow);
-                ComputeViscousFlux(NULL, NULL, Gh, k, j, i - 1, Un, space, flow);
+                ComputeViscousFluxGradient(NULL, NULL, gradG, k, j, i, Un, space, flow);
                 for (int dim = 0; dim < 5; ++dim) {
-                    U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + 0.5 * r * (G[dim] - Gh[dim]);
+                    U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
                 }
             }
         }
@@ -618,9 +612,9 @@ static int ComputeNonViscousFlux(
     }
     return 0;
 }
-static int ComputeViscousFlux(
-        Real Gz[], Real Gy[], Real Gx[], 
-        int k, int j, int i, 
+static int ComputeViscousFluxGradient(
+        Real gradGz[], Real gradGy[], Real gradGx[], 
+        const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
     /*
@@ -634,73 +628,89 @@ static int ComputeViscousFlux(
      * difference scheme can't be applied because of lacking stencil. Thus,
      * they also need to be identified and modified.
      */
-    if (NULL != Gz) {
-        if (space->ng == k) {
-            ++k;
-        } else {
-            if (space->nz + space->ng - 1 == k) {
-                --k;
-            }
+    Real hG[5] = {0.0}; /* viscous flux vector */
+    Real Gh[5] = {0.0}; /* viscous flux vector */
+    if (NULL != gradGz) {
+        /* default is central scheme */
+        int hl = k - 1;
+        int hr = k + 1;
+        if (space->ng == hl) { /* if left at boundary */
+            ++hl;
+        }
+        if ((space->nz + space->ng - 1) == hr) { /* if right at boundary */
+            --hr;
+        }
+        /* check ghost */
+        const int idxl = (hl * space->jMax + j) * space->iMax + i;
+        const int idxr = (hr * space->jMax + j) * space->iMax + i;
+        if (10 <= space->nodeFlag[idxl]) {
+            ++hl;
+        }
+        if (10 <= space->nodeFlag[idxr]) {
+            --hr;
+        }
+        ComputeViscousFlux(hG, NULL, NULL, hl, j, i, U, space, flow);
+        ComputeViscousFlux(Gh, NULL, NULL, hr, j, i, U, space, flow);
+        const Real h = space->ddz / (hr - hl);
+        for (int row = 0; row < 5; ++row) {
+            gradGz[row] = h * (Gh[row] - hG[row]);
         }
     }
-    if (NULL != Gy) {
-        if (space->ng == j) {
-            ++j;
-        } else {
-            if (space->ny + space->ng - 1 == j) {
-                --j;
-            }
+    if (NULL != gradGy) {
+        /* default is central scheme */
+        int hl = j - 1;
+        int hr = j + 1;
+        if (space->ng == hl) { /* if left at boundary */
+            ++hl;
+        }
+        if ((space->ny + space->ng - 1) == hr) { /* if right at boundary */
+            --hr;
+        }
+        /* check ghost */
+        const int idxl = (k * space->jMax + hl) * space->iMax + i;
+        const int idxr = (k * space->jMax + hr) * space->iMax + i;
+        if (10 <= space->nodeFlag[idxl]) {
+            ++hl;
+        }
+        if (10 <= space->nodeFlag[idxr]) {
+            --hr;
+        }
+        ComputeViscousFlux(NULL, hG, NULL, k, hl, i, U, space, flow);
+        ComputeViscousFlux(NULL, Gh, NULL, k, hr, i, U, space, flow);
+        const Real h = space->ddy / (hr - hl);
+        for (int row = 0; row < 5; ++row) {
+            gradGy[row] = h * (Gh[row] - hG[row]);
         }
     }
-    if (NULL != Gx) {
-        if (space->ng == i) {
-            ++i;
-        } else {
-            if (space->nx + space->ng - 1 == i) {
-                --i;
-            }
+    if (NULL != gradGx) {
+        /* default is central scheme */
+        int hl = i - 1;
+        int hr = i + 1;
+        if (space->ng == hl) { /* if left at boundary */
+            ++hl;
+        }
+        if ((space->nx + space->ng - 1) == hr) { /* if right at boundary */
+            --hr;
+        }
+        /* check ghost */
+        const int idxl = (k * space->jMax + j) * space->iMax + hl;
+        const int idxr = (k * space->jMax + j) * space->iMax + hr;
+        if (10 <= space->nodeFlag[idxl]) {
+            ++hl;
+        }
+        if (10 <= space->nodeFlag[idxr]) {
+            --hr;
+        }
+        ComputeViscousFlux(NULL, NULL, hG, k, j, hl, U, space, flow);
+        ComputeViscousFlux(NULL, NULL, Gh, k, j, hr, U, space, flow);
+        const Real h = space->ddx / (hr - hl);
+        for (int row = 0; row < 5; ++row) {
+            gradGx[row] = h * (Gh[row] - hG[row]);
         }
     }
-    const int idx = (k * space->jMax + j) * space->iMax + i;
-    if (10 <= space->nodeFlag[idx]) { /* interior ghost used Forward or Backward scheme */
-        if (NULL != Gz) {
-            const int idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
-            const int idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
-            if (-10 >= space->nodeFlag[idxF]) {
-                ++k;
-            } else {
-                if (-10 >= space->nodeFlag[idxB]) {
-                    --k;
-                }
-            }
-        }
-        if (NULL != Gy) {
-            const int idxS = (k * space->jMax + j - 1) * space->iMax + i;
-            const int idxN = (k * space->jMax + j + 1) * space->iMax + i;
-            if (-10 >= space->nodeFlag[idxS]) {
-                ++j;
-            } else {
-                if (-10 >= space->nodeFlag[idxN]) {
-                    --j;
-                }
-            }
-        }
-        if (NULL != Gx) {
-            const int idxW = (k * space->jMax + j) * space->iMax + i - 1;
-            const int idxE = (k * space->jMax + j) * space->iMax + i + 1;
-            if (-10 >= space->nodeFlag[idxW]) { 
-                ++i;
-            } else {
-                if (-10 >= space->nodeFlag[idxE]) {
-                    --i;
-                }
-            }
-        }
-    }
-    CalculateViscousFlux(Gz, Gy, Gx, k, j, i, U, space, flow);
     return 0;
 }
-static int CalculateViscousFlux(
+static int ComputeViscousFlux(
         Real Gz[], Real Gy[], Real Gx[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
