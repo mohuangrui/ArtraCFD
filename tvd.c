@@ -361,6 +361,7 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
         const Real *U, const Space *space, const Flow *flow)
 {
     const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+    Real L[5][5] = {{0.0}}; /* store left eigenvectors */
     if (NULL != alphaz) {
         const int idxh = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
         const Real deltaU[5] = {
@@ -369,7 +370,6 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
             U[idxh+2] - U[idx+2],
             U[idxh+3] - U[idx+3],
             U[idxh+4] - U[idx+4]};
-        Real L[5][5] = {{0.0}};
         ComputeEigenvaluesAndEigenvectorSpaceL(lambdaz, NULL, NULL, L, NULL, NULL, k, j, i, U, space, flow);
         CalculateAlpha(alphaz, L, deltaU);
     }
@@ -381,7 +381,6 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
             U[idxh+2] - U[idx+2],
             U[idxh+3] - U[idx+3],
             U[idxh+4] - U[idx+4]};
-        Real L[5][5] = {{0.0}};
         ComputeEigenvaluesAndEigenvectorSpaceL(NULL, lambday, NULL, NULL, L, NULL, k, j, i, U, space, flow);
         CalculateAlpha(alphay, L, deltaU);
     }
@@ -393,7 +392,6 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlpha(
             U[idxh+2] - U[idx+2],
             U[idxh+3] - U[idx+3],
             U[idxh+4] - U[idx+4]};
-        Real L[5][5] = {{0.0}};
         ComputeEigenvaluesAndEigenvectorSpaceL(NULL, NULL, lambdax, NULL, NULL, L, k, j, i, U, space, flow);
         CalculateAlpha(alphax, L, deltaU);
     }
@@ -416,8 +414,8 @@ static int ComputeEigenvaluesAndEigenvectorSpaceL(
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
+    Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
     if ((NULL != lambdaz) || (NULL != Lz)) {
-        Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(Uo, NULL, NULL, k, j, i, U, space, flow);
         const Real u = Uo[1];
         const Real v = Uo[2];
@@ -438,7 +436,6 @@ static int ComputeEigenvaluesAndEigenvectorSpaceL(
         }
     }
     if ((NULL != lambday) || (NULL != Ly)) {
-        Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(NULL, Uo, NULL, k, j, i, U, space, flow);
         const Real u = Uo[1];
         const Real v = Uo[2];
@@ -459,7 +456,6 @@ static int ComputeEigenvaluesAndEigenvectorSpaceL(
         }
     }
     if ((NULL != lambdax) || (NULL != Lx)) {
-        Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(NULL, NULL, Uo, k, j, i, U, space, flow);
         const Real u = Uo[1];
         const Real v = Uo[2];
@@ -486,8 +482,8 @@ static int ComputeEigenvectorSpaceR(
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
+    Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
     if (NULL != Rz) {
-        Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(Uo, NULL, NULL, k, j, i, U, space, flow);
         const Real u = Uo[1];
         const Real v = Uo[2];
@@ -502,7 +498,6 @@ static int ComputeEigenvectorSpaceR(
         Rz[4][0] = hT - w * c;  Rz[4][1] = u;  Rz[4][2] = v;  Rz[4][3] = w * w - q;  Rz[4][4] = hT + w * c;
     }
     if (NULL != Ry) {
-        Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(NULL, Uo, NULL, k, j, i, U, space, flow);
         const Real u = Uo[1];
         const Real v = Uo[2];
@@ -517,7 +512,6 @@ static int ComputeEigenvectorSpaceR(
         Ry[4][0] = hT - v * c;  Ry[4][1] = u;  Ry[4][2] = v * v - q;  Ry[4][3] = w;  Ry[4][4] = hT + v * c;
     }
     if (NULL != Rx) {
-        Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(NULL, NULL, Uo, k, j, i, U, space, flow);
         const Real u = Uo[1];
         const Real v = Uo[2];
