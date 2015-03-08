@@ -257,7 +257,7 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
 /*
  * Boundary type ID:
  * 0: interior region (default value)
- * 1: inlet
+ * 1: inflow
  * 2: outflow
  * 3: slip wall
  * 4: noslip wall
@@ -277,7 +277,7 @@ static int ReadBoundaryData(FILE **filePointerPointer, Partition *part, const in
     }
     fgets(currentLine, sizeof currentLine, filePointer);
     CommandLineProcessor(currentLine); /* process current line */
-    if (0 == strncmp(currentLine, "inlet", sizeof currentLine)) {
+    if (0 == strncmp(currentLine, "inflow", sizeof currentLine)) {
         part->typeBC[partID] = 1;
         fgets(currentLine, sizeof currentLine, filePointer);
         sscanf(currentLine, formatI, &(part->valueBC[partID][0])); 
@@ -329,7 +329,7 @@ static int WriteBoundaryData(FILE **filePointerPointer, const Partition *part, c
 {
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
     if (1 == part->typeBC[partID]) {
-        fprintf(filePointer, "boundary type: inlet\n"); 
+        fprintf(filePointer, "boundary type: inflow\n"); 
         fprintf(filePointer, "density: %.6g\n", part->valueBC[partID][0]);
         fprintf(filePointer, "x velocity: %.6g\n", part->valueBC[partID][1]);
         fprintf(filePointer, "y velocity: %.6g\n", part->valueBC[partID][2]);

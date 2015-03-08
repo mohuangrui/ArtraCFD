@@ -63,7 +63,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                  * variables rather than conservative variables.
                  */
                 switch (part->typeBC[partID]) {
-                    case 1: /* inlet */
+                    case 1: /* inflow */
                         U[idx+0] = rho;
                         U[idx+1] = rho * u;
                         U[idx+2] = rho * v;
@@ -148,7 +148,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                     idxh = (((k + (ng-1) * normalZ) * space->jMax + (j + (ng-1) * normalY)) * space->iMax + i + (ng-1) * normalX) * 5;
                     idxhh = (((k + (ng-2) * normalZ) * space->jMax + (j + (ng-2) * normalY)) * space->iMax + i + (ng-2) * normalX) * 5;
                     switch (part->typeBC[partID]) {
-                        case 1: /* inlet */
+                        case 1: /* inflow */
                         case 5: /* primary periodic pair */
                         case -5: /* auxiliary periodic pair */
                             for (int dim = 0; dim < 5; ++dim) {
