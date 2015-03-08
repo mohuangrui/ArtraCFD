@@ -54,7 +54,7 @@ static int ComputeFunctionG(
 static int CalculateGamma(
         Real gamma[], const Real g[], const Real gh[], const Real alpha[]);
 static int CalculateSigma(
-        Real sigma[], const Real lambda[], const Real r);
+        Real sigma[], const Real lambda[], const Real delta[], const Real r);
 static int ComputeRoeAverage(Real Uoz[], Real Uoy[], Real Uox[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
@@ -70,7 +70,11 @@ static int ComputeViscousFluxGradient(Real gradGz[], Real gradGy[], Real gradGx[
 static int ComputeViscousFlux(Real Gz[], Real Gy[], Real Gx[], 
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
-static Real Q(const Real z);
+static int ComputeNumericalDissipationDelta(
+        Real deltaz[], Real deltay[], Real deltax[], 
+        const int k, const int j, const int i,
+        const Real *U, const Space *space, const Flow *flow);
+static Real Q(const Real z, const Real delta);
 static Real minmod(const Real x, const Real y);
 static int sign(const Real x);
 static Real min(const Real x, const Real y);
@@ -261,31 +265,35 @@ static int ComputeFluxDecompositionCoefficientPhi(
     Real gamma[5] = {0.0}; /* TVD function gamma */
     Real lambda[5] = {0.0}; /* eigenvalues */
     Real alpha[5] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
+    Real delta[5] = {0.0}; /* numerical dissipation */
     if (NULL != Phiz) {
         ComputeEigenvaluesAndDecompositionCoefficientAlpha(lambda, NULL, NULL, alpha, NULL, NULL, k, j, i, U, space, flow);
         ComputeFunctionG(g, NULL, NULL, k, j, i, U, space, flow, dt);
         ComputeFunctionG(gh, NULL, NULL, k + 1, j, i, U, space, flow, dt);
+        ComputeNumericalDissipationDelta(delta, NULL, NULL, k, j, i, U, space, flow);
         CalculateGamma(gamma, g, gh, alpha);
         for (int row = 0; row < 5; ++row) {
-            Phiz[row] = g[row] + gh[row] - Q(lambda[row] + gamma[row]) * alpha[row];
+            Phiz[row] = g[row] + gh[row] - Q(lambda[row] + gamma[row], delta[row]) * alpha[row];
         }
     }
     if (NULL != Phiy) {
         ComputeEigenvaluesAndDecompositionCoefficientAlpha(NULL, lambda, NULL, NULL, alpha, NULL, k, j, i, U, space, flow);
         ComputeFunctionG(NULL, g, NULL, k, j, i, U, space, flow, dt);
         ComputeFunctionG(NULL, gh, NULL, k, j + 1, i, U, space, flow, dt);
+        ComputeNumericalDissipationDelta(NULL, delta, NULL, k, j, i, U, space, flow);
         CalculateGamma(gamma, g, gh, alpha);
         for (int row = 0; row < 5; ++row) {
-            Phiy[row] = g[row] + gh[row] - Q(lambda[row] + gamma[row]) * alpha[row];
+            Phiy[row] = g[row] + gh[row] - Q(lambda[row] + gamma[row], delta[row]) * alpha[row];
         }
     }
     if (NULL != Phix) {
         ComputeEigenvaluesAndDecompositionCoefficientAlpha(NULL, NULL, lambda, NULL, NULL, alpha, k, j, i, U, space, flow);
         ComputeFunctionG(NULL, NULL, g, k, j, i, U, space, flow, dt);
         ComputeFunctionG(NULL, NULL, gh, k, j, i + 1, U, space, flow, dt);
+        ComputeNumericalDissipationDelta(NULL, NULL, delta, k, j, i, U, space, flow);
         CalculateGamma(gamma, g, gh, alpha);
         for (int row = 0; row < 5; ++row) {
-            Phix[row] = g[row] + gh[row] - Q(lambda[row] + gamma[row]) * alpha[row];
+            Phix[row] = g[row] + gh[row] - Q(lambda[row] + gamma[row], delta[row]) * alpha[row];
         }
     }
     return 0;
@@ -299,14 +307,18 @@ static int ComputeFunctionG(
     Real lambdah[5] = {0.0}; /* eigenvalues at neighbour */
     Real alpha[5] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
     Real alphah[5] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
+    Real delta[5] = {0.0}; /* numerical dissipation */
+    Real deltah[5] = {0.0}; /* numerical dissipation */
     Real sigma[5] = {0.0}; /* TVD function sigma */
     Real sigmah[5] = {0.0}; /* TVD function sigma at neighbour */
     if (NULL != gz) {
         const Real r = dt * space->ddz;
         ComputeEigenvaluesAndDecompositionCoefficientAlpha(lambda, NULL, NULL, alpha, NULL, NULL, k, j, i, U, space, flow);
-        CalculateSigma(sigma, lambda, r);
+        ComputeNumericalDissipationDelta(delta, NULL, NULL, k, j, i, U, space, flow);
+        CalculateSigma(sigma, lambda, delta, r);
         ComputeEigenvaluesAndDecompositionCoefficientAlpha(lambdah, NULL, NULL, alphah, NULL, NULL, k - 1, j, i, U, space, flow);
-        CalculateSigma(sigmah, lambdah, r);
+        ComputeNumericalDissipationDelta(deltah, NULL, NULL, k - 1, j, i, U, space, flow);
+        CalculateSigma(sigmah, lambdah, deltah, r);
         for (int row = 0; row < 5; ++row) {
             gz[row] = minmod(sigma[row] * alpha[row], sigmah[row] * alphah[row]);
         }
@@ -314,9 +326,11 @@ static int ComputeFunctionG(
     if (NULL != gy) {
         const Real r = dt * space->ddy;
         ComputeEigenvaluesAndDecompositionCoefficientAlpha(NULL, lambda, NULL, NULL, alpha, NULL, k, j, i, U, space, flow);
-        CalculateSigma(sigma, lambda, r);
+        ComputeNumericalDissipationDelta(NULL, delta, NULL, k, j, i, U, space, flow);
+        CalculateSigma(sigma, lambda, delta, r);
         ComputeEigenvaluesAndDecompositionCoefficientAlpha(NULL, lambdah, NULL, NULL, alphah, NULL, k, j - 1, i, U, space, flow);
-        CalculateSigma(sigmah, lambdah, r);
+        ComputeNumericalDissipationDelta(NULL, deltah, NULL, k, j - 1, i, U, space, flow);
+        CalculateSigma(sigmah, lambdah, deltah, r);
         for (int row = 0; row < 5; ++row) {
             gy[row] = minmod(sigma[row] * alpha[row], sigmah[row] * alphah[row]);
         }
@@ -324,9 +338,11 @@ static int ComputeFunctionG(
     if (NULL != gx) {
         const Real r = dt * space->ddx;
         ComputeEigenvaluesAndDecompositionCoefficientAlpha(NULL, NULL, lambda, NULL, NULL, alpha, k, j, i, U, space, flow);
-        CalculateSigma(sigma, lambda, r);
+        ComputeNumericalDissipationDelta(NULL, NULL, delta, k, j, i, U, space, flow);
+        CalculateSigma(sigma, lambda, delta, r);
         ComputeEigenvaluesAndDecompositionCoefficientAlpha(NULL, NULL, lambdah, NULL, NULL, alphah, k, j, i - 1, U, space, flow);
-        CalculateSigma(sigmah, lambdah, r);
+        ComputeNumericalDissipationDelta(NULL, NULL, deltah, k, j, i - 1, U, space, flow);
+        CalculateSigma(sigmah, lambdah, deltah, r);
         for (int row = 0; row < 5; ++row) {
             gx[row] = minmod(sigma[row] * alpha[row], sigmah[row] * alphah[row]);
         }
@@ -347,10 +363,10 @@ static int CalculateGamma(
     return 0;
 }
 static int CalculateSigma(
-        Real sigma[], const Real lambda[], const Real r)
+        Real sigma[], const Real lambda[], const Real delta[], const Real r)
 {
     for (int row = 0; row < 5; ++row) {
-        sigma[row] = 0.5 * (Q(lambda[row]) - r * lambda[row] * lambda[row]);
+        sigma[row] = 0.5 * (Q(lambda[row], delta[row]) - r * lambda[row] * lambda[row]);
     }
     return 0;
 }
@@ -841,9 +857,47 @@ static int ComputeViscousFlux(
     }
     return 0;
 }
-static Real Q(const Real z)
+static int ComputeNumericalDissipationDelta(
+        Real deltaz[], Real deltay[], Real deltax[], 
+        const int k, const int j, const int i,
+        const Real *U, const Space *space, const Flow *flow)
 {
-    const Real delta = 0.05; /* delta in [0.05, 0.5] */
+    Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
+    const Real delta0 = 0.125; /* in [0.05, 0.25], 0.125 is recommended */
+    if (NULL != deltaz) {
+        ComputeRoeAverage(Uo, NULL, NULL, k, j, i, U, space, flow);
+        const Real u = Uo[1];
+        const Real v = Uo[2];
+        const Real w = Uo[3];
+        const Real c = Uo[5];
+        for (int row = 0; row < 5; ++row) {
+            deltaz[row] = delta0 * (fabs(u) + fabs(v) + fabs(w) + c); 
+        }
+    }
+    if (NULL != deltay) {
+        ComputeRoeAverage(NULL, Uo, NULL, k, j, i, U, space, flow);
+        const Real u = Uo[1];
+        const Real v = Uo[2];
+        const Real w = Uo[3];
+        const Real c = Uo[5];
+        for (int row = 0; row < 5; ++row) {
+            deltay[row] = delta0 * (fabs(u) + fabs(v) + fabs(w) + c); 
+        }
+    }
+    if (NULL != deltax) {
+        ComputeRoeAverage(NULL, NULL, Uo, k, j, i, U, space, flow);
+        const Real u = Uo[1];
+        const Real v = Uo[2];
+        const Real w = Uo[3];
+        const Real c = Uo[5];
+        for (int row = 0; row < 5; ++row) {
+            deltax[row] = delta0 * (fabs(u) + fabs(v) + fabs(w) + c); 
+        }
+    }
+    return 0;
+}
+static Real Q(const Real z, const Real delta)
+{
     if (fabs(z) >= delta) {
         return fabs(z);
     }
