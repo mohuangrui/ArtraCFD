@@ -84,10 +84,10 @@ int SpatialDiscretizationAndComputation(Real *U, Real *Un,
 {
     Real *exchanger = Un;
     /*
-     * When exchange a large bunch of data between two arrays, if there is no
-     * new data generation but just data exchange and update, then the rational
-     * way is to exchange the head address that they  points rather than values
-     * of data entries.
+     * When exchange a large bunch of data between two storage space, such as
+     * arrays, if there is no new data generation but just data exchange and 
+     * update, then the rational way is to exchange the address value that
+     * their pointer point to rather than values of data entries.
      */
     Lz(U, Un, space, part, flow, 0.5 * dt);
     BoundaryCondtionsAndTreatments(U, space, particle, part, flow);
@@ -423,7 +423,7 @@ static int ComputeEigenvaluesAndEigenvectorSpaceL(
         const Real *U, const Space *space, const Flow *flow)
 {
     if ((NULL != lambdaz) || (NULL != Lz)) {
-        Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
+        Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(Uo, NULL, NULL, k, j, i, U, space, flow);
         const Real u = Uo[1];
         const Real v = Uo[2];
@@ -444,7 +444,7 @@ static int ComputeEigenvaluesAndEigenvectorSpaceL(
         }
     }
     if ((NULL != lambday) || (NULL != Ly)) {
-        Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
+        Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(NULL, Uo, NULL, k, j, i, U, space, flow);
         const Real u = Uo[1];
         const Real v = Uo[2];
@@ -465,7 +465,7 @@ static int ComputeEigenvaluesAndEigenvectorSpaceL(
         }
     }
     if ((NULL != lambdax) || (NULL != Lx)) {
-        Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
+        Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(NULL, NULL, Uo, k, j, i, U, space, flow);
         const Real u = Uo[1];
         const Real v = Uo[2];
@@ -493,7 +493,7 @@ static int ComputeEigenvectorSpaceR(
         const Real *U, const Space *space, const Flow *flow)
 {
     if (NULL != Rz) {
-        Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
+        Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(Uo, NULL, NULL, k, j, i, U, space, flow);
         const Real u = Uo[1];
         const Real v = Uo[2];
@@ -508,7 +508,7 @@ static int ComputeEigenvectorSpaceR(
         Rz[4][0] = hT - w * c;  Rz[4][1] = u;  Rz[4][2] = v;  Rz[4][3] = w * w - q;  Rz[4][4] = hT + w * c;
     }
     if (NULL != Ry) {
-        Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
+        Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(NULL, Uo, NULL, k, j, i, U, space, flow);
         const Real u = Uo[1];
         const Real v = Uo[2];
@@ -523,7 +523,7 @@ static int ComputeEigenvectorSpaceR(
         Ry[4][0] = hT - v * c;  Ry[4][1] = u;  Ry[4][2] = v * v - q;  Ry[4][3] = w;  Ry[4][4] = hT + v * c;
     }
     if (NULL != Rx) {
-        Real Uo[6] = {0.0}; /* primitive variables rho, u, v, w, hT, c */
+        Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
         ComputeRoeAverage(NULL, NULL, Uo, k, j, i, U, space, flow);
         const Real u = Uo[1];
         const Real v = Uo[2];
