@@ -665,12 +665,11 @@ static int ComputeViscousFluxGradient(
         if (10 <= space->nodeFlag[idxr]) {
             --hr;
         }
+        h = 0; /* set h to zero first */
         if (0 != (hr - hl)) { /* only do calculation when needed */
             h = space->ddz / (hr - hl);
             ComputeViscousFlux(hG, NULL, NULL, hl, j, i, U, space, flow);
             ComputeViscousFlux(Gh, NULL, NULL, hr, j, i, U, space, flow);
-        } else {
-            h = 0;
         }
         for (int row = 0; row < 5; ++row) {
             gradGz[row] = h * (Gh[row] - hG[row]);
@@ -695,12 +694,11 @@ static int ComputeViscousFluxGradient(
         if (10 <= space->nodeFlag[idxr]) {
             --hr;
         }
+        h = 0; /* set h to zero first */
         if (0 != (hr - hl)) { /* only do calculation when needed */
             h = space->ddy / (hr - hl);
             ComputeViscousFlux(NULL, hG, NULL, k, hl, i, U, space, flow);
             ComputeViscousFlux(NULL, Gh, NULL, k, hr, i, U, space, flow);
-        } else {
-            h = 0;
         }
         for (int row = 0; row < 5; ++row) {
             gradGy[row] = h * (Gh[row] - hG[row]);
@@ -725,12 +723,11 @@ static int ComputeViscousFluxGradient(
         if (10 <= space->nodeFlag[idxr]) {
             --hr;
         }
+        h = 0; /* set h to zero first */
         if (0 != (hr - hl)) { /* only do calculation when needed */
             h = space->ddx / (hr - hl);
             ComputeViscousFlux(NULL, NULL, hG, k, j, hl, U, space, flow);
             ComputeViscousFlux(NULL, NULL, Gh, k, j, hr, U, space, flow);
-        } else {
-            h = 0;
         }
         for (int row = 0; row < 5; ++row) {
             gradGx[row] = h * (Gh[row] - hG[row]);
