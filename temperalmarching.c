@@ -7,7 +7,7 @@
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "temperalmarching.h"
+#include "temporalmarching.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
 #include "rungekutta.h"
@@ -24,7 +24,7 @@ static Real Max(const Real valueA, const Real valueB);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int TemperalMarching(Field *field, Space *space, Particle *particle,
+int TemporalMarching(Field *field, Space *space, Particle *particle,
         Time *time, const Partition *part, const Flow *flow)
 {
     ShowInformation("Time marching...");
@@ -47,7 +47,7 @@ int TemperalMarching(Field *field, Space *space, Particle *particle,
         /*
          * Calculate dt for current time step
          */
-        time->dt = ComputeTimeStepByCFL(field->Un, space, time, part, flow);
+        time->dt = ComputeTimeStepByCFL(field->U, space, time, part, flow);
         fprintf(stdout, "\nStep=%d; Time=%.6g; Remain=%.6g; dt=%.6g\n", time->stepCount, 
                 time->currentTime, time->totalTime - time->currentTime, time->dt);
         /*
@@ -77,7 +77,7 @@ int TemperalMarching(Field *field, Space *space, Particle *particle,
                 (time->stepCount == time->totalStep)) {
             ++(time->outputCount); /* export count increase */
             TickTime(&operationTimer);
-            WriteComputedDataEnsight(field->Un, space, particle, time, part, flow);
+            WriteComputedDataEnsight(field->U, space, particle, time, part, flow);
             operationTime = TockTime(&operationTimer);
             accumulatedTime = 0; /* reset accumulated time */
             fprintf(stdout, "  data export time consuming: %.6gs\n", operationTime);

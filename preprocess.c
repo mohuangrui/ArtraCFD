@@ -47,12 +47,13 @@ static int ProgramMemoryAllocate(Field *field, Space *space)
 {
     ShowInformation("Allocating memory for program...");
     /*
-     * Conservative flow variables: rho, rho_u, rho_v, rho_w, rho_eT
+     * Conservative flow variables: rho, rho_u, rho_v, rho_w, rho_eT.
+     * Tips: the storage space of U is best between Un and Uswap.
      */
     int idxMax = space->nMax * 5;
-    field->U = AssignStorage(idxMax, "Real");
     field->Un = AssignStorage(idxMax, "Real");
-    field->Um = AssignStorage(idxMax, "Real");
+    field->U = AssignStorage(idxMax, "Real");
+    field->Uswap = AssignStorage(idxMax, "Real");
     /*
      * Node type identifier
      */

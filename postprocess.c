@@ -36,9 +36,9 @@ static int ProgramMemoryRelease(Field *field, Space *space, Particle *particle)
 {
     ShowInformation("Releasing memory back to system...");
     /* field variable related */
-    RetrieveStorage(field->U);
     RetrieveStorage(field->Un);
-    RetrieveStorage(field->Um);
+    RetrieveStorage(field->U);
+    RetrieveStorage(field->Uswap);
     /* space related */
     RetrieveStorage(space->nodeFlag);
     /* particle related */

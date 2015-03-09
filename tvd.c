@@ -82,52 +82,57 @@ static Real max(const Real x, const Real y);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int SpatialDiscretizationAndComputation(Real *U, Real *Un, 
+int SpatialDiscretizationAndComputation(Real *U, const Real dt, Real *Uswap, 
         const Space *space, const Particle *particle, 
-        const Partition *part, const Flow *flow, const Real dt)
+        const Partition *part, const Flow *flow)
 {
-    Real *exchanger = Un;
+    Real *exchanger = U;
     /*
      * When exchange a large bunch of data between two storage space, such as
      * arrays, if there is no new data generation but just data exchange and 
      * update, then the rational way is to exchange the address value that
      * their pointer point to rather than values of data entries.
      */
-    Lz(U, Un, space, part, flow, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(U, space, particle, part, flow);
-    exchanger = Un; /* preserve the address of Un */
-    Un = U; /* update flow field */
-    U = exchanger; /* regain the used space as new space */
+    Lz(Uswap, U, space, part, flow, 0.5 * dt);
+    BoundaryCondtionsAndTreatments(Uswap, space, particle, part, flow);
+    exchanger = U; /* preserve the address of U */
+    U = Uswap; /* update flow field */
+    Uswap = exchanger; /* regain the used space as new space */
 
-    Ly(U, Un, space, part, flow, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(U, space, particle, part, flow);
-    exchanger = Un; /* preserve the address of Un */
-    Un = U; /* update flow field */
-    U = exchanger; /* regain the used space as new space */
+    Ly(Uswap, U, space, part, flow, 0.5 * dt);
+    BoundaryCondtionsAndTreatments(Uswap, space, particle, part, flow);
+    exchanger = U; /* preserve the address of Un */
+    U = Uswap; /* update flow field */
+    Uswap = exchanger; /* regain the used space as new space */
 
-    Lx(U, Un, space, part, flow, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(U, space, particle, part, flow);
-    exchanger = Un; /* preserve the address of Un */
-    Un = U; /* update flow field */
-    U = exchanger; /* regain the used space as new space */
+    Lx(Uswap, U, space, part, flow, 0.5 * dt);
+    BoundaryCondtionsAndTreatments(Uswap, space, particle, part, flow);
+    exchanger = U; /* preserve the address of Un */
+    U = Uswap; /* update flow field */
+    Uswap = exchanger; /* regain the used space as new space */
 
-    Lx(U, Un, space, part, flow, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(U, space, particle, part, flow);
-    exchanger = Un; /* preserve the address of Un */
-    Un = U; /* update flow field */
-    U = exchanger; /* regain the used space as new space */
+    Lx(Uswap, U, space, part, flow, 0.5 * dt);
+    BoundaryCondtionsAndTreatments(Uswap, space, particle, part, flow);
+    exchanger = U; /* preserve the address of Un */
+    U = Uswap; /* update flow field */
+    Uswap = exchanger; /* regain the used space as new space */
 
-    Ly(U, Un, space, part, flow, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(U, space, particle, part, flow);
-    exchanger = Un; /* preserve the address of Un */
-    Un = U; /* update flow field */
-    U = exchanger; /* regain the used space as new space */
+    Ly(Uswap, U, space, part, flow, 0.5 * dt);
+    BoundaryCondtionsAndTreatments(Uswap, space, particle, part, flow);
+    exchanger = U; /* preserve the address of Un */
+    U = Uswap; /* update flow field */
+    Uswap = exchanger; /* regain the used space as new space */
 
-    Lz(U, Un, space, part, flow, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(U, space, particle, part, flow);
-    exchanger = Un; /* preserve the address of Un */
-    Un = U; /* update flow field */
-    U = exchanger; /* regain the used space as new space */
+    Lz(Uswap, U, space, part, flow, 0.5 * dt);
+    BoundaryCondtionsAndTreatments(Uswap, space, particle, part, flow);
+    exchanger = U; /* preserve the address of Un */
+    U = Uswap; /* update flow field */
+    Uswap = exchanger; /* regain the used space as new space */
+    /*
+     * NOTICE: the exchange operations must be even times, otherwise, the
+     * storage space that U originally pointed to will not store the newest
+     * updated field data after computation.
+     */
     return 0;
 }
 static int Lz(Real *U, const Real *Un, const Space *space, const Partition *part, const Flow *flow, const Real dt)

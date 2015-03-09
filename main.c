@@ -24,9 +24,9 @@ int main(int argc, char *argv[])
      * Declare and initialize variables
      */    
     Field theField = { /* flow field variables */
-        .U = NULL,
         .Un = NULL,
-        .Um = NULL};
+        .U = NULL,
+        .Uswap = NULL};
     Space theSpace = { /* space dimensions */
         .nx = 0,
         .ny = 0,

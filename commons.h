@@ -479,9 +479,9 @@ typedef double Real;
  * rho_eT = U[idx+4];
  */
 typedef struct {
-    Real *U; /* conservative flow variables at n+1*/
-    Real *Un; /* conservative flow variables at time n */
-    Real *Um; /* conservative flow variables at time n-1 */
+    Real *Un; /* store the "old" field data for intermediate calculation */
+    Real *U; /* store updating field data, and updated data after every computation  */
+    Real *Uswap; /* an auxiliary storage space */
 }Field;
 /*
  * Space domain parameters

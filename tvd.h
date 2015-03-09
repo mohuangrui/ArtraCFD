@@ -19,13 +19,17 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Numerical scheme of the space domain
+ * Spatial discretization and computation
  *
  * Function
- *      Compute field data in the space domain.
+ *      Compute field data to next time step based on the inputed data.
+ * Parameters
+ *      U -- current data, and store updated field data after computation.
+ *      dt -- time step size
+ *      Uswap -- a auxiliary storage space of the same size of U.
  */
-extern int SpatialDiscretizationAndComputation(Real *U, Real *Un, 
-        const Space *, const Particle *, const Partition *, const Flow *, const Real dt);
+extern int SpatialDiscretizationAndComputation(Real *U, const Real dt, Real *Uswap, 
+        const Space *, const Particle *, const Partition *, const Flow *);
 #endif
 /* a good practice: end file with a newline */
 
