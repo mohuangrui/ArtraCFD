@@ -20,6 +20,7 @@
 int RungeKutta(Field *field, Space *space, Particle *particle,
         Time *time, const Partition *part, const Flow *flow)
 {
+    SpatialDiscretizationAndComputation(field->U, field->Un, space, particle, part, flow, time->dt);
     return 0;
 }
 /* a good practice: end file with a newline */
