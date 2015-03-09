@@ -101,31 +101,31 @@ int SpatialDiscretizationAndComputation(Real *U, const Real dt, Real *Uswap,
 
     Ly(Uswap, U, space, part, flow, 0.5 * dt);
     BoundaryCondtionsAndTreatments(Uswap, space, particle, part, flow);
-    exchanger = U; /* preserve the address of Un */
+    exchanger = U; /* preserve the address of U */
     U = Uswap; /* update flow field */
     Uswap = exchanger; /* regain the used space as new space */
 
     Lx(Uswap, U, space, part, flow, 0.5 * dt);
     BoundaryCondtionsAndTreatments(Uswap, space, particle, part, flow);
-    exchanger = U; /* preserve the address of Un */
+    exchanger = U; /* preserve the address of U */
     U = Uswap; /* update flow field */
     Uswap = exchanger; /* regain the used space as new space */
 
     Lx(Uswap, U, space, part, flow, 0.5 * dt);
     BoundaryCondtionsAndTreatments(Uswap, space, particle, part, flow);
-    exchanger = U; /* preserve the address of Un */
+    exchanger = U; /* preserve the address of U */
     U = Uswap; /* update flow field */
     Uswap = exchanger; /* regain the used space as new space */
 
     Ly(Uswap, U, space, part, flow, 0.5 * dt);
     BoundaryCondtionsAndTreatments(Uswap, space, particle, part, flow);
-    exchanger = U; /* preserve the address of Un */
+    exchanger = U; /* preserve the address of U */
     U = Uswap; /* update flow field */
     Uswap = exchanger; /* regain the used space as new space */
 
     Lz(Uswap, U, space, part, flow, 0.5 * dt);
     BoundaryCondtionsAndTreatments(Uswap, space, particle, part, flow);
-    exchanger = U; /* preserve the address of Un */
+    exchanger = U; /* preserve the address of U */
     U = Uswap; /* update flow field */
     Uswap = exchanger; /* regain the used space as new space */
     /*
