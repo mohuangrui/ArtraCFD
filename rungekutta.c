@@ -49,7 +49,8 @@ int RungeKuttaTimeMarching(Field *field, Space *space, Particle *particle,
          * Calculate dt for current time step
          */
         time->dt = ComputeTimeStepByCFL(field->Un, space, time, part, flow);
-        fprintf(stdout, "\nStep=%d; Time=%.6g; dt=%.6g\n", time->stepCount, time->currentTime, time->dt);
+        fprintf(stdout, "\nStep=%d; Time=%.6g; Remain=%.6g; dt=%.6g\n", time->stepCount, 
+                time->currentTime, time->totalTime - time->currentTime, time->dt);
         /*
          * Update current time stamp, if current time exceeds the total time, 
          * recompute the value of dt to make current time equal total time.

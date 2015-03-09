@@ -76,6 +76,7 @@ int main(int argc, char *argv[])
         .gamma = 0.0,
         .gasR = 0.0,
         .cv = 0.0,
+        .delta = 0.0,
         .refLength = 0.0,
         .refDensity = 0.0,
         .refVelocity = 0.0,

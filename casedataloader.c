@@ -114,6 +114,8 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
             sscanf(currentLine, formatI, &(flow->refPr)); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatI, &(flow->refMu)); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, &(flow->delta)); 
             continue;
         }
         if (0 == strncmp(currentLine, "reference begin", sizeof currentLine)) {
@@ -457,6 +459,7 @@ static int WriteVerifyData(const Space *space, const Time *time, const Flow *flo
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "Prandtl number: %.6g\n", flow->refPr); 
     fprintf(filePointer, "modify coefficient of dynamic viscosity: %.6g\n", flow->refMu); 
+    fprintf(filePointer, "Harten's numerical dissipation coefficient: %.6g\n", flow->delta); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                        >> Reference Values  <<\n");
@@ -542,7 +545,7 @@ static int CheckCaseSettingData(const Space *space, const Time *time, const Flow
         FatalError("wrong values in time section of case settings");
     }
     /* fluid and flow */
-    if ((0 >= flow->refPr) || (0 > flow->refMu)) {
+    if ((0 >= flow->refPr) || (0 > flow->refMu) || (0 > flow->delta)) {
         FatalError("wrong values in fluid and flow section of case settings");
     }
     /* reference */

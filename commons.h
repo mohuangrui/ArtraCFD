@@ -547,6 +547,7 @@ typedef struct {
     Real gamma; /* heat capacity ratio */
     Real gasR; /* the gas constant */
     Real cv; /* specific heat capacity at constant volume */
+    Real delta; /* numerical dissipation */
     Real refLength; /* characteristic length */
     Real refDensity; /* characteristic density */
     Real refVelocity;  /*characteristic velocity */

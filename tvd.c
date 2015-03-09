@@ -863,7 +863,7 @@ static int ComputeNumericalDissipationDelta(
         const Real *U, const Space *space, const Flow *flow)
 {
     Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
-    const Real delta0 = 0.125; /* in [0.05, 0.25], 0.125 is recommended */
+    /* numerical dissipation in [0.05, 0.25], 0.125 is recommended */
     if (NULL != deltaz) {
         ComputeRoeAverage(Uo, NULL, NULL, k, j, i, U, space, flow);
         const Real u = Uo[1];
@@ -871,7 +871,7 @@ static int ComputeNumericalDissipationDelta(
         const Real w = Uo[3];
         const Real c = Uo[5];
         for (int row = 0; row < 5; ++row) {
-            deltaz[row] = delta0 * (fabs(u) + fabs(v) + fabs(w) + c); 
+            deltaz[row] = flow->delta * (fabs(u) + fabs(v) + fabs(w) + c); 
         }
     }
     if (NULL != deltay) {
@@ -881,7 +881,7 @@ static int ComputeNumericalDissipationDelta(
         const Real w = Uo[3];
         const Real c = Uo[5];
         for (int row = 0; row < 5; ++row) {
-            deltay[row] = delta0 * (fabs(u) + fabs(v) + fabs(w) + c); 
+            deltay[row] = flow->delta * (fabs(u) + fabs(v) + fabs(w) + c); 
         }
     }
     if (NULL != deltax) {
@@ -891,7 +891,7 @@ static int ComputeNumericalDissipationDelta(
         const Real w = Uo[3];
         const Real c = Uo[5];
         for (int row = 0; row < 5; ++row) {
-            deltax[row] = delta0 * (fabs(u) + fabs(v) + fabs(w) + c); 
+            deltax[row] = flow->delta * (fabs(u) + fabs(v) + fabs(w) + c); 
         }
     }
     return 0;
