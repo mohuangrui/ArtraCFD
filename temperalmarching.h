@@ -6,8 +6,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_RUNGEKUTTA_H_ /* if this is the first definition */
-#define ARTRACFD_RUNGEKUTTA_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_TEMPERALMARCHING_H_ /* if this is the first definition */
+#define ARTRACFD_TEMPERALMARCHING_H_ /* a unique marker for this header file */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -19,12 +19,11 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Time marching scheme
+ * Temperal marching
  *
  * Function
- *      Apply runge-kutta method for explicit time marching solution
  */
-extern int RungeKutta(Field *, Space *, Particle *, Time *, 
+extern int TemperalMarching(Field *, Space *, Particle *, Time *, 
         const Partition *, const Flow *);
 #endif
 /* a good practice: end file with a newline */
