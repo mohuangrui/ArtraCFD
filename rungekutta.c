@@ -59,7 +59,7 @@ int RungeKutta(Field *field, Space *space, Particle *particle,
     const Real coeAA = (1/3);
     const Real coeBB = (2/3);
     for (int idx = 0; idx < (space->nMax * 5); ++idx) {
-        field->U[idx] = coeA * field->Un[idx] + coeB * field->U[idx];
+        field->U[idx] = coeAA * field->Un[idx] + coeBB * field->U[idx];
     }
     return 0;
 }
