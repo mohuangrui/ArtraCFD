@@ -33,12 +33,12 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
             FatalError("failed to write data to ensight data file: ensight.***...");
         }
         fprintf(filePointer, "# points      rho     u       v       w       p       T\n"); 
-        const int iA = (flow->probePos[n][0] - space->xMin) * space->ddx + space->ng;
-        const int jA = (flow->probePos[n][1] - space->yMin) * space->ddy + space->ng;
-        const int kA = (flow->probePos[n][2] - space->zMin) * space->ddz + space->ng;
-        const int iB = (flow->probePos[n][3] - space->xMin) * space->ddx + space->ng;
-        const int jB = (flow->probePos[n][4] - space->yMin) * space->ddy + space->ng;
-        const int kB = (flow->probePos[n][5] - space->zMin) * space->ddz + space->ng;
+        const int iA = (int)((flow->probePos[n][0] - space->xMin) * space->ddx) + space->ng;
+        const int jA = (int)((flow->probePos[n][1] - space->yMin) * space->ddy) + space->ng;
+        const int kA = (int)((flow->probePos[n][2] - space->zMin) * space->ddz) + space->ng;
+        const int iB = (int)((flow->probePos[n][3] - space->xMin) * space->ddx) + space->ng;
+        const int jB = (int)((flow->probePos[n][4] - space->yMin) * space->ddy) + space->ng;
+        const int kB = (int)((flow->probePos[n][5] - space->zMin) * space->ddz) + space->ng;
         int stepN = flow->probe[n] - 1;
         if (1 > stepN) { /* set to lowest resolution if happens */
             stepN = 1;
@@ -56,7 +56,7 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
         const Real iStep = (Real)(iB - iA) / (Real)(stepN);
         const Real jStep = (Real)(jB - jA) / (Real)(stepN);
         const Real kStep = (Real)(kB - kA) / (Real)(stepN);
-        for (int m = 0; m < stepN; ++m) {
+        for (int m = 0; m <= stepN; ++m) {
             idx = (((kA + (int)(m * kStep)) * space->jMax + (jA + (int)(m * jStep))) * space->iMax + (iA + (int)(m * iStep))) * 5;
             if ((space->nMax * 5 <= idx) || (0 > idx)) {
                 continue;

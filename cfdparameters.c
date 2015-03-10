@@ -82,9 +82,9 @@ static int NodeBasedMeshNumberRefine(Space *space)
 static int InitializeCFDParameters(Space *space, Time *time, Flow *flow)
 {
     /* space */
-    space->dz = ((space->zMax - space->zMin) / (space->nz - 1)) / flow->refLength;
-    space->dy = ((space->yMax - space->yMin) / (space->ny - 1)) / flow->refLength;
-    space->dx = ((space->xMax - space->xMin) / (space->nx - 1)) / flow->refLength;
+    space->dz = ((space->zMax - space->zMin) / (Real)(space->nz - 1)) / flow->refLength;
+    space->dy = ((space->yMax - space->yMin) / (Real)(space->ny - 1)) / flow->refLength;
+    space->dx = ((space->xMax - space->xMin) / (Real)(space->nx - 1)) / flow->refLength;
     space->xMax = space->xMax / flow->refLength;
     space->yMax = space->yMax / flow->refLength;
     space->zMax = space->zMax / flow->refLength;
