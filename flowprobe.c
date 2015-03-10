@@ -46,8 +46,8 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
         const int jStep = (jB - jA) / stepN;
         const int kStep = (kB - kA) / stepN;
         for (int m = 0; m < flow->probe[n]; ++m) {
-            idx = (((kA + m * kStep) * space->jMax + (jA + m * jStep)) * space->iMax + (iA + m * iStep)) * 5;
-            if ((space->nMax <= idx) || (0 > idx)) {
+            idx = (((kA + m * kStep) * space->jMax + jA + m * jStep) * space->iMax + iA + m * iStep) * 5;
+            if ((space->nMax * 5 <= idx) || (0 > idx)) {
                 continue;
             }
             rho = U[idx+0];
