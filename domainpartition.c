@@ -30,9 +30,7 @@
 int DomainPartition(Partition *part, const Space *space)
 {
     ShowInformation("Domain partitioning...");
-    /*
-     * Give names of each part
-     */
+    part->subN = 13; /* number of inner partitions */
     const char partName[13][15] = {
         "Interior",
         "Domain West",       "Domain East", 

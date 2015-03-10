@@ -80,12 +80,12 @@ static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,
 {
     FILE *filePointer = NULL;
     int idx = 0; /* linear array index math variable */
-    EnsightReal data = 0; /* the ensight data format */
+    EnsightReal data = 0.0; /* the ensight data format */
     const char nameSuffix[5][10] = {"rho", "u", "v", "w", "p"};
-    Real rho = 0; 
-    Real u = 0;
-    Real v = 0;
-    Real w = 0;
+    Real rho = 0.0; 
+    Real u = 0.0;
+    Real v = 0.0;
+    Real w = 0.0;
     for (int dim = 0; dim < 5; ++dim) {
         snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
         filePointer = fopen(enSet->fileName, "rb");
@@ -120,7 +120,7 @@ static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,
                                 u = U[idx+1] / rho;
                                 v = U[idx+2] / rho;
                                 w = U[idx+3] / rho;
-                                U[idx+4] = data / (flow->gamma - 1) + 0.5 * rho * (u * u + v * v + w * w);
+                                U[idx+4] = data / (flow->gamma - 1.0) + 0.5 * rho * (u * u + v * v + w * w);
                                 break;
                             default:
                                 break;

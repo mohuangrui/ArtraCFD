@@ -69,7 +69,7 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
                 U[idx+1] = rho * u;
                 U[idx+2] = rho * v;
                 U[idx+3] = rho * w;
-                U[idx+4] = p / (flow->gamma - 1) + 0.5 * rho * (u * u + v * v + w * w);
+                U[idx+4] = p / (flow->gamma - 1.0) + 0.5 * rho * (u * u + v * v + w * w);
             }
         }
     }
@@ -114,13 +114,13 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
     const Real w = part->valueIC[n][13];
     const Real p = part->valueIC[n][14];
     /* the vary part */
-    Real r = 0;
-    Real xh = 0;
-    Real yh = 0;
-    Real zh = 0;
-    Real normalZ = 0;
-    Real normalY = 0;
-    Real normalX = 0;
+    Real r = 0.0;
+    Real xh = 0.0;
+    Real yh = 0.0;
+    Real zh = 0.0;
+    Real normalZ = 0.0;
+    Real normalY = 0.0;
+    Real normalX = 0.0;
     switch (part->typeIC[n]) {
         case 1: /* plane */
             normalX = part->valueIC[n][3];
@@ -181,7 +181,7 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
                     U[idx+1] = rho * u;
                     U[idx+2] = rho * v;
                     U[idx+3] = rho * w;
-                    U[idx+4] = p / (flow->gamma - 1) + 0.5 * rho * (u * u + v * v + w * w);
+                    U[idx+4] = p / (flow->gamma - 1.0) + 0.5 * rho * (u * u + v * v + w * w);
                 }
             }
         }

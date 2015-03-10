@@ -38,11 +38,11 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
     /* obtain the desired export time interval */
     const Real exportTimeInterval = (time->totalTime - time->currentTime) / time->totalOutputTimes;
     const Real probeExportInterval = (time->totalTime - time->currentTime) / flow->probe[11];
-    Real accumulatedTime = 0; /* used for control when to export data */
-    Real probeAccumulatedTime = 0; /* used for control when to export probe data */
+    Real accumulatedTime = 0.0; /* used for control when to export data */
+    Real probeAccumulatedTime = 0.0; /* used for control when to export probe data */
     /* set some timers for monitoring time consuming of process */
     Timer operationTimer; /* timer for computing operations */
-    Real operationTime = 0; /* record consuming time of operation */
+    Real operationTime = 0.0; /* record consuming time of operation */
     /* time marching */
     for (time->stepCount += 1; (time->currentTime < time->totalTime) && 
             (time->stepCount <= time->totalStep); ++(time->stepCount)) {
@@ -104,16 +104,16 @@ static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Time *
     /*
      * Define the primitive field variables.
      */
-    Real rho = 0; 
-    Real u = 0;
-    Real v = 0;
-    Real w = 0;
-    Real p = 0;
-    Real eT = 0;
+    Real rho = 0.0; 
+    Real u = 0.0;
+    Real v = 0.0;
+    Real w = 0.0;
+    Real p = 0.0;
+    Real eT = 0.0;
     /*
      * Auxiliary variables
      */
-    Real velocity = 0;
+    Real velocity = 0.0;
     Real velocityMax = 1e-38;
     int idx = 0; /* linear array index math variable */
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
@@ -129,7 +129,7 @@ static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Time *
                 v = U[idx+2] / rho;
                 w = U[idx+3] / rho;
                 eT = U[idx+4] / rho;
-                p = (flow->gamma - 1) * rho * (eT - 0.5 * (u * u + v * v + w * w));
+                p = (flow->gamma - 1.0) * rho * (eT - 0.5 * (u * u + v * v + w * w));
 
                 velocity = sqrt(flow->gamma * p / rho) + Max(fabs(u), Max(fabs(v), fabs(w)));
                 if (velocityMax < velocity) {

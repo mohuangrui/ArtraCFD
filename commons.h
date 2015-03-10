@@ -560,7 +560,7 @@ typedef struct {
  */
 typedef struct {
     int totalN; /* total number of domain partitions */
-    const int subN; /* 13 inner partitions for each partition */
+    int subN; /* inner partitions for each partition */
     int kSub[13]; /* inner decomposition control for each partition */
     int kSup[13];
     int jSub[13];

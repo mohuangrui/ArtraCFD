@@ -38,7 +38,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#   plane; X is horizontal from west to east; Y is vertical from south to     -\n");
     fprintf(filePointer, "#   north; Z axis is perpendicular to screen and points from front to back.   -\n");
     fprintf(filePointer, "# - Physical quantities are SI Unit based. Data are float type if no specific -\n");
-    fprintf(filePointer, "#   information. Floats can be exponential notation of lower-case e.          -\n");
+    fprintf(filePointer, "#   information. Floats can be exponential notation of lower-case 'e'.        -\n");
     fprintf(filePointer, "# - In each 'begin end' environment, there should NOT be any empty or comment -\n");
     fprintf(filePointer, "#   lines. Please double check your input!                                    -\n");
     fprintf(filePointer, "#                                                                             -\n");

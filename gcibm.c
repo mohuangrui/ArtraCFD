@@ -40,16 +40,11 @@ static int IdentifyGhostCells(Space *, const Partition *);
 int InitializeDomainGeometry(Space *space)
 {
     /*
-     * Initialize the entire domain to type "2"
+     * Initialize the entire domain to type "2". Operation can be achieved
+     * by a single loop since all data are stored by linear arrays.
      */
-    int idx = 0; /* linear array index math variable */
-    for (int k = 0; k < space->kMax; ++k) {
-        for (int j = 0; j < space->jMax; ++j) {
-            for (int i = 0; i < space->iMax; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
-                space->nodeFlag[idx] = 2;
-            }
-        }
+    for (int idx = 0; idx < space->nMax; ++idx) {
+        space->nodeFlag[idx] = 2;
     }
     return 0;
 }
@@ -63,11 +58,11 @@ static int LocateSolidGeometry(Space *space, const Particle *particle, const Par
 {
     int idx = 0; /* linear array index math variable */
     /* geometry computation */
-    Real distance = 0;
-    Real distX = 0;
-    Real distY = 0;
-    Real distZ = 0;
-    Real radius = 0;
+    Real distance = 0.0;
+    Real distX = 0.0;
+    Real distY = 0.0;
+    Real distZ = 0.0;
+    Real radius = 0.0;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
@@ -137,15 +132,15 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
     int idxF = 0; /* index at Front */
     int idxB = 0; /* index at Back */
     int geoID = 0; /* geometry id */
-    Real distToCenter = 0; /* distance from node to particle center */
-    Real distToSurface = 0; /* distance from node to particle surface */
-    Real distX = 0;
-    Real distY = 0;
-    Real distZ = 0;
-    Real radius = 0;
-    Real normalX = 0; /* x component of normal vector at surface */
-    Real normalY = 0; /* y component of normal vector at surface */
-    Real normalZ = 0; /* z component of normal vector at surface */
+    Real distToCenter = 0.0; /* distance from node to particle center */
+    Real distToSurface = 0.0; /* distance from node to particle surface */
+    Real distX = 0.0;
+    Real distY = 0.0;
+    Real distZ = 0.0;
+    Real radius = 0.0;
+    Real normalX = 0.0; /* x component of normal vector at surface */
+    Real normalY = 0.0; /* y component of normal vector at surface */
+    Real normalZ = 0.0; /* z component of normal vector at surface */
     int imageI = 0; /* node coordinates of the image point of the ghost */
     int imageJ = 0; /* node coordinates of the image point of the ghost */
     int imageK = 0; /* node coordinates of the image point of the ghost */

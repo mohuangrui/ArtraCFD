@@ -44,15 +44,15 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
     const int normalZ = part->normalZ[partID];
     const int normalY = part->normalY[partID];
     const int normalX = part->normalX[partID];
-    Real rho_h = 0; 
-    Real u_h = 0;
-    Real u_hh = 0;
-    Real v_h = 0;
-    Real v_hh = 0;
-    Real w_h = 0;
-    Real w_hh = 0;
-    Real eT_h = 0;
-    Real p_h = 0;
+    Real rho_h = 0.0; 
+    Real u_h = 0.0;
+    Real u_hh = 0.0;
+    Real v_h = 0.0;
+    Real v_hh = 0.0;
+    Real w_h = 0.0;
+    Real w_hh = 0.0;
+    Real eT_h = 0.0;
+    Real p_h = 0.0;
     for (int k = part->kSub[partID]; k < part->kSup[partID]; ++k) {
         for (int j = part->jSub[partID]; j < part->jSup[partID]; ++j) {
             for (int i = part->iSub[partID]; i < part->iSup[partID]; ++i) {
@@ -68,7 +68,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         U[idx+1] = rho * u;
                         U[idx+2] = rho * v;
                         U[idx+3] = rho * w;
-                        U[idx+4] = p / (flow->gamma - 1) + 0.5 * rho * (u * u + v * v + w * w);
+                        U[idx+4] = p / (flow->gamma - 1.0) + 0.5 * rho * (u * u + v * v + w * w);
                         break;
                     case 2: /* outflow */
                         /* Calculate inner neighbour nodes according to normal vector direction. */
@@ -79,15 +79,15 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         v_h = U[idxh+2] / rho_h;
                         w_h = U[idxh+3] / rho_h;
                         eT_h = U[idxh+4] / rho_h;
-                        p_h = (flow->gamma - 1) * rho_h * (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h));
+                        p_h = (flow->gamma - 1.0) * rho_h * (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h));
                         u_hh = U[idxhh+1] / U[idxhh+0];
                         v_hh = U[idxhh+2] / U[idxhh+0];
                         w_hh = U[idxhh+3] / U[idxhh+0];
                         U[idx+0] = rho_h;
-                        U[idx+1] = rho_h * (2 * u_h - u_hh);
-                        U[idx+2] = rho_h * (2 * v_h - v_hh);
-                        U[idx+3] = rho_h * (2 * w_h - w_hh);
-                        U[idx+4] = p_h / (flow->gamma - 1) + 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx+0];
+                        U[idx+1] = rho_h * (2.0 * u_h - u_hh);
+                        U[idx+2] = rho_h * (2.0 * v_h - v_hh);
+                        U[idx+3] = rho_h * (2.0 * w_h - w_hh);
+                        U[idx+4] = p_h / (flow->gamma - 1.0) + 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx+0];
                         break;
                     case 3: /* slip wall, the method of image, copy scalar, flip vector */
                         idxh = (((k - normalZ) * space->jMax + (j - normalY)) * space->iMax + i - normalX) * 5;
@@ -96,13 +96,13 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         v_h = U[idxh+2] / rho_h;
                         w_h = U[idxh+3] / rho_h;
                         eT_h = U[idxh+4] / rho_h;
-                        p_h = (flow->gamma - 1) * rho_h * (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h));
+                        p_h = (flow->gamma - 1.0) * rho_h * (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h));
                         U[idx+0] = rho_h;
                         U[idx+1] = (!normalX) * rho_h * u_h;
                         U[idx+2] = (!normalY) * rho_h * v_h;
                         U[idx+3] = (!normalZ) * rho_h * w_h;
                         if (0 > T) { /* adiabatic, dT/dn = 0 */
-                            U[idx+4] = p_h / (flow->gamma - 1) + 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx+0];
+                            U[idx+4] = p_h / (flow->gamma - 1.0) + 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx+0];
                         } else { /* constant wall temperature, T = Tw */
                             U[idx+4] = rho_h * flow->cv * T + 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx+0];
                         }
@@ -114,13 +114,13 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         v_h = U[idxh+2] / rho_h;
                         w_h = U[idxh+3] / rho_h;
                         eT_h = U[idxh+4] / rho_h;
-                        p_h = (flow->gamma - 1) * rho_h * (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h));
+                        p_h = (flow->gamma - 1.0) * rho_h * (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h));
                         U[idx+0] = rho_h;
-                        U[idx+1] = 0;
-                        U[idx+2] = 0;
-                        U[idx+3] = 0;
+                        U[idx+1] = 0.0;
+                        U[idx+2] = 0.0;
+                        U[idx+3] = 0.0;
                         if (0 > T) { /* adiabatic, dT/dn = 0 */
-                            U[idx+4] = p_h / (flow->gamma - 1);
+                            U[idx+4] = p_h / (flow->gamma - 1.0);
                         } else { /* constant wall temperature, T = Tw */
                             U[idx+4] = rho_h * flow->cv * T;
                         }
@@ -161,15 +161,15 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                             v_h = U[idxh+2] / rho_h;
                             w_h = U[idxh+3] / rho_h;
                             eT_h = U[idxh+4] / rho_h;
-                            p_h = (flow->gamma - 1) * rho_h * (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h));
+                            p_h = (flow->gamma - 1.0) * rho_h * (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h));
                             u_hh = U[idxhh+1] / U[idxhh+0];
                             v_hh = U[idxhh+2] / U[idxhh+0];
                             w_hh = U[idxhh+3] / U[idxhh+0];
                             U[idx+0] = rho_h;
-                            U[idx+1] = rho_h * (2 * u_h - u_hh);
-                            U[idx+2] = rho_h * (2 * v_h - v_hh);
-                            U[idx+3] = rho_h * (2 * w_h - w_hh);
-                            U[idx+4] = p_h / (flow->gamma - 1) + 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx+0];
+                            U[idx+1] = rho_h * (2.0 * u_h - u_hh);
+                            U[idx+2] = rho_h * (2.0 * v_h - v_hh);
+                            U[idx+3] = rho_h * (2.0 * w_h - w_hh);
+                            U[idx+4] = p_h / (flow->gamma - 1.0) + 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx+0];
                             break;
                     }
                 }

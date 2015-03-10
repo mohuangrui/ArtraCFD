@@ -184,7 +184,7 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
     int idx = 0; /* linear array index math variable */
     int nodeCount[3] = {0, 0, 0}; /* i j k node number in each part */
     int blankID = 0; /* Ensight geometry iblank entry */
-    EnsightReal data = 0; /* the ensight data format */
+    EnsightReal data = 0.0; /* the ensight data format */
     for (int partCount = 0, partNum = 1; partCount < part->subN; ++partCount, ++partNum) {
         strncpy(enSet->stringData, "part", sizeof(EnsightString));
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
@@ -265,7 +265,7 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
 {
     FILE *filePointer = NULL;
     int idx = 0; /* linear array index math variable */
-    EnsightReal data = 0; /* the ensight data format */
+    EnsightReal data = 0.0; /* the ensight data format */
     /*
      * Write the scalar field (Binary Form)
      * There are six primitive variables need to be written:
@@ -274,11 +274,11 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
     /*
      * Define the primitive field variables.
      */
-    Real rho = 0; 
-    Real u = 0;
-    Real v = 0;
-    Real w = 0;
-    Real eT = 0;
+    Real rho = 0.0; 
+    Real u = 0.0;
+    Real v = 0.0;
+    Real w = 0.0;
+    Real eT = 0.0;
     const char nameSuffix[6][5] = {"rho", "u", "v", "w", "p", "T"};
     for (int dim = 0; dim < 6; ++dim) {
         snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
@@ -320,7 +320,7 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
                                 v = U[idx+2] / rho;
                                 w = U[idx+3] / rho;
                                 eT = U[idx+4] / rho;
-                                data = (flow->gamma - 1) * rho * (eT - 0.5 * (u * u + v * v + w * w));
+                                data = (flow->gamma - 1.0) * rho * (eT - 0.5 * (u * u + v * v + w * w));
                                 break;
                             case 5: /* T */
                                 u = U[idx+1] / rho;

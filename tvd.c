@@ -443,8 +443,8 @@ static int ComputeEigenvaluesAndEigenvectorSpaceL(
         const Real w = Uo[3];
         const Real c = Uo[5];
         const Real q = 0.5 * (u * u + v * v + w * w);
-        const Real b = (flow->gamma - 1) / (2 * c * c);
-        const Real d = (1 / (2 * c)); 
+        const Real b = (flow->gamma - 1.0) / (2.0 * c * c);
+        const Real d = (1.0 / (2.0 * c)); 
         if (NULL != lambdaz) {
             lambdaz[0] = w - c; lambdaz[1] = w; lambdaz[2] = w; lambdaz[3] = w; lambdaz[4] = w + c;
         }
@@ -463,8 +463,8 @@ static int ComputeEigenvaluesAndEigenvectorSpaceL(
         const Real w = Uo[3];
         const Real c = Uo[5];
         const Real q = 0.5 * (u * u + v * v + w * w);
-        const Real b = (flow->gamma - 1) / (2 * c * c);
-        const Real d = (1 / (2 * c)); 
+        const Real b = (flow->gamma - 1.0) / (2.0 * c * c);
+        const Real d = (1.0 / (2.0 * c)); 
         if (NULL != lambday) {
             lambday[0] = v - c; lambday[1] = v; lambday[2] = v; lambday[3] = v; lambday[4] = v + c;
         }
@@ -483,8 +483,8 @@ static int ComputeEigenvaluesAndEigenvectorSpaceL(
         const Real w = Uo[3];
         const Real c = Uo[5];
         const Real q = 0.5 * (u * u + v * v + w * w);
-        const Real b = (flow->gamma - 1) / (2 * c * c);
-        const Real d = (1 / (2 * c)); 
+        const Real b = (flow->gamma - 1.0) / (2.0 * c * c);
+        const Real d = (1.0 / (2.0 * c)); 
         if (NULL != lambdax) {
             lambdax[0] = u - c; lambdax[1] = u; lambdax[2] = u; lambdax[3] = u; lambdax[4] = u + c;
         }
@@ -588,7 +588,7 @@ static int CalculateRoeAverageUo(
     Uo[2] = (v + D * v_h) / (1 + D); /* v average */
     Uo[3] = (w + D * w_h) / (1 + D); /* w average */
     Uo[4] = (hT + D * hT_h) / (1 + D); /* hT average */
-    Uo[5] = sqrt((flow->gamma - 1) * (Uo[4] - 0.5 * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]))); /* the speed of sound */
+    Uo[5] = sqrt((flow->gamma - 1.0) * (Uo[4] - 0.5 * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]))); /* the speed of sound */
     return 0;
 }
 static int ComputeNonViscousFlux(
@@ -602,7 +602,7 @@ static int ComputeNonViscousFlux(
     const Real v = U[idx+2] / rho;
     const Real w = U[idx+3] / rho;
     const Real eT = U[idx+4] / rho;
-    const Real p = (flow->gamma - 1) * rho * (eT - 0.5 * (u * u + v * v + w * w));
+    const Real p = (flow->gamma - 1.0) * rho * (eT - 0.5 * (u * u + v * v + w * w));
 
     if (NULL != Fz) {
         Fz[0] = rho * w;
@@ -740,18 +740,18 @@ static int ComputeViscousFlux(
         const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    Real rho = 0; 
-    Real rho_h = 0; 
-    Real u = 0;
-    Real u_h = 0;
-    Real v = 0;
-    Real v_h = 0;
-    Real w = 0;
-    Real w_h = 0;
-    Real eT = 0;
-    Real eT_h = 0;
-    Real T = 0;
-    Real T_h = 0;
+    Real rho = 0.0; 
+    Real rho_h = 0.0; 
+    Real u = 0.0;
+    Real u_h = 0.0;
+    Real v = 0.0;
+    Real v_h = 0.0;
+    Real w = 0.0;
+    Real w_h = 0.0;
+    Real eT = 0.0;
+    Real eT_h = 0.0;
+    Real T = 0.0;
+    Real T_h = 0.0;
     const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
     const int idxW = ((k * space->jMax + j) * space->iMax + i - 1) * 5;
     const int idxE = ((k * space->jMax + j) * space->iMax + i + 1) * 5;
@@ -837,21 +837,21 @@ static int ComputeViscousFlux(
         Gz[0] = 0;
         Gz[1] = mu * (dw_dx + du_dz);
         Gz[2] = mu * (dw_dy + dv_dz);
-        Gz[3] = mu * (2 * dw_dz - (2/3) * divV);
+        Gz[3] = mu * (2.0 * dw_dz - (2.0/3.0) * divV);
         Gz[4] = heatK * dT_dz + 
             u * Gz[1] + v * Gz[2] + w * Gz[3];
     }
     if (NULL != Gy) {
         Gy[0] = 0;
         Gy[1] = mu * (dv_dx + du_dy);
-        Gy[2] = mu * (2 * dv_dy - (2/3) * divV);
+        Gy[2] = mu * (2.0 * dv_dy - (2.0/3.0) * divV);
         Gy[3] = mu * (dv_dz + dw_dy);
         Gy[4] = heatK * dT_dy + 
             u * Gy[1] + v * Gy[2] + w * Gy[3];
     }
     if (NULL != Gx) {
         Gx[0] = 0;
-        Gx[1] = mu * (2 * du_dx - (2/3) * divV);
+        Gx[1] = mu * (2.0 * du_dx - (2.0/3.0) * divV);
         Gx[2] = mu * (du_dy + dv_dx);
         Gx[3] = mu * (du_dz + dw_dx);
         Gx[4] = heatK * dT_dx + 

@@ -92,17 +92,17 @@ static int InitializeCFDParameters(Space *space, Time *time, Flow *flow)
     space->yMin = space->yMin / flow->refLength;
     space->zMin = space->zMin / flow->refLength;
     if (0 < space->dx) {
-        space->ddx = 1 / space->dx;
+        space->ddx = 1.0 / space->dx;
     } else { /* zero mesh size has zero reciprocal */
         space->ddx = 0;
     }
     if (0 < space->dy) {
-        space->ddy = 1 / space->dy;
+        space->ddy = 1.0 / space->dy;
     } else { /* zero mesh size has zero reciprocal */
         space->ddy = 0;
     }
     if (0 < space->dz) {
-        space->ddz = 1 / space->dz;
+        space->ddz = 1.0 / space->dz;
     } else { /* zero mesh size has zero reciprocal */
         space->ddz = 0;
     }
@@ -123,8 +123,8 @@ static int InitializeCFDParameters(Space *space, Time *time, Flow *flow)
      * for both dimensional and nondimensional N-S equations, since
      * dimensional forms can be seen as normalized by reference 1.
      */
-    flow->gasR = 1 / (flow->gamma * flow->refMa * flow->refMa);
-    flow->cv = flow->gasR / (flow->gamma - 1);
+    flow->gasR = 1.0 / (flow->gamma * flow->refMa * flow->refMa);
+    flow->cv = flow->gasR / (flow->gamma - 1.0);
     return 0;
 }
 /* a good practice: end file with a newline */

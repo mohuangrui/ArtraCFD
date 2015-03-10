@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
         .probePos = {{0.0}}};
     Partition thePart = { /* domain partition control */
         .totalN = 1,
-        .subN = 13,
+        .subN = 0,
         .kSub = {0},
         .kSup = {0},
         .jSub = {0},
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
         .normalX = {0},
         .typeBC = {0},
         .valueBC = {{0.0}},
-        .name = {" "},
+        .name = {{'\0'}},
         .typeIC = {0},
         .valueIC = {{0.0}}};
     Control theControl = { /* program overall control */
