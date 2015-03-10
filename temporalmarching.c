@@ -13,6 +13,7 @@
 #include "rungekutta.h"
 #include "ensight.h"
 #include "timer.h"
+#include "flowprobe.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
@@ -28,16 +29,17 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
         Time *time, const Partition *part, const Flow *flow)
 {
     ShowInformation("Time marching...");
-    Real exportTimeInterval = (time->totalTime - time->currentTime);
     /* check whether current time is equal to or larger than the total time */
-    if (0 >= exportTimeInterval) {
+    if (0 >= (time->totalTime - time->currentTime)) {
         ShowInformation("  current time is equal to or larger than total time...");
         ShowInformation("Session End");
         return 1;
     }
     /* obtain the desired export time interval */
-    exportTimeInterval = exportTimeInterval / time->totalOutputTimes;
+    const Real exportTimeInterval = (time->totalTime - time->currentTime) / time->totalOutputTimes;
+    const Real probeExportInterval = (time->totalTime - time->currentTime) / flow->probe[11];
     Real accumulatedTime = 0; /* used for control when to export data */
+    Real probeAccumulatedTime = 0; /* used for control when to export probe data */
     /* set some timers for monitoring time consuming of process */
     Timer operationTimer; /* timer for computing operations */
     Real operationTime = 0; /* record consuming time of operation */
@@ -72,6 +74,7 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
          * is the total time, then also write data out.
          */
         accumulatedTime = accumulatedTime + time->dt;
+        probeAccumulatedTime = probeAccumulatedTime + time->dt;
         if ((accumulatedTime >=  exportTimeInterval) || 
                 (0 == time->currentTime - time->totalTime) ||
                 (time->stepCount == time->totalStep)) {
@@ -81,6 +84,12 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
             operationTime = TockTime(&operationTimer);
             accumulatedTime = 0; /* reset accumulated time */
             fprintf(stdout, "  data export time consuming: %.6gs\n", operationTime);
+        }
+        if ((probeAccumulatedTime >=  probeExportInterval) || 
+                (0 == time->currentTime - time->totalTime) ||
+                (time->stepCount == time->totalStep)) {
+            WriteComputedDataAtProbes(time->stepCount, field->U, space, flow);
+            probeAccumulatedTime = 0; /* reset probe accumulated time */
         }
         /* fluid solid coupling */
         /* particle dynamics */

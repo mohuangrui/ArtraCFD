@@ -246,6 +246,26 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
             sscanf(currentLine, formatI, part->valueIC[part->typeIC[0]] + 14); 
             continue;
         }
+        if (0 == strncmp(currentLine, "probe control begin", sizeof currentLine)) {
+            /* optional entry do not increase entry count */
+            fgets(currentLine, sizeof currentLine, filePointer);
+            /* output time control of probes */
+            sscanf(currentLine, "%d", &(flow->probe[11])); 
+            continue;
+        }
+        if (0 == strncmp(currentLine, "probe begin", sizeof currentLine)) {
+            /* optional entry do not increase entry count */
+            ++flow->probe[0]; /* probe count and pointer */
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatIII, flow->probePos[flow->probe[0]] + 0, 
+                    flow->probePos[flow->probe[0]] + 1, flow->probePos[flow->probe[0]] + 2); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatIII, flow->probePos[flow->probe[0]] + 3, 
+                    flow->probePos[flow->probe[0]] + 4, flow->probePos[flow->probe[0]] + 5); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, "%d", &(flow->probe[flow->probe[0]])); 
+            continue;
+        }
     }
     fclose(filePointer); /* close current opened file */
     /*
@@ -517,6 +537,20 @@ static int WriteVerifyData(const Space *space, const Time *time, const Flow *flo
     for (int n = 1; n <= part->typeIC[0]; ++n) {
         fprintf(filePointer, "#\n");
         WriteRegionalInitializerData(&filePointer, part, n);
+    }
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#                    >> Field Data Probes <<\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "# total number of times of exporting probe data: %d\n", flow->probe[11]);
+    for (int n = 1; n <= flow->probe[0]; ++n) {
+        fprintf(filePointer, "#probe %d\n", n);
+        fprintf(filePointer, "x, y, z of the first end point: %.6g, %.6g, %.6g\n", 
+                flow->probePos[n][0], flow->probePos[n][1], flow->probePos[n][2]);
+        fprintf(filePointer, "x, y, z of the second end point: %.6g, %.6g, %.6g\n", 
+                flow->probePos[n][3], flow->probePos[n][4], flow->probePos[n][5]);
+        fprintf(filePointer, "# number of points on line:\n", flow->probe[n]);
     }
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");

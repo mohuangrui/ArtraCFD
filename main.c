@@ -80,7 +80,9 @@ int main(int argc, char *argv[])
         .refLength = 0.0,
         .refDensity = 0.0,
         .refVelocity = 0.0,
-        .refTemperature = 0.0};
+        .refTemperature = 0.0,
+        .probe = {0},
+        .probePos = {{0.0}}};
     Partition thePart = { /* domain partition control */
         .totalN = 1,
         .subN = 13,
