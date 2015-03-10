@@ -183,6 +183,9 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
         }
         if (0 == strncmp(currentLine, "plane initialization begin", sizeof currentLine)) {
             /* optional entry do not increase entry count */
+            if (10 < part->typeIC[0]) { /* no admitting more than 10 entries */
+                continue;
+            }
             ++part->typeIC[0]; /* regional initializer count and pointer */
             part->typeIC[part->typeIC[0]] = 1; /* IC type id */
             fgets(currentLine, sizeof currentLine, filePointer);
@@ -205,6 +208,9 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
         }
         if (0 == strncmp(currentLine, "sphere initialization begin", sizeof currentLine)) {
             /* optional entry do not increase entry count */
+            if (10 < part->typeIC[0]) { /* no admitting more than 10 entries */
+                continue;
+            }
             ++part->typeIC[0]; /* regional initializer count and pointer */
             part->typeIC[part->typeIC[0]] = 2; /* IC type id */
             fgets(currentLine, sizeof currentLine, filePointer);
@@ -225,6 +231,9 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
             continue;
         }
         if (0 == strncmp(currentLine, "box initialization begin", sizeof currentLine)) {
+            if (10 < part->typeIC[0]) { /* no admitting more than 10 entries */
+                continue;
+            }
             /* optional entry do not increase entry count */
             ++part->typeIC[0]; /* regional initializer count and pointer */
             part->typeIC[part->typeIC[0]] = 3; /* IC type id */
@@ -255,6 +264,9 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
         }
         if (0 == strncmp(currentLine, "probe begin", sizeof currentLine)) {
             /* optional entry do not increase entry count */
+            if (10 < flow->probe[0]) { /* no admitting more than 10 entries */
+                continue;
+            }
             ++flow->probe[0]; /* probe count and pointer */
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatIII, flow->probePos[flow->probe[0]] + 0, 

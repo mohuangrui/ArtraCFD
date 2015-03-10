@@ -187,7 +187,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#                    >> Field Data Probes <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#Probes originally are all in line type, but can be changed to a single point\n");
-    fprintf(filePointer, "#or any allowed number of points by adjusting the number of points on line.\n");
+    fprintf(filePointer, "#or any allowed number of points by adjusting resolution (points on line).\n");
     fprintf(filePointer, "#NOTICE: the number of probe specify section should not exceed 10.\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#probe control begin\n");

@@ -8,6 +8,7 @@
  * Required Header Files
  ****************************************************************************/
 #include <stdio.h> /* standard library for input and output */
+#include <stdlib.h> /* support for abs operation */
 #include "commons.h"
 /****************************************************************************
  * Function definitions
@@ -39,14 +40,24 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
         const int jB = (flow->probePos[n][4] - space->yMin) * space->ddy + space->ng;
         const int kB = (flow->probePos[n][5] - space->zMin) * space->ddz + space->ng;
         int stepN = flow->probe[n] - 1;
-        if (1 > stepN) {
+        if (1 > stepN) { /* set to lowest resolution if happens */
             stepN = 1;
         }
-        const int iStep = (iB - iA) / stepN;
-        const int jStep = (jB - jA) / stepN;
-        const int kStep = (kB - kA) / stepN;
+        if ((abs(iB - iA) < stepN) && (abs(jB - jA) < stepN) && (abs(kB - kA) < stepN)) {
+            /* set to highest resolution allowed */
+            stepN = abs(iB - iA);
+            if (abs(jB - jA) > stepN) {
+                stepN = abs(jB - jA);
+            }
+            if (abs(kB - kA) > stepN) {
+                stepN = abs(kB - kA);
+            }
+        }
+        const Real iStep = (Real)(iB - iA) / (Real)stepN;
+        const Real jStep = (Real)(jB - jA) / (Real)stepN;
+        const Real kStep = (Real)(kB - kA) / (Real)stepN;
         for (int m = 0; m < flow->probe[n]; ++m) {
-            idx = (((kA + m * kStep) * space->jMax + (jA + m * jStep)) * space->iMax + (iA + m * iStep)) * 5;
+            idx = (((kA + (int)(m * kStep)) * space->jMax + (jA + (int)(m * jStep))) * space->iMax + (iA + (int)(m * iStep))) * 5;
             if ((space->nMax * 5 <= idx) || (0 > idx)) {
                 continue;
             }
