@@ -550,7 +550,7 @@ static int WriteVerifyData(const Space *space, const Time *time, const Flow *flo
                 flow->probePos[n][0], flow->probePos[n][1], flow->probePos[n][2]);
         fprintf(filePointer, "x, y, z of the second end point: %.6g, %.6g, %.6g\n", 
                 flow->probePos[n][3], flow->probePos[n][4], flow->probePos[n][5]);
-        fprintf(filePointer, "number of points on line:\n", flow->probe[n]);
+        fprintf(filePointer, "number of points on line: %d\n", flow->probe[n]);
     }
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
