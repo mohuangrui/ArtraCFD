@@ -108,6 +108,9 @@ static int InitializeCFDParameters(Space *space, Time *time, Flow *flow)
     }
     /* time */
     time->totalTime = time->totalTime * flow->refVelocity / flow->refLength;
+    if ((0 > time->totalStep)) {
+        time->totalStep = 9000000;
+    }
     /* fluid and flow */
     flow->gamma = 1.4;
     flow->gasR = 8.314462175;

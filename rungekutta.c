@@ -44,8 +44,8 @@ int RungeKutta(Field *field, Space *space, Particle *particle,
      * need to be introduced since all calculations are based on a single space
      * and do not require neighbours.
      */
-    const Real coeA = (3/4);
-    const Real coeB = (1/4);
+    const Real coeA = 0.75;
+    const Real coeB = 1 - coeA;
     for (int idx = 0; idx < (space->nMax * 5); ++idx) {
         field->U[idx] = coeA * field->Un[idx] + coeB * field->U[idx];
     }
@@ -56,8 +56,8 @@ int RungeKutta(Field *field, Space *space, Particle *particle,
     /*
      * Calculate field data at n+1
      */
-    const Real coeAA = (1/3);
-    const Real coeBB = (2/3);
+    const Real coeAA = 0.33333333333333333;
+    const Real coeBB = 1 - coeAA;
     for (int idx = 0; idx < (space->nMax * 5); ++idx) {
         field->U[idx] = coeAA * field->Un[idx] + coeBB * field->U[idx];
     }
