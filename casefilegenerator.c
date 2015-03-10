@@ -193,6 +193,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#probe control begin\n");
     fprintf(filePointer, "#1                 # total number of times of exporting probe data (integer)\n");
     fprintf(filePointer, "#probe control end\n");
+    fprintf(filePointer, "#\n");
     fprintf(filePointer, "#probe begin\n");
     fprintf(filePointer, "#-1, 0, 0          # x, y, z of the first end point of line\n");
     fprintf(filePointer, "#1, 0, 0           # x, y, z of the second end point of line\n");
