@@ -553,7 +553,7 @@ typedef struct {
     Real refVelocity;  /*characteristic velocity */
     Real refTemperature; /* characteristic temperature */
     int probe[12]; /* store various information of probes */
-    Real probePos[10][6]; /* store position information of probes */
+    Real probePos[11][6]; /* store position information of probes */
 }Flow;
 /*
  * Domain partition structure
