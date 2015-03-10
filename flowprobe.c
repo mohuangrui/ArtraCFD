@@ -53,9 +53,9 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
                 stepN = abs(kB - kA);
             }
         }
-        const Real iStep = (Real)(iB - iA) / (Real)stepN;
-        const Real jStep = (Real)(jB - jA) / (Real)stepN;
-        const Real kStep = (Real)(kB - kA) / (Real)stepN;
+        const Real iStep = (Real)(iB - iA) / (Real)(stepN);
+        const Real jStep = (Real)(jB - jA) / (Real)(stepN);
+        const Real kStep = (Real)(kB - kA) / (Real)(stepN);
         for (int m = 0; m < flow->probe[n]; ++m) {
             idx = (((kA + (int)(m * kStep)) * space->jMax + (jA + (int)(m * jStep))) * space->iMax + (iA + (int)(m * iStep))) * 5;
             if ((space->nMax * 5 <= idx) || (0 > idx)) {
