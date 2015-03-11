@@ -101,7 +101,7 @@ CC := gcc
 ifeq ($(CC),gcc)
 CFLAGS += -Wall -Wextra -O2 -std=c99 -pedantic
 else
-CFLAGS += -Wall -Wextra -fast
+CFLAGS += -Wall -Wextra -fast -std=c99 -pedantic
 endif
 
 #
