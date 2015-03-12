@@ -20,7 +20,7 @@ static int FirstRunInitializer(Real *U, const Space *, const Particle *,
         const Partition *, const Flow *);
 static int ApplyRegionalInitializer(const int, Real *U, const Space *, 
         const Partition *, const Flow *);
-static int RestartInitializer(Real *U, const Space *, Time *, 
+static int RestartInitializer(Real *U, const Space *, const Particle *, Time *, 
         const Partition *, const Flow *);
 /****************************************************************************
  * Function definitions
@@ -39,7 +39,7 @@ int InitializeFlowField(Real *U, const Space *space, const Particle *particle,
         InitializeEnsightTransientCaseFile(time);
         WriteComputedDataEnsight(U, space, particle, time, part, flow);
     } else {
-        RestartInitializer(U, space, time, part, flow);
+        RestartInitializer(U, space, particle, time, part, flow);
     }
     ShowInformation("Session End");
     return 0;
@@ -192,14 +192,18 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
  * If this is a restart run, then initialize flow field by reading field data
  * from restart files.
  */
-static int RestartInitializer(Real *U, const Space *space, Time *time,
-        const Partition *part, const Flow *flow)
+static int RestartInitializer(Real *U, const Space *space, const Particle *particle, 
+        Time *time, const Partition *part, const Flow *flow)
 {
     ShowInformation("  Restart run initializing...");
     /*
      * Load data from Ensight restart files.
      */
     LoadComputedDataEnsight(U, space, time, part, flow);
+    /*
+     * Boundary conditions and treatments to obtain an entire initialized flow field
+     */
+    BoundaryCondtionsAndTreatments(U, space, particle, part, flow);
     return 0;
 }
 /* a good practice: end file with a newline */

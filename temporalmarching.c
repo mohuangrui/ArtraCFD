@@ -50,8 +50,6 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
          * Calculate dt for current time step
          */
         time->dt = ComputeTimeStepByCFL(field->U, space, time, part, flow);
-        fprintf(stdout, "\nStep=%d; Time=%.6g; Remain=%.6g; dt=%.6g\n", time->stepCount, 
-                time->currentTime, time->totalTime - time->currentTime, time->dt);
         /*
          * Update current time stamp, if current time exceeds the total time, 
          * recompute the value of dt to make current time equal total time.
@@ -61,10 +59,15 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
             time->dt = time->totalTime - (time->currentTime - time->dt);
             time->currentTime = time->totalTime;
         }
+        fprintf(stdout, "\nStep=%d; Time=%.6g; Remain=%.6g; dt=%.6g; ", time->stepCount, 
+                time->currentTime, time->totalTime - time->currentTime, time->dt);
         /*
          * Compute field data in current time step
          */
+        TickTime(&operationTimer);
         RungeKutta(field, space, particle, time, part, flow);
+        operationTime = TockTime(&operationTimer);
+        fprintf(stdout, "elapsed: %.6gs\n", operationTime);
         /*
          * Export computed data. Use accumulatedTime as a flag, if
          * accumulatedTime increases to anticipated export interval,
