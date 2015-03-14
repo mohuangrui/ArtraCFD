@@ -71,7 +71,7 @@ int WriteComputedDataEnsight(const Real *U, const Space *space,
         const Particle *particle, const Time *time, const Partition *part,
         const Flow *flow)
 {
-    ShowInformation("  Writing field data to file...");
+    ShowInformation("  writing field data to file...");
     EnsightSet enSet = { /* initialize Ensight environment */
         .baseName = "ensight", /* data file base name */
         .fileName = {'\0'}, /* data file name */

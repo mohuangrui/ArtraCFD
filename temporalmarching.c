@@ -59,7 +59,7 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
             time->dt = time->totalTime - (time->currentTime - time->dt);
             time->currentTime = time->totalTime;
         }
-        fprintf(stdout, "\nStep=%d; Time=%.6g; Remain=%.6g; dt=%.6g; ", time->stepCount, 
+        fprintf(stdout, "\nstep=%d; time=%.6g; remain=%.6g; dt=%.6g; ", time->stepCount, 
                 time->currentTime, time->totalTime - time->currentTime, time->dt);
         /*
          * Compute field data in current time step
