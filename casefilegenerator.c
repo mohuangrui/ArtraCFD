@@ -74,7 +74,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "fluid begin\n");
     fprintf(filePointer, "0.71               # Prandtl number\n");
     fprintf(filePointer, "1                  # modify coefficient of dynamic viscosity (0 if inviscid)\n");
-    fprintf(filePointer, "0                  # Harten's numerical dissipation coefficient ([0, 0.5])\n");
+    fprintf(filePointer, "0.125              # Harten's numerical dissipation coefficient ([0, 0.5])\n");
     fprintf(filePointer, "fluid end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
