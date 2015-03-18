@@ -397,7 +397,7 @@ static int WriteParticleFile(EnsightSet *enSet, const Particle *particle)
         FatalError("faild to write particle data file: ensight.particle***...");
     }
     fprintf(filePointer, "N: %d\n", particle->totalN); /* number of objects */
-    Real *ptk = particle->headAddress;
+    const Real *ptk = particle->headAddress;
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
         ptk = ptk + geoCount * particle->entryN; /* point to storage of current particle */
         fprintf(filePointer, "%.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g\n",
