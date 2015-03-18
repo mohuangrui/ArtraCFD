@@ -100,9 +100,9 @@ static int ReadGeometryData(FILE **filePointerPointer, Particle *particle)
     if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
         strncpy(formatXI, "%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g", sizeof formatXI); /* float type */
     }
-    Real *ptk = particle->headAddress;
+    Real *ptk = NULL;
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        ptk = ptk + geoCount * particle->entryN; /* point to storage of current particle */
+        ptk = particle->headAddress + geoCount * particle->entryN; /* point to storage of current particle */
         fgets(currentLine, sizeof currentLine, filePointer);
         sscanf(currentLine, formatXI, ptk + 0, ptk + 1, ptk + 2, ptk + 3, ptk + 4, ptk + 5,
                 ptk + 6, ptk + 7, ptk + 8, ptk + 9, ptk + 10);

@@ -101,10 +101,10 @@ static int LocateSolidGeometry(Space *space, const Particle *particle, const Par
     Real distY = 0.0;
     Real distZ = 0.0;
     Real radius = 0.0;
-    const Real *ptk = particle->headAddress;
+    const Real *ptk = NULL;
     const int offset = space->nodeFlagOffset;
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        ptk = ptk + geoCount * particle->entryN; /* point to storage of current particle */
+        ptk = particle->headAddress + geoCount * particle->entryN; /* point to storage of current particle */
         const int iCenter = (int)((ptk[0] - space->xMin) * space->ddx) + space->ng;
         const int jCenter = (int)((ptk[1] - space->yMin) * space->ddy) + space->ng;
         const int kCenter = (int)((ptk[2] - space->zMin) * space->ddz) + space->ng;
@@ -229,24 +229,23 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
     Real normalX = 0.0; /* x component of normal vector at surface */
     Real normalY = 0.0; /* y component of normal vector at surface */
     Real normalZ = 0.0; /* z component of normal vector at surface */
-    int imageI = 0; /* node coordinates of the image point of the ghost */
-    int imageJ = 0; /* node coordinates of the image point of the ghost */
-    int imageK = 0; /* node coordinates of the image point of the ghost */
+    int imageI = 0; /* node coordinates of the image point */
+    int imageJ = 0; /* node coordinates of the image point */
+    int imageK = 0; /* node coordinates of the image point */
+    const Real *ptk = NULL;
+    const int offset = space->nodeFlagOffset;
+    /*
+     * Processing ghost nodes
+     */
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
-                if (10 > space->nodeFlag[idx]) { /* it's not a ghost */
+                if (offset > space->nodeFlag[idx]) { /* it's not a ghost */
                     continue;
                 }
-                idxW = (k * space->jMax + j) * space->iMax + i - 1;
-                idxE = (k * space->jMax + j) * space->iMax + i + 1;
-                idxS = (k * space->jMax + j - 1) * space->iMax + i;
-                idxN = (k * space->jMax + j + 1) * space->iMax + i;
-                idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
-                idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
-
-                geoID = space->nodeFlag[idx] - 10; /* extract geoID from inner ghost node flag */
+                geoID = space->nodeFlag[idx] - offset; /* extract geometry number from inner ghost node flag */
+                ptk = particle->headAddress + geoID * particle->entryN; /* point to storage of current particle */
                 radius = particle->r[geoID];
                 distX = space->xMin + (i - space->ng) * space->dx - particle->x[geoID];
                 distY = space->yMin + (j - space->ng) * space->dy - particle->y[geoID];
