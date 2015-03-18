@@ -34,7 +34,6 @@ int Preprocess(Field *field, Space *space, Particle *particle, Time *time,
     DomainPartition(part, space);
     ProgramMemoryAllocate(field, space);
     LoadGeometryData(particle, time);
-    InitializeDomainGeometry(space);
     ComputeDomainGeometryGCIBM(space, particle, part);
     return 0;
 }

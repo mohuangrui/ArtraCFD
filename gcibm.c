@@ -15,8 +15,10 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
+static int InitializeDomainGeometry(Space *);
 static int LocateSolidGeometry(Space *, const Particle *, const Partition *);
 static int IdentifyGhostNodes(Space *, const Partition *);
+static int IdentifyFluidNodeWithGhostNeighbours(Space *, const Partition *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -40,11 +42,15 @@ static int IdentifyGhostNodes(Space *, const Partition *);
  * The rational is that don't store every information for each ghost cell, but
  * only store necessary information. When need it, access and calculate it.
  */
-/*
- * This function initializes the geometry for the entire domain.
- * It's separated because only need to be executed once as initialization.
- */
-int InitializeDomainGeometry(Space *space)
+int ComputeDomainGeometryGCIBM(Space *space, Particle *particle, const Partition *part)
+{
+    InitializeDomainGeometry(space);
+    LocateSolidGeometry(space, particle, part);
+    IdentifyGhostNodes(space, part);
+    IdentifyFluidNodeWithGhostNeighbours(space, part);
+    return 0;
+}
+static int InitializeDomainGeometry(Space *space)
 {
     /*
      * Initialize the entire domain to type "2". Operation can be achieved
@@ -55,13 +61,13 @@ int InitializeDomainGeometry(Space *space)
     }
     return 0;
 }
-int ComputeDomainGeometryGCIBM(Space *space, Particle *particle, const Partition *part)
-{
-    LocateSolidGeometry(space, particle, part);
-    IdentifyGhostNodes(space, part);
-    IdentifyFluidNodeWithGhostNeighbours(space, part);
-    return 0;
-}
+/*
+ * When locate solid nodes, there are two approaches available. One is search
+ * over each node and verify each node regarding to all the particles; another
+ * is search each particle and find all the nodes inside current particle.
+ * The second method is adopted here for performance reason, although it's much
+ * more complicated than the first one.
+ */
 static int LocateSolidGeometry(Space *space, const Particle *particle, const Partition *part)
 {
     int idx = 0; /* linear array index math variable */
@@ -71,13 +77,15 @@ static int LocateSolidGeometry(Space *space, const Particle *particle, const Par
     Real distY = 0.0;
     Real distZ = 0.0;
     Real radius = 0.0;
+    Real *ptk = particle->headAddress;
+    for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
+        ptk = ptk + geoCount * particle->entryN; /* point to storage of current particle */
+
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
                 space->nodeFlag[idx] = 0; /* reset to fluid */
-                for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-                    radius = particle->r[geoCount];
                     distX = space->xMin + (i - space->ng) * space->dx - particle->x[geoCount];
                     distY = space->yMin + (j - space->ng) * space->dy - particle->y[geoCount];
                     distZ = space->zMin + (k - space->ng) * space->dz - particle->z[geoCount];
