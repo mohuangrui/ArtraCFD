@@ -184,6 +184,7 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
     int idx = 0; /* linear array index math variable */
     int nodeCount[3] = {0, 0, 0}; /* i j k node number in each part */
     int blankID = 0; /* Ensight geometry iblank entry */
+    const int offset = space->nodeFlagOffset;
     EnsightReal data = 0.0; /* the ensight data format */
     for (int partCount = 0, partNum = 1; partCount < part->subN; ++partCount, ++partNum) {
         strncpy(enSet->stringData, "part", sizeof(EnsightString));
@@ -237,7 +238,7 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
             for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                 for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
                     idx = (k * space->jMax + j) * space->iMax + i;
-                    if (-10 >= space->nodeFlag[idx]) { /* solid region */
+                    if (-offset >= space->nodeFlag[idx]) { /* solid region */
                         blankID = 0;
                     } else {
                         blankID = 1;

@@ -18,7 +18,7 @@
 static int InitializeDomainGeometry(Space *, const Partition *);
 static int LocateSolidGeometry(Space *, const Particle *, const Partition *);
 static int IdentifyGhostNodes(Space *, const Partition *);
-static int IdentifySolidNodeWithGhostNeighbours(Space *, const Partition *);
+static int IdentifySolidNodeWithGhostNeighbours(Space *, const Particle *, const Partition *);
 static int Min(const int x, const int y);
 static int Max(const int x, const int y);
 /****************************************************************************
@@ -26,18 +26,18 @@ static int Max(const int x, const int y);
  ****************************************************************************/
 /*
  * These functions identify the type of each node: 
- * 1:      boundary and exterior ghost node,
- * <= -10: interior solid node,
- * >=10:   interior ghost node, 
- * 0:      interior fluid node with all neighbours are fluid nodes,
- * <= -10 - totalN: interior solid node with at least one neighbour is a ghost node.
+ * 1:                   boundary and exterior ghost node,
+ * <= -offset:          interior solid node,
+ * >=offset:            interior ghost node, 
+ * 0:                   interior fluid node,
+ * <= -offset - totalN: interior solid node with ghost neighbour.
  *
  * Procedures are:
  * -- initialize node flag of boundary and exterior nodes to boundary type,
  *    and inner nodes to fluid type;
  * -- identify all inner nodes that are in solid geometry as solid node;
  * -- identify ghost nodes according to the node type of its neighbours;
- * -- identify whether a fluid node has ghost neighbours.
+ * -- identify whether a solid node has ghost neighbours.
  *
  * It's necessary to difference boundary nodes and inner nodes because this
  * will make the identification of ghost nodes much easier in both 2D and
@@ -54,11 +54,16 @@ int ComputeDomainGeometryGCIBM(Space *space, Particle *particle, const Partition
     InitializeDomainGeometry(space, part);
     LocateSolidGeometry(space, particle, part);
     IdentifyGhostNodes(space, part);
-    IdentifySolidNodeWithGhostNeighbours(space, part);
+    IdentifySolidNodeWithGhostNeighbours(space, particle, part);
     return 0;
 }
 static int InitializeDomainGeometry(Space *space, const Partition *part)
 {
+    /*
+     * Set the vaule of offset to specify the range assignment for node type
+     * identifier.
+     */
+    space->nodeFlagOffset = 10;
     /*
      * Initialize the entire domain to boundary type. Operation can be achieved
      * by a single loop since all data are stored by linear arrays.
@@ -97,6 +102,7 @@ static int LocateSolidGeometry(Space *space, const Particle *particle, const Par
     Real distZ = 0.0;
     Real radius = 0.0;
     const Real *ptk = particle->headAddress;
+    const int offset = space->nodeFlagOffset;
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
         ptk = ptk + geoCount * particle->entryN; /* point to storage of current particle */
         const int iCenter = (int)((ptk[0] - space->xMin) * space->ddx) + space->ng;
@@ -121,7 +127,7 @@ static int LocateSolidGeometry(Space *space, const Particle *particle, const Par
                     distZ = space->zMin + (k - space->ng) * space->dz - ptk[2];
                     distance = distX * distX + distY * distY + distZ * distZ - ptk[3] * ptk[3];
                     if (0 > distance) { /* in the solid geometry */
-                        space->nodeFlag[idx] = -10 - geoCount; /* geometry are linked */
+                        space->nodeFlag[idx] = -offset - geoCount; /* geometry are linked */
                     }
                 }
             }
@@ -140,11 +146,12 @@ static int IdentifyGhostNodes(Space *space, const Partition *part)
     int idxB = 0; /* index at Back */
     /* criteria */
     int flag = 0;
+    const int offset = space->nodeFlagOffset;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
-                if (-10 < space->nodeFlag[idx]) { /* it's not solid node */
+                if (-offset < space->nodeFlag[idx]) { /* it's not solid node */
                     continue;
                 }
                 idxW = (k * space->jMax + j) * space->iMax + i - 1;
@@ -164,7 +171,7 @@ static int IdentifyGhostNodes(Space *space, const Partition *part)
     }
     return 0;
 }
-static int IdentifySolidNodeWithGhostNeighbours(Space *space, const Partition *part)
+static int IdentifySolidNodeWithGhostNeighbours(Space *space, const Particle *particle, const Partition *part)
 {
     int idx = 0; /* linear array index math variable */
     int idxW = 0; /* index at West */
@@ -173,13 +180,12 @@ static int IdentifySolidNodeWithGhostNeighbours(Space *space, const Partition *p
     int idxN = 0; /* index at North */
     int idxF = 0; /* index at Front */
     int idxB = 0; /* index at Back */
-    /* criteria */
-    int flag = 0;
+    const int offset = space->nodeFlagOffset;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = (k * space->jMax + j) * space->iMax + i;
-                if (-10 < space->nodeFlag[idx]) { /* it's not solid node */
+                if (-offset < space->nodeFlag[idx]) { /* it's not solid node */
                     continue;
                 }
                 idxW = (k * space->jMax + j) * space->iMax + i - 1;
@@ -188,12 +194,13 @@ static int IdentifySolidNodeWithGhostNeighbours(Space *space, const Partition *p
                 idxN = (k * space->jMax + j + 1) * space->iMax + i;
                 idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
                 idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
-                flag = space->nodeFlag[idxW] + space->nodeFlag[idxE] + 
-                    space->nodeFlag[idxS] + space->nodeFlag[idxN] + 
-                    space->nodeFlag[idxF] + space->nodeFlag[idxB];
-                if (10 <= flag) { /* if exist one neighbour is ghost */
-                    space->nodeFlag[idx] = -space->nodeFlag[idx]; /* geoID information conserved */
+                if ((-offset >= space->nodeFlag[idxW]) && (-offset >= space->nodeFlag[idxE]) &&  
+                        (-offset >= space->nodeFlag[idxS]) && (-offset >= space->nodeFlag[idxN]) && 
+                        (-offset >= space->nodeFlag[idxF]) && (-offset >= space->nodeFlag[idxB])) {
+                    continue; /* this solid node has no ghost neighbour */
                 }
+                /* exist at least one neighbour is ghost */
+                space->nodeFlag[idx] = space->nodeFlag[idx] - particle->totalN; /* geometry information conserved */
             }
         }
     }

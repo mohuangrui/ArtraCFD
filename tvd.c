@@ -870,6 +870,7 @@ static int ComputeViscousFluxGradientZ(
     Real hG[5] = {0.0}; /* viscous flux vector */
     Real Gh[5] = {0.0}; /* viscous flux vector */
     Real h = 0; /* reciprocal of differencing distance */
+    const int offset = space->nodeFlagOffset;
     /* default is central scheme */
     int hl = k - 1;
     int hr = k + 1;
@@ -882,10 +883,10 @@ static int ComputeViscousFluxGradientZ(
     /* check ghost */
     const int idxl = (hl * space->jMax + j) * space->iMax + i;
     const int idxr = (hr * space->jMax + j) * space->iMax + i;
-    if (10 <= space->nodeFlag[idxl]) {
+    if (offset <= space->nodeFlag[idxl]) {
         ++hl;
     }
-    if (10 <= space->nodeFlag[idxr]) {
+    if (offset <= space->nodeFlag[idxr]) {
         --hr;
     }
     if (0 != (hr - hl)) { /* only do calculation when needed */
@@ -905,6 +906,7 @@ static int ComputeViscousFluxGradientY(
     Real hG[5] = {0.0}; /* viscous flux vector */
     Real Gh[5] = {0.0}; /* viscous flux vector */
     Real h = 0; /* reciprocal of differencing distance */
+    const int offset = space->nodeFlagOffset;
     /* default is central scheme */
     int hl = j - 1;
     int hr = j + 1;
@@ -917,10 +919,10 @@ static int ComputeViscousFluxGradientY(
     /* check ghost */
     const int idxl = (k * space->jMax + hl) * space->iMax + i;
     const int idxr = (k * space->jMax + hr) * space->iMax + i;
-    if (10 <= space->nodeFlag[idxl]) {
+    if (offset <= space->nodeFlag[idxl]) {
         ++hl;
     }
-    if (10 <= space->nodeFlag[idxr]) {
+    if (offset <= space->nodeFlag[idxr]) {
         --hr;
     }
     if (0 != (hr - hl)) { /* only do calculation when needed */
@@ -940,6 +942,7 @@ static int ComputeViscousFluxGradientX(
     Real hG[5] = {0.0}; /* viscous flux vector */
     Real Gh[5] = {0.0}; /* viscous flux vector */
     Real h = 0; /* reciprocal of differencing distance */
+    const int offset = space->nodeFlagOffset;
     /* default is central scheme */
     int hl = i - 1;
     int hr = i + 1;
@@ -952,10 +955,10 @@ static int ComputeViscousFluxGradientX(
     /* check ghost */
     const int idxl = (k * space->jMax + j) * space->iMax + hl;
     const int idxr = (k * space->jMax + j) * space->iMax + hr;
-    if (10 <= space->nodeFlag[idxl]) {
+    if (offset <= space->nodeFlag[idxl]) {
         ++hl;
     }
-    if (10 <= space->nodeFlag[idxr]) {
+    if (offset <= space->nodeFlag[idxr]) {
         --hr;
     }
     if (0 != (hr - hl)) { /* only do calculation when needed */

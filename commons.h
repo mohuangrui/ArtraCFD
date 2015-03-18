@@ -507,6 +507,7 @@ typedef struct {
     Real xMax; /* coordinates define the space domain */
     Real yMax; /* coordinates define the space domain */
     Real zMax; /* coordinates define the space domain */
+    int nodeFlagOffset; /* node type separator */
     int *nodeFlag; /* node type integer flag: normal, ghost, solid, etc. */
 }Space;
 /*

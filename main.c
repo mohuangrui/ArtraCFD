@@ -48,6 +48,7 @@ int main(int argc, char *argv[])
         .xMax = 0.0,
         .yMax = 0.0,
         .zMax = 0.0,
+        .nodeFlagOffset = 0,
         .nodeFlag = NULL};
     Particle theParticle = { /* particle entities */
         .totalN = 0,
