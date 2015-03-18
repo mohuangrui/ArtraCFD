@@ -16,19 +16,26 @@
  * Static Function Declarations
  ****************************************************************************/
 static int LocateSolidGeometry(Space *, const Particle *, const Partition *);
-static int IdentifyGhostCells(Space *, const Partition *);
+static int IdentifyGhostNodes(Space *, const Partition *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
 /*
  * These functions identify the type of each node: 
- * boundary and exterior ghost cell (2), interior ghost cell (>= 10), 
- * interior solid cell (<= -10), interior fluid cells (0),
- * Procedures are: first, initialize nodeFlag of all nodes to boundary type;
- * then, identify all inner nodes as in solid geometry or fluid;
- * finally, identify ghost nodes according to its neighbours' node type;
- * moreover, whenever identifying a solid node or ghost node, store its
- * corresponding geometry information by linking the nodeFlag to the
+ * 2:      boundary and exterior ghost node,
+ * <= -10: interior solid node,
+ * >=10:   interior ghost node, 
+ * 0:      interior fluid node with all neighbours are fluid nodes,
+ * 1:      interior fluid node with at least one neighbour is a ghost node.
+ *
+ * Procedures are:
+ * -- initialize node flag of all nodes to boundary type;
+ * -- identify all inner nodes as in solid geometry or fluid;
+ * -- identify ghost nodes according to the node type of its neighbours;
+ * -- identify whether a fluid node has ghost neighbours.
+ *
+ * Moreover, whenever identifying a solid node or ghost node, store its
+ * corresponding geometry information by linking the node flag to the
  * geometry ID, which will be accessed to calculate other informations. 
  * The rational is that don't store every information for each ghost cell, but
  * only store necessary information. When need it, access and calculate it.
@@ -51,7 +58,8 @@ int InitializeDomainGeometry(Space *space)
 int ComputeDomainGeometryGCIBM(Space *space, Particle *particle, const Partition *part)
 {
     LocateSolidGeometry(space, particle, part);
-    IdentifyGhostCells(space, part);
+    IdentifyGhostNodes(space, part);
+    IdentifyFluidNodeWithGhostNeighbours(space, part);
     return 0;
 }
 static int LocateSolidGeometry(Space *space, const Particle *particle, const Partition *part)
@@ -83,7 +91,7 @@ static int LocateSolidGeometry(Space *space, const Particle *particle, const Par
     }
     return 0;
 }
-static int IdentifyGhostCells(Space *space, const Partition *part)
+static int IdentifyGhostNodes(Space *space, const Partition *part)
 {
     int idx = 0; /* linear array index math variable */
     int idxW = 0; /* index at West */
@@ -119,7 +127,7 @@ static int IdentifyGhostCells(Space *space, const Partition *part)
     return 0;
 }
 /*
- * Boundary condition for interior ghost cells
+ * Boundary condition for interior ghost nodes
  */
 int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle, 
         const Partition *part)

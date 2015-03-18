@@ -514,14 +514,8 @@ typedef struct {
  */
 typedef struct {
     int totalN; /* total number of particles */
-    Real *headAddress; /* record the head address */
-    Real *x; /* x coordinates of the particle center */
-    Real *y; /* y coordinates of the particle center */
-    Real *z; /* z coordinates of the particle center */
-    Real *r; /* radius of the particle */
-    Real *u; /* x component of the velocity of particles */
-    Real *v; /* y component of the velocity of particles */
-    Real *w; /* z component of the velocity of particles */
+    int entryN; /* number of information entries for each particle */
+    Real *headAddress; /* record the head address that stores information */
 }Particle;
 /*
  * Time domain parameters

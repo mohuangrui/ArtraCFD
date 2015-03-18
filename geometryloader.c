@@ -87,29 +87,25 @@ static int ReadGeometryData(FILE **filePointerPointer, Particle *particle)
     if (0 == particle->totalN) { /* no internal geometries */
         return 0;
     }
-    /* first assign storage to particle pointers */
-    particle->headAddress = AssignStorage(particle->totalN * 7, "Real");
-    particle->x = particle->headAddress + particle->totalN * 0;
-    particle->y = particle->headAddress + particle->totalN * 1;
-    particle->z = particle->headAddress + particle->totalN * 2;
-    particle->r = particle->headAddress + particle->totalN * 3;
-    particle->u = particle->headAddress + particle->totalN * 4;
-    particle->v = particle->headAddress + particle->totalN * 5;
-    particle->w = particle->headAddress + particle->totalN * 6;
-    /* then read and store data per object*/
-    char currentLine[200] = {'\0'}; /* store the current read line */
+    /* 
+     * Assign storage to store particle information:
+     * x, y, z, r, density, u, v, w, fx, fy, fz
+     */
+    particle->entryN = 11;
+    particle->headAddress = AssignStorage(particle->totalN * particle->entryN, "Real");
+    /* read and store data per object*/
+    char currentLine[500] = {'\0'}; /* store the current read line */
     /* set format specifier according to the type of Real */
-    char formatVII[40] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg"; /* default is double type */
+    char formatXI[100] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg"; /* default is double type */
     if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
-        strncpy(formatVII, "%g, %g, %g, %g, %g, %g, %g", sizeof formatVII); /* float type */
+        strncpy(formatXI, "%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g", sizeof formatXI); /* float type */
     }
+    Real *ptk = particle->headAddress;
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
+        ptk = ptk + geoCount * particle->entryN; /* point to storage of current particle */
         fgets(currentLine, sizeof currentLine, filePointer);
-        sscanf(currentLine, formatVII, 
-                &(particle->x[geoCount]), &(particle->y[geoCount]),
-                &(particle->z[geoCount]), &(particle->r[geoCount]),
-                &(particle->u[geoCount]), &(particle->v[geoCount]),
-                &(particle->w[geoCount]));
+        sscanf(currentLine, formatXI, ptk + 0, ptk + 1, ptk + 2, ptk + 3, ptk + 4, ptk + 5,
+                ptk + 6, ptk + 7, ptk + 8, ptk + 9, ptk + 10);
     }
     *filePointerPointer = filePointer; /* return a updated value of file pointer */
     return 0;

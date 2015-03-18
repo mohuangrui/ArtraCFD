@@ -51,14 +51,8 @@ int main(int argc, char *argv[])
         .nodeFlag = NULL};
     Particle theParticle = { /* particle entities */
         .totalN = 0,
-        .headAddress = NULL,
-        .x = NULL,
-        .y = NULL,
-        .z = NULL,
-        .r = NULL,
-        .u = NULL,
-        .v = NULL,
-        .w = NULL};
+        .entryN = 0,
+        .headAddress = NULL};
     Time theTime = { /* time dimensions */
         .restart = 0,
         .totalTime = 0.0,

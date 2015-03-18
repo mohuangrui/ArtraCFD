@@ -240,11 +240,7 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
                     if (-10 >= space->nodeFlag[idx]) { /* solid region */
                         blankID = 0;
                     } else {
-                        if (0 == space->nodeFlag[idx]) { /* fluid */
-                            blankID = 1;
-                        } else {
-                            blankID = space->nodeFlag[idx];
-                        }
+                        blankID = 1;
                     }
                     fwrite(&(blankID), sizeof(int), 1, filePointer);
                 }
@@ -401,12 +397,12 @@ static int WriteParticleFile(EnsightSet *enSet, const Particle *particle)
         FatalError("faild to write particle data file: ensight.particle***...");
     }
     fprintf(filePointer, "N: %d\n", particle->totalN); /* number of objects */
+    Real *ptk = particle->headAddress;
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        fprintf(filePointer, "%.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g\n", 
-                particle->x[geoCount], particle->y[geoCount],
-                particle->z[geoCount], particle->r[geoCount],
-                particle->u[geoCount], particle->v[geoCount],
-                particle->w[geoCount]);
+        ptk = ptk + geoCount * particle->entryN; /* point to storage of current particle */
+        fprintf(filePointer, "%.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g\n",
+                ptk[0], ptk[1], ptk[2], ptk[3], ptk[4], ptk[5], 
+                ptk[6], ptk[7], ptk[8], ptk[9], ptk[10]);
     }
     fclose(filePointer); /* close current opened file */
     return 0;
