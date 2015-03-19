@@ -289,7 +289,7 @@ static int LinearReconstruction(const int k, const int j, const int i, const int
         {-1, -1, 0}, {-1, 0, -1}, {0, -1, -1}, {-1, -1, 1},
         {-1, 1, -1}, {1, -1, -1}, {-1, -1, -1}};
     const int stencilN = 4; /* number of stencils for interpolation */
-    int tally = 1; /* number of current stencil, one is the boundary point */
+    int tally = 0; /* number of current stencil */
     for (int loop = 0; (tally < stencilN) && (loop < 27); ++loop) {
         const int ih = imageI + path[loop][0];
         const int jh = imageJ + path[loop][1];
@@ -317,19 +317,6 @@ static int LinearReconstruction(const int k, const int j, const int i, const int
         rhsVector[tally][4] = p_h;
         ++tally; /* increase the tally */
     }
-    /*
-     * Linear reconstruction for velocity components
-     */
-    /* save the coordinates of the boundary point into matrix */
-    posMatrix[0][0] = 1;
-    posMatrix[0][1] = imageX - distToSurface * normalX;
-    posMatrix[0][2] = imageY - distToSurface * normalY;
-    posMatrix[0][3] = imageZ - distToSurface * normalZ;
-    /* the right hand vector at boundary point */
-    rhsVector[0][1] = 0;
-    rhsVector[0][2] = 0;
-    rhsVector[0][3] = 0;
-
 }
 static int Min(const int x, const int y)
 {
