@@ -233,7 +233,7 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
     return 0;
 }
 /*
- * Bilinear reconstruction is adopted here, variable phi at ghost or solid node
+ * Linear reconstruction is adopted here, variable phi at ghost or solid node
  * is reconstructed by two steps:
  *
  * phi = 2 * phi_o - phi_image 
@@ -241,7 +241,9 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
  * phi_image = a0 + a1 * x + a2 * y + a3 * z
  *
  * ai are undetermined coefficients which will be determined by 
- * one boundary point (o), and other three neighbour nodes.
+ * solving a linear system at neighbour nodes of the image point under the
+ * assumption that linear distribution of phi(x,y,z) is also valid for the
+ * neighbour nodes.
  */
 static int LinearReconstruction(const int k, const int j, const int i, const int geoID, 
         Real *U, const Space *space, const Particle *particle, const Flow *flow)
@@ -265,16 +267,17 @@ static int LinearReconstruction(const int k, const int j, const int i, const int
     const int imageI = i + (int)(2 * distToSurface * normalX * space->ddx);
     const int imageJ = j + (int)(2 * distToSurface * normalY * space->ddy);
     const int imageK = k + (int)(2 * distToSurface * normalZ * space->ddz);
-    /* save the coordinates of the boundary point into matrix */
-    posMatrix[0][0] = 1;
-    posMatrix[0][1] = imageX - distToSurface * normalX;
-    posMatrix[0][2] = imageY - distToSurface * normalY;
-    posMatrix[0][3] = imageZ - distToSurface * normalZ;
+    /*
+     * Originally the interpolation stencil should contain the boundary point,
+     * however, this will complicate the problem very much. Therefore, the
+     * influence of boundary conditions at wall will only be applied in the
+     * first relationship, and the interpolation stencils are all fluid node.
+     */
     /* 
-     * Search around the image node to find other required fluid nodes as
+     * Search around the image node to find required fluid nodes as
      * interpolation stencil. Because the node coordinates of the image node
-     * are always downward truncated, therefore, the search direction is better
-     * to set as 0 (current node) or +1 (upward direction).
+     * are always downward truncated, therefore, the prior search directions 
+     * are better to set as 0 (current node) or +1 (upward direction).
      */
     /* build an adequate search path */
     const int path[27][3] = { /* n pathes for i, j, k */
@@ -288,9 +291,9 @@ static int LinearReconstruction(const int k, const int j, const int i, const int
     const int stencilN = 4; /* number of stencils for interpolation */
     int tally = 1; /* number of current stencil, one is the boundary point */
     for (int loop = 0; (tally < stencilN) && (loop < 27); ++loop) {
-        const int ih = i + path[loop][0];
-        const int jh = j + path[loop][1];
-        const int kh = k + path[loop][2];
+        const int ih = imageI + path[loop][0];
+        const int jh = imageJ + path[loop][1];
+        const int kh = imageK + path[loop][2];
         const int idxh = (kh * space->jMax + jh) * space->iMax + ih;
         if (0 != space->nodeFlag[idxh]) { /* it's not a fluid node */
             continue;
@@ -314,6 +317,18 @@ static int LinearReconstruction(const int k, const int j, const int i, const int
         rhsVector[tally][4] = p_h;
         ++tally; /* increase the tally */
     }
+    /*
+     * Linear reconstruction for velocity components
+     */
+    /* save the coordinates of the boundary point into matrix */
+    posMatrix[0][0] = 1;
+    posMatrix[0][1] = imageX - distToSurface * normalX;
+    posMatrix[0][2] = imageY - distToSurface * normalY;
+    posMatrix[0][3] = imageZ - distToSurface * normalZ;
+    /* the right hand vector at boundary point */
+    rhsVector[0][1] = 0;
+    rhsVector[0][2] = 0;
+    rhsVector[0][3] = 0;
 
 }
 static int Min(const int x, const int y)
