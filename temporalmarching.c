@@ -146,7 +146,7 @@ static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Time *
 static Real MinPositive(const Real valueA, const Real valueB)
 {
     if ((0 >= valueA) && (0 >= valueB)) {
-        return 1e10;
+        return 1.0e15;
     }
     if (0 >= valueA) {
         return valueB;

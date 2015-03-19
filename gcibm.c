@@ -280,7 +280,7 @@ static int LinearReconstruction(const int k, const int j, const int i, const int
      * are better to set as 0 (current node) or +1 (upward direction).
      */
     /* build an adequate search path */
-    const int path[27][3] = { /* n pathes for i, j, k */
+    const int path[27][3] = { /* n paths for i, j, k */
         {0, 0, 0}, {1, 1, 1}, {1, 1, 0}, {1, 0, 1},
         {0, 1, 1}, {1, 0, 0}, {0, 1, 0}, {0, 0, 1},
         {-1, 0, 0}, {0, -1, 0}, {0, 0, -1}, {-1, 1, 0},
@@ -298,11 +298,19 @@ static int LinearReconstruction(const int k, const int j, const int i, const int
         if (0 != space->nodeFlag[idxh]) { /* it's not a fluid node */
             continue;
         }
-        /* obtain the coordinates of the stencil and save to matrix */
+        /* 
+         * Obtain the coordinates of the stencil and save to matrix. One
+         * approach is to save the space coordinates to construct the matrix
+         * for the linear system. However, this will easily result a singular
+         * matrix or a matrix which can not be easily processed by Gaussian
+         * elimination or LU decomposition even with pivoting. The second
+         * approach is to use the node coordinates to do the construction,
+         * which is equivalent because of the same degree of freedom. 
+         */
         posMatrix[tally][0] = 1;
-        posMatrix[tally][1] = space->xMin + (ih - space->ng) * space->dx;
-        posMatrix[tally][2] = space->yMin + (jh - space->ng) * space->dy;
-        posMatrix[tally][3] = space->zMin + (kh - space->ng) * space->dz;
+        posMatrix[tally][1] = (Real)(ih); 
+        posMatrix[tally][2] = (Real)(jh);
+        posMatrix[tally][3] = (Real)(kh);
         /* construct the right hand vectors */
         const Real rho_h = U[idxh+0];
         const Real u_h = U[idxh+1] / rho_h;
@@ -317,6 +325,76 @@ static int LinearReconstruction(const int k, const int j, const int i, const int
         rhsVector[tally][4] = p_h;
         ++tally; /* increase the tally */
     }
+}
+/*
+ * Perform A = LU factorization, A is a n x n matrix.
+ * After factorization, both L and U are stored into the storage space of A,
+ * The returned A has its upper triangle as U, and the part beneath the 
+ * diagonal is equal to L. The missing diagonal elements of L are all 1.
+ * Crout's algorithm is employed for factorization.
+ *
+ * Partial pivoting is used to stabilize the algorithm, that is, only row-wise
+ * permutation will be employed. The permutations are recorded in the integer 
+ * vector "permute", which will be used to reorder the right hand side vectors
+ * before solving the linear system.
+ */
+static int LUFactorization(Real **A, const int n, int permute[])
+{
+    const Real epsilon = 1.0e-15; /* a small number for singularity check */
+    Real temp = 0.0; /* auxiliary variable */
+    Real scale[n]; /* stores the implicit scaling of each row with variable length array */
+    int rowMax = 0; /* record the row number of current pivot element */
+    int flag = 1; /* changes sign with each row interchange */
+    /*
+     * Loop over rows to get the implicit scaling information.
+     */
+    for (int row = 0; row < n; ++row) {
+        Real maximum = 0.0;
+        for (int col = 0; col < n; ++col) {
+            temp = fabs(A[row][col]);
+            if (temp > maximum) {
+                maximum = temp;
+            }
+        }
+        if (0 == maximum) {
+            FatalError("singular matrix in LU factorization...");
+        }
+        scale[row] = 1.0 / maximum; /* save the scaling */
+    }
+    /*
+     * Do LU factorization with partial pivoting.
+     */
+    for (int loop = 0; loop < n; ++loop) {
+        Real maximum = 0.0; /* initialize for the search of largest pivot element */
+        rowMax = loop; /* initialize the pivot position to current row */
+        for (int row = loop; row < n; ++row) { /* search pivot element for current loop */
+            temp = scale[row] * fabs(A[row][loop]);
+            if (temp > maximum) {
+                maximum = temp;
+                rowMax = row;
+            }
+        }
+        if (loop != rowMax) { /* interchange rows if required */
+            for (int col = 0; col < n; ++col) {
+                temp = A[rowMax][col];
+                A[rowMax][col] = A[loop][col];
+                A[loop][col] = temp;
+            }
+            flag = -flag; /* change the parity of flag */
+            scale[rowMax] = scale[loop]; /* replace the scale factor */
+        }
+        permute[loop] = rowMax; /* record the permutation */
+        if (0 == A[loop][loop]) { /* substitute zero pivot element with epsilon */
+            A[loop][loop] = epsilon;
+        }
+        for (int row = loop + 1; row < n; ++row) {
+            A[row][loop] = A[row][loop] / A[loop][loop]; /* divide column element with pivot element */
+            for (int col = loop + 1; col < n; ++col) {
+                A[row][col] = A[row][col] - A[row][loop] * A[loop][col];
+            }
+        }
+    }
+
 }
 static int Min(const int x, const int y)
 {
