@@ -207,32 +207,14 @@ static int IdentifySolidNodeWithGhostNeighbours(Space *space, const Particle *pa
     return 0;
 }
 /*
- * Boundary condition for interior ghost nodes
+ * Boundary condition for interior ghost nodes and solid nodes with ghost
+ * neighbours.
  */
 int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle, 
-        const Partition *part)
+        const Partition *part, const Flow *flow)
 {
     int idx = 0; /* linear array index math variable */
-    int idxW = 0; /* index at West */
-    int idxE = 0; /* index at East */
-    int idxS = 0; /* index at South */
-    int idxN = 0; /* index at North */
-    int idxF = 0; /* index at Front */
-    int idxB = 0; /* index at Back */
     int geoID = 0; /* geometry id */
-    Real distToCenter = 0.0; /* distance from node to particle center */
-    Real distToSurface = 0.0; /* distance from node to particle surface */
-    Real distX = 0.0;
-    Real distY = 0.0;
-    Real distZ = 0.0;
-    Real radius = 0.0;
-    Real normalX = 0.0; /* x component of normal vector at surface */
-    Real normalY = 0.0; /* y component of normal vector at surface */
-    Real normalZ = 0.0; /* z component of normal vector at surface */
-    int imageI = 0; /* node coordinates of the image point */
-    int imageJ = 0; /* node coordinates of the image point */
-    int imageK = 0; /* node coordinates of the image point */
-    const Real *ptk = NULL;
     const int offset = space->nodeFlagOffset;
     /*
      * Processing ghost nodes
@@ -245,24 +227,94 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
                     continue;
                 }
                 geoID = space->nodeFlag[idx] - offset; /* extract geometry number from inner ghost node flag */
-                ptk = particle->headAddress + geoID * particle->entryN; /* point to storage of current particle */
-                radius = particle->r[geoID];
-                distX = space->xMin + (i - space->ng) * space->dx - particle->x[geoID];
-                distY = space->yMin + (j - space->ng) * space->dy - particle->y[geoID];
-                distZ = space->zMin + (k - space->ng) * space->dz - particle->z[geoID];
-                distToCenter = sqrt(distX * distX + distY * distY + distZ * distZ);
-                normalX = distX / distToCenter;
-                normalY = distY / distToCenter;
-                normalZ = distZ / distToCenter;
-                distToSurface = radius - distToCenter;
-                imageI = i + (int)(2 * distToSurface * normalX * space->ddx);
-                imageJ = j + (int)(2 * distToSurface * normalY * space->ddy);
-                imageK = k + (int)(2 * distToSurface * normalZ * space->ddz);
             }
-            /* integrate the forces on current particle */
         }
     }
     return 0;
+}
+/*
+ * Bilinear reconstruction is adopted here, variable phi at ghost or solid node
+ * is reconstructed by two steps:
+ *
+ * phi = 2 * phi_o - phi_image 
+ * (scalar phi = phi_o = phi_image, vector phi_o = 0, thus phi = - phi_image)
+ * phi_image = a0 + a1 * x + a2 * y + a3 * z
+ *
+ * ai are undetermined coefficients which will be determined by 
+ * one boundary point (o), and other three neighbour nodes.
+ */
+static int LinearReconstruction(const int k, const int j, const int i, const int geoID, 
+        Real *U, const Space *space, const Particle *particle, const Flow *flow)
+{
+    Real coeVector[4] = {0.0}; /* undetermined coefficients vector */
+    Real posMatrix[4][4] = {{0.0}}; /* position matrix for interpolation */
+    Real rhsVector[4][5] = {{0.0}}; /* right hand side vectors for five variables */
+    const Real *ptk = particle->headAddress + geoID * particle->entryN; /* point to storage of current particle */
+    const Real distX = space->xMin + (i - space->ng) * space->dx - ptk[0];
+    const Real distY = space->yMin + (j - space->ng) * space->dy - ptk[1];
+    const Real distZ = space->zMin + (k - space->ng) * space->dz - ptk[2];
+    const Real distToCenter = sqrt(distX * distX + distY * distY + distZ * distZ);
+    const Real normalX = distX / distToCenter;
+    const Real normalY = distY / distToCenter;
+    const Real normalZ = distZ / distToCenter;
+    const Real distToSurface = ptk[3] - distToCenter;
+    /* obtain the coordinates of the image point */
+    const Real imageX = space->xMin + (i - space->ng) * space->dx + 2 * distToSurface * normalX;
+    const Real imageY = space->yMin + (j - space->ng) * space->dy + 2 * distToSurface * normalY;
+    const Real imageZ = space->zMin + (k - space->ng) * space->dz + 2 * distToSurface * normalZ;
+    const int imageI = i + (int)(2 * distToSurface * normalX * space->ddx);
+    const int imageJ = j + (int)(2 * distToSurface * normalY * space->ddy);
+    const int imageK = k + (int)(2 * distToSurface * normalZ * space->ddz);
+    /* save the coordinates of the boundary point into matrix */
+    posMatrix[0][0] = 1;
+    posMatrix[0][1] = imageX - distToSurface * normalX;
+    posMatrix[0][2] = imageY - distToSurface * normalY;
+    posMatrix[0][3] = imageZ - distToSurface * normalZ;
+    /* 
+     * Search around the image node to find other required fluid nodes as
+     * interpolation stencil. Because the node coordinates of the image node
+     * are always downward truncated, therefore, the search direction is better
+     * to set as 0 (current node) or +1 (upward direction).
+     */
+    /* build an adequate search path */
+    const int path[27][3] = { /* n pathes for i, j, k */
+        {0, 0, 0}, {1, 1, 1}, {1, 1, 0}, {1, 0, 1},
+        {0, 1, 1}, {1, 0, 0}, {0, 1, 0}, {0, 0, 1},
+        {-1, 0, 0}, {0, -1, 0}, {0, 0, -1}, {-1, 1, 0},
+        {-1, 0, 1}, {1, -1, 0}, {0, -1, 1}, {1, 0, -1},
+        {0, 1, -1}, {-1, 1, 1}, {1, -1, 1}, {1, 1, -1},
+        {-1, -1, 0}, {-1, 0, -1}, {0, -1, -1}, {-1, -1, 1},
+        {-1, 1, -1}, {1, -1, -1}, {-1, -1, -1}};
+    const int stencilN = 4; /* number of stencils for interpolation */
+    int tally = 1; /* number of current stencil, one is the boundary point */
+    for (int loop = 0; (tally < stencilN) && (loop < 27); ++loop) {
+        const int ih = i + path[loop][0];
+        const int jh = j + path[loop][1];
+        const int kh = k + path[loop][2];
+        const int idxh = (kh * space->jMax + jh) * space->iMax + ih;
+        if (0 != space->nodeFlag[idxh]) { /* it's not a fluid node */
+            continue;
+        }
+        /* obtain the coordinates of the stencil and save to matrix */
+        posMatrix[tally][0] = 1;
+        posMatrix[tally][1] = space->xMin + (ih - space->ng) * space->dx;
+        posMatrix[tally][2] = space->yMin + (jh - space->ng) * space->dy;
+        posMatrix[tally][3] = space->zMin + (kh - space->ng) * space->dz;
+        /* construct the right hand vectors */
+        const Real rho_h = U[idxh+0];
+        const Real u_h = U[idxh+1] / rho_h;
+        const Real v_h = U[idxh+2] / rho_h;
+        const Real w_h = U[idxh+3] / rho_h;
+        const Real eT_h = U[idxh+4] / rho_h;
+        const Real p_h = (flow->gamma - 1.0) * rho_h * (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h));
+        rhsVector[tally][0] = rho_h;
+        rhsVector[tally][1] = u_h;
+        rhsVector[tally][2] = v_h;
+        rhsVector[tally][3] = w_h;
+        rhsVector[tally][4] = p_h;
+        ++tally; /* increase the tally */
+    }
+
 }
 static int Min(const int x, const int y)
 {

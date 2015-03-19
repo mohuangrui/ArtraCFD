@@ -26,7 +26,7 @@ int BoundaryCondtionsAndTreatments(Real *U, const Space *space,
         ApplyBoundaryConditions(partID, U, space, part, flow);
     }
     /* Boundary conditions and treatments for interior ghost cells */
-    BoundaryConditionGCIBM(U, space, particle, part);
+    BoundaryConditionGCIBM(U, space, particle, part, flow);
     return 0;
 }
 static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space, 

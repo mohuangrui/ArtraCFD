@@ -33,7 +33,7 @@ extern int ComputeDomainGeometryGCIBM(Space *, Particle *, const Partition *);
  *      Apply boundary conditions to the interior ghost cells.
  */
 extern int BoundaryConditionGCIBM(Real *U, const Space *, const Particle *, 
-        const Partition *);
+        const Partition *, const Flow *);
 #endif
 /* a good practice: end file with a newline */
 
