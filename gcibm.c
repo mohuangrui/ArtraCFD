@@ -20,6 +20,8 @@ static int InitializeDomainGeometry(Space *, const Partition *);
 static int LocateSolidGeometry(Space *, const Particle *, const Partition *);
 static int IdentifyGhostNodes(Space *, const Partition *);
 static int IdentifySolidNodeWithGhostNeighbours(Space *, const Particle *, const Partition *);
+static int LinearReconstruction(Real Uo[], const int k, const int j, const int i, const int geoID, 
+        const Real *U, const Space *, const Particle *, const Flow *);
 static int Min(const int x, const int y);
 static int Max(const int x, const int y);
 /****************************************************************************
@@ -208,23 +210,16 @@ static int IdentifySolidNodeWithGhostNeighbours(Space *space, const Particle *pa
 }
 /*
  * Boundary condition for interior ghost nodes and solid nodes with ghost
- * neighbours. At the same time, integrate the forces for each particle.
+ * neighbours.
  */
 int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle, 
         const Partition *part, const Flow *flow)
 {
     int idx = 0; /* linear array index math variable */
+    Real Uo[5] = {0.0}; /* save reconstructed primitives */
     int geoID = 0; /* geometry id */
     Real *ptk = NULL;
     const int offset = space->nodeFlagOffset;
-    /* reset some non accumulative information of particles to zero */
-    for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        ptk = particle->headAddress + geoCount * particle->entryN; /* point to storage of current particle */
-        ptk[8] = 0; /* force at x direction */
-        ptk[9] = 0; /* force at y direction */
-        ptk[10] = 0; /* force at z direction */
-        ptk[11] = 0; /* ghost node count */
-    }
     /*
      * Processing ghost nodes
      */
@@ -236,30 +231,37 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
                     continue;
                 }
                 geoID = space->nodeFlag[idx] - offset; /* extract geometry number from inner ghost node flag */
-                /*
-                 * Add the pressure force at boundary to the pressure force of 
-                 * corresponding particle. The pressure at boundary will equal
-                 * to the pressure of the ghost node since zero pressure 
-                 * gradient at wall normal direction is enforced here.
-                 * A even spaced pressure distribution over the particle 
-                 * surface is assumed since we only compute the pressure at
-                 * the boundary point that has a ghost neighbour. By this 
-                 * approach, the accuracy of pressure integration along particle
-                 * surface will increase correspondingly with the increase of 
-                 * mesh resolution while saving remarkable computation effort.
-                 */
-                ptk = particle->headAddress + geoID * particle->entryN; /* point to storage of current particle */
-                ptk[11] = ptk[11] + 1; /* count the number of ghost node of current particle */
+                LinearReconstruction(Uo, k, j, i, geoID, U, space, particle, flow);
+                idx = idx * 5; /* switch to index field variable */
+                U[idx+0] = Uo[0];
+                U[idx+1] = Uo[0] * Uo[1];
+                U[idx+2] = Uo[0] * Uo[2];
+                U[idx+3] = Uo[0] * Uo[3];
+                U[idx+4] = Uo[4] / (flow->gamma - 1.0) + 0.5 * Uo[0] * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]);
             }
         }
     }
     /*
-     * All ghost nodes has been processed, recalibrate the particle force to
-     * surface integral.
-     */
-    /*
      * Process solid nodes
      */
+    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
+                idx = (k * space->jMax + j) * space->iMax + i;
+                if (-offset - particle->totalN < space->nodeFlag[idx]) { /* it's not a solid with ghost neighbour */
+                    continue;
+                }
+                geoID = space->nodeFlag[idx] + offset + particle->totalN; /* extract geometry number from inner ghost node flag */
+                LinearReconstruction(Uo, k, j, i, geoID, U, space, particle, flow);
+                idx = idx * 5; /* switch to index field variable */
+                U[idx+0] = Uo[0];
+                U[idx+1] = Uo[0] * Uo[1];
+                U[idx+2] = Uo[0] * Uo[2];
+                U[idx+3] = Uo[0] * Uo[3];
+                U[idx+4] = Uo[4] / (flow->gamma - 1.0) + 0.5 * Uo[0] * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]);
+            }
+        }
+    }
     return 0;
 }
 /*
@@ -278,9 +280,8 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
 static int LinearReconstruction(Real Uo[], const int k, const int j, const int i, const int geoID, 
         const Real *U, const Space *space, const Particle *particle, const Flow *flow)
 {
-    Real coeVector[4] = {0.0}; /* undetermined coefficients vector */
     Real posMatrix[4][4] = {{0.0}}; /* position matrix for interpolation */
-    Real rhsVector[4][5] = {{0.0}}; /* right hand side vectors for five variables */
+    Real rhsVector[4][5] = {{0.0}}; /* right hand side vectors for five variables, solution vectors use the same space */
     const Real *ptk = particle->headAddress + geoID * particle->entryN; /* point to storage of current particle */
     const Real distX = space->xMin + (i - space->ng) * space->dx - ptk[0];
     const Real distY = space->yMin + (j - space->ng) * space->dy - ptk[1];
@@ -290,10 +291,7 @@ static int LinearReconstruction(Real Uo[], const int k, const int j, const int i
     const Real normalY = distY / distToCenter;
     const Real normalZ = distZ / distToCenter;
     const Real distToSurface = ptk[3] - distToCenter;
-    /* obtain the coordinates of the image point */
-    const Real imageX = space->xMin + (i - space->ng) * space->dx + 2 * distToSurface * normalX;
-    const Real imageY = space->yMin + (j - space->ng) * space->dy + 2 * distToSurface * normalY;
-    const Real imageZ = space->zMin + (k - space->ng) * space->dz + 2 * distToSurface * normalZ;
+    /* obtain the node coordinates of the image point */
     const int imageI = i + (int)(2 * distToSurface * normalX * space->ddx);
     const int imageJ = j + (int)(2 * distToSurface * normalY * space->ddy);
     const int imageK = k + (int)(2 * distToSurface * normalZ * space->ddz);
@@ -320,11 +318,12 @@ static int LinearReconstruction(Real Uo[], const int k, const int j, const int i
         {-1, 1, -1}, {1, -1, -1}, {-1, -1, -1}};
     const int stencilN = 4; /* number of stencils for interpolation */
     int tally = 0; /* number of current stencil */
+    int idxh = 0; /* index variable */
     for (int loop = 0; (tally < stencilN) && (loop < 27); ++loop) {
         const int ih = imageI + path[loop][0];
         const int jh = imageJ + path[loop][1];
         const int kh = imageK + path[loop][2];
-        const int idxh = (kh * space->jMax + jh) * space->iMax + ih;
+        idxh = (kh * space->jMax + jh) * space->iMax + ih;
         if (0 != space->nodeFlag[idxh]) { /* it's not a fluid node */
             continue;
         }
@@ -342,6 +341,7 @@ static int LinearReconstruction(Real Uo[], const int k, const int j, const int i
         posMatrix[tally][2] = (Real)(jh);
         posMatrix[tally][3] = (Real)(kh);
         /* construct the right hand vectors */
+        idxh = idxh * 5; /* switch to index field variable */
         const Real rho_h = U[idxh+0];
         const Real u_h = U[idxh+1] / rho_h;
         const Real v_h = U[idxh+2] / rho_h;
@@ -355,6 +355,29 @@ static int LinearReconstruction(Real Uo[], const int k, const int j, const int i
         rhsVector[tally][4] = p_h;
         ++tally; /* increase the tally */
     }
+    /*
+     * Solve the linear systems for five variables to obtain their
+     * corresponding interpolation coefficients. Solutions are stored in the
+     * same space of the right hand side matrix.
+     */
+    MatrixLinearSystemSolver(4, posMatrix, 5, rhsVector, rhsVector);
+    /*
+     * Obtain the interpolation coordinates of image point and do the
+     * interpolation.
+     */
+    const Real imageX = (Real)(i) + 2 * distToSurface * normalX * space->ddx;
+    const Real imageY = (Real)(j) + 2 * distToSurface * normalY * space->ddy;
+    const Real imageZ = (Real)(k) + 2 * distToSurface * normalZ * space->ddz;
+    for (int m = 0; m < 5; ++m) {
+        Uo[m] = rhsVector[0][m] + rhsVector[1][m] * imageX + rhsVector[2][m] * imageY + rhsVector[3][m] * imageZ;
+    }
+    /*
+     * Apply wall boundary conditions to obtain the primitive values at nodes
+     * in wall. That is, keep scalars and flip vectors after reflection.
+     */
+    Uo[1] = -Uo[1];
+    Uo[2] = -Uo[2];
+    Uo[3] = -Uo[3];
 }
 static int Min(const int x, const int y)
 {
