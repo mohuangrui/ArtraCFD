@@ -220,9 +220,9 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
     /* reset some non accumulative information of particles to zero */
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
         ptk = particle->headAddress + geoCount * particle->entryN; /* point to storage of current particle */
-        ptk[6] = 0; /* force at x direction */
-        ptk[7] = 0; /* force at y direction */
-        ptk[8] = 0; /* force at z direction */
+        ptk[8] = 0; /* force at x direction */
+        ptk[9] = 0; /* force at y direction */
+        ptk[10] = 0; /* force at z direction */
         ptk[11] = 0; /* ghost node count */
     }
     /*

@@ -89,23 +89,25 @@ static int ReadGeometryData(FILE **filePointerPointer, Particle *particle)
     }
     /* 
      * Assign storage to store particle information:
-     * x, y, z, r, density, u, v, w, fx, fy, fz
+     * x, y, z, r, density, u, v, w,       fx, fy, fz, tally 
+     * 0, 1, 2, 3,    4,    5, 6, 7,        8,  9, 10,  11      total: 12
+     *    need to be read in                  calculated
      */
-    particle->entryN = 11;
+    particle->entryN = 12;
     particle->headAddress = AssignStorage(particle->totalN * particle->entryN, "Real");
     /* read and store data per object*/
     char currentLine[500] = {'\0'}; /* store the current read line */
     /* set format specifier according to the type of Real */
-    char formatXI[100] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg"; /* default is double type */
+    char format[100] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg"; /* default is double type */
     if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
-        strncpy(formatXI, "%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g", sizeof formatXI); /* float type */
+        strncpy(format, "%g, %g, %g, %g, %g, %g, %g, %g", sizeof format); /* float type */
     }
     Real *ptk = NULL;
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
         ptk = particle->headAddress + geoCount * particle->entryN; /* point to storage of current particle */
         fgets(currentLine, sizeof currentLine, filePointer);
-        sscanf(currentLine, formatXI, ptk + 0, ptk + 1, ptk + 2, ptk + 3, ptk + 4, ptk + 5,
-                ptk + 6, ptk + 7, ptk + 8, ptk + 9, ptk + 10);
+        sscanf(currentLine, format, ptk + 0, ptk + 1, ptk + 2, ptk + 3, ptk + 4, ptk + 5,
+                ptk + 6, ptk + 7);
     }
     *filePointerPointer = filePointer; /* return a updated value of file pointer */
     return 0;

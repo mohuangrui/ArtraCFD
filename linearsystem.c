@@ -12,22 +12,23 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int LUFactorization(Real **A, const int n, int permute[]);
-static int FactorizedLinearSystemSolver(Real **L, Real **U, Real x[], Real b[],
-        const int n, const int permute[]);
+static int LUFactorization(const int n, Real A[][n], int permute[]);
+static int FactorizedLinearSystemSolver(const int n, Real L[][n], Real U[][n],
+        Real x[], Real b[], const int permute[]);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int MatrixLinearSystemSolver(Real **A, const int n, Real **X, Real **B, const int m)
+int MatrixLinearSystemSolver(const int n, Real A[][n],
+        const int m, Real X[][m], Real B[][m])
 {
     int permute[n]; /* record the permutation information */
     Real rhs[n]; /* transfer data into column vector */
-    LUFactorization(A, n, permute);
+    LUFactorization(n, A, permute);
     for (int col = 0; col < m; ++col) { /* solve column by column */
         for (int row = 0; row < n; ++row) {
             rhs[row] = B[row][col]; /* obtain each right hand side vector */
         }
-        FactorizedLinearSystemSolver(A, A, rhs, rhs, n, permute);
+        FactorizedLinearSystemSolver(n, A, A, rhs, rhs, permute);
         for (int row = 0; row < n; ++row) { /* save solution vector */
             X[row][col] = rhs[row];
         }
@@ -46,7 +47,7 @@ int MatrixLinearSystemSolver(Real **A, const int n, Real **X, Real **B, const in
  * vector "permute", which will be used to reorder the right hand side vectors
  * before solving the factorized linear system.
  */
-static int LUFactorization(Real **A, const int n, int permute[])
+static int LUFactorization(const int n, Real A[][n], int permute[])
 {
     const Real epsilon = 1.0e-15; /* a small number for singularity check */
     Real temp = 0.0; /* auxiliary variable */
@@ -110,8 +111,8 @@ static int LUFactorization(Real **A, const int n, int permute[])
  * space, in this situation, solution vector overwrites the right hand size
  * vector. The permutation information are required for the solving.
  */
-static int FactorizedLinearSystemSolver(Real **L, Real **U, Real x[], Real b[],
-        const int n, const int permute[])
+static int FactorizedLinearSystemSolver(const int n, Real L[][n], Real U[][n], 
+        Real x[], Real b[], const int permute[])
 {
     /*
      * Rearrange the elements of right hand side vector according to
