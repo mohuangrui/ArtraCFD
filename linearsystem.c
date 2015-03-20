@@ -18,12 +18,12 @@ static int FactorizedLinearSystemSolver(Real **L, Real **U, Real x[], Real b[],
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int MatrixLinearSystemSolver(Real **A, Real **X, Real **B, const int n)
+int MatrixLinearSystemSolver(Real **A, const int n, Real **X, Real **B, const int m)
 {
     int permute[n]; /* record the permutation information */
     Real rhs[n]; /* transfer data into column vector */
     LUFactorization(A, n, permute);
-    for (int col = 0; col < n; ++col) { /* solve column by column */
+    for (int col = 0; col < m; ++col) { /* solve column by column */
         for (int row = 0; row < n; ++row) {
             rhs[row] = B[row][col]; /* obtain each right hand side vector */
         }
@@ -143,6 +143,7 @@ static int FactorizedLinearSystemSolver(Real **L, Real **U, Real x[], Real b[],
         }
         x[row] = x[row] / U[row][row];
     }
+    return 0;
 }
 /* a good practice: end file with a newline */
 

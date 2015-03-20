@@ -101,7 +101,6 @@ static int LocateSolidGeometry(Space *space, const Particle *particle, const Par
     Real distX = 0.0;
     Real distY = 0.0;
     Real distZ = 0.0;
-    Real radius = 0.0;
     const Real *ptk = NULL;
     const int offset = space->nodeFlagOffset;
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {

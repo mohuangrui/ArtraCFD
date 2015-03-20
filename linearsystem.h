@@ -22,7 +22,8 @@
  * Linear System Solver in Matrix Form
  *
  * Function
- *      General matrix linear system solver for AX = B.
+ *      General matrix linear system solver for AX = B. 
+ *      Dimension of A is n x n; dimension of X and B is n x m;
  *      A is the system matrix, X is the solution matrix with each column vector
  *      stands for a solution vector of a single linear system A * x = b, B is 
  *      the right hand matrix with each column vector stands for a right hand 
@@ -30,7 +31,7 @@
  *      matrix X is the inverse matrix of A. In practice, right hand matrix 
  *      and solution matrix can share the same storage.
  */
-extern int MatrixLinearSystemSolver(Real **A, Real **X, Real **B, const int n);
+extern int MatrixLinearSystemSolver(Real **A, const int n, Real **X, Real **B, const int m);
 #endif
 /* a good practice: end file with a newline */
 
