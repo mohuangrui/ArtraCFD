@@ -208,14 +208,23 @@ static int IdentifySolidNodeWithGhostNeighbours(Space *space, const Particle *pa
 }
 /*
  * Boundary condition for interior ghost nodes and solid nodes with ghost
- * neighbours.
+ * neighbours. At the same time, integrate the forces for each particle.
  */
 int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle, 
         const Partition *part, const Flow *flow)
 {
     int idx = 0; /* linear array index math variable */
     int geoID = 0; /* geometry id */
+    Real *ptk = NULL;
     const int offset = space->nodeFlagOffset;
+    /* reset some non accumulative information of particles to zero */
+    for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
+        ptk = particle->headAddress + geoCount * particle->entryN; /* point to storage of current particle */
+        ptk[6] = 0; /* force at x direction */
+        ptk[7] = 0; /* force at y direction */
+        ptk[8] = 0; /* force at z direction */
+        ptk[11] = 0; /* ghost node count */
+    }
     /*
      * Processing ghost nodes
      */
@@ -227,14 +236,35 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
                     continue;
                 }
                 geoID = space->nodeFlag[idx] - offset; /* extract geometry number from inner ghost node flag */
+                /*
+                 * Add the pressure force at boundary to the pressure force of 
+                 * corresponding particle. The pressure at boundary will equal
+                 * to the pressure of the ghost node since zero pressure 
+                 * gradient at wall normal direction is enforced here.
+                 * A even spaced pressure distribution over the particle 
+                 * surface is assumed since we only compute the pressure at
+                 * the boundary point that has a ghost neighbour. By this 
+                 * approach, the accuracy of pressure integration along particle
+                 * surface will increase correspondingly with the increase of 
+                 * mesh resolution while saving remarkable computation effort.
+                 */
+                ptk = particle->headAddress + geoID * particle->entryN; /* point to storage of current particle */
+                ptk[11] = ptk[11] + 1; /* count the number of ghost node of current particle */
             }
         }
     }
+    /*
+     * All ghost nodes has been processed, recalibrate the particle force to
+     * surface integral.
+     */
+    /*
+     * Process solid nodes
+     */
     return 0;
 }
 /*
- * Linear reconstruction is adopted here, variable phi at ghost or solid node
- * is reconstructed by two steps:
+ * Reconstruction of the values of primitive vector Uo for a non-fluid node.
+ * Variable phi is reconstructed by a two-step linear reconstruction:
  *
  * phi = 2 * phi_o - phi_image 
  * (scalar phi = phi_o = phi_image, vector phi_o = 0, thus phi = - phi_image)
@@ -245,8 +275,8 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
  * assumption that linear distribution of phi(x,y,z) is also valid for the
  * neighbour nodes.
  */
-static int LinearReconstruction(const int k, const int j, const int i, const int geoID, 
-        Real *U, const Space *space, const Particle *particle, const Flow *flow)
+static int LinearReconstruction(Real Uo[], const int k, const int j, const int i, const int geoID, 
+        const Real *U, const Space *space, const Particle *particle, const Flow *flow)
 {
     Real coeVector[4] = {0.0}; /* undetermined coefficients vector */
     Real posMatrix[4][4] = {{0.0}}; /* position matrix for interpolation */

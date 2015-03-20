@@ -30,6 +30,12 @@
  *      vector of a single linear system. If B is a unit matrix, then solution
  *      matrix X is the inverse matrix of A. In practice, right hand matrix 
  *      and solution matrix can share the same storage.
+ * Notice
+ *      The storage space that argument A, X, B point to should be two
+ *      dimensional arrays. A prerequisite step that establishes the
+ *      relationship between 2nd pointers A, X, B and their corresponding two
+ *      dimensional arrays are required for correctly indexing array elements.
+ *      This can be achieved via array pointers: **A => *A[n] => A[n][n]
  */
 extern int MatrixLinearSystemSolver(Real **A, const int n, Real **X, Real **B, const int m);
 #endif
