@@ -69,10 +69,12 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
          * splitting method.
          */
         TickTime(&operationTimer);
-        /* fluid dynamics */
-        RungeKutta(field, space, particle, time, part, flow);
         /* particle dynamics */
-        ParticleSpatialEvolution(field->U, space, particle, time, part, flow);
+        ParticleSpatialEvolution(field->U, 0.5 * time->dt, space, particle, part, flow);
+        /* fluid dynamics */
+        RungeKutta(field, time->dt, space, particle, part, flow);
+        /* particle dynamics */
+        ParticleSpatialEvolution(field->U, 0.5 * time->dt, space, particle, part, flow);
         operationTime = TockTime(&operationTimer);
         fprintf(stdout, "elapsed: %.6gs\n", operationTime);
         /*

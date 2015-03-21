@@ -17,8 +17,8 @@
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int RungeKutta(Field *field, Space *space, Particle *particle,
-        Time *time, const Partition *part, const Flow *flow)
+int RungeKutta(Field *field, const Real dt, Space *space, Particle *particle,
+        const Partition *part, const Flow *flow)
 {
     /*
      * First, save the full value of current field, since this value is required
@@ -33,11 +33,11 @@ int RungeKutta(Field *field, Space *space, Particle *particle,
      * Then solve the flow field for a time step, updated data will be stored
      * in the same storage space of inputed data.
      */
-    SpatialDiscretizationAndComputation(field->U, time->dt, field->Uswap, space, particle, part, flow);
+    SpatialDiscretizationAndComputation(field->U, dt, field->Uswap, space, particle, part, flow);
     /*
      * Now solve the updated field data for another time step.
      */
-    SpatialDiscretizationAndComputation(field->U, time->dt, field->Uswap, space, particle, part, flow);
+    SpatialDiscretizationAndComputation(field->U, dt, field->Uswap, space, particle, part, flow);
     /*
      * Calculate the intermediate stage based on the newest updated data and
      * the original field data which is stored at first. No new storage space
@@ -52,7 +52,7 @@ int RungeKutta(Field *field, Space *space, Particle *particle,
     /*
      * Now solve the updated field data based on the intermediate field.
      */
-    SpatialDiscretizationAndComputation(field->U, time->dt, field->Uswap, space, particle, part, flow);
+    SpatialDiscretizationAndComputation(field->U, dt, field->Uswap, space, particle, part, flow);
     /*
      * Calculate field data at n+1
      */

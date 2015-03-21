@@ -24,8 +24,8 @@
  * Function
  *      
  */
-extern int ParticleSpatialEvolution(Real *U, Space *, Particle *, 
-        Time *, const Partition *, const Flow *);
+extern int ParticleSpatialEvolution(Real *U, const Real dt, Space *, Particle *, 
+        const Partition *, const Flow *);
 #endif
 /* a good practice: end file with a newline */
 

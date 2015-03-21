@@ -24,7 +24,7 @@
  * Function
  *      Apply runge-kutta method for explicit time marching solution
  */
-extern int RungeKutta(Field *, Space *, Particle *, Time *, 
+extern int RungeKutta(Field *, const Real dt, Space *, Particle *, 
         const Partition *, const Flow *);
 #endif
 /* a good practice: end file with a newline */

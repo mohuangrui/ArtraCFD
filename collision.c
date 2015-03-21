@@ -19,8 +19,8 @@ static int SurfaceForceIntegration(const Real *U, const Space *space,
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int ParticleSpatialEvolution(Real *U, Space *space, Particle *particle, 
-        Time *time, const Partition *part, const Flow *flow)
+int ParticleSpatialEvolution(Real *U, const Real dt, Space *space, Particle *particle, 
+        const Partition *part, const Flow *flow)
 {
     /*
      * Compute the forces acting on particles.
@@ -38,7 +38,6 @@ int ParticleSpatialEvolution(Real *U, Space *space, Particle *particle,
     Real distZ = 0.0;
     Real mass = 0.0;
     const Real pi = acos(-1);
-    const Real dt = time->dt;
     const int offset = space->nodeFlagOffset;
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
         ptk = particle->headAddress + geoCount * particle->entryN; /* point to storage of current particle */
