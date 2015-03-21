@@ -218,7 +218,6 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
     int idx = 0; /* linear array index math variable */
     Real Uo[5] = {0.0}; /* save reconstructed primitives */
     int geoID = 0; /* geometry id */
-    Real *ptk = NULL;
     const int offset = space->nodeFlagOffset;
     /*
      * Processing ghost nodes
@@ -378,6 +377,7 @@ static int LinearReconstruction(Real Uo[], const int k, const int j, const int i
     Uo[1] = -Uo[1];
     Uo[2] = -Uo[2];
     Uo[3] = -Uo[3];
+    return 0;
 }
 static int Min(const int x, const int y)
 {
