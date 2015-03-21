@@ -38,6 +38,8 @@ int SurfaceForceIntegration(const Real *U, const Space *space, Particle *particl
     Real normalX = 0.0;
     Real normalY = 0.0;
     Real normalZ = 0.0;
+    Real ds = 0.0;
+    const Real pi = acos(-1);
     Real p = 0.0;
     const int offset = space->nodeFlagOffset;
     /* reset some non accumulative information of particles to zero */
@@ -74,6 +76,15 @@ int SurfaceForceIntegration(const Real *U, const Space *space, Particle *particl
             }
         }
     }
+    /* calibrate the sum of discrete forces into integration */
+    if (0 == space->dx * space->dy * space->dz) { /* space dimension collapsed */
+        ds = 2 * pi * ptk[3] / ptk[11]; /* circle perimeter */
+    } else {
+        ds = 4 * pi * ptk[3] * ptk[3] / ptk[11]; /* sphere surface */
+    }
+    ptk[8] = ptk[8] * ds;
+    ptk[9] = ptk[9] * ds;
+    ptk[10] = ptk[10] * ds;
 }
 /* a good practice: end file with a newline */
 
