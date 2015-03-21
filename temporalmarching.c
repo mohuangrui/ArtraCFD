@@ -63,10 +63,16 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
         fprintf(stdout, "\nstep=%d; time=%.6g; remain=%.6g; dt=%.6g; ", time->stepCount, 
                 time->currentTime, time->totalTime - time->currentTime, time->dt);
         /*
-         * Compute field data in current time step
+         * Compute field data in current time step, treat the interaction of
+         * fluid and particles as two physical processes, and split these two
+         * processes in time space use a technique similar to Strang's
+         * splitting method.
          */
         TickTime(&operationTimer);
+        /* fluid dynamics */
         RungeKutta(field, space, particle, time, part, flow);
+        /* particle dynamics */
+        ParticleSpatialEvolution(field->U, space, particle, time, part, flow);
         operationTime = TockTime(&operationTimer);
         fprintf(stdout, "elapsed: %.6gs\n", operationTime);
         /*
@@ -95,8 +101,6 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
             WriteComputedDataAtProbes(time->stepCount, field->U, space, flow);
             probeAccumulatedTime = 0; /* reset probe accumulated time */
         }
-        /* particle dynamics */
-        ParticleSpatialEvolution(field->U, space, particle, time, part, flow);
     }
     ShowInformation("Session End");
     return 0;
