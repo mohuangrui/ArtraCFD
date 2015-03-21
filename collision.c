@@ -9,6 +9,7 @@
 #include "collision.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
+#include "gcibm.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
@@ -18,7 +19,7 @@ static int SurfaceForceIntegration(const Real *U, const Space *space,
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int ParticleSpatialEvolution(Real *U, const Space *space, Particle *particle, 
+int ParticleSpatialEvolution(Real *U, Space *space, Particle *particle, 
         Time *time, const Partition *part, const Flow *flow)
 {
     /*
@@ -117,6 +118,7 @@ int ParticleSpatialEvolution(Real *U, const Space *space, Particle *particle,
                     ++tally; /* increase the tally */
                 }
                 /* reconstruction of flow values */
+                idx = idx * 5; /* switch to index field variable */
                 U[idx+0] = Uo[0];
                 U[idx+1] = Uo[0] * Uo[1];
                 U[idx+2] = Uo[0] * Uo[2];
@@ -125,19 +127,22 @@ int ParticleSpatialEvolution(Real *U, const Space *space, Particle *particle,
             }
         }
     }
+    /*
+     * Recompute the changed geometry and apply boundary condition.
+     */
+    ComputeDomainGeometryGCIBM(space, particle, part);
+    BoundaryConditionGCIBM(U, space, particle, part, flow);
     return 0;
 }
 /*
- * Add the pressure force at boundary to the pressure force of 
- * corresponding particle. The pressure at boundary will equal
- * to the pressure of the ghost node since zero pressure 
- * gradient at wall normal direction is enforced here.
- * A even spaced pressure distribution over the particle 
- * surface is assumed since we only compute the pressure at
- * the boundary point that has a ghost neighbour. By this 
- * approach, the accuracy of pressure integration along particle
- * surface will increase correspondingly with the increase of 
- * mesh resolution while saving remarkable computation effort.
+ * Add the pressure force at boundary to the pressure force of corresponding
+ * particle. The pressure at boundary will equal to the pressure of the ghost
+ * node since zero pressure gradient at wall normal direction is enforced here.
+ * A even spaced pressure distribution over the particle surface is assumed 
+ * since we only compute the pressure at the boundary point that has a ghost 
+ * neighbour. By this approach, the accuracy of pressure integration along 
+ * particle surface will increase correspondingly with the increase of mesh 
+ * resolution while saving remarkable computation effort.
  */
 static int SurfaceForceIntegration(const Real *U, const Space *space, Particle *particle, 
         const Partition *part, const Flow *flow)

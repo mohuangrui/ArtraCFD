@@ -11,6 +11,7 @@
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
 #include "rungekutta.h"
+#include "collision.h"
 #include "ensight.h"
 #include "timer.h"
 #include "flowprobe.h"
@@ -94,9 +95,8 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
             WriteComputedDataAtProbes(time->stepCount, field->U, space, flow);
             probeAccumulatedTime = 0; /* reset probe accumulated time */
         }
-        /* fluid solid coupling */
         /* particle dynamics */
-        /* recompute domain geometry and remeshing */
+        ParticleSpatialEvolution(field->U, space, particle, time, part, flow);
     }
     ShowInformation("Session End");
     return 0;
