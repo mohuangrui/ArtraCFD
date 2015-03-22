@@ -49,7 +49,8 @@ static int ProgramMemoryAllocate(Field *field, Space *space)
      * Conservative flow variables: rho, rho_u, rho_v, rho_w, rho_eT.
      * Tips: the storage space of U is best between Un and Uswap.
      */
-    int idxMax = space->nMax * 5;
+    space->dimU = 5; /* dimension of field variable */
+    int idxMax = space->nMax * space->dimU;
     field->Un = AssignStorage(idxMax, "Real");
     field->U = AssignStorage(idxMax, "Real");
     field->Uswap = AssignStorage(idxMax, "Real");
