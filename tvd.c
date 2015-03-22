@@ -202,14 +202,14 @@ static int Lz(Real *U, const Real *Un, const Space *space, const Partition *part
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = ((k * space->jMax + j) * space->iMax + i);
+                idx = IndexMath(k, j, i, space);
                 if (0 != space->nodeFlag[idx]) { /* it's not a fluid */
                     continue;
                 }
-                idx = idx * 5; /* change idx to field variable */
                 ComputeReconstructedFluxZ(Fhat, k, j, i, Un, space, flow, dt);
                 ComputeReconstructedFluxZ(Fhath, k - 1, j, i, Un, space, flow, dt);
                 ComputeViscousFluxGradientZ(gradG, k, j, i, Un, space, flow);
+                idx = idx * space->dimU; /* change idx to field variable */
                 for (int dim = 0; dim < 5; ++dim) {
                     U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
                 }
@@ -228,14 +228,14 @@ static int Ly(Real *U, const Real *Un, const Space *space, const Partition *part
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = ((k * space->jMax + j) * space->iMax + i);
+                idx = IndexMath(k, j, i, space);
                 if (0 != space->nodeFlag[idx]) { /* it's not a fluid */
                     continue;
                 }
-                idx = idx * 5; /* change idx to field variable */
                 ComputeReconstructedFluxY(Fhat, k, j, i, Un, space, flow, dt);
                 ComputeReconstructedFluxY(Fhath, k, j - 1, i, Un, space, flow, dt);
                 ComputeViscousFluxGradientY(gradG, k, j, i, Un, space, flow);
+                idx = idx * space->dimU; /* change idx to field variable */
                 for (int dim = 0; dim < 5; ++dim) {
                     U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
                 }
@@ -254,14 +254,14 @@ static int Lx(Real *U, const Real *Un, const Space *space, const Partition *part
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = ((k * space->jMax + j) * space->iMax + i);
+                idx = IndexMath(k, j, i, space);
                 if (0 != space->nodeFlag[idx]) { /* it's not a fluid */
                     continue;
                 }
-                idx = idx * 5; /* change idx to field variable */
                 ComputeReconstructedFluxX(Fhat, k, j, i, Un, space, flow, dt);
                 ComputeReconstructedFluxX(Fhath, k, j, i - 1, Un, space, flow, dt);
                 ComputeViscousFluxGradientX(gradG, k, j, i, Un, space, flow);
+                idx = idx * space->dimU; /* change idx to field variable */
                 for (int dim = 0; dim < 5; ++dim) {
                     U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
                 }
@@ -570,8 +570,8 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlphaZ(
         Real lambda[], Real alpha[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
-    const int idxh = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
+    const int idx = IndexMath(k, j, i, space) * space->dimU;
+    const int idxh = IndexMath(k + 1, j, i, space) * space->dimU;;
     Real L[5][5] = {{0.0}}; /* store left eigenvectors */
     const Real deltaU[5] = {
         U[idxh+0] - U[idx+0],
@@ -587,8 +587,8 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlphaY(
         Real lambda[], Real alpha[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
-    const int idxh = ((k * space->jMax + j + 1) * space->iMax + i) * 5;
+    const int idx = IndexMath(k, j, i, space) * space->dimU;
+    const int idxh = IndexMath(k, j + 1, i, space) * space->dimU;;
     Real L[5][5] = {{0.0}}; /* store left eigenvectors */
     const Real deltaU[5] = {
         U[idxh+0] - U[idx+0],
@@ -604,8 +604,8 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlphaX(
         Real lambda[], Real alpha[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
-    const int idxh = ((k * space->jMax + j) * space->iMax + i + 1) * 5;
+    const int idx = IndexMath(k, j, i, space) * space->dimU;
+    const int idxh = IndexMath(k, j, i + 1, space) * space->dimU;;
     Real L[5][5] = {{0.0}}; /* store left eigenvectors */
     const Real deltaU[5] = {
         U[idxh+0] - U[idx+0],
@@ -752,8 +752,8 @@ static int ComputeRoeAverageZ(
         Real Uo[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
-    const int idxh = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
+    const int idx = IndexMath(k, j, i, space) * space->dimU;
+    const int idxh = IndexMath(k + 1, j, i, space) * space->dimU;;
     CalculateRoeAverageUo(Uo, idx, idxh, U, flow);
     return 0;
 }
@@ -761,8 +761,8 @@ static int ComputeRoeAverageY(
         Real Uo[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
-    const int idxh = ((k * space->jMax + j + 1) * space->iMax + i) * 5;
+    const int idx = IndexMath(k, j, i, space) * space->dimU;
+    const int idxh = IndexMath(k, j + 1, i, space) * space->dimU;;
     CalculateRoeAverageUo(Uo, idx, idxh, U, flow);
     return 0;
 }
@@ -770,8 +770,8 @@ static int ComputeRoeAverageX(
         Real Uo[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
-    const int idxh = ((k * space->jMax + j) * space->iMax + i + 1) * 5;
+    const int idx = IndexMath(k, j, i, space) * space->dimU;
+    const int idxh = IndexMath(k, j, i + 1, space) * space->dimU;;
     CalculateRoeAverageUo(Uo, idx, idxh, U, flow);
     return 0;
 }
@@ -802,7 +802,7 @@ static int ComputeNonViscousFluxZ(
         Real F[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+    const int idx = IndexMath(k, j, i, space) * space->dimU;
     const Real rho = U[idx+0];
     const Real u = U[idx+1] / rho;
     const Real v = U[idx+2] / rho;
@@ -820,7 +820,7 @@ static int ComputeNonViscousFluxY(
         Real F[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+    const int idx = IndexMath(k, j, i, space) * space->dimU;
     const Real rho = U[idx+0];
     const Real u = U[idx+1] / rho;
     const Real v = U[idx+2] / rho;
@@ -838,7 +838,7 @@ static int ComputeNonViscousFluxX(
         Real F[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+    const int idx = IndexMath(k, j, i, space) * space->dimU;
     const Real rho = U[idx+0];
     const Real u = U[idx+1] / rho;
     const Real v = U[idx+2] / rho;
@@ -881,8 +881,8 @@ static int ComputeViscousFluxGradientZ(
         --hr;
     }
     /* check ghost */
-    const int idxl = (hl * space->jMax + j) * space->iMax + i;
-    const int idxr = (hr * space->jMax + j) * space->iMax + i;
+    const int idxl = IndexMath(hl, j, i, space);
+    const int idxr = IndexMath(hr, j, i, space);
     if (offset <= space->nodeFlag[idxl]) {
         ++hl;
     }
@@ -917,8 +917,8 @@ static int ComputeViscousFluxGradientY(
         --hr;
     }
     /* check ghost */
-    const int idxl = (k * space->jMax + hl) * space->iMax + i;
-    const int idxr = (k * space->jMax + hr) * space->iMax + i;
+    const int idxl = IndexMath(k, hl, i, space);
+    const int idxr = IndexMath(k, hr, i, space);
     if (offset <= space->nodeFlag[idxl]) {
         ++hl;
     }
@@ -953,8 +953,8 @@ static int ComputeViscousFluxGradientX(
         --hr;
     }
     /* check ghost */
-    const int idxl = (k * space->jMax + j) * space->iMax + hl;
-    const int idxr = (k * space->jMax + j) * space->iMax + hr;
+    const int idxl = IndexMath(k, j, hl, space);
+    const int idxr = IndexMath(k, j, hr, space);
     if (offset <= space->nodeFlag[idxl]) {
         ++hl;
     }
@@ -975,13 +975,13 @@ static int ComputeViscousFluxZ(
         Real G[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
-    const int idxW = ((k * space->jMax + j) * space->iMax + i - 1) * 5;
-    const int idxE = ((k * space->jMax + j) * space->iMax + i + 1) * 5;
-    const int idxS = ((k * space->jMax + j - 1) * space->iMax + i) * 5;
-    const int idxN = ((k * space->jMax + j + 1) * space->iMax + i) * 5;
-    const int idxF = (((k - 1) * space->jMax + j) * space->iMax + i) * 5;
-    const int idxB = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
+    const int idx = IndexMath(k, j, i, space) * space->dimU;
+    const int idxW = IndexMath(k, j, i - 1, space) * space->dimU;
+    const int idxE = IndexMath(k, j, i + 1, space) * space->dimU;
+    const int idxS = IndexMath(k, j - 1, i, space) * space->dimU;
+    const int idxN = IndexMath(k, j + 1, i, space) * space->dimU;
+    const int idxF = IndexMath(k - 1, j, i, space) * space->dimU;
+    const int idxB = IndexMath(k + 1, j, i, space) * space->dimU;
 
     /* calculate derivatives in z direction */
     const Real rhoB = U[idxB+0];
@@ -1043,13 +1043,13 @@ static int ComputeViscousFluxY(
         Real G[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
-    const int idxW = ((k * space->jMax + j) * space->iMax + i - 1) * 5;
-    const int idxE = ((k * space->jMax + j) * space->iMax + i + 1) * 5;
-    const int idxS = ((k * space->jMax + j - 1) * space->iMax + i) * 5;
-    const int idxN = ((k * space->jMax + j + 1) * space->iMax + i) * 5;
-    const int idxF = (((k - 1) * space->jMax + j) * space->iMax + i) * 5;
-    const int idxB = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
+    const int idx = IndexMath(k, j, i, space) * space->dimU;
+    const int idxW = IndexMath(k, j, i - 1, space) * space->dimU;
+    const int idxE = IndexMath(k, j, i + 1, space) * space->dimU;
+    const int idxS = IndexMath(k, j - 1, i, space) * space->dimU;
+    const int idxN = IndexMath(k, j + 1, i, space) * space->dimU;
+    const int idxF = IndexMath(k - 1, j, i, space) * space->dimU;
+    const int idxB = IndexMath(k + 1, j, i, space) * space->dimU;
 
     /* calculate derivatives in z direction */
     const Real vB = U[idxB+2] / U[idxB+0];
@@ -1111,13 +1111,13 @@ static int ComputeViscousFluxX(
         Real G[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = ((k * space->jMax + j) * space->iMax + i) * 5;
-    const int idxW = ((k * space->jMax + j) * space->iMax + i - 1) * 5;
-    const int idxE = ((k * space->jMax + j) * space->iMax + i + 1) * 5;
-    const int idxS = ((k * space->jMax + j - 1) * space->iMax + i) * 5;
-    const int idxN = ((k * space->jMax + j + 1) * space->iMax + i) * 5;
-    const int idxF = (((k - 1) * space->jMax + j) * space->iMax + i) * 5;
-    const int idxB = (((k + 1) * space->jMax + j) * space->iMax + i) * 5;
+    const int idx = IndexMath(k, j, i, space) * space->dimU;
+    const int idxW = IndexMath(k, j, i - 1, space) * space->dimU;
+    const int idxE = IndexMath(k, j, i + 1, space) * space->dimU;
+    const int idxS = IndexMath(k, j - 1, i, space) * space->dimU;
+    const int idxN = IndexMath(k, j + 1, i, space) * space->dimU;
+    const int idxF = IndexMath(k - 1, j, i, space) * space->dimU;
+    const int idxB = IndexMath(k + 1, j, i, space) * space->dimU;
 
     /* calculate derivatives in z direction */
     const Real uB = U[idxB+1] / U[idxB+0];
