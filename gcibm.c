@@ -334,11 +334,9 @@ static int LinearReconstruction(Real Uo[], const int k, const int j, const int i
         posMatrix[tally][3] = (Real)(kh);
         /* construct the right hand vectors */
         PrimitiveByConservative(Uoh, idxh * space->dimU, U, flow);
-        rhsVector[tally][0] = Uoh[0];
-        rhsVector[tally][1] = Uoh[1];
-        rhsVector[tally][2] = Uoh[2];
-        rhsVector[tally][3] = Uoh[3];
-        rhsVector[tally][4] = Uoh[4];
+        for (int dim = 0; dim < space->dimU; ++dim) {
+            rhsVector[tally][dim] = Uoh[dim];
+        }
         ++tally; /* increase the tally */
     }
     /*
@@ -354,7 +352,7 @@ static int LinearReconstruction(Real Uo[], const int k, const int j, const int i
     const Real imageX = (Real)(i) + 2 * distToSurface * normalX * space->ddx;
     const Real imageY = (Real)(j) + 2 * distToSurface * normalY * space->ddy;
     const Real imageZ = (Real)(k) + 2 * distToSurface * normalZ * space->ddz;
-    for (int m = 0; m < 5; ++m) {
+    for (int m = 0; m < space->dimU; ++m) {
         Uo[m] = rhsVector[0][m] + rhsVector[1][m] * imageX + 
             rhsVector[2][m] * imageY + rhsVector[3][m] * imageZ;
     }

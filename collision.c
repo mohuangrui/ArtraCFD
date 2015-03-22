@@ -104,11 +104,9 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space, Particle *par
                         continue;
                     }
                     PrimitiveByConservative(Uoh, idxh * space->dimU, U, flow);
-                    Uo[0] = Uo[0] + (1 / stencilN) * Uoh[0];
-                    Uo[1] = Uo[1] + (1 / stencilN) * Uoh[1];
-                    Uo[2] = Uo[2] + (1 / stencilN) * Uoh[2];
-                    Uo[3] = Uo[3] + (1 / stencilN) * Uoh[3];
-                    Uo[4] = Uo[4] + (1 / stencilN) * Uoh[4];
+                    for (int dim = 0; dim < space->dimU; ++dim) {
+                        Uo[dim] = Uo[dim] + (1 / stencilN) * Uoh[dim];
+                    }
                     ++tally; /* increase the tally */
                 }
                 /* reconstruction of flow values */
