@@ -83,7 +83,7 @@
  *   compiler-enforced protection from unintended writes to data
  *   that should be read-only.
  *    * Declare variables that should not be changed after initialization.
- *          const double pi = 3.1415; const data;
+ *          const double pi = 3.1415;
  *    * Two ways of declaring a const pointer: 
  *      a) the target address which the pointer points to is fixed, but 
  *      the content in the address can be changed:
@@ -468,10 +468,10 @@ typedef double Real;
  * conservative variables at each (k,j,i), the most efficient index arrangement
  * should be the following:
  *
- * U[kMax][jMax][iMax][5] (Note: NOT U[5][kMax][jMax][iMax]);
- * int k, j, i;
+ * U[kMax][jMax][iMax][dimU] (Note: NOT U[dimU][kMax][jMax][iMax]);
+ * int k, j, i, dimU;
  * int idx; use long type if needed
- * idx = ((k * jMax + j) * iMax + i) * 5;
+ * idx = ((k * jMax + j) * iMax + i) * dimU;
  * rho    = U[idx+0];
  * rho_u  = U[idx+1];
  * rho_v  = U[idx+2];
@@ -479,6 +479,7 @@ typedef double Real;
  * rho_eT = U[idx+4];
  */
 typedef struct {
+    int dimU; /* dimension of field variable vector */
     Real *Un; /* store the "old" field data for intermediate calculation */
     Real *U; /* store updating field data, and updated data after every computation  */
     Real *Uswap; /* an auxiliary storage space */
@@ -650,6 +651,32 @@ extern void *AssignStorage(const int idxMax, const char *dataType);
  *      0 -- successful
  */
 extern int RetrieveStorage(void *pointer);
+/*
+ * Index math.
+ *
+ * Function
+ *      calculate the index of current node.
+ * Returns
+ *      int -- the calculated index value
+ */
+extern int IndexMath(const int k, const int j, const int i, const Space *space);
+/*
+ * Compute the values of primitive variable vector.
+ *
+ * Parameter
+ *      Uo[] -- a array stores the returned values of [rho, u, v, w, p, T].
+ *      idx  -- the index of current node.
+ * Returns
+ *      0 -- successful
+ */
+extern int GetPrimitiveVariable(Real Uo[], const int idx, const Real *U, const Flow *);
+/*
+ * Compute and update conservative variable vector.
+ *
+ * Function
+ *      Compute and update conservative variable vector according to primitive values.
+ */
+extern int PrimitiveToConservative(Real *U, const int idx, const Real Uo[], const Flow *flow);
 #endif
 /* a good practice: end file with a newline */
 

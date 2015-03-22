@@ -156,5 +156,40 @@ int RetrieveStorage(void *pointer)
     }
     return 0;
 }
+/*
+ * Index math.
+ */
+int IndexMath(const int k, const int j, const int i, const Space *space)
+{
+    return ((k * space->jMax + j) * space->iMax + i);
+}
+/*
+ * Get value of primitive variable vector.
+ * [rho, u, v, w, p, T]
+ */
+int GetPrimitiveVariable(Real Uo[], const int idx, const Real *U, const Flow *flow)
+{
+    Uo[0] = U[idx];
+    Uo[1] = U[idx+1] / U[idx];
+    Uo[2] = U[idx+2] / U[idx];
+    Uo[3] = U[idx+3] / U[idx];
+    Uo[4] = (flow->gamma - 1.0) * (U[idx+4] - 0.5 * 
+            ((U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]));
+    Uo[5] = (Uo[4] / U[idx]) / flow->gasR;
+    return 0;
+}
+/*
+ * Compute and update conservative variable vector according to primitive
+ * values.
+ */
+int PrimitiveToConservative(Real *U, const int idx, const Real Uo[], const Flow *flow)
+{
+    U[idx] = Uo[0];
+    U[idx+1] = Uo[0] * Uo[1];
+    U[idx+2] = Uo[0] * Uo[2];
+    U[idx+3] = Uo[0] * Uo[3];
+    U[idx+4] = Uo[4] / (flow->gamma - 1.0) + 0.5 * Uo[0] * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]);
+    return 0;
+}
 /* a good practice: end file with a newline */
 
