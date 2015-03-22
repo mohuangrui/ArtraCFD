@@ -19,9 +19,10 @@
 static int InitializeDomainGeometry(Space *, const Partition *);
 static int LocateSolidGeometry(Space *, const Particle *, const Partition *);
 static int IdentifyGhostNodes(Space *, const Partition *);
-static int IdentifySolidNodeWithGhostNeighbours(Space *, const Particle *, const Partition *);
-static int LinearReconstruction(Real Uo[], const int k, const int j, const int i, const int geoID, 
-        const Real *U, const Space *, const Particle *, const Flow *);
+static int IdentifySolidNodeWithGhostNeighbours(Space *, const Particle *, 
+        const Partition *);
+static int LinearReconstruction(Real Uo[], const int k, const int j, const int i,
+        const int geoID, const Real *U, const Space *, const Particle *, const Flow *);
 static int Min(const int x, const int y);
 static int Max(const int x, const int y);
 /****************************************************************************
@@ -81,7 +82,7 @@ static int InitializeDomainGeometry(Space *space, const Partition *part)
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
+                idx = IndexMath(k, j, i, space);
                 space->nodeFlag[idx] = 0;
             }
         }
@@ -106,7 +107,7 @@ static int LocateSolidGeometry(Space *space, const Particle *particle, const Par
     const Real *ptk = NULL;
     const int offset = space->nodeFlagOffset;
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        ptk = particle->headAddress + geoCount * particle->entryN; /* point to storage of current particle */
+        ptk = particle->headAddress + geoCount * particle->entryN; /* point to particle */
         const int iCenter = (int)((ptk[0] - space->xMin) * space->ddx) + space->ng;
         const int jCenter = (int)((ptk[1] - space->yMin) * space->ddy) + space->ng;
         const int kCenter = (int)((ptk[2] - space->zMin) * space->ddz) + space->ng;
@@ -123,7 +124,7 @@ static int LocateSolidGeometry(Space *space, const Particle *particle, const Par
         for (int k = kSub; k < kSup; ++k) {
             for (int j = jSub; j < jSup; ++j) {
                 for (int i = iSub; i < iSup; ++i) {
-                    idx = (k * space->jMax + j) * space->iMax + i;
+                    idx = IndexMath(k, j, i, space);
                     distX = space->xMin + (i - space->ng) * space->dx - ptk[0];
                     distY = space->yMin + (j - space->ng) * space->dy - ptk[1];
                     distZ = space->zMin + (k - space->ng) * space->dz - ptk[2];
@@ -152,28 +153,29 @@ static int IdentifyGhostNodes(Space *space, const Partition *part)
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
+                idx = IndexMath(k, j, i, space);
                 if (-offset < space->nodeFlag[idx]) { /* it's not solid node */
                     continue;
                 }
-                idxW = (k * space->jMax + j) * space->iMax + i - 1;
-                idxE = (k * space->jMax + j) * space->iMax + i + 1;
-                idxS = (k * space->jMax + j - 1) * space->iMax + i;
-                idxN = (k * space->jMax + j + 1) * space->iMax + i;
-                idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
-                idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
+                idxW = IndexMath(k, j, i - 1, space);
+                idxE = IndexMath(k, j, i + 1, space);
+                idxS = IndexMath(k, j - 1, i, space);
+                idxN = IndexMath(k, j + 1, i, space);
+                idxF = IndexMath(k - 1, j, i, space);
+                idxB = IndexMath(k + 1, j, i, space);
                 flag = space->nodeFlag[idxW] * space->nodeFlag[idxE] * 
                     space->nodeFlag[idxS] * space->nodeFlag[idxN] * 
                     space->nodeFlag[idxF] * space->nodeFlag[idxB];
                 if (0 == flag) { /* if exist one neighbour is fluid, then it's ghost */
-                    space->nodeFlag[idx] = -space->nodeFlag[idx]; /* geometry information conserved */
+                    space->nodeFlag[idx] = -space->nodeFlag[idx]; /* geometry conserved */
                 }
             }
         }
     }
     return 0;
 }
-static int IdentifySolidNodeWithGhostNeighbours(Space *space, const Particle *particle, const Partition *part)
+static int IdentifySolidNodeWithGhostNeighbours(Space *space, 
+        const Particle *particle, const Partition *part)
 {
     int idx = 0; /* linear array index math variable */
     int idxW = 0; /* index at West */
@@ -186,23 +188,23 @@ static int IdentifySolidNodeWithGhostNeighbours(Space *space, const Particle *pa
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
+                idx = IndexMath(k, j, i, space);
                 if (-offset < space->nodeFlag[idx]) { /* it's not solid node */
                     continue;
                 }
-                idxW = (k * space->jMax + j) * space->iMax + i - 1;
-                idxE = (k * space->jMax + j) * space->iMax + i + 1;
-                idxS = (k * space->jMax + j - 1) * space->iMax + i;
-                idxN = (k * space->jMax + j + 1) * space->iMax + i;
-                idxF = ((k - 1) * space->jMax + j) * space->iMax + i;
-                idxB = ((k + 1) * space->jMax + j) * space->iMax + i;
+                idxW = IndexMath(k, j, i - 1, space);
+                idxE = IndexMath(k, j, i + 1, space);
+                idxS = IndexMath(k, j - 1, i, space);
+                idxN = IndexMath(k, j + 1, i, space);
+                idxF = IndexMath(k - 1, j, i, space);
+                idxB = IndexMath(k + 1, j, i, space);
                 if ((-offset >= space->nodeFlag[idxW]) && (-offset >= space->nodeFlag[idxE]) &&  
                         (-offset >= space->nodeFlag[idxS]) && (-offset >= space->nodeFlag[idxN]) && 
                         (-offset >= space->nodeFlag[idxF]) && (-offset >= space->nodeFlag[idxB])) {
                     continue; /* this solid node has no ghost neighbour */
                 }
                 /* exist at least one neighbour is ghost */
-                space->nodeFlag[idx] = space->nodeFlag[idx] - particle->totalN; /* geometry information conserved */
+                space->nodeFlag[idx] = space->nodeFlag[idx] - particle->totalN; /* geometry conserved */
             }
         }
     }
@@ -225,18 +227,13 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
+                idx = IndexMath(k, j, i, space);
                 if (offset > space->nodeFlag[idx]) { /* it's not a ghost */
                     continue;
                 }
-                geoID = space->nodeFlag[idx] - offset; /* extract geometry number from inner ghost node flag */
+                geoID = space->nodeFlag[idx] - offset; /* extract geometry */
                 LinearReconstruction(Uo, k, j, i, geoID, U, space, particle, flow);
-                idx = idx * 5; /* switch to index field variable */
-                U[idx+0] = Uo[0];
-                U[idx+1] = Uo[0] * Uo[1];
-                U[idx+2] = Uo[0] * Uo[2];
-                U[idx+3] = Uo[0] * Uo[3];
-                U[idx+4] = Uo[4] / (flow->gamma - 1.0) + 0.5 * Uo[0] * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]);
+                ConservativeByPrimitive(U, idx * space->dimU, Uo, flow);
             }
         }
     }
@@ -246,18 +243,13 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
-                if (-offset - particle->totalN < space->nodeFlag[idx]) { /* it's not a solid with ghost neighbour */
+                idx = IndexMath(k, j, i, space);
+                if (-offset - particle->totalN < space->nodeFlag[idx]) { /* not a solid with ghost neighbour */
                     continue;
                 }
-                geoID = space->nodeFlag[idx] + offset + particle->totalN; /* extract geometry number from inner ghost node flag */
+                geoID = space->nodeFlag[idx] + offset + particle->totalN; /* extract geometry */
                 LinearReconstruction(Uo, k, j, i, geoID, U, space, particle, flow);
-                idx = idx * 5; /* switch to index field variable */
-                U[idx+0] = Uo[0];
-                U[idx+1] = Uo[0] * Uo[1];
-                U[idx+2] = Uo[0] * Uo[2];
-                U[idx+3] = Uo[0] * Uo[3];
-                U[idx+4] = Uo[4] / (flow->gamma - 1.0) + 0.5 * Uo[0] * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]);
+                ConservativeByPrimitive(U, idx * space->dimU, Uo, flow);
             }
         }
     }
@@ -318,11 +310,12 @@ static int LinearReconstruction(Real Uo[], const int k, const int j, const int i
     const int stencilN = 4; /* number of stencils for interpolation */
     int tally = 0; /* number of current stencil */
     int idxh = 0; /* index variable */
+    Real Uoh[6] = {0.0};
     for (int loop = 0; (tally < stencilN) && (loop < 27); ++loop) {
         const int ih = imageI + path[loop][0];
         const int jh = imageJ + path[loop][1];
         const int kh = imageK + path[loop][2];
-        idxh = (kh * space->jMax + jh) * space->iMax + ih;
+        idxh = IndexMath(kh, jh, ih, space);
         if (0 != space->nodeFlag[idxh]) { /* it's not a fluid node */
             continue;
         }
@@ -340,18 +333,12 @@ static int LinearReconstruction(Real Uo[], const int k, const int j, const int i
         posMatrix[tally][2] = (Real)(jh);
         posMatrix[tally][3] = (Real)(kh);
         /* construct the right hand vectors */
-        idxh = idxh * 5; /* switch to index field variable */
-        const Real rho_h = U[idxh+0];
-        const Real u_h = U[idxh+1] / rho_h;
-        const Real v_h = U[idxh+2] / rho_h;
-        const Real w_h = U[idxh+3] / rho_h;
-        const Real eT_h = U[idxh+4] / rho_h;
-        const Real p_h = (flow->gamma - 1.0) * rho_h * (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h));
-        rhsVector[tally][0] = rho_h;
-        rhsVector[tally][1] = u_h;
-        rhsVector[tally][2] = v_h;
-        rhsVector[tally][3] = w_h;
-        rhsVector[tally][4] = p_h;
+        PrimitiveByConservative(Uoh, idxh * space->dimU, U, flow);
+        rhsVector[tally][0] = Uoh[0];
+        rhsVector[tally][1] = Uoh[1];
+        rhsVector[tally][2] = Uoh[2];
+        rhsVector[tally][3] = Uoh[3];
+        rhsVector[tally][4] = Uoh[4];
         ++tally; /* increase the tally */
     }
     /*
@@ -368,7 +355,8 @@ static int LinearReconstruction(Real Uo[], const int k, const int j, const int i
     const Real imageY = (Real)(j) + 2 * distToSurface * normalY * space->ddy;
     const Real imageZ = (Real)(k) + 2 * distToSurface * normalZ * space->ddz;
     for (int m = 0; m < 5; ++m) {
-        Uo[m] = rhsVector[0][m] + rhsVector[1][m] * imageX + rhsVector[2][m] * imageY + rhsVector[3][m] * imageZ;
+        Uo[m] = rhsVector[0][m] + rhsVector[1][m] * imageX + 
+            rhsVector[2][m] * imageY + rhsVector[3][m] * imageZ;
     }
     /*
      * Apply wall boundary conditions to obtain the primitive values at nodes
