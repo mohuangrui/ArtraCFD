@@ -52,11 +52,13 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
 {
     ShowInformation("  Non-restart run initializing...");
     /* extract initial values */
-    const Real rho = part->valueBC[0][0];
-    const Real u = part->valueBC[0][1];
-    const Real v = part->valueBC[0][2];
-    const Real w = part->valueBC[0][3];
-    const Real p = part->valueBC[0][4];
+    const Real Uo[6] = {
+        part->valueBC[0][0],
+        part->valueBC[0][1],
+        part->valueBC[0][2],
+        part->valueBC[0][3],
+        part->valueBC[0][4],
+        0.0};
     /*
      * Initialize the interior field
      */
@@ -64,12 +66,8 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = ((k * space->jMax + j) * space->iMax + i) * 5;
-                U[idx+0] = rho;
-                U[idx+1] = rho * u;
-                U[idx+2] = rho * v;
-                U[idx+3] = rho * w;
-                U[idx+4] = p / (flow->gamma - 1.0) + 0.5 * rho * (u * u + v * v + w * w);
+                idx = IndexMath(k, j, i, space) * space->dimU;
+                ConservativeByPrimitive(U, idx, Uo, flow);
             }
         }
     }
@@ -108,11 +106,13 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
     const Real x = part->valueIC[n][0];
     const Real y = part->valueIC[n][1];
     const Real z = part->valueIC[n][2];
-    const Real rho = part->valueIC[n][10];
-    const Real u = part->valueIC[n][11];
-    const Real v = part->valueIC[n][12];
-    const Real w = part->valueIC[n][13];
-    const Real p = part->valueIC[n][14];
+    const Real Uo[6] = {
+        part->valueIC[n][10],
+        part->valueIC[n][11],
+        part->valueIC[n][12],
+        part->valueIC[n][13],
+        part->valueIC[n][14],
+        0.0};
     /* the vary part */
     Real r = 0.0;
     Real xh = 0.0;
@@ -146,7 +146,6 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = ((k * space->jMax + j) * space->iMax + i) * 5;
                 flag = 0; /* always initialize flag to zero */
                 switch (part->typeIC[n]) {
                     case 1: /* plane */
@@ -161,15 +160,19 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
                         xh = (space->xMin + (i - space->ng) * space->dx - x);
                         yh = (space->yMin + (j - space->ng) * space->dy - y);
                         zh = (space->zMin + (k - space->ng) * space->dz - z);
-                        if (0 > (xh * xh + yh * yh + zh * zh - r * r)) { /* in the sphere */
+                        if (0 >= (xh * xh + yh * yh + zh * zh - r * r)) { /* in or on the sphere */
                             flag = 1; /* set flag to true */
                         }
                         break;
                     case 3: /* box */
-                        normalX = (space->xMin + (i - space->ng) * space->dx - x) * (space->xMin + (i - space->ng) * space->dx - xh);
-                        normalY = (space->yMin + (j - space->ng) * space->dy - y) * (space->yMin + (j - space->ng) * space->dy - yh);
-                        normalZ = (space->zMin + (k - space->ng) * space->dz - z) * (space->zMin + (k - space->ng) * space->dz - zh);
-                        if ((0 >= normalX) && (0 >= normalY) && (0 >= normalZ)) { /* in the box, equal sign is needed for collapse */
+                        normalX = (space->xMin + (i - space->ng) * space->dx - x) * 
+                            (space->xMin + (i - space->ng) * space->dx - xh);
+                        normalY = (space->yMin + (j - space->ng) * space->dy - y) * 
+                            (space->yMin + (j - space->ng) * space->dy - yh);
+                        normalZ = (space->zMin + (k - space->ng) * space->dz - z) * 
+                            (space->zMin + (k - space->ng) * space->dz - zh);
+                        if ((0 >= normalX) && (0 >= normalY) && (0 >= normalZ)) { 
+                            /* in the box, equal sign is needed for collapse */
                             flag = 1; /* set flag to true */
                         }
                         break;
@@ -177,11 +180,8 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
                         break;
                 }
                 if (1 == flag) { /* current node meets the condition */
-                    U[idx+0] = rho;
-                    U[idx+1] = rho * u;
-                    U[idx+2] = rho * v;
-                    U[idx+3] = rho * w;
-                    U[idx+4] = p / (flow->gamma - 1.0) + 0.5 * rho * (u * u + v * v + w * w);
+                    idx = IndexMath(k, j, i, space) * space->dimU;
+                    ConservativeByPrimitive(U, idx, Uo, flow);
                 }
             }
         }
