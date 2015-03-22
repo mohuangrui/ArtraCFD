@@ -479,7 +479,6 @@ typedef double Real;
  * rho_eT = U[idx+4];
  */
 typedef struct {
-    int dimU; /* dimension of field variable vector */
     Real *Un; /* store the "old" field data for intermediate calculation */
     Real *U; /* store updating field data, and updated data after every computation  */
     Real *Uswap; /* an auxiliary storage space */
@@ -496,6 +495,7 @@ typedef struct {
     int jMax; /* total node number in y */
     int kMax; /* total node number in z */
     int nMax; /* total node number */
+    int dimU; /* dimension of field variable vector */
     Real dx; /* mesh size in x */
     Real dy; /* mesh size in y */
     Real dz; /* mesh size in z */
@@ -669,14 +669,14 @@ extern int IndexMath(const int k, const int j, const int i, const Space *space);
  * Returns
  *      0 -- successful
  */
-extern int GetPrimitiveVariable(Real Uo[], const int idx, const Real *U, const Flow *);
+extern int PrimitiveByConservative(Real Uo[], const int idx, const Real *U, const Flow *);
 /*
  * Compute and update conservative variable vector.
  *
  * Function
  *      Compute and update conservative variable vector according to primitive values.
  */
-extern int PrimitiveToConservative(Real *U, const int idx, const Real Uo[], const Flow *flow);
+extern int ConservativeByPrimitive(Real *U, const int idx, const Real Uo[], const Flow *flow);
 #endif
 /* a good practice: end file with a newline */
 

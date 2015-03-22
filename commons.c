@@ -167,7 +167,7 @@ int IndexMath(const int k, const int j, const int i, const Space *space)
  * Get value of primitive variable vector.
  * [rho, u, v, w, p, T]
  */
-int GetPrimitiveVariable(Real Uo[], const int idx, const Real *U, const Flow *flow)
+int PrimitiveByConservative(Real Uo[], const int idx, const Real *U, const Flow *flow)
 {
     Uo[0] = U[idx];
     Uo[1] = U[idx+1] / U[idx];
@@ -182,7 +182,7 @@ int GetPrimitiveVariable(Real Uo[], const int idx, const Real *U, const Flow *fl
  * Compute and update conservative variable vector according to primitive
  * values.
  */
-int PrimitiveToConservative(Real *U, const int idx, const Real Uo[], const Flow *flow)
+int ConservativeByPrimitive(Real *U, const int idx, const Real Uo[], const Flow *flow)
 {
     U[idx] = Uo[0];
     U[idx+1] = Uo[0] * Uo[1];

@@ -24,7 +24,6 @@ int main(int argc, char *argv[])
      * Declare and initialize variables
      */    
     Field theField = { /* flow field variables */
-        .dimU = 0,
         .Un = NULL,
         .U = NULL,
         .Uswap = NULL};
@@ -37,6 +36,7 @@ int main(int argc, char *argv[])
         .jMax = 0,
         .kMax = 0,
         .nMax = 0,
+        .dimU = 0,
         .dx = 0.0,
         .dy = 0.0,
         .dz = 0.0,
