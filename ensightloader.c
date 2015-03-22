@@ -101,7 +101,7 @@ static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,
                 for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                     for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
                         fread(&data, sizeof(EnsightReal), 1, filePointer);
-                        idx = ((k * space->jMax + j) * space->iMax + i) * 5;
+                        idx = IndexMath(k, j, i, space) * space->dimU;
                         switch (dim) {
                             case 0: /* rho */
                                 U[idx] = data;
@@ -116,11 +116,8 @@ static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,
                                 U[idx+3] = U[idx] * data;
                                 break;
                             case 4: /* p */
-                                rho = U[idx];
-                                u = U[idx+1] / rho;
-                                v = U[idx+2] / rho;
-                                w = U[idx+3] / rho;
-                                U[idx+4] = data / (flow->gamma - 1.0) + 0.5 * rho * (u * u + v * v + w * w);
+                                U[idx+4] = data / (flow->gamma - 1.0) + 0.5 * 
+                                    (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx];
                                 break;
                             default:
                                 break;

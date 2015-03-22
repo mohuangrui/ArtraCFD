@@ -237,7 +237,7 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
         for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
             for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                 for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                    idx = (k * space->jMax + j) * space->iMax + i;
+                    idx = IndexMath(k, j, i, space);
                     if (-offset >= space->nodeFlag[idx]) { /* solid region */
                         blankID = 0;
                     } else {
@@ -297,34 +297,27 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
             for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
                 for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                     for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                        idx = ((k * space->jMax + j) * space->iMax + i) * 5;
-                        rho = U[idx];
+                        idx = IndexMath(k, j, i, space) * space->dimU;
                         switch (dim) {
                             case 0: /* rho */
-                                data = rho;
+                                data = U[idx];
                                 break;
                             case 1: /* u */
-                                data = U[idx+1] / rho;
+                                data = U[idx+1] / U[idx];
                                 break;
                             case 2: /* v */
-                                data = U[idx+2] / rho;
+                                data = U[idx+2] / U[idx];
                                 break;
                             case 3: /* w */
-                                data = U[idx+3] / rho;
+                                data = U[idx+3] / U[idx];
                                 break;
                             case 4: /* p */
-                                u = U[idx+1] / rho;
-                                v = U[idx+2] / rho;
-                                w = U[idx+3] / rho;
-                                eT = U[idx+4] / rho;
-                                data = (flow->gamma - 1.0) * rho * (eT - 0.5 * (u * u + v * v + w * w));
+                                data = (flow->gamma - 1.0) * (U[idx+4] - 0.5 * 
+                                        (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]);
                                 break;
                             case 5: /* T */
-                                u = U[idx+1] / rho;
-                                v = U[idx+2] / rho;
-                                w = U[idx+3] / rho;
-                                eT = U[idx+4] / rho;
-                                data = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
+                                data = (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + 
+                                            U[idx+3] * U[idx+3]) / U[idx]) / (U[idx] * flow->cv);
                                 break;
                             default:
                                 break;
@@ -362,17 +355,16 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
             for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
                 for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                     for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                        idx = ((k * space->jMax + j) * space->iMax + i) * 5;
-                        rho = U[idx];
+                        idx = IndexMath(k, j, i, space) * space->dimU;
                         switch (dim) {
                             case 1: /* u */
-                                data = U[idx+1] / rho;
+                                data = U[idx+1] / U[idx];
                                 break;
                             case 2: /* v */
-                                data = U[idx+2] / rho;
+                                data = U[idx+2] / U[idx];
                                 break;
                             case 3: /* w */
-                                data = U[idx+3] / rho;
+                                data = U[idx+3] / U[idx];
                                 break;
                             default:
                                 break;
