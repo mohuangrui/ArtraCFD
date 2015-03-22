@@ -29,7 +29,6 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space, Particle *par
     /*
      * Update particle velocity and position
      */
-    int idx = 0; /* linear array index math variable */
     int geoID = 0; /* geometry id */
     Real *ptk = NULL;
     Real distance = 0.0;
@@ -40,7 +39,7 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space, Particle *par
     const Real pi = acos(-1);
     const int offset = space->nodeFlagOffset;
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        ptk = particle->headAddress + geoCount * particle->entryN; /* point to storage of current particle */
+        ptk = particle->headAddress + geoCount * particle->entryN;
         if (0 == space->dx * space->dy * space->dz) {
             mass = ptk[4] * pi * ptk[3] * ptk[3];
         } else {
@@ -71,16 +70,17 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space, Particle *par
         {-1, 1, 0}, {-1, 0, 1}, {1, 1, -1}, {1, -1, 1}, {-1, 1, 1}, {1, -1, -1},
         {-1, 1, -1}, {-1, -1, 1}};
     const int stencilN = 2; /* number of stencils for interpolation */
+    int idx = 0; /* linear array index math variable */
     int idxh = 0; /* index variable */
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
+                idx = IndexMath(k, j, i, space);
                 if (offset > space->nodeFlag[idx]) { /* it's not a ghost */
                     continue;
                 }
-                geoID = space->nodeFlag[idx] - offset; /* extract geometry number from inner ghost node flag */
-                ptk = particle->headAddress + geoID * particle->entryN; /* point to storage of current particle */
+                geoID = space->nodeFlag[idx] - offset; /* extract geometry information */
+                ptk = particle->headAddress + geoID * particle->entryN;
                 distX = space->xMin + (i - space->ng) * space->dx - ptk[0];
                 distY = space->yMin + (j - space->ng) * space->dy - ptk[1];
                 distZ = space->zMin + (k - space->ng) * space->dz - ptk[2];
@@ -89,40 +89,30 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space, Particle *par
                     continue;
                 }
                 /* 
-                 * Search around the image node to find required fluid nodes as
+                 * Search around the node to find required fluid nodes as
                  * interpolation stencil.
                  */
                 Real Uo[5] = {0.0}; /* store weighted primitives */
+                Real Uoh[5] = {0.0}; /* store weighted primitives */
                 int tally = 0; /* number of current stencil */
                 for (int loop = 0; (tally < stencilN) && (loop < 26); ++loop) {
                     const int ih = i + path[loop][0];
                     const int jh = j + path[loop][1];
                     const int kh = k + path[loop][2];
-                    idxh = (kh * space->jMax + jh) * space->iMax + ih;
+                    idxh = IndexMath(kh, jh, ih, space);
                     if (0 != space->nodeFlag[idxh]) { /* it's not a fluid node */
                         continue;
                     }
-                    idxh = idxh * 5; /* switch to index field variable */
-                    const Real rho_h = U[idxh+0];
-                    const Real u_h = U[idxh+1] / rho_h;
-                    const Real v_h = U[idxh+2] / rho_h;
-                    const Real w_h = U[idxh+3] / rho_h;
-                    const Real eT_h = U[idxh+4] / rho_h;
-                    const Real p_h = (flow->gamma - 1.0) * rho_h * (eT_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h));
-                    Uo[0] = Uo[0] + (1 / stencilN) * rho_h;
-                    Uo[1] = Uo[1] + (1 / stencilN) * u_h;
-                    Uo[2] = Uo[2] + (1 / stencilN) * v_h;
-                    Uo[3] = Uo[3] + (1 / stencilN) * w_h;
-                    Uo[4] = Uo[4] + (1 / stencilN) * p_h;
+                    PrimitiveByConservative(Uoh, idxh * space->dimU, U, flow);
+                    Uo[0] = Uo[0] + (1 / stencilN) * Uoh[0];
+                    Uo[1] = Uo[1] + (1 / stencilN) * Uoh[1];
+                    Uo[2] = Uo[2] + (1 / stencilN) * Uoh[2];
+                    Uo[3] = Uo[3] + (1 / stencilN) * Uoh[3];
+                    Uo[4] = Uo[4] + (1 / stencilN) * Uoh[4];
                     ++tally; /* increase the tally */
                 }
                 /* reconstruction of flow values */
-                idx = idx * 5; /* switch to index field variable */
-                U[idx+0] = Uo[0];
-                U[idx+1] = Uo[0] * Uo[1];
-                U[idx+2] = Uo[0] * Uo[2];
-                U[idx+3] = Uo[0] * Uo[3];
-                U[idx+4] = Uo[4] / (flow->gamma - 1.0) + 0.5 * Uo[0] * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]);
+                ConservativeByPrimitive(U, idx * space->dimU, Uo, flow);
             }
         }
     }
@@ -162,7 +152,7 @@ static int SurfaceForceIntegration(const Real *U, const Space *space, Particle *
     const int offset = space->nodeFlagOffset;
     /* reset some non accumulative information of particles to zero */
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        ptk = particle->headAddress + geoCount * particle->entryN; /* point to storage of current particle */
+        ptk = particle->headAddress + geoCount * particle->entryN;
         ptk[8] = 0; /* force at x direction */
         ptk[9] = 0; /* force at y direction */
         ptk[10] = 0; /* force at z direction */
@@ -171,12 +161,12 @@ static int SurfaceForceIntegration(const Real *U, const Space *space, Particle *
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
+                idx = IndexMath(k, j, i, space);
                 if (offset > space->nodeFlag[idx]) { /* it's not a ghost */
                     continue;
                 }
-                geoID = space->nodeFlag[idx] - offset; /* extract geometry number from inner ghost node flag */
-                ptk = particle->headAddress + geoID * particle->entryN; /* point to storage of current particle */
+                geoID = space->nodeFlag[idx] - offset; /* extract geometry information */
+                ptk = particle->headAddress + geoID * particle->entryN;
                 distX = space->xMin + (i - space->ng) * space->dx - ptk[0];
                 distY = space->yMin + (j - space->ng) * space->dy - ptk[1];
                 distZ = space->zMin + (k - space->ng) * space->dz - ptk[2];
@@ -184,8 +174,9 @@ static int SurfaceForceIntegration(const Real *U, const Space *space, Particle *
                 normalX = distX / distToCenter;
                 normalY = distY / distToCenter;
                 normalZ = distZ / distToCenter;
-                idx = idx * 5; /* switch to index field variable */
-                p = (flow->gamma - 1.0) * (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx+0]);
+                idx = idx * space->dimU; /* switch to index field variable */
+                p = (flow->gamma - 1.0) * (U[idx+4] - 0.5 * 
+                        (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]);
                 ptk[8] = -p * normalX; /* increase fx by pressure projection on x */
                 ptk[9] = -p * normalY; /* increase fy by pressure projection on y */
                 ptk[10] = -p * normalZ; /* increase fz by pressure projection on z */
@@ -196,9 +187,9 @@ static int SurfaceForceIntegration(const Real *U, const Space *space, Particle *
     }
     /* calibrate the sum of discrete forces into integration */
     if (0 == space->dx * space->dy * space->dz) { /* space dimension collapsed */
-        ds = 2 * pi * ptk[3] / ptk[11]; /* circle perimeter */
+        ds = 2.0 * pi * ptk[3] / ptk[11]; /* circle perimeter */
     } else {
-        ds = 4 * pi * ptk[3] * ptk[3] / ptk[11]; /* sphere surface */
+        ds = 4.0 * pi * ptk[3] * ptk[3] / ptk[11]; /* sphere surface */
     }
     ptk[8] = ptk[8] * ds;
     ptk[9] = ptk[9] * ds;
