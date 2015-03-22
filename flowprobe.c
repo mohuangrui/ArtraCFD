@@ -19,13 +19,7 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
     FILE *filePointer = NULL;
     char fileName[25] = {'\0'};
     int idx = 0; /* linear array index math variable */
-    Real rho = 0.0; 
-    Real u = 0.0;
-    Real v = 0.0;
-    Real w = 0.0;
-    Real eT = 0.0;
-    Real p = 0.0;
-    Real T = 0.0;
+    Real Uo[6] = {0.0};
     for (int n = 1; n <= flow->probe[0]; ++n) {
         snprintf(fileName, sizeof(fileName), "%s%d.%05d", "probe", n, stepCount);
         filePointer = fopen(fileName, "w");
@@ -57,18 +51,14 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
         const Real jStep = (Real)(jB - jA) / (Real)(stepN);
         const Real kStep = (Real)(kB - kA) / (Real)(stepN);
         for (int m = 0; m <= stepN; ++m) {
-            idx = (((kA + (int)(m * kStep)) * space->jMax + (jA + (int)(m * jStep))) * space->iMax + (iA + (int)(m * iStep))) * 5;
-            if ((space->nMax * 5 <= idx) || (0 > idx)) {
+            idx = IndexMath(kA + (int)(m * kStep), jA + (int)(m * jStep), iA + 
+                    (int)(m * iStep), space) * space->dimU;
+            if ((space->nMax * space->dimU <= idx) || (0 > idx)) {
                 continue;
             }
-            rho = U[idx+0];
-            u = U[idx+1] / rho;
-            v = U[idx+2] / rho;
-            w = U[idx+3] / rho;
-            eT = U[idx+4] / rho;
-            p = (flow->gamma - 1.0) * rho * (eT - 0.5 * (u * u + v * v + w * w));
-            T = (eT - 0.5 * (u * u + v * v + w * w)) / flow->cv;
-            fprintf(filePointer, "%d     %.6g      %.6g     %.6g      %.6g      %.6g     %.6g\n", m, rho, u, v, w, p, T); 
+            PrimitiveByConservative(Uo, idx, U, flow);
+            fprintf(filePointer, "%d     %.6g      %.6g     %.6g      %.6g      %.6g     %.6g\n",
+                    m, Uo[0], Uo[1], Uo[2], Uo[3], Uo[4], Uo[5]); 
         }
         fclose(filePointer); /* close current opened file */
     }
