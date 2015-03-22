@@ -110,37 +110,19 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
 static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Time *time, 
         const Partition *part, const Flow *flow)
 {
-    /*
-     * Define the primitive field variables.
-     */
-    Real rho = 0.0; 
-    Real u = 0.0;
-    Real v = 0.0;
-    Real w = 0.0;
-    Real p = 0.0;
-    Real eT = 0.0;
-    /*
-     * Auxiliary variables
-     */
+    Real Uo[6] = {0.0};
     Real velocity = 0.0;
     Real velocityMax = 1e-38;
     int idx = 0; /* linear array index math variable */
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = (k * space->jMax + j) * space->iMax + i;
+                idx = IndexMath(k, j, i, space);
                 if (0 != space->nodeFlag[idx]) { /* if it's not fluid */
                     continue;
                 }
-                idx = idx * 5; /* change idx to field variable */
-                rho = U[idx+0];
-                u = U[idx+1] / rho;
-                v = U[idx+2] / rho;
-                w = U[idx+3] / rho;
-                eT = U[idx+4] / rho;
-                p = (flow->gamma - 1.0) * rho * (eT - 0.5 * (u * u + v * v + w * w));
-
-                velocity = sqrt(flow->gamma * p / rho) + Max(fabs(u), Max(fabs(v), fabs(w)));
+                PrimitiveByConservative(Uo, idx * space->dimU, U, flow);
+                velocity = sqrt(flow->gamma * Uo[4] / Uo[0]) + Max(fabs(Uo[1]), Max(fabs(Uo[2]), fabs(Uo[3])));
                 if (velocityMax < velocity) {
                     velocityMax = velocity;
                 }
