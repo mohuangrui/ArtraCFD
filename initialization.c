@@ -153,7 +153,7 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
                         xh = (space->xMin + (i - space->ng) * space->dx - x) * normalX;
                         yh = (space->yMin + (j - space->ng) * space->dy - y) * normalY;
                         zh = (space->zMin + (k - space->ng) * space->dz - z) * normalZ;
-                        if (0 < (xh + yh + zh)) { /* on the normal direction */
+                        if (0 <= (xh + yh + zh)) { /* on the normal direction or the plane */
                             flag = 1; /* set flag to true */
                         }
                         break;
