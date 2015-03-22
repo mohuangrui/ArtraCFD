@@ -92,8 +92,8 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space, Particle *par
                  * Search around the node to find required fluid nodes as
                  * interpolation stencil.
                  */
-                Real Uo[5] = {0.0}; /* store weighted primitives */
-                Real Uoh[5] = {0.0}; /* store weighted primitives */
+                Real Uo[6] = {0.0}; /* store weighted primitives */
+                Real Uoh[6] = {0.0}; /* store weighted primitives */
                 int tally = 0; /* number of current stencil */
                 for (int loop = 0; (tally < stencilN) && (loop < 26); ++loop) {
                     const int ih = i + path[loop][0];

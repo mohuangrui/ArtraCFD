@@ -218,7 +218,7 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
         const Partition *part, const Flow *flow)
 {
     int idx = 0; /* linear array index math variable */
-    Real Uo[5] = {0.0}; /* save reconstructed primitives */
+    Real Uo[6] = {0.0}; /* save reconstructed primitives */
     int geoID = 0; /* geometry id */
     const int offset = space->nodeFlagOffset;
     /*
@@ -344,7 +344,7 @@ static int LinearReconstruction(Real Uo[], const int k, const int j, const int i
      * corresponding interpolation coefficients. Solutions are stored in the
      * same space of the right hand side matrix.
      */
-    MatrixLinearSystemSolver(4, posMatrix, 5, rhsVector, rhsVector);
+    MatrixLinearSystemSolver(4, posMatrix, space->dimU, rhsVector, rhsVector);
     /*
      * Obtain the interpolation coordinates of image point and do the
      * interpolation.

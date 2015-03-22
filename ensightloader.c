@@ -86,7 +86,7 @@ static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,
     Real u = 0.0;
     Real v = 0.0;
     Real w = 0.0;
-    for (int dim = 0; dim < 5; ++dim) {
+    for (int dim = 0; dim < space->dimU; ++dim) {
         snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
         filePointer = fopen(enSet->fileName, "rb");
         if (NULL == filePointer) {
