@@ -19,7 +19,7 @@
 static int InitializeDomainGeometry(Space *, const Partition *);
 static int LocateSolidGeometry(Space *, const Particle *, const Partition *);
 static int IdentifyGhostNodes(Space *, const Partition *);
-static int IdentifySolidNodeWithGhostNeighbours(Space *, const Particle *, 
+static int IdentifySolidNodesAtNumericalBoundary(Space *, const Particle *, 
         const Partition *);
 static int LinearReconstruction(Real Uo[], const int k, const int j, const int i,
         const int geoID, const Real *U, const Space *, const Particle *, const Flow *);
@@ -31,21 +31,29 @@ static int Max(const int x, const int y);
 /*
  * These functions identify the type of each node: 
  * 1:                   boundary and exterior ghost node,
+ * 0:                   interior fluid node,
  * <= -offset:          interior solid node,
  * >=offset:            interior ghost node, 
- * 0:                   interior fluid node,
- * <= -offset - totalN: interior solid node with ghost neighbour.
+ * <= -offset - totalN: interior solid node required for numerical boundary.
  *
  * Procedures are:
  * -- initialize node flag of boundary and exterior nodes to boundary type,
  *    and inner nodes to fluid type;
  * -- identify all inner nodes that are in solid geometry as solid node;
  * -- identify ghost nodes according to the node type of its neighbours;
- * -- identify whether a solid node has ghost neighbours.
+ * -- identify whether a solid node required for numerical boundary.
  *
  * It's necessary to difference boundary nodes and inner nodes because this
- * will make the identification of ghost nodes much easier in both 2D and
- * 3D situations.
+ * will not make incorrect mark of ghost nodes at nearby of domain boundaries.
+ * It's necessary to difference ghost node and interior solid node which is
+ * also required for numerical boundary because the latter is only required for
+ * a numerical scheme has an accuracy order higher than 2nd. Besides, the ghost
+ * node is special because the computation of boundary forces are only based on
+ * the first nearest solid layer of boundary, that is, ghost node.
+ *
+ * The identification process should proceed step by step to correctly handle
+ * all these relationships and avoid interference between each step,
+ * interference may happen if identification processes are crunched together.
  *
  * Moreover, whenever identifying a solid node or ghost node, store its
  * corresponding geometry information by linking the node flag to the
@@ -58,13 +66,13 @@ int ComputeDomainGeometryGCIBM(Space *space, Particle *particle, const Partition
     InitializeDomainGeometry(space, part);
     LocateSolidGeometry(space, particle, part);
     IdentifyGhostNodes(space, part);
-    IdentifySolidNodeWithGhostNeighbours(space, particle, part);
+    IdentifySolidNodesAtNumericalBoundary(space, particle, part);
     return 0;
 }
 static int InitializeDomainGeometry(Space *space, const Partition *part)
 {
     /*
-     * Set the vaule of offset to specify the range assignment for node type
+     * Set the value of offset to specify the range assignment for node type
      * identifier.
      */
     space->nodeFlagOffset = 10;
@@ -174,7 +182,7 @@ static int IdentifyGhostNodes(Space *space, const Partition *part)
     }
     return 0;
 }
-static int IdentifySolidNodeWithGhostNeighbours(Space *space, 
+static int IdentifySolidNodesAtNumericalBoundary(Space *space, 
         const Particle *particle, const Partition *part)
 {
     int idx = 0; /* linear array index math variable */
@@ -184,6 +192,8 @@ static int IdentifySolidNodeWithGhostNeighbours(Space *space,
     int idxN = 0; /* index at North */
     int idxF = 0; /* index at Front */
     int idxB = 0; /* index at Back */
+    /* criteria */
+    int flag = 0;
     const int offset = space->nodeFlagOffset;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
@@ -192,27 +202,28 @@ static int IdentifySolidNodeWithGhostNeighbours(Space *space,
                 if (-offset < space->nodeFlag[idx]) { /* it's not solid node */
                     continue;
                 }
-                idxW = IndexMath(k, j, i - 1, space);
-                idxE = IndexMath(k, j, i + 1, space);
-                idxS = IndexMath(k, j - 1, i, space);
-                idxN = IndexMath(k, j + 1, i, space);
-                idxF = IndexMath(k - 1, j, i, space);
-                idxB = IndexMath(k + 1, j, i, space);
-                if ((-offset >= space->nodeFlag[idxW]) && (-offset >= space->nodeFlag[idxE]) &&  
-                        (-offset >= space->nodeFlag[idxS]) && (-offset >= space->nodeFlag[idxN]) && 
-                        (-offset >= space->nodeFlag[idxF]) && (-offset >= space->nodeFlag[idxB])) {
-                    continue; /* this solid node has no ghost neighbour */
+                for (int order = 2; order <= 2; ++order) {
+                    idxW = IndexMath(k, j, i - order, space);
+                    idxE = IndexMath(k, j, i + order, space);
+                    idxS = IndexMath(k, j - order, i, space);
+                    idxN = IndexMath(k, j + order, i, space);
+                    idxF = IndexMath(k - order, j, i, space);
+                    idxB = IndexMath(k + order, j, i, space);
+                    flag = space->nodeFlag[idxW] * space->nodeFlag[idxE] * 
+                        space->nodeFlag[idxS] * space->nodeFlag[idxN] * 
+                        space->nodeFlag[idxF] * space->nodeFlag[idxB];
+                    if (0 == flag) { /* solid required for numerical boundary */
+                        space->nodeFlag[idx] = space->nodeFlag[idx] - particle->totalN;
+                    }
                 }
-                /* exist at least one neighbour is ghost */
-                space->nodeFlag[idx] = space->nodeFlag[idx] - particle->totalN; /* geometry conserved */
             }
         }
     }
     return 0;
 }
 /*
- * Boundary condition for interior ghost nodes and solid nodes with ghost
- * neighbours.
+ * Boundary condition for interior ghost nodes and solid nodes at numerical
+ * boundary.
  */
 int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle, 
         const Partition *part, const Flow *flow)
@@ -221,33 +232,19 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
     Real Uo[6] = {0.0}; /* save reconstructed primitives */
     int geoID = 0; /* geometry id */
     const int offset = space->nodeFlagOffset;
-    /*
-     * Processing ghost nodes
-     */
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = IndexMath(k, j, i, space);
-                if (offset > space->nodeFlag[idx]) { /* it's not a ghost */
-                    continue;
+                if (-offset - particle->totalN >= space->nodeFlag[idx]) { /* solid */
+                    geoID = space->nodeFlag[idx] + offset + particle->totalN; /* extract geometry */
+                } else {
+                    if (offset <= space->nodeFlag[idx]) { /* ghost */
+                        geoID = space->nodeFlag[idx] - offset; /* extract geometry */
+                    } else { /* not a numerical boundary node */
+                        continue;
+                    }
                 }
-                geoID = space->nodeFlag[idx] - offset; /* extract geometry */
-                LinearReconstruction(Uo, k, j, i, geoID, U, space, particle, flow);
-                ConservativeByPrimitive(U, idx * space->dimU, Uo, flow);
-            }
-        }
-    }
-    /*
-     * Process solid nodes
-     */
-    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = IndexMath(k, j, i, space);
-                if (-offset - particle->totalN < space->nodeFlag[idx]) { /* not a solid with ghost neighbour */
-                    continue;
-                }
-                geoID = space->nodeFlag[idx] + offset + particle->totalN; /* extract geometry */
                 LinearReconstruction(Uo, k, j, i, geoID, U, space, particle, flow);
                 ConservativeByPrimitive(U, idx * space->dimU, Uo, flow);
             }
@@ -357,7 +354,7 @@ static int LinearReconstruction(Real Uo[], const int k, const int j, const int i
             rhsVector[2][m] * imageY + rhsVector[3][m] * imageZ;
     }
     /*
-     * Apply wall boundary conditions to obtain the primitive values at nodes
+     * Apply no-slip wall boundary conditions to get primitive values at nodes
      * in wall. That is, keep scalars and flip vectors after reflection.
      */
     Uo[1] = -Uo[1];
