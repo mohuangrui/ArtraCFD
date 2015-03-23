@@ -63,12 +63,18 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space, Particle *par
      * condition of flow. Therefore, only ghost nodes need to be verified.
      */
     /* build an adequate search path */
-    const int path[26][3] = { /* n paths for i, j, k */
+    const int path[56][3] = { /* n paths for i, j, k */
         {1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {-1, 0, 0}, {0, -1, 0}, {0, 0, -1},
         {1, 1, 0}, {1, 0, 1}, {0, 1, 1}, {-1, -1, 0}, {-1, 0, -1}, {0, -1, -1},
         {1, 1, 1}, {-1, -1, -1}, {1, -1, 0}, {1, 0, -1}, {0, 1, -1}, {0, -1, 1},
         {-1, 1, 0}, {-1, 0, 1}, {1, 1, -1}, {1, -1, 1}, {-1, 1, 1}, {1, -1, -1},
-        {-1, 1, -1}, {-1, -1, 1}};
+        {-1, 1, -1}, {-1, -1, 1},
+        {2, 0, 0}, {0, 2, 0}, {0, 0, 2}, {2, 1, 0}, {2, 0, 1},
+        {1, 2, 0}, {0, 2, 1}, {1, 0, 2}, {0, 1, 2},
+        {-2, 0, 0}, {0, -2, 0}, {0, 0, -2}, {-2, -1, 0}, {-2, 0, -1},
+        {-1, -2, 0}, {0, -2, -1}, {-1, 0, -2}, {0, -1, -2},
+        {2, -1, 0}, {2, 0, -1}, {-1, 2, 0}, {0, 2, -1}, {-1, 0, 2}, {0, -1, 2},
+        {-2, 1, 0}, {-2, 0, 1}, {1, -2, 0}, {0, -2, 1}, {1, 0, -2}, {0, 1, -2}};
     const int stencilN = 2; /* number of stencils for interpolation */
     int idx = 0; /* linear array index math variable */
     int idxh = 0; /* index variable */
@@ -95,7 +101,7 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space, Particle *par
                 Real Uo[6] = {0.0}; /* store weighted primitives */
                 Real Uoh[6] = {0.0}; /* store weighted primitives */
                 int tally = 0; /* number of current stencil */
-                for (int loop = 0; (tally < stencilN) && (loop < 26); ++loop) {
+                for (int loop = 0; (tally < stencilN) && (loop < 56); ++loop) {
                     const int ih = i + path[loop][0];
                     const int jh = j + path[loop][1];
                     const int kh = k + path[loop][2];

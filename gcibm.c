@@ -297,19 +297,25 @@ static int LinearReconstruction(Real Uo[], const int k, const int j, const int i
      * are better to set as 0 (current node) or +1 (upward direction).
      */
     /* build an adequate search path */
-    const int path[27][3] = { /* n paths for i, j, k */
+    const int path[57][3] = { /* n paths for i, j, k */
         {0, 0, 0}, {1, 1, 1}, {1, 1, 0}, {1, 0, 1},
         {0, 1, 1}, {1, 0, 0}, {0, 1, 0}, {0, 0, 1},
         {-1, 0, 0}, {0, -1, 0}, {0, 0, -1}, {-1, 1, 0},
         {-1, 0, 1}, {1, -1, 0}, {0, -1, 1}, {1, 0, -1},
         {0, 1, -1}, {-1, 1, 1}, {1, -1, 1}, {1, 1, -1},
         {-1, -1, 0}, {-1, 0, -1}, {0, -1, -1}, {-1, -1, 1},
-        {-1, 1, -1}, {1, -1, -1}, {-1, -1, -1}};
+        {-1, 1, -1}, {1, -1, -1}, {-1, -1, -1},
+        {2, 0, 0}, {0, 2, 0}, {0, 0, 2}, {2, 1, 0}, {2, 0, 1},
+        {1, 2, 0}, {0, 2, 1}, {1, 0, 2}, {0, 1, 2},
+        {-2, 0, 0}, {0, -2, 0}, {0, 0, -2}, {-2, -1, 0}, {-2, 0, -1},
+        {-1, -2, 0}, {0, -2, -1}, {-1, 0, -2}, {0, -1, -2},
+        {2, -1, 0}, {2, 0, -1}, {-1, 2, 0}, {0, 2, -1}, {-1, 0, 2}, {0, -1, 2},
+        {-2, 1, 0}, {-2, 0, 1}, {1, -2, 0}, {0, -2, 1}, {1, 0, -2}, {0, 1, -2}};
     const int stencilN = 4; /* number of stencils for interpolation */
     int tally = 0; /* number of current stencil */
     int idxh = 0; /* index variable */
     Real Uoh[6] = {0.0};
-    for (int loop = 0; (tally < stencilN) && (loop < 27); ++loop) {
+    for (int loop = 0; (tally < stencilN) && (loop < 57); ++loop) {
         const int ih = imageI + path[loop][0];
         const int jh = imageJ + path[loop][1];
         const int kh = imageK + path[loop][2];
