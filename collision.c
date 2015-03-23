@@ -190,14 +190,17 @@ static int SurfaceForceIntegration(const Real *U, const Space *space, Particle *
         }
     }
     /* calibrate the sum of discrete forces into integration */
-    if (0 == space->dx * space->dy * space->dz) { /* space dimension collapsed */
-        ds = 2.0 * pi * ptk[3] / ptk[11]; /* circle perimeter */
-    } else {
-        ds = 4.0 * pi * ptk[3] * ptk[3] / ptk[11]; /* sphere surface */
+    for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
+        ptk = particle->headAddress + geoCount * particle->entryN;
+        if (0 == space->dx * space->dy * space->dz) { /* space dimension collapsed */
+            ds = 2.0 * pi * ptk[3] / ptk[11]; /* circle perimeter */
+        } else {
+            ds = 4.0 * pi * ptk[3] * ptk[3] / ptk[11]; /* sphere surface */
+        }
+        ptk[8] = ptk[8] * ds;
+        ptk[9] = ptk[9] * ds;
+        ptk[10] = ptk[10] * ds;
     }
-    ptk[8] = ptk[8] * ds;
-    ptk[9] = ptk[9] * ds;
-    ptk[10] = ptk[10] * ds;
     return 0;
 }
 /* a good practice: end file with a newline */
