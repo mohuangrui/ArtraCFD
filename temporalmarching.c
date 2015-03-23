@@ -60,7 +60,7 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
             time->dt = time->totalTime - (time->currentTime - time->dt);
             time->currentTime = time->totalTime;
         }
-        fprintf(stdout, "\nstep=%d; time=%.6g; remain=%.6g; dt=%.6g; ", time->stepCount, 
+        fprintf(stdout, "\nstep=%d; time=%.6g; remain=%.6g; dt=%.6g;\n", time->stepCount, 
                 time->currentTime, time->totalTime - time->currentTime, time->dt);
         /*
          * Compute field data in current time step, treat the interaction of
@@ -76,7 +76,7 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
         /* particle dynamics */
         ParticleSpatialEvolution(field->U, 0.5 * time->dt, space, particle, part, flow);
         operationTime = TockTime(&operationTimer);
-        fprintf(stdout, "elapsed: %.6gs\n", operationTime);
+        fprintf(stdout, "     elapsed: %.6gs\n", operationTime);
         /*
          * Export computed data. Use accumulatedTime as a flag, if
          * accumulatedTime increases to anticipated export interval,
