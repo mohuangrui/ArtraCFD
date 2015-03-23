@@ -268,14 +268,6 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
      * There are six primitive variables need to be written:
      * density, u, v, w, pressure, temperature
      */
-    /*
-     * Define the primitive field variables.
-     */
-    Real rho = 0.0; 
-    Real u = 0.0;
-    Real v = 0.0;
-    Real w = 0.0;
-    Real eT = 0.0;
     const char nameSuffix[6][5] = {"rho", "u", "v", "w", "p", "T"};
     for (int dim = 0; dim < 6; ++dim) {
         snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
