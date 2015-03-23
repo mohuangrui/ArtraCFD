@@ -107,12 +107,9 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                  * Extrapolate values for exterior ghost nodes of current node
                  */
                 for (int ng = 1; ng <= space->ng; ++ng) { /* process layer by layer */
-                    k = k + ng * normalZ; /* shift index */
-                    j = j + ng * normalY;
-                    i = i + ng * normalX;
-                    idx = IndexMath(k, j, i, space) * space->dimU;
-                    idxh = IndexMath(k - normalZ, j - normalY, i - normalX, space) * space->dimU;
-                    idxhh = IndexMath(k - 2 * normalZ, j - 2 * normalY, i - 2 * normalX, space) * space->dimU;
+                    idx = IndexMath(k + ng * normalZ, j + ng * normalY, i + ng * normalX, space) * space->dimU;
+                    idxh = IndexMath(k + (ng-1) * normalZ, j + (ng-1) * normalY, i + (ng-1) * normalX, space) * space->dimU;
+                    idxhh = IndexMath(k + (ng-2) * normalZ, j + (ng-2) * normalY, i + (ng-2) * normalX, space) * space->dimU;
                     switch (part->typeBC[partID]) {
                         case 1: /* inflow */
                         case 2: /* outflow */
