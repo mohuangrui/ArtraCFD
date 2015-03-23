@@ -76,7 +76,7 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
         /* particle dynamics */
         ParticleSpatialEvolution(field->U, 0.5 * time->dt, space, particle, part, flow);
         operationTime = TockTime(&operationTimer);
-        fprintf(stdout, "     elapsed: %.6gs\n", operationTime);
+        fprintf(stdout, "  elapsed: %.6gs\n", operationTime);
         /*
          * Export computed data. Use accumulatedTime as a flag, if
          * accumulatedTime increases to anticipated export interval,
