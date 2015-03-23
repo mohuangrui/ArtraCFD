@@ -123,12 +123,13 @@ static int LocateSolidGeometry(Space *space, const Particle *particle, const Par
         const int iRange = (int)(safetyCoe * ptk[3] * space->ddx);
         const int jRange = (int)(safetyCoe * ptk[3] * space->ddy);
         const int kRange = (int)(safetyCoe * ptk[3] * space->ddz);
+        /* sup plus two for dimension collapses */
         const int kSub = Max(kCenter - kRange, part->kSub[0]);
-        const int kSup = Min(kCenter + kRange + 1, part->kSup[0]);
+        const int kSup = Min(kCenter + kRange + 2, part->kSup[0]);
         const int jSub = Max(jCenter - jRange, part->jSub[0]);
-        const int jSup = Min(jCenter + jRange + 1, part->jSup[0]);
+        const int jSup = Min(jCenter + jRange + 2, part->jSup[0]);
         const int iSub = Max(iCenter - iRange, part->iSub[0]);
-        const int iSup = Min(iCenter + iRange + 1, part->iSup[0]);
+        const int iSup = Min(iCenter + iRange + 2, part->iSup[0]);
         for (int k = kSub; k < kSup; ++k) {
             for (int j = jSub; j < jSup; ++j) {
                 for (int i = iSub; i < iSup; ++i) {

@@ -238,10 +238,10 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
             for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                 for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
                     idx = IndexMath(k, j, i, space);
-                    if (-offset >= space->nodeFlag[idx]) { /* solid region */
-                        blankID = 0;
-                    } else {
+                    if ((-offset < space->nodeFlag[idx]) && (offset > space->nodeFlag[idx])) {
                         blankID = 1;
+                    } else { /* inner nodes in geometry */
+                        blankID = 0;
                     }
                     fwrite(&(blankID), sizeof(int), 1, filePointer);
                 }
