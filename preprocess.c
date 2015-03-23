@@ -44,7 +44,7 @@ int Preprocess(Field *field, Space *space, Particle *particle, Time *time,
  */
 static int ProgramMemoryAllocate(Field *field, Space *space)
 {
-    ShowInformation("Allocating memory for program...");
+    ShowInformation("Allocating memory...");
     /*
      * Conservative flow variables: rho, rho_u, rho_v, rho_w, rho_eT.
      * Tips: the storage space of U is best between Un and Uswap.

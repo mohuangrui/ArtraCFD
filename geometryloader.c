@@ -34,7 +34,7 @@ int LoadGeometryData(Particle *particle, const Time *time)
 }
 static int NonrestartGeometryLoader(Particle *particle)
 {
-    ShowInformation("Loading inputed geometry data ...");
+    ShowInformation("Loading geometry data ...");
     FILE *filePointer = fopen("artracfd.geo", "r");
     if (NULL == filePointer) {
         FatalError("failed to open geometry file: artracfd.geo...");
