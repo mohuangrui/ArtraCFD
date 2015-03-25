@@ -65,6 +65,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "-1                 # maximum steps to force cease (integer, -1 if disable)\n");
     fprintf(filePointer, "0.6                # CFL condition number\n");
     fprintf(filePointer, "50                 # total number of times of exporting computed data (integer)\n");
+    fprintf(filePointer, "0                  # data streamer (0: ParaView; 1: Ensight)\n");
     fprintf(filePointer, "time end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");

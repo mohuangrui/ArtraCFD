@@ -11,7 +11,7 @@
 #include <stdio.h> /* standard library for input and output */
 #include <string.h> /* manipulating strings */
 #include "boundarycondition.h"
-#include "ensight.h"
+#include "datastream.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
@@ -36,7 +36,7 @@ int InitializeFlowField(Real *U, const Space *space, const Particle *particle,
     if (0 == time->restart) { /* non restart */
         FirstRunInitializer(U, space, particle, part, flow);
         /* if this is a first run, output initial data */
-        WriteComputedDataEnsight(U, space, particle, time, part, flow);
+        WriteComputedData(U, space, particle, time, part, flow);
     } else {
         RestartInitializer(U, space, particle, time, part, flow);
     }
@@ -198,7 +198,7 @@ static int RestartInitializer(Real *U, const Space *space, const Particle *parti
     /*
      * Load data from Ensight restart files.
      */
-    LoadComputedDataEnsight(U, space, time, part, flow);
+    LoadComputedData(U, space, time, part, flow);
     /*
      * Boundary conditions and treatments to obtain an entire initialized flow field
      */

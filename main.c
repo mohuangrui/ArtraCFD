@@ -64,7 +64,8 @@ int main(int argc, char *argv[])
         .totalStep = 0,
         .stepCount = 0,
         .totalOutputTimes = 0,
-        .outputCount = 0};
+        .outputCount = 0,
+        .dataStreamer = 0};
     Flow theFlow = { /* flow parameters */
         .refMa = 0.0,
         .refMu = 0.0,

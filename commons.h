@@ -532,6 +532,7 @@ typedef struct {
     int stepCount; /* step number count */
     int totalOutputTimes; /* total times of exporting computed data */
     int outputCount; /* exporting data count */
+    int dataStreamer; /* types of data streamer */
 }Time;
 /*
  * Flow properties and physics parameters
