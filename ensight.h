@@ -32,14 +32,6 @@ typedef struct {
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Ensight transient case file initializer
- *
- * Function
- *      Initialize a Ensight transient case file. This function only needs to
- *      be call once for each non restart run.
- */
-extern int InitializeEnsightTransientCaseFile(const Time *);
-/*
  * Ensight format data exporter
  *
  * Function

@@ -36,7 +36,6 @@ int InitializeFlowField(Real *U, const Space *space, const Particle *particle,
     if (0 == time->restart) { /* non restart */
         FirstRunInitializer(U, space, particle, part, flow);
         /* if this is a first run, output initial data */
-        InitializeEnsightTransientCaseFile(time);
         WriteComputedDataEnsight(U, space, particle, time, part, flow);
     } else {
         RestartInitializer(U, space, particle, time, part, flow);

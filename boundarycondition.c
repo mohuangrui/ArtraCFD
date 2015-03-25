@@ -74,10 +74,10 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         if (0 > Uo[5]) { /* adiabatic, dT/dn = 0 */
                             PrimitiveByConservative(Uoh, idxh, U, flow);
                             U[idx+4] = Uoh[4] / (flow->gamma - 1.0) + 0.5 * 
-                                (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx+0];
+                                (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx];
                         } else { /* constant wall temperature, T = Tw */
                             U[idx+4] = U[idx] * flow->cv * Uo[5] + 0.5 * 
-                                (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx+0];
+                                (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx];
                         }
                         break;
                     case 4: /* noslip wall */
@@ -125,7 +125,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                             U[idx+2] = U[idx] * (2.0 * Uoh[2] - Uohh[2]);
                             U[idx+3] = U[idx] * (2.0 * Uoh[3] - Uohh[3]);
                             U[idx+4] = Uoh[4] / (flow->gamma - 1.0) + 0.5 * 
-                                (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx+0];
+                                (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx];
                             break;
                     }
                 }

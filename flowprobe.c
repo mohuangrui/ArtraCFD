@@ -47,12 +47,12 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
                 stepN = abs(kB - kA);
             }
         }
-        const Real iStep = (Real)(iB - iA) / (Real)(stepN);
-        const Real jStep = (Real)(jB - jA) / (Real)(stepN);
-        const Real kStep = (Real)(kB - kA) / (Real)(stepN);
+        const Real xStep = (Real)(iB - iA) / (Real)(stepN);
+        const Real yStep = (Real)(jB - jA) / (Real)(stepN);
+        const Real zStep = (Real)(kB - kA) / (Real)(stepN);
         for (int m = 0; m <= stepN; ++m) {
-            idx = IndexMath(kA + (int)(m * kStep), jA + (int)(m * jStep), iA + 
-                    (int)(m * iStep), space) * space->dimU;
+            idx = IndexMath(kA + (int)(m * zStep), jA + (int)(m * yStep), iA + 
+                    (int)(m * xStep), space) * space->dimU;
             if ((space->nMax * space->dimU <= idx) || (0 > idx)) {
                 continue;
             }

@@ -30,7 +30,7 @@ static int Max(const int x, const int y);
  ****************************************************************************/
 /*
  * These functions identify the type of each node: 
- * 1:                   boundary and exterior ghost node,
+ * -1:                  boundary and exterior ghost node,
  * 0:                   interior fluid node,
  * <= -offset:          interior solid node,
  * >=offset:            interior ghost node, 
@@ -82,7 +82,7 @@ static int InitializeDomainGeometry(Space *space, const Partition *part)
      */
     int idx = 0; /* linear array index math variable */
     for (idx = 0; idx < space->nMax; ++idx) {
-        space->nodeFlag[idx] = 1;
+        space->nodeFlag[idx] = -1;
     }
     /*
      * Initialize inner nodes to fluid type.

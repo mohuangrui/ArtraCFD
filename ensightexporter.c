@@ -16,6 +16,7 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
+static int InitializeEnsightTransientCaseFile(EnsightSet *, const Time *);
 static int WriteEnsightCaseFile(EnsightSet *, const Time *);
 static int WriteEnsightGeometryFile(EnsightSet *, const Space *, const Partition *);
 static int WriteEnsightVariableFile(const Real *, EnsightSet *, const Space *,
@@ -24,44 +25,6 @@ static int WriteParticleFile(EnsightSet *, const Particle *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-/*
- * Ensight transient case file
- * This function initializes an overall transient case file.
- * It's separated because only need to be executed once as initialization.
- */
-int InitializeEnsightTransientCaseFile(const Time *time)
-{
-    ShowInformation("  Initialize Ensight transient case file...");
-    FILE *filePointer = fopen("transient.case", "w");
-    if (NULL == filePointer) {
-        FatalError("failed to write data to ensight case file: transient.case...");
-    }
-    /* output information to file */
-    const EnsightString baseName = "ensight";
-    fprintf(filePointer, "FORMAT\n"); 
-    fprintf(filePointer, "type: ensight gold\n"); 
-    fprintf(filePointer, "\n"); 
-    fprintf(filePointer, "GEOMETRY\n"); 
-    fprintf(filePointer, "model:            1       %s*****.geo\n", baseName); 
-    fprintf(filePointer, "\n"); 
-    fprintf(filePointer, "VARIABLE\n"); 
-    fprintf(filePointer, "scalar per node:  1  rho  %s*****.rho\n", baseName); 
-    fprintf(filePointer, "scalar per node:  1  u    %s*****.u\n", baseName); 
-    fprintf(filePointer, "scalar per node:  1  v    %s*****.v\n", baseName); 
-    fprintf(filePointer, "scalar per node:  1  w    %s*****.w\n", baseName); 
-    fprintf(filePointer, "scalar per node:  1  p    %s*****.p\n", baseName); 
-    fprintf(filePointer, "scalar per node:  1  T    %s*****.T\n", baseName); 
-    fprintf(filePointer, "vector per node:  1  Vel  %s*****.Vel\n", baseName); 
-    fprintf(filePointer, "\n"); 
-    fprintf(filePointer, "TIME\n"); 
-    fprintf(filePointer, "time set:         1\n"); 
-    fprintf(filePointer, "number of steps:          %d\n", (time->totalOutputTimes + 1)); 
-    fprintf(filePointer, "filename start number:    0\n"); 
-    fprintf(filePointer, "filename increment:       1\n"); 
-    fprintf(filePointer, "time values:  "); 
-    fclose(filePointer); /* close current opened file */
-    return 0;
-}
 /*
  * This function write computed data to files with Ensight data format, 
  * including transient and steady output with file names consists of the 
@@ -77,10 +40,48 @@ int WriteComputedDataEnsight(const Real *U, const Space *space,
         .fileName = {'\0'}, /* data file name */
         .stringData = {'\0'}, /* string data recorder */
     };
+    if (0 == time->stepCount) { /* this is the initialization step */
+        InitializeEnsightTransientCaseFile(&enSet, time);
+    }
     WriteEnsightCaseFile(&enSet, time);
     WriteEnsightGeometryFile(&enSet, space, part);
     WriteEnsightVariableFile(U, &enSet, space, part, flow);
     WriteParticleFile(&enSet, particle);
+    return 0;
+}
+/*
+ * Ensight transient case file
+ * This function initializes an overall transient case file.
+ */
+int InitializeEnsightTransientCaseFile(EnsightSet *enSet, const Time *time)
+{
+    FILE *filePointer = fopen("transient.case", "w");
+    if (NULL == filePointer) {
+        FatalError("failed to write data to ensight case file: transient.case...");
+    }
+    /* output information to file */
+    fprintf(filePointer, "FORMAT\n"); 
+    fprintf(filePointer, "type: ensight gold\n"); 
+    fprintf(filePointer, "\n"); 
+    fprintf(filePointer, "GEOMETRY\n"); 
+    fprintf(filePointer, "model:            1       %s*****.geo\n", enSet->baseName); 
+    fprintf(filePointer, "\n"); 
+    fprintf(filePointer, "VARIABLE\n"); 
+    fprintf(filePointer, "scalar per node:  1  rho  %s*****.rho\n", enSet->baseName); 
+    fprintf(filePointer, "scalar per node:  1  u    %s*****.u\n", enSet->baseName); 
+    fprintf(filePointer, "scalar per node:  1  v    %s*****.v\n", enSet->baseName); 
+    fprintf(filePointer, "scalar per node:  1  w    %s*****.w\n", enSet->baseName); 
+    fprintf(filePointer, "scalar per node:  1  p    %s*****.p\n", enSet->baseName); 
+    fprintf(filePointer, "scalar per node:  1  T    %s*****.T\n", enSet->baseName); 
+    fprintf(filePointer, "vector per node:  1  Vel  %s*****.Vel\n", enSet->baseName); 
+    fprintf(filePointer, "\n"); 
+    fprintf(filePointer, "TIME\n"); 
+    fprintf(filePointer, "time set:         1\n"); 
+    fprintf(filePointer, "number of steps:          %d\n", (time->totalOutputTimes + 1)); 
+    fprintf(filePointer, "filename start number:    0\n"); 
+    fprintf(filePointer, "filename increment:       1\n"); 
+    fprintf(filePointer, "time values:  "); 
+    fclose(filePointer); /* close current opened file */
     return 0;
 }
 /*
