@@ -486,7 +486,7 @@ static int WriteVerifyData(const Space *space, const Time *time, const Flow *flo
     fprintf(filePointer, "maximum number of steps: %d\n", time->totalStep); 
     fprintf(filePointer, "CFL condition number: %.6g\n", time->numCFL); 
     fprintf(filePointer, "exporting data times: %d\n", time->totalOutputTimes); 
-    fprintf(filePointer, "data exporter id: %d\n", time->dataStreamer); 
+    fprintf(filePointer, "data streamer id: %d\n", time->dataStreamer); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                    >> Fluid and Flow Properties <<\n");
