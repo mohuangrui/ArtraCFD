@@ -28,12 +28,12 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
         }
         fprintf(filePointer, "# points      rho     u       v       w       p       T\n"); 
         /* plus one to shift away from boundary when dimension collapse */
-        const int iA = (int)((flow->probePos[n][0] - space->xMin) * space->ddx) + space->ng + 1;
-        const int jA = (int)((flow->probePos[n][1] - space->yMin) * space->ddy) + space->ng + 1;
-        const int kA = (int)((flow->probePos[n][2] - space->zMin) * space->ddz) + space->ng + 1;
-        const int iB = (int)((flow->probePos[n][3] - space->xMin) * space->ddx) + space->ng + 1;
-        const int jB = (int)((flow->probePos[n][4] - space->yMin) * space->ddy) + space->ng + 1;
-        const int kB = (int)((flow->probePos[n][5] - space->zMin) * space->ddz) + space->ng + 1;
+        const int iA = (int)((flow->probePos[n][0] - space->xMin) * space->ddx) + space->ng;
+        const int jA = (int)((flow->probePos[n][1] - space->yMin) * space->ddy) + space->ng;
+        const int kA = (int)((flow->probePos[n][2] - space->zMin) * space->ddz) + space->ng;
+        const int iB = (int)((flow->probePos[n][3] - space->xMin) * space->ddx) + space->ng;
+        const int jB = (int)((flow->probePos[n][4] - space->yMin) * space->ddy) + space->ng;
+        const int kB = (int)((flow->probePos[n][5] - space->zMin) * space->ddz) + space->ng;
         int stepN = flow->probe[n] - 1;
         if (1 > stepN) { /* set to lowest resolution if happens */
             stepN = 1;

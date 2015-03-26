@@ -170,8 +170,7 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
                             (space->yMin + (j - space->ng) * space->dy - yh);
                         normalZ = (space->zMin + (k - space->ng) * space->dz - z) * 
                             (space->zMin + (k - space->ng) * space->dz - zh);
-                        if ((0 >= normalX) && (0 >= normalY) && (0 >= normalZ)) { 
-                            /* in the box, equal sign is needed for collapse */
+                        if ((0 >= normalX) && (0 >= normalY) && (0 >= normalZ)) { /* in or on the box */
                             flag = 1; /* set flag to true */
                         }
                         break;
