@@ -9,6 +9,7 @@
 #include "datastream.h"
 #include <stdio.h> /* standard library for input and output */
 #include"paraview.h"
+#include"parasight.h"
 #include"ensight.h"
 #include "commons.h"
 /****************************************************************************
@@ -19,13 +20,16 @@ int WriteComputedData(const Real *U, const Space *space, const Particle *particl
 {
     switch (time->dataStreamer) {
         case 0: /* ParaView */
-            WriteComputedDataParaview(U, space, particle, time, part, flow);
+            WriteComputedDataParaview(U, space, particle, time, flow);
             break;
-        case 1: /* Ensight */
+        case 1: /* Generic Ensight */
             WriteComputedDataEnsight(U, space, particle, time, part, flow);
             break;
+        case 2: /* ParaView Ensight */
+            WriteComputedDataParasight(U, space, particle, time, flow);
+            break;
         default: /* ParaView */
-            WriteComputedDataParaview(U, space, particle, time, part, flow);
+            WriteComputedDataParaview(U, space, particle, time, flow);
             break;
     }
     return 0;
@@ -35,13 +39,16 @@ int LoadComputedData(Real *U, const Space *space, Time *time,
 {
     switch (time->dataStreamer) {
         case 0: /* ParaView */
-            LoadComputedDataParaview(U, space, time, part, flow);
+            LoadComputedDataParaview(U, space, time, flow);
             break;
         case 1: /* Ensight */
             LoadComputedDataEnsight(U, space, time, part, flow);
             break;
+        case 2: /* Paraview Ensight */
+            LoadComputedDataParasight(U, space, time, flow);
+            break;
         default: /* ParaView */
-            LoadComputedDataParaview(U, space, time, part, flow);
+            LoadComputedDataParaview(U, space, time, flow);
             break;
     }
     return 0;

@@ -1,68 +1,67 @@
 /****************************************************************************
- * Functions for Ensight Data Format                                        *
+ * Functions for Parasight Data Format                                      *
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide.                                 *
- * - This file defines operations for Ensight gold data format.             *
+ * - This file defines operations for Parasight data format.                *
  ****************************************************************************/
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "ensight.h"
+#include "parasight.h"
 #include <stdio.h> /* standard library for input and output */
 #include <string.h> /* manipulating strings */
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int InitializeEnsightTransientCaseFile(EnsightSet *, const Time *);
-static int WriteEnsightCaseFile(EnsightSet *, const Time *);
-static int WriteEnsightGeometryFile(EnsightSet *, const Space *, const Partition *);
-static int WriteEnsightVariableFile(const Real *, EnsightSet *, const Space *,
-        const Partition *, const Flow *);
-static int WriteParticleFile(EnsightSet *, const Particle *);
+static int InitializeParasightTransientCaseFile(ParasightSet *, const Time *);
+static int WriteParasightCaseFile(ParasightSet *, const Time *);
+static int WriteParasightGeometryFile(ParasightSet *, const Space *);
+static int WriteParasightVariableFile(const Real *, ParasightSet *, const Space *,
+        const Flow *);
+static int WriteParticleFile(ParasightSet *, const Particle *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
 /*
- * This function write computed data to files with Ensight data format, 
+ * This function write computed data to files with Parasight data format, 
  * including transient and steady output with file names consists of the 
  * default base file name and export step tag. 
  */
-int WriteComputedDataEnsight(const Real *U, const Space *space, 
-        const Particle *particle, const Time *time, const Partition *part,
-        const Flow *flow)
+int WriteComputedDataParasight(const Real *U, const Space *space, 
+        const Particle *particle, const Time *time, const Flow *flow)
 {
     ShowInformation("  writing field data to file...");
-    EnsightSet enSet = { /* initialize Ensight environment */
-        .baseName = "ensight", /* data file base name */
+    ParasightSet enSet = { /* initialize Parasight environment */
+        .baseName = "parasight", /* data file base name */
         .fileName = {'\0'}, /* data file name */
         .stringData = {'\0'}, /* string data recorder */
     };
     if (0 == time->stepCount) { /* this is the initialization step */
-        InitializeEnsightTransientCaseFile(&enSet, time);
+        InitializeParasightTransientCaseFile(&enSet, time);
+        WriteParasightGeometryFile(&enSet, space);
     }
-    WriteEnsightCaseFile(&enSet, time);
-    WriteEnsightGeometryFile(&enSet, space, part);
-    WriteEnsightVariableFile(U, &enSet, space, part, flow);
+    WriteParasightCaseFile(&enSet, time);
+    WriteParasightVariableFile(U, &enSet, space, flow);
     WriteParticleFile(&enSet, particle);
     return 0;
 }
 /*
- * Ensight transient case file
+ * Parasight transient case file
  * This function initializes an overall transient case file.
  */
-int InitializeEnsightTransientCaseFile(EnsightSet *enSet, const Time *time)
+int InitializeParasightTransientCaseFile(ParasightSet *enSet, const Time *time)
 {
-    FILE *filePointer = fopen("transient.case", "w");
+    FILE *filePointer = fopen("parasight.case", "w");
     if (NULL == filePointer) {
-        FatalError("failed to write data to ensight case file: transient.case...");
+        FatalError("failed to write data to Parasight case file: parasight.case...");
     }
     /* output information to file */
     fprintf(filePointer, "FORMAT\n"); 
     fprintf(filePointer, "type: ensight gold\n"); 
     fprintf(filePointer, "\n"); 
     fprintf(filePointer, "GEOMETRY\n"); 
-    fprintf(filePointer, "model:            1       %s*****.geo\n", enSet->baseName); 
+    fprintf(filePointer, "model:  parasight.geo\n"); 
     fprintf(filePointer, "\n"); 
     fprintf(filePointer, "VARIABLE\n"); 
     fprintf(filePointer, "scalar per node:  1  rho  %s*****.rho\n", enSet->baseName); 
@@ -71,6 +70,7 @@ int InitializeEnsightTransientCaseFile(EnsightSet *enSet, const Time *time)
     fprintf(filePointer, "scalar per node:  1  w    %s*****.w\n", enSet->baseName); 
     fprintf(filePointer, "scalar per node:  1  p    %s*****.p\n", enSet->baseName); 
     fprintf(filePointer, "scalar per node:  1  T    %s*****.T\n", enSet->baseName); 
+    fprintf(filePointer, "scalar per node:  1  id   %s*****.id\n", enSet->baseName); 
     fprintf(filePointer, "vector per node:  1  Vel  %s*****.Vel\n", enSet->baseName); 
     fprintf(filePointer, "\n"); 
     fprintf(filePointer, "TIME\n"); 
@@ -83,9 +83,9 @@ int InitializeEnsightTransientCaseFile(EnsightSet *enSet, const Time *time)
     return 0;
 }
 /*
- * Ensight case files
+ * Parasight case files
  */
-static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
+static int WriteParasightCaseFile(ParasightSet *enSet, const Time *time)
 {
     /*
      * Write the steady case file of current step.
@@ -100,21 +100,21 @@ static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
      * blank-padding.
      */
     /* store updated basename in filename */
-    snprintf(enSet->fileName, sizeof(EnsightString), "%s%05d", enSet->baseName, time->outputCount); 
+    snprintf(enSet->fileName, sizeof(ParasightString), "%s%05d", enSet->baseName, time->outputCount); 
     /* basename is updated here! */
-    snprintf(enSet->baseName, sizeof(EnsightString), "%s", enSet->fileName); 
+    snprintf(enSet->baseName, sizeof(ParasightString), "%s", enSet->fileName); 
     /* current filename */
-    snprintf(enSet->fileName, sizeof(EnsightString), "%s.case", enSet->baseName); 
+    snprintf(enSet->fileName, sizeof(ParasightString), "%s.case", enSet->baseName); 
     FILE *filePointer = fopen(enSet->fileName, "w");
     if (NULL == filePointer) {
-        FatalError("failed to write data to ensight case file: ensight.case***...");
+        FatalError("failed to write data to Parasight case file: parasight.case***...");
     }
     /* output information to file */
     fprintf(filePointer, "FORMAT\n"); 
     fprintf(filePointer, "type: ensight gold\n"); 
     fprintf(filePointer, "\n"); 
     fprintf(filePointer, "GEOMETRY\n"); 
-    fprintf(filePointer, "model:  %s.geo\n", enSet->baseName); 
+    fprintf(filePointer, "model:  parasight.geo\n"); 
     fprintf(filePointer, "\n"); 
     fprintf(filePointer, "VARIABLE\n"); 
     fprintf(filePointer, "constant per case:  Order %d\n", time->outputCount);
@@ -126,15 +126,16 @@ static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
     fprintf(filePointer, "scalar per node:    w     %s.w\n", enSet->baseName); 
     fprintf(filePointer, "scalar per node:    p     %s.p\n", enSet->baseName); 
     fprintf(filePointer, "scalar per node:    T     %s.T\n", enSet->baseName); 
+    fprintf(filePointer, "scalar per node:    id    %s.id\n", enSet->baseName); 
     fprintf(filePointer, "vector per node:    Vel   %s.Vel\n", enSet->baseName); 
     fprintf(filePointer, "\n"); 
     fclose(filePointer); /* close current opened file */
     /*
      * Add the time flag of current export to the transient case
      */
-    filePointer = fopen("transient.case", "a");
+    filePointer = fopen("parasight.case", "a");
     if (NULL == filePointer) {
-        FatalError("failed to add data to ensight case file: transient.case...");
+        FatalError("failed to add data to Parasight case file: parasight.case...");
     }
     if ((time->outputCount % 5) == 0) { /* print to a new line every x outputs */
         fprintf(filePointer, "\n"); 
@@ -144,106 +145,80 @@ static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
     return 0;
 }
 /*
- * Ensight geometry file
+ * Parasight geometry file
  */
-static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const Partition *part)
+static int WriteParasightGeometryFile(ParasightSet *enSet, const Space *space)
 {
     /*
      * Write the geometry file (Binary Form).
-     * Ensight Maximums: maximum number of nodes in a part is 2GB.
+     * Parasight Maximums: maximum number of nodes in a part is 2GB.
      */
-    snprintf(enSet->fileName, sizeof(EnsightString), "%s.geo", enSet->baseName);
+    snprintf(enSet->fileName, sizeof(ParasightString), "parasight.geo");
     FILE *filePointer = fopen(enSet->fileName, "wb");
     if (NULL == filePointer) {
-        FatalError("failed to write data to ensight geometry file: ensight.geo***...");
+        FatalError("failed to write data to Parasight geometry file: parasight.geo...");
     }
     /*
-     * Output information to file, need to strictly follow the Ensight data format.
+     * Output information to file, need to strictly follow the Parasight data format.
      * NOTE: if memeory locations of input objects overlap, the behavior of
      * strncpy is undefined!
      * In fwrite, the first size is the sizeof an object, which is given in the
      * units of chars, And the second size (count) is the number of object 
      * that need to be written.
      */
-    /* description  at the beginning */
-    strncpy(enSet->stringData, "C Binary", sizeof(EnsightString));
-    fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-    strncpy(enSet->stringData, "Ensight Geometry File", sizeof(EnsightString));
-    fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-    strncpy(enSet->stringData, "Written by ArtraCFD", sizeof(EnsightString));
-    fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-    /* node id and extents settings */
-    strncpy(enSet->stringData, "node id off", sizeof(EnsightString));
-    fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-    strncpy(enSet->stringData, "element id off", sizeof(EnsightString));
-    fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-    /*
-     * Begin to write each part
-     */
     int idx = 0; /* linear array index math variable */
-    int nodeCount[3] = {0, 0, 0}; /* i j k node number in each part */
-    int blankID = 0; /* Ensight geometry iblank entry */
+    int nodeCount[3] = {0, 0, 0}; /* i j k node number in part */
     const int offset = space->nodeFlagOffset;
-    EnsightReal data = 0.0; /* the ensight data format */
-    for (int partCount = 0, partNum = 1; partCount < part->subN; ++partCount, ++partNum) {
-        strncpy(enSet->stringData, "part", sizeof(EnsightString));
-        fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        fwrite(&partNum, sizeof(int), 1, filePointer);
-        strncpy(enSet->stringData, part->name[partCount], sizeof(EnsightString));
-        fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        strncpy(enSet->stringData, "block iblanked", sizeof(EnsightString));
-        fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        /* this line is the total number of nodes in i, j, k */
-        nodeCount[0] = (part->iSup[partCount] - part->iSub[partCount]); 
-        nodeCount[1] = (part->jSup[partCount] - part->jSub[partCount]);
-        nodeCount[2] = (part->kSup[partCount] - part->kSub[partCount]);
-        fwrite(nodeCount, sizeof(int), 3, filePointer);
-        /* now output the x coordinates of all nodes in current part */
-        for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
-            for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
-                for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                    data = space->xMin + (i - space->ng) * space->dx;
-                    fwrite(&data, sizeof(EnsightReal), 1, filePointer);
-                }
+    const int partNum = 1; /* only one part is needed */
+    ParasightReal data = 0.0; /* the Parasight data format */
+    /* description  at the beginning */
+    strncpy(enSet->stringData, "C Binary", sizeof(ParasightString));
+    fwrite(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
+    strncpy(enSet->stringData, "Parasight Geometry File", sizeof(ParasightString));
+    fwrite(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
+    strncpy(enSet->stringData, "Written by ArtraCFD", sizeof(ParasightString));
+    fwrite(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
+    /* node id and extents settings */
+    strncpy(enSet->stringData, "node id off", sizeof(ParasightString));
+    fwrite(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
+    strncpy(enSet->stringData, "element id off", sizeof(ParasightString));
+    fwrite(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
+    strncpy(enSet->stringData, "part", sizeof(ParasightString));
+    fwrite(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
+    fwrite(&partNum, sizeof(int), 1, filePointer);
+    strncpy(enSet->stringData, "entire domain", sizeof(ParasightString));
+    fwrite(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
+    strncpy(enSet->stringData, "block", sizeof(ParasightString));
+    fwrite(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
+    /* this line is the total number of nodes in i, j, k */
+    nodeCount[0] = space->iMax; 
+    nodeCount[1] = space->jMax;
+    nodeCount[2] = space->kMax;
+    fwrite(nodeCount, sizeof(int), 3, filePointer);
+    /* now output the x coordinates of all nodes in current part */
+    for (int k = 0; k < space->kMax; ++k) {
+        for (int j = 0; j < space->jMax; ++j) {
+            for (int i = 0; i < space->iMax; ++i) {
+                data = space->xMin + (i - space->ng) * space->dx;
+                fwrite(&data, sizeof(ParasightReal), 1, filePointer);
             }
         }
-        /* now output the y coordinates of all nodes in current part */
-        for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
-            for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
-                for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                    data = space->yMin + (j - space->ng) * space->dy;
-                    fwrite(&data, sizeof(EnsightReal), 1, filePointer);
-                }
+    }
+    /* now output the y coordinates of all nodes in current part */
+    for (int k = 0; k < space->kMax; ++k) {
+        for (int j = 0; j < space->jMax; ++j) {
+            for (int i = 0; i < space->iMax; ++i) {
+                data = space->yMin + (j - space->ng) * space->dy;
+                fwrite(&data, sizeof(ParasightReal), 1, filePointer);
             }
         }
-        /* now output the z coordinates of all nodes in current part */
-        for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
-            for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
-                for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                    data = space->zMin + (k - space->ng) * space->dz;
-                    fwrite(&data, sizeof(EnsightReal), 1, filePointer);
-                }
-            }
-        }
-        /*
-         * Now output the iblanked array of all nodes in current part
-         * blankID = 1 is interior type, will be created and used.
-         * blankID = 0 is exterior type, they are blanked-out nodes 
-         * and will not be created in the geometry.
-         * blankID > 1 or < 0 are any kind of boundary nodes.
-         * Transforming from the nodeFlag to blankID are required.
-         */
-        for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
-            for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
-                for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                    idx = IndexMath(k, j, i, space);
-                    if ((-offset < space->nodeFlag[idx]) && (offset > space->nodeFlag[idx])) {
-                        blankID = 1;
-                    } else { /* inner nodes in geometry */
-                        blankID = 0;
-                    }
-                    fwrite(&(blankID), sizeof(int), 1, filePointer);
-                }
+    }
+    /* now output the z coordinates of all nodes in current part */
+    for (int k = 0; k < space->kMax; ++k) {
+        for (int j = 0; j < space->jMax; ++j) {
+            for (int i = 0; i < space->iMax; ++i) {
+                data = space->zMin + (k - space->ng) * space->dz;
+                fwrite(&data, sizeof(ParasightReal), 1, filePointer);
             }
         }
     }
@@ -251,70 +226,72 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
     return 0;
 }
 /*
- * Ensight variables files
+ * Parasight variables files
  * The values for each node of the structured block are output in 
  * the same IJK order as the coordinates. (The number of nodes in the
- * part are obtained from the corresponding EnSight Gold geometry file.)
+ * part are obtained from the corresponding Parasight Gold geometry file.)
  */
-static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
-        const Space *space, const Partition *part, const Flow *flow)
+static int WriteParasightVariableFile(const Real *U, ParasightSet *enSet,
+        const Space *space, const Flow *flow)
 {
     FILE *filePointer = NULL;
     int idx = 0; /* linear array index math variable */
-    EnsightReal data = 0.0; /* the ensight data format */
+    ParasightReal data = 0.0; /* the Parasight data format */
     /*
      * Write the scalar field (Binary Form)
      * There are six primitive variables need to be written:
      * density, u, v, w, pressure, temperature
      */
-    const char nameSuffix[6][5] = {"rho", "u", "v", "w", "p", "T"};
-    for (int dim = 0; dim < 6; ++dim) {
-        snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
+    const char nameSuffix[7][5] = {"rho", "u", "v", "w", "p", "T", "id"};
+    const int partNum = 1;
+    for (int dim = 0; dim < 7; ++dim) {
+        snprintf(enSet->fileName, sizeof(ParasightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
         filePointer = fopen(enSet->fileName, "wb");
         if (NULL == filePointer) {
-            FatalError("failed to write data to ensight data file: ensight.***...");
+            FatalError("failed to write data to Parasight data file: parasight.***...");
         }
         /* first line description per file */
-        strncpy(enSet->stringData, "scalar variable", sizeof(EnsightString));
-        fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        for (int partCount = 0, partNum = 1; partCount < part->subN; ++partCount, ++partNum) {
-            /* binary file format */
-            strncpy(enSet->stringData, "part", sizeof(EnsightString));
-            fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-            fwrite(&partNum, sizeof(int), 1, filePointer);
-            strncpy(enSet->stringData, "block", sizeof(EnsightString));
-            fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-            /* now output the scalar value at each node in current part */
-            for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
-                for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
-                    for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                        idx = IndexMath(k, j, i, space) * space->dimU;
-                        switch (dim) {
-                            case 0: /* rho */
-                                data = U[idx];
-                                break;
-                            case 1: /* u */
-                                data = U[idx+1] / U[idx];
-                                break;
-                            case 2: /* v */
-                                data = U[idx+2] / U[idx];
-                                break;
-                            case 3: /* w */
-                                data = U[idx+3] / U[idx];
-                                break;
-                            case 4: /* p */
-                                data = (flow->gamma - 1.0) * (U[idx+4] - 0.5 * 
-                                        (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]);
-                                break;
-                            case 5: /* T */
-                                data = (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + 
-                                            U[idx+3] * U[idx+3]) / U[idx]) / (U[idx] * flow->cv);
-                                break;
-                            default:
-                                break;
-                        }
-                        fwrite(&data, sizeof(EnsightReal), 1, filePointer);
+        strncpy(enSet->stringData, "scalar variable", sizeof(ParasightString));
+        fwrite(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
+        /* binary file format */
+        strncpy(enSet->stringData, "part", sizeof(ParasightString));
+        fwrite(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
+        fwrite(&partNum, sizeof(int), 1, filePointer);
+        strncpy(enSet->stringData, "block", sizeof(ParasightString));
+        fwrite(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
+        /* now output the scalar value at each node in current part */
+        for (int k = 0; k < space->kMax; ++k) {
+            for (int j = 0; j < space->jMax; ++j) {
+                for (int i = 0; i < space->iMax; ++i) {
+                    idx = IndexMath(k, j, i, space) * space->dimU;
+                    switch (dim) {
+                        case 0: /* rho */
+                            data = U[idx];
+                            break;
+                        case 1: /* u */
+                            data = U[idx+1] / U[idx];
+                            break;
+                        case 2: /* v */
+                            data = U[idx+2] / U[idx];
+                            break;
+                        case 3: /* w */
+                            data = U[idx+3] / U[idx];
+                            break;
+                        case 4: /* p */
+                            data = (flow->gamma - 1.0) * (U[idx+4] - 0.5 * 
+                                    (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]);
+                            break;
+                        case 5: /* T */
+                            data = (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + 
+                                        U[idx+3] * U[idx+3]) / U[idx]) / (U[idx] * flow->cv);
+                            break;
+                        case 6: /* node flag */
+                            idx = idx / space->dimU;
+                            data = space->nodeFlag[idx];
+                        default:
+                            break;
                     }
+                    fwrite(&data, sizeof(ParasightReal), 1, filePointer);
                 }
             }
         }
@@ -323,45 +300,43 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
     /*
      * Write the velocity vector field (Binary Form)
      */
-    snprintf(enSet->fileName, sizeof(EnsightString), "%s.Vel", enSet->baseName);
+    snprintf(enSet->fileName, sizeof(ParasightString), "%s.Vel", enSet->baseName);
     filePointer = fopen(enSet->fileName, "wb");
     if (NULL == filePointer) {
-        FatalError("failed to write ensight data file: ensight.Vel***...");
+        FatalError("failed to write Parasight data file: Parasight.Vel***...");
     }
     /* binary file format */
-    strncpy(enSet->stringData, "vector variable", sizeof(EnsightString));
-    fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-    for (int partCount = 0, partNum = 1; partCount < part->subN; ++partCount, ++partNum) {
-        strncpy(enSet->stringData, "part", sizeof(EnsightString));
-        fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        fwrite(&partNum, sizeof(int), 1, filePointer);
-        strncpy(enSet->stringData, "block", sizeof(EnsightString));
-        fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        /*
-         * Now output the vector components at each node in current part
-         * dimension index of u, v, w is 1, 2, 3 in U in each part, 
-         * write u, v, w sequentially
-         */
-        for (int dim = 1; dim < 4; ++dim) {
-            for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
-                for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
-                    for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                        idx = IndexMath(k, j, i, space) * space->dimU;
-                        switch (dim) {
-                            case 1: /* u */
-                                data = U[idx+1] / U[idx];
-                                break;
-                            case 2: /* v */
-                                data = U[idx+2] / U[idx];
-                                break;
-                            case 3: /* w */
-                                data = U[idx+3] / U[idx];
-                                break;
-                            default:
-                                break;
-                        }
-                        fwrite(&data, sizeof(EnsightReal), 1, filePointer);
+    strncpy(enSet->stringData, "vector variable", sizeof(ParasightString));
+    fwrite(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
+    strncpy(enSet->stringData, "part", sizeof(ParasightString));
+    fwrite(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
+    fwrite(&partNum, sizeof(int), 1, filePointer);
+    strncpy(enSet->stringData, "block", sizeof(ParasightString));
+    fwrite(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
+    /*
+     * Now output the vector components at each node in current part
+     * dimension index of u, v, w is 1, 2, 3 in U in each part, 
+     * write u, v, w sequentially
+     */
+    for (int dim = 1; dim < 4; ++dim) {
+        for (int k = 0; k < space->kMax; ++k) {
+            for (int j = 0; j < space->jMax; ++j) {
+                for (int i = 0; i < space->iMax; ++i) {
+                    idx = IndexMath(k, j, i, space) * space->dimU;
+                    switch (dim) {
+                        case 1: /* u */
+                            data = U[idx+1] / U[idx];
+                            break;
+                        case 2: /* v */
+                            data = U[idx+2] / U[idx];
+                            break;
+                        case 3: /* w */
+                            data = U[idx+3] / U[idx];
+                            break;
+                        default:
+                            break;
                     }
+                    fwrite(&data, sizeof(ParasightReal), 1, filePointer);
                 }
             }
         }
@@ -371,14 +346,14 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
 }
 /*
  * This file stores the particle information, this will not processed by
- * Ensight, but used for restart.
+ * Parasight, but used for restart.
  */
-static int WriteParticleFile(EnsightSet *enSet, const Particle *particle)
+static int WriteParticleFile(ParasightSet *enSet, const Particle *particle)
 {
-    snprintf(enSet->fileName, sizeof(EnsightString), "%s.particle", enSet->baseName);
+    snprintf(enSet->fileName, sizeof(ParasightString), "%s.particle", enSet->baseName);
     FILE *filePointer = fopen(enSet->fileName, "w");
     if (NULL == filePointer) {
-        FatalError("faild to write particle data file: ensight.particle***...");
+        FatalError("faild to write particle data file: parasight.particle***...");
     }
     fprintf(filePointer, "N: %d\n", particle->totalN); /* number of objects */
     const Real *ptk = NULL;

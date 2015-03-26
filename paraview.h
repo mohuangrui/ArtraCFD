@@ -45,7 +45,7 @@ typedef struct {
  *      and can be accessed by linear index math.
  */
 extern int WriteComputedDataParaview(const Real * U, const Space *, 
-        const Particle *, const Time *, const Partition *, const Flow *);
+        const Particle *, const Time *, const Flow *);
 /*
  * Paraview data loader
  *
@@ -54,7 +54,7 @@ extern int WriteComputedDataParaview(const Real * U, const Space *,
  *      format.
  */
 extern int LoadComputedDataParaview(Real *U, const Space *, Time *,
-        const Partition *, const Flow *);
+        const Flow *);
 #endif
 /* a good practice: end file with a newline */
 

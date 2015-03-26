@@ -16,45 +16,52 @@
  * Data Structure Declarations
  ****************************************************************************/
 /*
- * Ensight data format and type control
+ * Parasight data format and type control, Parasight means the Ensight data
+ * format adjusted for Paraview. This adjustment is required for the following
+ * reason: the handling of complex geometry in Paraview is achieved by data 
+ * filter rather than the blankID of nodes. Therefore, there is no need to
+ * write changing geometry files, but need to write a data entry for filter.
+ * Because of the same reason, there is no need to write each subparts, since
+ * they can be distinguished from each other by the data filter.
+ *
  */
-typedef char EnsightString[80]; /* Ensight string data requires 80 chars */
-typedef float EnsightReal; /* Ensight requires real data to be float */
+typedef char ParasightString[80]; /* Parasight string data requires 80 chars */
+typedef float ParasightReal; /* Parasight requires real data to be float */
 /*
- * Ensight configuration structure
+ * Parasight configuration structure
  */
 typedef struct {
-    EnsightString baseName; /* data file base name */
-    EnsightString fileName; /* store current open file name */
-    EnsightString stringData; /* Ensight string data */
-}EnsightSet;
+    ParasightString baseName; /* data file base name */
+    ParasightString fileName; /* store current open file name */
+    ParasightString stringData; /* Parasight string data */
+}ParasightSet;
 /****************************************************************************
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Ensight format data exporter
+ * Parasight format data exporter
  *
  * Function
  *      Export conservative field data vector variable:
  *      U = [rho, rho_u, rho_v, rho_w, rho_eT]
  *      to primitive variables = [rho, u, v, w, p, T]
- *      to binary data files with Ensight data format.
+ *      to binary data files with Parasight data format.
  * Notice
  *      U is a linear array that stores all the values.
  *      These data are in sequential state 
  *      and can be accessed by linear index math.
  */
-extern int WriteComputedDataEnsight(const Real * U, const Space *, 
-        const Particle *, const Time *, const Partition *, const Flow *);
+extern int WriteComputedDataParasight(const Real * U, const Space *, 
+        const Particle *, const Time *, const Flow *);
 /*
- * Ensight format data loader
+ * Parasight format data loader
  *
  * Function
- *      Load computed data from output files which are written in Ensight
+ *      Load computed data from output files which are written in Parasight
  *      format.
  */
-extern int LoadComputedDataEnsight(Real *U, const Space *, Time *,
-        const Partition *, const Flow *);
+extern int LoadComputedDataParasight(Real *U, const Space *, Time *,
+        const Flow *);
 #endif
 /* a good practice: end file with a newline */
 

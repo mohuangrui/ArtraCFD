@@ -53,9 +53,9 @@ int WriteComputedDataEnsight(const Real *U, const Space *space,
  */
 int InitializeEnsightTransientCaseFile(EnsightSet *enSet, const Time *time)
 {
-    FILE *filePointer = fopen("transient.case", "w");
+    FILE *filePointer = fopen("ensight.case", "w");
     if (NULL == filePointer) {
-        FatalError("failed to write data to ensight case file: transient.case...");
+        FatalError("failed to write data to ensight case file: ensight.case...");
     }
     /* output information to file */
     fprintf(filePointer, "FORMAT\n"); 
@@ -132,9 +132,9 @@ static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
     /*
      * Add the time flag of current export to the transient case
      */
-    filePointer = fopen("transient.case", "a");
+    filePointer = fopen("ensight.case", "a");
     if (NULL == filePointer) {
-        FatalError("failed to add data to ensight case file: transient.case...");
+        FatalError("failed to add data to ensight case file: ensight.case...");
     }
     if ((time->outputCount % 5) == 0) { /* print to a new line every x outputs */
         fprintf(filePointer, "\n"); 

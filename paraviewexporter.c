@@ -14,8 +14,7 @@
  * Function definitions
  ****************************************************************************/
 int WriteComputedDataParaview(const Real *U, const Space *space, 
-        const Particle *particle, const Time *time, const Partition *part, 
-        const Flow *flow)
+        const Particle *particle, const Time *time, const Flow *flow)
 {
     return 0;
 }
