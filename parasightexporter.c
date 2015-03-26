@@ -166,9 +166,7 @@ static int WriteParasightGeometryFile(ParasightSet *enSet, const Space *space)
      * units of chars, And the second size (count) is the number of object 
      * that need to be written.
      */
-    int idx = 0; /* linear array index math variable */
     int nodeCount[3] = {0, 0, 0}; /* i j k node number in part */
-    const int offset = space->nodeFlagOffset;
     const int partNum = 1; /* only one part is needed */
     ParasightReal data = 0.0; /* the Parasight data format */
     /* description  at the beginning */
