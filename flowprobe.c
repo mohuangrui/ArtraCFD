@@ -14,7 +14,7 @@
  * Function definitions
  ****************************************************************************/
 int WriteComputedDataAtProbes(const int stepCount, const Real *U, 
-        const Space *space, const Flow *flow)
+        const Space *space, const Partition *part, const Flow *flow)
 {
     FILE *filePointer = NULL;
     char fileName[25] = {'\0'};
@@ -52,11 +52,15 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
         const Real yStep = (Real)(jB - jA) / (Real)(stepN);
         const Real zStep = (Real)(kB - kA) / (Real)(stepN);
         for (int m = 0; m <= stepN; ++m) {
-            idx = IndexMath(kA + (int)(m * zStep), jA + (int)(m * yStep), iA + 
-                    (int)(m * xStep), space) * space->dimU;
-            if ((space->nMax * space->dimU <= idx) || (0 > idx)) {
-                continue;
+            const int k = kA + (int)(m * zStep);
+            const int j = jA + (int)(m * yStep);
+            const int i = iA + (int)(m * xStep);
+            if ((part->kSub[0] > k) || (part->kSup[0] <= k) || 
+                    (part->jSub[0] > j) || (part->jSup[0] <= j) ||
+                    (part->iSub[0] > i) || (part->iSup[0] <= i)) {
+                continue; /* not in flow domain */
             }
+            idx = IndexMath(k, j, i, space) * space->dimU;
             PrimitiveByConservative(Uo, idx, U, flow);
             fprintf(filePointer, "%d     %.6g      %.6g     %.6g      %.6g      %.6g     %.6g\n",
                     m, Uo[0], Uo[1], Uo[2], Uo[3], Uo[4], Uo[5]); 

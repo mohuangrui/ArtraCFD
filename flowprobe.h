@@ -25,7 +25,7 @@
  *      Write field data of probes.
  */
 extern int WriteComputedDataAtProbes(const int stepCount, const Real *U, 
-        const Space *, const Flow *);
+        const Space *, const Partition *, const Flow *);
 #endif
 /* a good practice: end file with a newline */
 

@@ -100,7 +100,7 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
         if ((probeAccumulatedTime >=  probeExportInterval) || 
                 (0 == time->currentTime - time->totalTime) ||
                 (time->stepCount == time->totalStep)) {
-            WriteComputedDataAtProbes(time->stepCount, field->U, space, flow);
+            WriteComputedDataAtProbes(time->stepCount, field->U, space, part, flow);
             probeAccumulatedTime = 0; /* reset probe accumulated time */
         }
     }
