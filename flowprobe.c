@@ -40,12 +40,12 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
         int jB = (int)((flow->probePos[n][4] - space->yMin) * space->ddy) + space->ng;
         int kB = (int)((flow->probePos[n][5] - space->zMin) * space->ddz) + space->ng;
         /* adjust into flow region */
-        iA = Min(part->iSub[2], Max(part->iSub[1], iA));
-        jA = Min(part->jSub[4], Max(part->jSub[3], jA));
-        kA = Min(part->kSub[6], Max(part->kSub[5], kA));
-        iB = Min(part->iSub[2], Max(part->iSub[1], iB));
-        jB = Min(part->jSub[4], Max(part->jSub[3], jB));
-        kB = Min(part->kSub[6], Max(part->kSub[5], kB));
+        iA = Min(part->iSup[0] - 1, Max(part->iSub[0], iA));
+        jA = Min(part->jSup[0] - 1, Max(part->jSub[0], jA));
+        kA = Min(part->kSup[0] - 1, Max(part->kSub[0], kA));
+        iB = Min(part->iSup[0] - 1, Max(part->iSub[0], iB));
+        jB = Min(part->jSup[0] - 1, Max(part->jSub[0], jB));
+        kB = Min(part->kSup[0] - 1, Max(part->kSub[0], kB));
         int stepN = flow->probe[n] - 1;
         if (1 > stepN) { /* set to lowest resolution if happens */
             stepN = 1;
