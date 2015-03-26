@@ -11,6 +11,11 @@
 #include <stdlib.h> /* support for abs operation */
 #include "commons.h"
 /****************************************************************************
+ * Static Function Declarations
+ ****************************************************************************/
+static int Min(const int x, const int y);
+static int Max(const int x, const int y);
+/****************************************************************************
  * Function definitions
  ****************************************************************************/
 int WriteComputedDataAtProbes(const int stepCount, const Real *U, 
@@ -28,25 +33,26 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
         }
         fprintf(filePointer, "# points      rho     u       v       w       p       T\n"); 
         /* plus one to shift away from boundary when dimension collapse */
-        const int iA = (int)((flow->probePos[n][0] - space->xMin) * space->ddx) + space->ng;
-        const int jA = (int)((flow->probePos[n][1] - space->yMin) * space->ddy) + space->ng;
-        const int kA = (int)((flow->probePos[n][2] - space->zMin) * space->ddz) + space->ng;
-        const int iB = (int)((flow->probePos[n][3] - space->xMin) * space->ddx) + space->ng;
-        const int jB = (int)((flow->probePos[n][4] - space->yMin) * space->ddy) + space->ng;
-        const int kB = (int)((flow->probePos[n][5] - space->zMin) * space->ddz) + space->ng;
+        int iA = (int)((flow->probePos[n][0] - space->xMin) * space->ddx) + space->ng;
+        int jA = (int)((flow->probePos[n][1] - space->yMin) * space->ddy) + space->ng;
+        int kA = (int)((flow->probePos[n][2] - space->zMin) * space->ddz) + space->ng;
+        int iB = (int)((flow->probePos[n][3] - space->xMin) * space->ddx) + space->ng;
+        int jB = (int)((flow->probePos[n][4] - space->yMin) * space->ddy) + space->ng;
+        int kB = (int)((flow->probePos[n][5] - space->zMin) * space->ddz) + space->ng;
+        /* adjust into flow region */
+        iA = Min(part->iSup[0] - 1, Max(part->iSub[0], iA));
+        jA = Min(part->jSup[0] - 1, Max(part->jSub[0], jA));
+        kA = Min(part->kSup[0] - 1, Max(part->kSub[0], kA));
+        iB = Min(part->iSup[0] - 1, Max(part->iSub[0], iB));
+        jB = Min(part->jSup[0] - 1, Max(part->jSub[0], jB));
+        kB = Min(part->kSup[0] - 1, Max(part->kSub[0], kB));
         int stepN = flow->probe[n] - 1;
         if (1 > stepN) { /* set to lowest resolution if happens */
             stepN = 1;
         }
         if ((abs(iB - iA) < stepN) && (abs(jB - jA) < stepN) && (abs(kB - kA) < stepN)) {
             /* set to highest resolution allowed */
-            stepN = abs(iB - iA);
-            if (abs(jB - jA) > stepN) {
-                stepN = abs(jB - jA);
-            }
-            if (abs(kB - kA) > stepN) {
-                stepN = abs(kB - kA);
-            }
+            stepN = Max(abs(iB - iA), Max(abs(jB - jA), abs(kB - kA)));
         }
         const Real xStep = (Real)(iB - iA) / (Real)(stepN);
         const Real yStep = (Real)(jB - jA) / (Real)(stepN);
@@ -55,11 +61,6 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
             const int k = kA + (int)(m * zStep);
             const int j = jA + (int)(m * yStep);
             const int i = iA + (int)(m * xStep);
-            if ((part->kSub[0] > k) || (part->kSup[0] <= k) || 
-                    (part->jSub[0] > j) || (part->jSup[0] <= j) ||
-                    (part->iSub[0] > i) || (part->iSup[0] <= i)) {
-                continue; /* not in flow domain */
-            }
             idx = IndexMath(k, j, i, space) * space->dimU;
             PrimitiveByConservative(Uo, idx, U, flow);
             fprintf(filePointer, "%d     %.6g      %.6g     %.6g      %.6g      %.6g     %.6g\n",
@@ -68,6 +69,20 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
         fclose(filePointer); /* close current opened file */
     }
     return 0;
+}
+static int Min(const int x, const int y)
+{
+    if (x < y) {
+        return x;
+    }
+    return y;
+}
+static int Max(const int x, const int y)
+{
+    if (x > y) {
+        return x;
+    }
+    return y;
 }
 /* a good practice: end file with a newline */
 
