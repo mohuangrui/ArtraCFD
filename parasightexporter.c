@@ -54,7 +54,7 @@ int InitializeParasightTransientCaseFile(ParasightSet *enSet, const Time *time)
 {
     FILE *filePointer = fopen("parasight.case", "w");
     if (NULL == filePointer) {
-        FatalError("failed to write data to Parasight case file: parasight.case...");
+        FatalError("failed to write data to transient case file...");
     }
     /* output information to file */
     fprintf(filePointer, "FORMAT\n"); 
@@ -107,7 +107,7 @@ static int WriteParasightCaseFile(ParasightSet *enSet, const Time *time)
     snprintf(enSet->fileName, sizeof(ParasightString), "%s.case", enSet->baseName); 
     FILE *filePointer = fopen(enSet->fileName, "w");
     if (NULL == filePointer) {
-        FatalError("failed to write data to Parasight case file: parasight.case***...");
+        FatalError("failed to write data to steady case file...");
     }
     /* output information to file */
     fprintf(filePointer, "FORMAT\n"); 
@@ -135,7 +135,7 @@ static int WriteParasightCaseFile(ParasightSet *enSet, const Time *time)
      */
     filePointer = fopen("parasight.case", "a");
     if (NULL == filePointer) {
-        FatalError("failed to add data to Parasight case file: parasight.case...");
+        FatalError("failed to add data to transient file...");
     }
     if ((time->outputCount % 5) == 0) { /* print to a new line every x outputs */
         fprintf(filePointer, "\n"); 
@@ -156,7 +156,7 @@ static int WriteParasightGeometryFile(ParasightSet *enSet, const Space *space)
     snprintf(enSet->fileName, sizeof(ParasightString), "parasight.geo");
     FILE *filePointer = fopen(enSet->fileName, "wb");
     if (NULL == filePointer) {
-        FatalError("failed to write data to Parasight geometry file: parasight.geo...");
+        FatalError("failed to write geometry file...");
     }
     /*
      * Output information to file, need to strictly follow the Parasight data format.
@@ -246,7 +246,7 @@ static int WriteParasightVariableFile(const Real *U, ParasightSet *enSet,
         snprintf(enSet->fileName, sizeof(ParasightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
         filePointer = fopen(enSet->fileName, "wb");
         if (NULL == filePointer) {
-            FatalError("failed to write data to Parasight data file: parasight.***...");
+            FatalError("failed to write data file...");
         }
         /* first line description per file */
         strncpy(enSet->stringData, "scalar variable", sizeof(ParasightString));
@@ -301,7 +301,7 @@ static int WriteParasightVariableFile(const Real *U, ParasightSet *enSet,
     snprintf(enSet->fileName, sizeof(ParasightString), "%s.Vel", enSet->baseName);
     filePointer = fopen(enSet->fileName, "wb");
     if (NULL == filePointer) {
-        FatalError("failed to write Parasight data file: Parasight.Vel***...");
+        FatalError("failed to write data file...");
     }
     /* binary file format */
     strncpy(enSet->stringData, "vector variable", sizeof(ParasightString));
@@ -351,7 +351,7 @@ static int WriteParticleFile(ParasightSet *enSet, const Particle *particle)
     snprintf(enSet->fileName, sizeof(ParasightString), "%s.particle", enSet->baseName);
     FILE *filePointer = fopen(enSet->fileName, "w");
     if (NULL == filePointer) {
-        FatalError("faild to write particle data file: parasight.particle***...");
+        FatalError("faild to write particle data file...");
     }
     fprintf(filePointer, "N: %d\n", particle->totalN); /* number of objects */
     const Real *ptk = NULL;
