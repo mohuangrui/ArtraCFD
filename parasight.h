@@ -52,7 +52,7 @@ typedef struct {
  *      and can be accessed by linear index math.
  */
 extern int WriteComputedDataParasight(const Real * U, const Space *, 
-        const Particle *, const Time *, const Flow *);
+        const Particle *, const Time *, const Partition *, const Flow *);
 /*
  * Parasight format data loader
  *
@@ -61,7 +61,7 @@ extern int WriteComputedDataParasight(const Real * U, const Space *,
  *      format.
  */
 extern int LoadComputedDataParasight(Real *U, const Space *, Time *,
-        const Flow *);
+        const Partition *, const Flow *);
 #endif
 /* a good practice: end file with a newline */
 

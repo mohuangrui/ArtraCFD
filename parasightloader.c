@@ -16,7 +16,7 @@
  ****************************************************************************/
 static int LoadParasightCaseFile(ParasightSet *, Time *);
 static int LoadParasightVariableFile(Real *U, ParasightSet *,
-        const Space *, const Flow *);
+        const Space *, const Partition *, const Flow *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -24,7 +24,7 @@ static int LoadParasightVariableFile(Real *U, ParasightSet *,
  * Load necessary flow information from computed data
  */
 int LoadComputedDataParasight(Real *U, const Space *space, Time *time,
-        const Flow *flow)
+        const Partition *part, const Flow *flow)
 {
     ParasightSet enSet = { /* initialize Parasight environment */
         .baseName = "restart", /* data file base name */
@@ -32,7 +32,7 @@ int LoadComputedDataParasight(Real *U, const Space *space, Time *time,
         .stringData = {'\0'}, /* string data recorder */
     };
     LoadParasightCaseFile(&enSet, time);
-    LoadParasightVariableFile(U, &enSet, space, flow);
+    LoadParasightVariableFile(U, &enSet, space, part, flow);
     return 0;
 }
 static int LoadParasightCaseFile(ParasightSet *enSet, Time *time)
@@ -76,7 +76,7 @@ static int LoadParasightCaseFile(ParasightSet *enSet, Time *time)
     return 0;
 }
 static int LoadParasightVariableFile(Real *U, ParasightSet *enSet,
-        const Space *space, const Flow *flow)
+        const Space *space, const Partition *part, const Flow *flow)
 {
     FILE *filePointer = NULL;
     int idx = 0; /* linear array index math variable */
@@ -93,9 +93,9 @@ static int LoadParasightVariableFile(Real *U, ParasightSet *enSet,
         fread(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
         fread(&partNum, sizeof(int), 1, filePointer);
         fread(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
-        for (int k = 0; k < space->kMax; ++k) {
-            for (int j = 0; j < space->jMax; ++j) {
-                for (int i = 0; i < space->iMax; ++i) {
+        for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+            for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+                for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                     fread(&data, sizeof(ParasightReal), 1, filePointer);
                     idx = IndexMath(k, j, i, space) * space->dimU;
                     switch (dim) {

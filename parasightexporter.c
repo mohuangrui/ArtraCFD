@@ -16,9 +16,10 @@
  ****************************************************************************/
 static int InitializeParasightTransientCaseFile(ParasightSet *, const Time *);
 static int WriteParasightCaseFile(ParasightSet *, const Time *);
-static int WriteParasightGeometryFile(ParasightSet *, const Space *);
+static int WriteParasightGeometryFile(ParasightSet *, const Space *, 
+        const Partition *);
 static int WriteParasightVariableFile(const Real *, ParasightSet *, const Space *,
-        const Flow *);
+        const Partition *, const Flow *);
 static int WriteParticleFile(ParasightSet *, const Particle *);
 /****************************************************************************
  * Function definitions
@@ -29,7 +30,8 @@ static int WriteParticleFile(ParasightSet *, const Particle *);
  * default base file name and export step tag. 
  */
 int WriteComputedDataParasight(const Real *U, const Space *space, 
-        const Particle *particle, const Time *time, const Flow *flow)
+        const Particle *particle, const Time *time, const Partition *part,
+        const Flow *flow)
 {
     ShowInformation("  writing field data to file...");
     ParasightSet enSet = { /* initialize Parasight environment */
@@ -39,10 +41,10 @@ int WriteComputedDataParasight(const Real *U, const Space *space,
     };
     if (0 == time->stepCount) { /* this is the initialization step */
         InitializeParasightTransientCaseFile(&enSet, time);
-        WriteParasightGeometryFile(&enSet, space);
+        WriteParasightGeometryFile(&enSet, space, part);
     }
     WriteParasightCaseFile(&enSet, time);
-    WriteParasightVariableFile(U, &enSet, space, flow);
+    WriteParasightVariableFile(U, &enSet, space, part, flow);
     WriteParticleFile(&enSet, particle);
     return 0;
 }
@@ -147,7 +149,8 @@ static int WriteParasightCaseFile(ParasightSet *enSet, const Time *time)
 /*
  * Parasight geometry file
  */
-static int WriteParasightGeometryFile(ParasightSet *enSet, const Space *space)
+static int WriteParasightGeometryFile(ParasightSet *enSet, const Space *space,
+        const Partition *part)
 {
     /*
      * Write the geometry file (Binary Form).
@@ -189,32 +192,32 @@ static int WriteParasightGeometryFile(ParasightSet *enSet, const Space *space)
     strncpy(enSet->stringData, "block", sizeof(ParasightString));
     fwrite(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
     /* this line is the total number of nodes in i, j, k */
-    nodeCount[0] = space->iMax; 
-    nodeCount[1] = space->jMax;
-    nodeCount[2] = space->kMax;
+    nodeCount[0] = (part->iSup[0] - part->iSub[0]); 
+    nodeCount[1] = (part->jSup[0] - part->jSub[0]);
+    nodeCount[2] = (part->kSup[0] - part->kSub[0]);
     fwrite(nodeCount, sizeof(int), 3, filePointer);
     /* now output the x coordinates of all nodes in current part */
-    for (int k = 0; k < space->kMax; ++k) {
-        for (int j = 0; j < space->jMax; ++j) {
-            for (int i = 0; i < space->iMax; ++i) {
+    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 data = space->xMin + (i - space->ng) * space->dx;
                 fwrite(&data, sizeof(ParasightReal), 1, filePointer);
             }
         }
     }
     /* now output the y coordinates of all nodes in current part */
-    for (int k = 0; k < space->kMax; ++k) {
-        for (int j = 0; j < space->jMax; ++j) {
-            for (int i = 0; i < space->iMax; ++i) {
+    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 data = space->yMin + (j - space->ng) * space->dy;
                 fwrite(&data, sizeof(ParasightReal), 1, filePointer);
             }
         }
     }
     /* now output the z coordinates of all nodes in current part */
-    for (int k = 0; k < space->kMax; ++k) {
-        for (int j = 0; j < space->jMax; ++j) {
-            for (int i = 0; i < space->iMax; ++i) {
+    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 data = space->zMin + (k - space->ng) * space->dz;
                 fwrite(&data, sizeof(ParasightReal), 1, filePointer);
             }
@@ -230,7 +233,7 @@ static int WriteParasightGeometryFile(ParasightSet *enSet, const Space *space)
  * part are obtained from the corresponding Parasight Gold geometry file.)
  */
 static int WriteParasightVariableFile(const Real *U, ParasightSet *enSet,
-        const Space *space, const Flow *flow)
+        const Space *space, const Partition *part, const Flow *flow)
 {
     FILE *filePointer = NULL;
     int idx = 0; /* linear array index math variable */
@@ -258,9 +261,9 @@ static int WriteParasightVariableFile(const Real *U, ParasightSet *enSet,
         strncpy(enSet->stringData, "block", sizeof(ParasightString));
         fwrite(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
         /* now output the scalar value at each node in current part */
-        for (int k = 0; k < space->kMax; ++k) {
-            for (int j = 0; j < space->jMax; ++j) {
-                for (int i = 0; i < space->iMax; ++i) {
+        for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+            for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+                for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                     idx = IndexMath(k, j, i, space) * space->dimU;
                     switch (dim) {
                         case 0: /* rho */
@@ -317,9 +320,9 @@ static int WriteParasightVariableFile(const Real *U, ParasightSet *enSet,
      * write u, v, w sequentially
      */
     for (int dim = 1; dim < 4; ++dim) {
-        for (int k = 0; k < space->kMax; ++k) {
-            for (int j = 0; j < space->jMax; ++j) {
-                for (int i = 0; i < space->iMax; ++i) {
+        for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+            for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+                for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                     idx = IndexMath(k, j, i, space) * space->dimU;
                     switch (dim) {
                         case 1: /* u */

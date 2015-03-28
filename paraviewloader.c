@@ -14,7 +14,7 @@
  * Function definitions
  ****************************************************************************/
 int LoadComputedDataParaview(Real *U, const Space *space, Time *time,
-        const Flow *flow)
+        const Partition *part, const Flow *flow)
 {
     return 0;
 }

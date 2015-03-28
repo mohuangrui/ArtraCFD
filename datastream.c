@@ -20,16 +20,16 @@ int WriteComputedData(const Real *U, const Space *space, const Particle *particl
 {
     switch (time->dataStreamer) {
         case 0: /* ParaView */
-            WriteComputedDataParaview(U, space, particle, time, flow);
+            WriteComputedDataParaview(U, space, particle, time, part, flow);
             break;
         case 1: /* Generic Ensight */
             WriteComputedDataEnsight(U, space, particle, time, part, flow);
             break;
         case 2: /* ParaView Ensight */
-            WriteComputedDataParasight(U, space, particle, time, flow);
+            WriteComputedDataParasight(U, space, particle, time, part, flow);
             break;
         default: /* ParaView */
-            WriteComputedDataParaview(U, space, particle, time, flow);
+            WriteComputedDataParaview(U, space, particle, time, part, flow);
             break;
     }
     return 0;
@@ -39,16 +39,16 @@ int LoadComputedData(Real *U, const Space *space, Time *time,
 {
     switch (time->dataStreamer) {
         case 0: /* ParaView */
-            LoadComputedDataParaview(U, space, time, flow);
+            LoadComputedDataParaview(U, space, time, part, flow);
             break;
         case 1: /* Ensight */
             LoadComputedDataEnsight(U, space, time, part, flow);
             break;
         case 2: /* Paraview Ensight */
-            LoadComputedDataParasight(U, space, time, flow);
+            LoadComputedDataParasight(U, space, time, part, flow);
             break;
         default: /* ParaView */
-            LoadComputedDataParaview(U, space, time, flow);
+            LoadComputedDataParaview(U, space, time, part, flow);
             break;
     }
     return 0;
