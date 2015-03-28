@@ -26,7 +26,8 @@ typedef float ParaviewReal; /* Paraview real data */
 typedef struct {
     ParaviewString baseName; /* data file base name */
     ParaviewString fileName; /* store current open file name */
-    ParaviewString stringData; /* Paraview string data */
+    ParaviewString floatType; /* Paraview data type */
+    ParaviewString byteOrder; /* byte order of data */
 }ParaviewSet;
 /****************************************************************************
  * Public Functions Declaration
