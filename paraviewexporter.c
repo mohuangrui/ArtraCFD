@@ -33,7 +33,7 @@ int WriteComputedDataParaview(const Real *U, const Space *space,
         InitializeParaviewDataFile(&paraSet, time);
     }
     WriteParaviewDataFile(&paraSet, time);
-    WriteParaviewVariableFile(U, &paraSet, space, flow);
+    //WriteParaviewVariableFile(U, &paraSet, space, flow);
     WriteParticleFile(&paraSet, particle);
     return 0;
 }
