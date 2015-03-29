@@ -91,12 +91,17 @@ static int LoadParaviewVariableFile(Real *U, ParaviewSet *paraSet,
     fgets(currentLine, sizeof currentLine, filePointer);
     int idx = 0; /* linear array index math variable */
     ParaviewReal data = 0.0; /* the Paraview data format */
+    /* set format specifier according to the type of Real */
+    char format[5] = "%lg"; /* default is double type */
+    if (sizeof(ParaviewReal) == sizeof(float)) {
+        strncpy(format, "%g", sizeof format); /* float type */
+    }
     for (int dim = 0; dim < space->dimU; ++dim) {
         fgets(currentLine, sizeof currentLine, filePointer);
         for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
             for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
                 for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                    fread(&data, sizeof(ParaviewReal), 1, filePointer);
+                    fscanf(filePointer, format, &data);
                     idx = IndexMath(k, j, i, space) * space->dimU;
                     switch (dim) {
                         case 0: /* rho */
