@@ -29,17 +29,16 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
         snprintf(fileName, sizeof(fileName), "%s%d.%05d", "probe", n, stepCount);
         filePointer = fopen(fileName, "w");
         if (NULL == filePointer) {
-            FatalError("failed to write data to ensight data file: ensight.***...");
+            FatalError("failed to write data at probes...");
         }
         fprintf(filePointer, "# points      rho     u       v       w       p       T\n"); 
-        /* plus one to shift away from boundary when dimension collapse */
         int iA = (int)((flow->probePos[n][0] - space->xMin) * space->ddx) + space->ng;
         int jA = (int)((flow->probePos[n][1] - space->yMin) * space->ddy) + space->ng;
         int kA = (int)((flow->probePos[n][2] - space->zMin) * space->ddz) + space->ng;
         int iB = (int)((flow->probePos[n][3] - space->xMin) * space->ddx) + space->ng;
         int jB = (int)((flow->probePos[n][4] - space->yMin) * space->ddy) + space->ng;
         int kB = (int)((flow->probePos[n][5] - space->zMin) * space->ddz) + space->ng;
-        /* adjust into flow region */
+        /* adjust index range into flow region */
         iA = Min(part->iSup[0] - 1, Max(part->iSub[0], iA));
         jA = Min(part->jSup[0] - 1, Max(part->jSub[0], jA));
         kA = Min(part->kSup[0] - 1, Max(part->kSub[0], kA));

@@ -33,7 +33,7 @@ static int Max(const int x, const int y);
  * -1:                  boundary and exterior ghost node,
  * 0:                   interior fluid node,
  * <= -offset:          interior solid node,
- * >=offset:            interior ghost node, 
+ * >= offset:           interior ghost node, 
  * <= -offset - totalN: interior solid node required for numerical boundary.
  *
  * Procedures are:
