@@ -83,7 +83,7 @@ static int LoadParasightVariableFile(Real *U, ParasightSet *enSet,
         snprintf(enSet->fileName, sizeof(ParasightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
         filePointer = fopen(enSet->fileName, "rb");
         if (NULL == filePointer) {
-            FatalError("failed to open restart data files: restart.***...");
+            FatalError("failed to open restart data files...");
         }
         fread(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
         fread(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);

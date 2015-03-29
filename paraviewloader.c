@@ -49,25 +49,24 @@ static int LoadParaviewDataFile(ParaviewSet *paraSet, Time *time)
     fgets(currentLine, sizeof currentLine, filePointer);
     fgets(currentLine, sizeof currentLine, filePointer);
     fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
     /* get restart time */
     /* set format specifier according to the type of Real */
-    strncpy(format, "%*s %*s=\"%lg\"", sizeof format); /* default is double type */
+    strncpy(format, "%*s %*s%lg", sizeof format); /* default is double type */
     if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
-        strncpy(format, "%*s %*s=\"%g\"", sizeof format); /* float type */
+        strncpy(format, "%*s %*s%g", sizeof format); /* float type */
     }
     fgets(currentLine, sizeof currentLine, filePointer);
     sscanf(currentLine, format, &(time->currentTime)); 
     /* get restart order number */
     /* set format specifier */
-    strncpy(format, "%*s=\"%*s%d.vts\"", sizeof format);
+    strncpy(format, "%*s%d.vts", sizeof format);
     fgets(currentLine, sizeof currentLine, filePointer);
     sscanf(currentLine, format, &(time->outputCount)); 
     /* get current step number */
     /* get rid of redundant lines */
     fgets(currentLine, sizeof currentLine, filePointer);
     /* set format specifier */
-    strncpy(format, "%*s %*s %d\"", sizeof format);
+    strncpy(format, "%*s %*s %d", sizeof format);
     fgets(currentLine, sizeof currentLine, filePointer);
     sscanf(currentLine, format, &(time->stepCount)); 
     fclose(filePointer); /* close current opened file */
@@ -78,9 +77,9 @@ static int LoadParaviewVariableFile(Real *U, ParaviewSet *paraSet,
 {
     FILE *filePointer = NULL;
     snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.vts", paraSet->baseName); 
-    filePointer = fopen(paraSet->fileName, "wb");
+    filePointer = fopen(paraSet->fileName, "r");
     if (NULL == filePointer) {
-        FatalError("failed to write data file...");
+        FatalError("failed to load data file...");
     }
     /* get rid of redundant lines */
     char currentLine[200] = {'\0'}; /* store current line */
@@ -90,11 +89,9 @@ static int LoadParaviewVariableFile(Real *U, ParaviewSet *paraSet,
     fgets(currentLine, sizeof currentLine, filePointer);
     fgets(currentLine, sizeof currentLine, filePointer);
     fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
     int idx = 0; /* linear array index math variable */
     ParaviewReal data = 0.0; /* the Paraview data format */
     for (int dim = 0; dim < space->dimU; ++dim) {
-        fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);
         for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
             for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {

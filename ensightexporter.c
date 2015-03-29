@@ -14,7 +14,7 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int InitializeEnsightTransientCaseFile(EnsightSet *, const Time *);
+static int InitializeEnsightTransientCaseFile(EnsightSet *);
 static int WriteEnsightCaseFile(EnsightSet *, const Time *);
 static int WriteEnsightGeometryFile(EnsightSet *, const Space *, const Partition *);
 static int WriteEnsightVariableFile(const Real *, EnsightSet *, const Space *,
@@ -39,7 +39,7 @@ int WriteComputedDataEnsight(const Real *U, const Space *space,
         .stringData = {'\0'}, /* string data recorder */
     };
     if (0 == time->stepCount) { /* this is the initialization step */
-        InitializeEnsightTransientCaseFile(&enSet, time);
+        InitializeEnsightTransientCaseFile(&enSet);
     }
     WriteEnsightCaseFile(&enSet, time);
     WriteEnsightGeometryFile(&enSet, space, part);
@@ -51,7 +51,7 @@ int WriteComputedDataEnsight(const Real *U, const Space *space,
  * Ensight transient case file
  * This function initializes an overall transient case file.
  */
-int InitializeEnsightTransientCaseFile(EnsightSet *enSet, const Time *time)
+int InitializeEnsightTransientCaseFile(EnsightSet *enSet)
 {
     FILE *filePointer = fopen("ensight.case", "w");
     if (NULL == filePointer) {
@@ -75,7 +75,7 @@ int InitializeEnsightTransientCaseFile(EnsightSet *enSet, const Time *time)
     fprintf(filePointer, "\n"); 
     fprintf(filePointer, "TIME\n"); 
     fprintf(filePointer, "time set:         1\n"); 
-    fprintf(filePointer, "number of steps:          %d\n", (time->totalOutputTimes + 1)); 
+    fprintf(filePointer, "number of steps:          0\n"); 
     fprintf(filePointer, "filename start number:    0\n"); 
     fprintf(filePointer, "filename increment:       1\n"); 
     fprintf(filePointer, "time values:  "); 
@@ -100,7 +100,8 @@ static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
      * blank-padding.
      */
     /* store updated basename in filename */
-    snprintf(enSet->fileName, sizeof(EnsightString), "%s%05d", enSet->baseName, time->outputCount); 
+    snprintf(enSet->fileName, sizeof(EnsightString), "%s%05d", 
+            enSet->baseName, time->outputCount); 
     /* basename is updated here! */
     snprintf(enSet->baseName, sizeof(EnsightString), "%s", enSet->fileName); 
     /* current filename */
@@ -130,12 +131,24 @@ static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
     fprintf(filePointer, "\n"); 
     fclose(filePointer); /* close current opened file */
     /*
-     * Add the time flag of current export to the transient case
+     * Add information to the transient case file
      */
-    filePointer = fopen("ensight.case", "a");
+    /* correct the number of steps in transient case */
+    filePointer = fopen("ensight.case", "r+");
     if (NULL == filePointer) {
         FatalError("failed to add data to transient file...");
     }
+    /* seek the target line for adding information */
+    char currentLine[200] = {'\0'}; /* store the current read line */
+    while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
+        CommandLineProcessor(currentLine); /* process current line */
+        if (0 == strncmp(currentLine, "time set", 8)) {
+            break;
+        }
+    }
+    fprintf(filePointer, "number of steps:          %d\n", (time->outputCount + 1)); 
+    /* add the time flag of current export to the transient case */
+    fseek(filePointer, 0, SEEK_END); // seek to the end of file
     if ((time->outputCount % 5) == 0) { /* print to a new line every x outputs */
         fprintf(filePointer, "\n"); 
     }
@@ -165,7 +178,7 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
      * units of chars, And the second size (count) is the number of object 
      * that need to be written.
      */
-    /* description  at the beginning */
+    /* description at the beginning */
     strncpy(enSet->stringData, "C Binary", sizeof(EnsightString));
     fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
     strncpy(enSet->stringData, "Ensight Geometry File", sizeof(EnsightString));
@@ -264,8 +277,6 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
     EnsightReal data = 0.0; /* the ensight data format */
     /*
      * Write the scalar field (Binary Form)
-     * There are six primitive variables need to be written:
-     * density, u, v, w, pressure, temperature
      */
     const char nameSuffix[6][5] = {"rho", "u", "v", "w", "p", "T"};
     for (int dim = 0; dim < 6; ++dim) {

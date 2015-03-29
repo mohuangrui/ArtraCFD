@@ -13,11 +13,11 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int InitializeTransientParaviewDataFile(ParaviewSet *paraSet);
-static int WriteSteadyParaviewDataFile(ParaviewSet *paraSet, const Time *);
+static int InitializeTransientParaviewDataFile(ParaviewSet *);
+static int WriteSteadyParaviewDataFile(ParaviewSet *, const Time *);
 static int WriteParaviewVariableFile(const Real *U, ParaviewSet *,
         const Space *, const Partition *, const Flow *);
-static int WriteParticleFile(ParaviewSet *paraSet, const Particle *);
+static int WriteParticleFile(ParaviewSet *, const Particle *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -48,9 +48,8 @@ static int InitializeTransientParaviewDataFile(ParaviewSet *paraSet)
     }
     /* output information to file */
     fprintf(filePointer, "<?xml version=\"1.0\"?>\n");
-    fprintf(filePointer, "<VTKFile type=\"Collection\" version=\"0.1\"\n");
-    fprintf(filePointer, "         byte_order=\"%s\"\n", paraSet->byteOrder);
-    fprintf(filePointer, "         compressor=\"vtkZLibDataCompressor\">\n");
+    fprintf(filePointer, "<VTKFile type=\"Collection\" version=\"1.0\"\n");
+    fprintf(filePointer, "         byte_order=\"%s\">\n", paraSet->byteOrder);
     fprintf(filePointer, "  <Collection>\n");
     fprintf(filePointer, "  </Collection>\n");
     fprintf(filePointer, "</VTKFile>\n");
@@ -72,9 +71,8 @@ static int WriteSteadyParaviewDataFile(ParaviewSet *paraSet, const Time *time)
     }
     /* output information to file */
     fprintf(filePointer, "<?xml version=\"1.0\"?>\n");
-    fprintf(filePointer, "<VTKFile type=\"Collection\" version=\"0.1\"\n");
-    fprintf(filePointer, "         byte_order=\"%s\"\n", paraSet->byteOrder);
-    fprintf(filePointer, "         compressor=\"vtkZLibDataCompressor\">\n");
+    fprintf(filePointer, "<VTKFile type=\"Collection\" version=\"1.0\"\n");
+    fprintf(filePointer, "         byte_order=\"%s\">\n", paraSet->byteOrder);
     fprintf(filePointer, "  <Collection>\n");
     fprintf(filePointer, "    <DataSet timestep=\"%.6g\" group=\"\" part=\"0\"\n", 
             time->currentTime);
@@ -136,13 +134,12 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
     int kMax = part->kSup[0] - 1 - part->kSub[0];
     fprintf(filePointer, "<?xml version=\"1.0\"?>\n");
     fprintf(filePointer, "<VTKFile type=\"StructuredGrid\" version=\"0.1\"\n");
-    fprintf(filePointer, "         byte_order=\"%s\"\n", paraSet->byteOrder);
-    fprintf(filePointer, "         compressor=\"vtkZLibDataCompressor\">\n");
+    fprintf(filePointer, "         byte_order=\"%s\">\n", paraSet->byteOrder);
     fprintf(filePointer, "  <StructuredGrid WholeExtent=\"%d %d %d %d %d %d\">\n", 
             iMin, jMin, kMin, iMax, jMax, kMax);
     fprintf(filePointer, "    <Piece Extent=\"%d %d %d %d %d %d\">\n", 
             iMin, jMin, kMin, iMax, jMax, kMax);
-    fprintf(filePointer, "      <PointData Scalars=\"rho\" Vectors=\"vel\">\n");
+    fprintf(filePointer, "      <PointData Scalars=\"rho\" Vectors=\"Vel\">\n");
     for (int dim = 0; dim < 7; ++dim) {
         fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"%s\" format=\"ascii\">\n", 
                 paraSet->floatType, name[dim]);
@@ -184,7 +181,7 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
         }
         fprintf(filePointer, "\n        </DataArray>\n");
     }
-    fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"vel\"\n", paraSet->floatType);
+    fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"Vel\"\n", paraSet->floatType);
     fprintf(filePointer, "                   NumberOfComponents=\"3\" format=\"ascii\">\n");
     fprintf(filePointer, "          ");
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {

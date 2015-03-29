@@ -82,7 +82,7 @@ static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,
         snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
         filePointer = fopen(enSet->fileName, "rb");
         if (NULL == filePointer) {
-            FatalError("failed to open restart data files: restart.***...");
+            FatalError("failed to open restart data files...");
         }
         fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
         for (int partCount = 0, partNum = 1; partCount < part->subN; ++partCount) {

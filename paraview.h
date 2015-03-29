@@ -51,7 +51,7 @@ extern int WriteComputedDataParaview(const Real * U, const Space *,
  * Paraview data loader
  *
  * Function
- *      Load computed data from output files which are written in VTK
+ *      Load computed data from output files which are written in Paraview
  *      format.
  */
 extern int LoadComputedDataParaview(Real *U, const Space *, Time *,
