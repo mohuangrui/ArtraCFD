@@ -441,7 +441,7 @@ typedef double Real;
 /*
  * Field variables of flow
  *
- * Conservative variables are vectors with five elements(rho, rho_u, rho_v,
+ * Conservative variables are vectors with five elements (rho, rho_u, rho_v,
  * rho_w, rho_eT), while each element is a three dimensional array in 3D space.
  * Thus, the conservative variables need to be presented as a 4 dimensional
  * array in 3D flow.
