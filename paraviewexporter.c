@@ -136,9 +136,9 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
     fprintf(filePointer, "<VTKFile type=\"StructuredGrid\" version=\"0.1\"\n");
     fprintf(filePointer, "         byte_order=\"%s\">\n", paraSet->byteOrder);
     fprintf(filePointer, "  <StructuredGrid WholeExtent=\"%d %d %d %d %d %d\">\n", 
-            iMin, jMin, kMin, iMax, jMax, kMax);
+            iMin, iMax, jMin, jMax, kMin, kMax);
     fprintf(filePointer, "    <Piece Extent=\"%d %d %d %d %d %d\">\n", 
-            iMin, jMin, kMin, iMax, jMax, kMax);
+            iMin, iMax, jMin, jMax, kMin, kMax);
     fprintf(filePointer, "      <PointData Scalars=\"rho\" Vectors=\"Vel\">\n");
     for (int dim = 0; dim < 7; ++dim) {
         fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"%s\" format=\"ascii\">\n", 
