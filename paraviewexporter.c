@@ -116,7 +116,7 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
 {
     FILE *filePointer = NULL;
     snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.vts", paraSet->baseName); 
-    filePointer = fopen(paraSet->fileName, "wb");
+    filePointer = fopen(paraSet->fileName, "w");
     if (NULL == filePointer) {
         FatalError("failed to write data file...");
     }
@@ -141,7 +141,7 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
             iMin, jMin, kMin, iMax, jMax, kMax);
     fprintf(filePointer, "      <PointData Scalars=\"rho\" Vectors=\"vel\">\n");
     for (int dim = 0; dim < 7; ++dim) {
-        fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"%s\" format=\"binary\">\n", paraSet->floatType, name[dim]);
+        fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"%s\" format=\"ascii\">\n", paraSet->floatType, name[dim]);
         fprintf(filePointer, "          ");
         for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
             for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
@@ -174,13 +174,13 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
                         default:
                             break;
                     }
-                    fwrite(&data, sizeof(ParaviewReal), 1, filePointer);
+                    fprintf(filePointer, "%.6g ", data);
                 }
             }
         }
         fprintf(filePointer, "\n        </DataArray>\n");
     }
-    fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"vel\" NumberOfComponents=\"3\" format=\"binary\">\n", paraSet->floatType);
+    fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"vel\" NumberOfComponents=\"3\" format=\"ascii\">\n", paraSet->floatType);
     fprintf(filePointer, "          ");
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
@@ -189,7 +189,7 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
                 vector[0] = U[idx+1] / U[idx];
                 vector[1] = U[idx+2] / U[idx];
                 vector[2] = U[idx+3] / U[idx];
-                fwrite(vector, sizeof(ParaviewReal), 3, filePointer);
+                fprintf(filePointer, "%.6g %.6g %.6g ", vector[0], vector[1], vector[2]);
             }
         }
     }
@@ -198,7 +198,7 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
     fprintf(filePointer, "      <CellData>\n");
     fprintf(filePointer, "      </CellData>\n");
     fprintf(filePointer, "      <Points>\n");
-    fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"points\" NumberOfComponents=\"3\" format=\"binary\">\n", paraSet->floatType);
+    fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"points\" NumberOfComponents=\"3\" format=\"ascii\">\n", paraSet->floatType);
     fprintf(filePointer, "          ");
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
@@ -206,7 +206,7 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
                 vector[0] = space->xMin + (i - space->ng) * space->dx;
                 vector[1] = space->yMin + (j - space->ng) * space->dy;
                 vector[2] = space->zMin + (k - space->ng) * space->dz;
-                fwrite(vector, sizeof(ParaviewReal), 3, filePointer);
+                fprintf(filePointer, "%.6g %.6g %.6g ", vector[0], vector[1], vector[2]);
             }
         }
     }
