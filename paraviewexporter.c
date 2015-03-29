@@ -143,6 +143,7 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
     for (int dim = 0; dim < 7; ++dim) {
         fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"%s\"\n", paraSet->floatType, name[dim]);
         fprintf(filePointer, "        format=\"binary\">\n");
+        fprintf(filePointer, "          ");
         for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
             for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
                 for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
@@ -182,6 +183,7 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
     }
     fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"vel\" NumberOfComponents=\"3\"\n", paraSet->floatType);
     fprintf(filePointer, "        format=\"binary\">\n");
+    fprintf(filePointer, "          ");
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
@@ -195,9 +197,12 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
     }
     fprintf(filePointer, "\n        </DataArray>\n");
     fprintf(filePointer, "      </PointData>\n");
+    fprintf(filePointer, "      <CellData>\n");
+    fprintf(filePointer, "      </CellData>\n");
     fprintf(filePointer, "      <Points>\n");
     fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"points\" NumberOfComponents=\"3\"\n", paraSet->floatType);
     fprintf(filePointer, "        format=\"binary\">\n");
+    fprintf(filePointer, "          ");
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
