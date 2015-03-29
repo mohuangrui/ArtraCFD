@@ -49,26 +49,23 @@ static int LoadParaviewDataFile(ParaviewSet *paraSet, Time *time)
     fgets(currentLine, sizeof currentLine, filePointer);
     fgets(currentLine, sizeof currentLine, filePointer);
     fgets(currentLine, sizeof currentLine, filePointer);
+    fgets(currentLine, sizeof currentLine, filePointer);
+    fgets(currentLine, sizeof currentLine, filePointer);
+    fgets(currentLine, sizeof currentLine, filePointer);
+    /* get restart order number */
+    fgets(currentLine, sizeof currentLine, filePointer);
+    sscanf(currentLine, "%*s %*s %d", &(time->outputCount)); 
     /* get restart time */
     /* set format specifier according to the type of Real */
-    strncpy(format, "%*s %*s%lg", sizeof format); /* default is double type */
+    strncpy(format, "%*s %*s %lg", sizeof format); /* default is double type */
     if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
-        strncpy(format, "%*s %*s%g", sizeof format); /* float type */
+        strncpy(format, "%*s %*s %g", sizeof format); /* float type */
     }
     fgets(currentLine, sizeof currentLine, filePointer);
     sscanf(currentLine, format, &(time->currentTime)); 
-    /* get restart order number */
-    /* set format specifier */
-    strncpy(format, "%*s%d.vts", sizeof format);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, format, &(time->outputCount)); 
     /* get current step number */
-    /* get rid of redundant lines */
     fgets(currentLine, sizeof currentLine, filePointer);
-    /* set format specifier */
-    strncpy(format, "%*s %*s %d", sizeof format);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, format, &(time->stepCount)); 
+    sscanf(currentLine, "%*s %*s %d", &(time->stepCount)); 
     fclose(filePointer); /* close current opened file */
     return 0;
 }
@@ -126,6 +123,7 @@ static int LoadParaviewVariableFile(Real *U, ParaviewSet *paraSet,
                 }
             }
         }
+        fgets(currentLine, sizeof currentLine, filePointer); /* get rid of the end of line of data */
         fgets(currentLine, sizeof currentLine, filePointer);
     }
     fclose(filePointer); /* close current opened file */

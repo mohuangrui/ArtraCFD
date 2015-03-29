@@ -78,7 +78,9 @@ static int WriteSteadyParaviewDataFile(ParaviewSet *paraSet, const Time *time)
             time->currentTime);
     fprintf(filePointer, "             file=\"%s.vts\"/>\n", paraSet->baseName);
     fprintf(filePointer, "  </Collection>\n");
-    fprintf(filePointer, "  <!-- stepCount %d -->\n", time->stepCount);
+    fprintf(filePointer, "  <!-- Order %d -->\n", time->outputCount);
+    fprintf(filePointer, "  <!-- Time %.6g -->\n", time->currentTime);
+    fprintf(filePointer, "  <!-- Step %d -->\n", time->stepCount);
     fprintf(filePointer, "</VTKFile>\n");
     fclose(filePointer); /* close current opened file */
     /*
