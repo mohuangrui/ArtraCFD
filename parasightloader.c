@@ -46,11 +46,10 @@ static int LoadParasightCaseFile(ParasightSet *enSet, Time *time)
     }
     /* read information from file */
     char currentLine[200] = {'\0'}; /* store current line */
-    char garbage[100] = {'\0'}; /* store redundant information */
     /* set format specifier according to the type of Real */
-    char formatV[25] = "%s %s %s %s %lg"; /* default is double type */
+    char format[25] = "%*s %*s %*s %*s %lg"; /* default is double type */
     if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
-        strncpy(formatV, "%s %s %s %s %g", sizeof formatV); /* float type */
+        strncpy(format, "%*s %*s %*s %*s %g", sizeof format); /* float type */
     }
     /* get rid of redundant lines */
     fgets(currentLine, sizeof currentLine, filePointer);
@@ -62,16 +61,13 @@ static int LoadParasightCaseFile(ParasightSet *enSet, Time *time)
     fgets(currentLine, sizeof currentLine, filePointer);
     /* get restart order number */
     fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, "%s %s %s %s %d", garbage, garbage,
-            garbage, garbage, &(time->outputCount)); 
+    sscanf(currentLine, "%*s %*s %*s %*s %d", &(time->outputCount)); 
     /* get restart time */
     fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, formatV, garbage, garbage,
-            garbage, garbage, &(time->currentTime)); 
+    sscanf(currentLine, format, &(time->currentTime)); 
     /* get current step number */
     fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, "%s %s %s %s %d", garbage, garbage,
-            garbage, garbage, &(time->stepCount)); 
+    sscanf(currentLine, "%*s %*s %*s %*s %d", &(time->stepCount)); 
     fclose(filePointer); /* close current opened file */
     return 0;
 }
