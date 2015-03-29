@@ -99,6 +99,7 @@ static int WriteSteadyParaviewDataFile(ParaviewSet *paraSet, const Time *time)
         ++targetLine;
     }
     /* redirect to the target line */
+    rewind(filePointer); /* seek to the beginning of the file */
     for (int line = 1; line < targetLine; ++line) {
         fgets(currentLine, sizeof currentLine, filePointer);
     }
@@ -177,7 +178,7 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
                 }
             }
         }
-        fprintf(filePointer, "        </DataArray>\n");
+        fprintf(filePointer, "\n        </DataArray>\n");
     }
     fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"vel\" NumberOfComponents=\"3\"\n", paraSet->floatType);
     fprintf(filePointer, "        format=\"binary\">\n");
@@ -188,11 +189,11 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
                 vector[0] = U[idx+1] / U[idx];
                 vector[1] = U[idx+2] / U[idx];
                 vector[2] = U[idx+3] / U[idx];
-                fwrite(vector, sizeof(ParaviewReal), sizeof vector, filePointer);
+                fwrite(vector, sizeof(ParaviewReal), 3, filePointer);
             }
         }
     }
-    fprintf(filePointer, "        </DataArray>\n");
+    fprintf(filePointer, "\n        </DataArray>\n");
     fprintf(filePointer, "      </PointData>\n");
     fprintf(filePointer, "      <Points>\n");
     fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"points\" NumberOfComponents=\"3\"\n", paraSet->floatType);
@@ -203,11 +204,11 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
                 vector[0] = space->xMin + (i - space->ng) * space->dx;
                 vector[1] = space->yMin + (j - space->ng) * space->dy;
                 vector[2] = space->zMin + (k - space->ng) * space->dz;
-                fwrite(vector, sizeof(ParaviewReal), sizeof vector, filePointer);
+                fwrite(vector, sizeof(ParaviewReal), 3, filePointer);
             }
         }
     }
-    fprintf(filePointer, "        </DataArray>\n");
+    fprintf(filePointer, "\n        </DataArray>\n");
     fprintf(filePointer, "      </Points>\n");
     fprintf(filePointer, "    </Piece>\n");
     fprintf(filePointer, "  </StructuredGrid>\n");
