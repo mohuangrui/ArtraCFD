@@ -93,7 +93,6 @@ static int LoadParaviewVariableFile(Real *U, ParaviewSet *paraSet,
     fgets(currentLine, sizeof currentLine, filePointer);
     int idx = 0; /* linear array index math variable */
     ParaviewReal data = 0.0; /* the Paraview data format */
-    const char name[5][10] = {"rho", "u", "v", "w", "p"};
     for (int dim = 0; dim < space->dimU; ++dim) {
         fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);

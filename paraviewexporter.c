@@ -13,7 +13,7 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int InitializeTransientParaviewDataFile(ParaviewSet *paraSet, const Time *);
+static int InitializeTransientParaviewDataFile(ParaviewSet *paraSet);
 static int WriteSteadyParaviewDataFile(ParaviewSet *paraSet, const Time *);
 static int WriteParaviewVariableFile(const Real *U, ParaviewSet *,
         const Space *, const Partition *, const Flow *);
@@ -33,14 +33,14 @@ int WriteComputedDataParaview(const Real *U, const Space *space,
         .byteOrder = "LittleEndian" /* byte order of data */
     };
     if (0 == time->stepCount) { /* this is the initialization step */
-        InitializeTransientParaviewDataFile(&paraSet, time);
+        InitializeTransientParaviewDataFile(&paraSet);
     }
     WriteSteadyParaviewDataFile(&paraSet, time);
     WriteParaviewVariableFile(U, &paraSet, space, part, flow);
     WriteParticleFile(&paraSet, particle);
     return 0;
 }
-static int InitializeTransientParaviewDataFile(ParaviewSet *paraSet, const Time *time)
+static int InitializeTransientParaviewDataFile(ParaviewSet *paraSet)
 {
     FILE *filePointer = fopen("paraview.pvd", "w");
     if (NULL == filePointer) {
