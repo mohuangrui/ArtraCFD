@@ -125,24 +125,17 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
     ParaviewReal vector[3] = {0.0}; /* paraview vector data elements */
     /* the scalar values at each node in current part */
     const char name[7][5] = {"rho", "u", "v", "w", "p", "T", "id"};
-    Real extentX1 = space->xMin + (part->iSub[0] - space->ng) * space->dx;
-    Real extentX2 = space->xMin + (part->iSup[0] - 1 - space->ng) * space->dx;
-    Real extentY1 = space->yMin + (part->jSub[0] - space->ng) * space->dy;
-    Real extentY2 = space->yMin + (part->jSup[0] - 1 - space->ng) * space->dy;
-    Real extentZ1 = space->zMin + (part->kSub[0] - space->ng) * space->dz;
-    Real extentZ2 = space->zMin + (part->kSup[0] - 1 - space->ng) * space->dz;
     fprintf(filePointer, "<?xml version=\"1.0\"?>\n");
     fprintf(filePointer, "<VTKFile type=\"StructuredGrid\" version=\"0.1\"\n");
     fprintf(filePointer, "         byte_order=\"%s\"\n", paraSet->byteOrder);
     fprintf(filePointer, "         compressor=\"vtkZLibDataCompressor\">\n");
-    fprintf(filePointer, "  <StructuredGrid WholeExtent=\"%.6g %.6g %.6g %.6g %.6g %.6g\">\n", 
-            extentX1, extentY1, extentZ1, extentX2, extentY2, extentZ2);
-    fprintf(filePointer, "    <Piece Extent=\"%.6g %.6g %.6g %.6g %.6g %.6g\">\n", 
-            extentX1, extentY1, extentZ1, extentX2, extentY2, extentZ2);
+    fprintf(filePointer, "  <StructuredGrid WholeExtent=\"%d %d %d %d %d %d\">\n", 
+            part->iSub[0], part->jSub[0], part->kSub[0], part->iSup[0], part->jSup[0], part->kSup[0]);
+    fprintf(filePointer, "    <Piece Extent=\"%d %d %d %d %d %d\">\n", 
+            part->iSub[0], part->jSub[0], part->kSub[0], part->iSup[0], part->jSup[0], part->kSup[0]);
     fprintf(filePointer, "      <PointData Scalars=\"rho\" Vectors=\"vel\">\n");
     for (int dim = 0; dim < 7; ++dim) {
-        fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"%s\"\n", paraSet->floatType, name[dim]);
-        fprintf(filePointer, "        format=\"binary\">\n");
+        fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"%s\" format=\"binary\">\n", paraSet->floatType, name[dim]);
         fprintf(filePointer, "          ");
         for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
             for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
