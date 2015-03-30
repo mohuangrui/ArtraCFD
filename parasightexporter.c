@@ -29,8 +29,7 @@ static int WriteParasightVariableFile(const Real *, ParasightSet *, const Space 
  * default base file name and export step tag. 
  */
 int WriteComputedDataParasight(const Real *U, const Space *space, 
-        const Particle *particle, const Time *time, const Partition *part,
-        const Flow *flow)
+        const Time *time, const Partition *part, const Flow *flow)
 {
     ShowInformation("  writing field data to file...");
     ParasightSet enSet = { /* initialize Parasight environment */

@@ -32,7 +32,7 @@
  *      and can be accessed by linear index math.
  */
 extern int WriteComputedData(const Real * U, const Space *, 
-        const Particle *, const Time *, const Partition *, const Flow *);
+        const Time *, const Partition *, const Flow *);
 /*
  * Data loader
  *

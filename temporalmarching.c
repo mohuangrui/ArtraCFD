@@ -13,6 +13,7 @@
 #include "rungekutta.h"
 #include "collision.h"
 #include "datastream.h"
+#include "geometrystream.h"
 #include "timer.h"
 #include "flowprobe.h"
 #include "commons.h"
@@ -92,7 +93,8 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
                 (time->stepCount == time->totalStep)) {
             ++(time->outputCount); /* export count increase */
             TickTime(&operationTimer);
-            WriteComputedData(field->U, space, particle, time, part, flow);
+            WriteComputedData(field->U, space, time, part, flow);
+            WriteGeometryData(particle, time);
             operationTime = TockTime(&operationTimer);
             accumulatedTime = 0; /* reset accumulated time */
             fprintf(stdout, "  data export time consuming: %.6gs\n", operationTime);

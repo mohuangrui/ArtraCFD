@@ -11,29 +11,27 @@
 #include"paraview.h"
 #include"parasight.h"
 #include"ensight.h"
-#include"geometrystream.h"
 #include "commons.h"
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int WriteComputedData(const Real *U, const Space *space, const Particle *particle, 
-        const Time *time, const Partition *part, const Flow *flow)
+int WriteComputedData(const Real *U, const Space *space, const Time *time, 
+        const Partition *part, const Flow *flow)
 {
     switch (time->dataStreamer) {
         case 0: /* ParaView */
-            WriteComputedDataParaview(U, space, particle, time, part, flow);
+            WriteComputedDataParaview(U, space, time, part, flow);
             break;
         case 1: /* Generic Ensight */
-            WriteComputedDataEnsight(U, space, particle, time, part, flow);
+            WriteComputedDataEnsight(U, space, time, part, flow);
             break;
         case 2: /* ParaView Ensight */
-            WriteComputedDataParasight(U, space, particle, time, part, flow);
+            WriteComputedDataParasight(U, space, time, part, flow);
             break;
         default: /* ParaView */
-            WriteComputedDataParaview(U, space, particle, time, part, flow);
+            WriteComputedDataParaview(U, space, time, part, flow);
             break;
     }
-    WriteGeometryData(particle, time);
     return 0;
 }
 int LoadComputedData(Real *U, const Space *space, Time *time,

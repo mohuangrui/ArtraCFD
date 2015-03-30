@@ -21,8 +21,7 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *,
  * Function definitions
  ****************************************************************************/
 int WriteComputedDataParaview(const Real *U, const Space *space, 
-        const Particle *particle, const Time *time, const Partition *part, 
-        const Flow *flow)
+        const Time *time, const Partition *part, const Flow *flow)
 {
     ShowInformation("  writing field data to file...");
     ParaviewSet paraSet = { /* initialize ParaviewSet environment */

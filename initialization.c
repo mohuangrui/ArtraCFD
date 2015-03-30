@@ -12,6 +12,7 @@
 #include <string.h> /* manipulating strings */
 #include "boundarycondition.h"
 #include "datastream.h"
+#include "geometrystream.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
@@ -36,7 +37,8 @@ int InitializeFlowField(Real *U, const Space *space, const Particle *particle,
     if (0 == time->restart) { /* non restart */
         FirstRunInitializer(U, space, particle, part, flow);
         /* if this is a first run, output initial data */
-        WriteComputedData(U, space, particle, time, part, flow);
+        WriteComputedData(U, space, time, part, flow);
+        WriteGeometryData(particle, time);
     } else {
         RestartInitializer(U, space, particle, time, part, flow);
     }

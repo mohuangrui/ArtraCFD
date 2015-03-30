@@ -45,7 +45,7 @@ typedef struct {
  *      and can be accessed by linear index math.
  */
 extern int WriteComputedDataEnsight(const Real * U, const Space *, 
-        const Particle *, const Time *, const Partition *, const Flow *);
+        const Time *, const Partition *, const Flow *);
 /*
  * Ensight format data loader
  *
