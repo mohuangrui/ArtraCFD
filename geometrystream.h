@@ -6,8 +6,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_GCIBM_H_ /* if this is the first definition */
-#define ARTRACFD_GCIBM_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_GEOMETRYSTREAM_H_ /* if this is the first definition */
+#define ARTRACFD_GEOMETRYSTREAM_H_ /* a unique marker for this header file */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -19,30 +19,21 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Compute domain geometry
+ * Geometry data loader
  *
  * Function
- *      Employ GCIBM approach to handle complex geometry that locates in
- *      the computational domain.
+ *      Load geometry data to program.
+ *      -- non restart run, load from file artracfd.geo
+ *      -- restart run, load from the restart particle file.
  */
-extern int ComputeDomainGeometryGCIBM(Space *, Particle *, const Partition *);
+extern int LoadGeometryData(Particle *, const Time *);
 /*
- * Boundary condition for interior ghost cells
+ * Geometry data writer
  *
  * Function
- *      Apply boundary conditions to the interior ghost cells.
+ *      Write geometry data.
  */
-extern int BoundaryConditionGCIBM(Real *U, const Space *, const Particle *, 
-        const Partition *, const Flow *);
-/*
- * Calculate geometry information
- *
- * Function
- *
- *      Calculate geometry information of current node.
- */
-extern int CalculateGeometryInformation(Real info[], const int k, const int j, 
-        const int i, const int geoID, const Space *, const Particle *);
+extern int WriteGeometryData(const Particle *, const Time *);
 #endif
 /* a good practice: end file with a newline */
 

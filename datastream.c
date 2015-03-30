@@ -11,6 +11,7 @@
 #include"paraview.h"
 #include"parasight.h"
 #include"ensight.h"
+#include"geometrystream.h"
 #include "commons.h"
 /****************************************************************************
  * Function definitions
@@ -32,6 +33,7 @@ int WriteComputedData(const Real *U, const Space *space, const Particle *particl
             WriteComputedDataParaview(U, space, particle, time, part, flow);
             break;
     }
+    WriteGeometryData(particle, time);
     return 0;
 }
 int LoadComputedData(Real *U, const Space *space, Time *time,

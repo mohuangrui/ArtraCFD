@@ -13,7 +13,7 @@
 #include "casedataloader.h"
 #include "cfdparameters.h"
 #include "domainpartition.h"
-#include "geometryloader.h"
+#include "geometrystream.h"
 #include "gcibm.h"
 #include "commons.h"
 /****************************************************************************

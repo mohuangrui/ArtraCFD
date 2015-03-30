@@ -20,7 +20,6 @@ static int WriteParasightGeometryFile(ParasightSet *, const Space *,
         const Partition *);
 static int WriteParasightVariableFile(const Real *, ParasightSet *, const Space *,
         const Partition *, const Flow *);
-static int WriteParticleFile(ParasightSet *, const Particle *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -45,7 +44,6 @@ int WriteComputedDataParasight(const Real *U, const Space *space,
     }
     WriteParasightCaseFile(&enSet, time);
     WriteParasightVariableFile(U, &enSet, space, part, flow);
-    WriteParticleFile(&enSet, particle);
     return 0;
 }
 /*
@@ -352,28 +350,6 @@ static int WriteParasightVariableFile(const Real *U, ParasightSet *enSet,
                 }
             }
         }
-    }
-    fclose(filePointer); /* close current opened file */
-    return 0;
-}
-/*
- * This file stores the particle information, this will not processed by
- * Parasight, but used for restart.
- */
-static int WriteParticleFile(ParasightSet *enSet, const Particle *particle)
-{
-    snprintf(enSet->fileName, sizeof(ParasightString), "%s.particle", enSet->baseName);
-    FILE *filePointer = fopen(enSet->fileName, "w");
-    if (NULL == filePointer) {
-        FatalError("faild to write particle data file...");
-    }
-    fprintf(filePointer, "N: %d\n", particle->totalN); /* number of objects */
-    const Real *ptk = NULL;
-    for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        ptk = particle->headAddress + geoCount * particle->entryN; /* point to storage of current particle */
-        fprintf(filePointer, "%.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g\n",
-                ptk[0], ptk[1], ptk[2], ptk[3], ptk[4], ptk[5], 
-                ptk[6], ptk[7]);
     }
     fclose(filePointer); /* close current opened file */
     return 0;

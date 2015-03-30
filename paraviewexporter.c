@@ -17,7 +17,6 @@ static int InitializeTransientParaviewDataFile(ParaviewSet *);
 static int WriteSteadyParaviewDataFile(ParaviewSet *, const Time *);
 static int WriteParaviewVariableFile(const Real *U, ParaviewSet *,
         const Space *, const Partition *, const Flow *);
-static int WriteParticleFile(ParaviewSet *, const Particle *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -37,7 +36,6 @@ int WriteComputedDataParaview(const Real *U, const Space *space,
     }
     WriteSteadyParaviewDataFile(&paraSet, time);
     WriteParaviewVariableFile(U, &paraSet, space, part, flow);
-    WriteParticleFile(&paraSet, particle);
     return 0;
 }
 static int InitializeTransientParaviewDataFile(ParaviewSet *paraSet)
@@ -220,24 +218,6 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
     fprintf(filePointer, "    </Piece>\n");
     fprintf(filePointer, "  </StructuredGrid>\n");
     fprintf(filePointer, "</VTKFile>\n");
-    fclose(filePointer); /* close current opened file */
-    return 0;
-}
-static int WriteParticleFile(ParaviewSet *paraSet, const Particle *particle)
-{
-    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.particle", paraSet->baseName);
-    FILE *filePointer = fopen(paraSet->fileName, "w");
-    if (NULL == filePointer) {
-        FatalError("faild to write particle data file...");
-    }
-    fprintf(filePointer, "N: %d\n", particle->totalN); /* number of objects */
-    const Real *ptk = NULL;
-    for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        ptk = particle->headAddress + geoCount * particle->entryN;
-        fprintf(filePointer, "%.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g\n",
-                ptk[0], ptk[1], ptk[2], ptk[3], ptk[4], ptk[5], 
-                ptk[6], ptk[7]);
-    }
     fclose(filePointer); /* close current opened file */
     return 0;
 }

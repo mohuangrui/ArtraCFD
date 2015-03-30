@@ -107,19 +107,14 @@ static int InitializeDomainGeometry(Space *space, const Partition *part)
 static int LocateSolidGeometry(Space *space, const Particle *particle, const Partition *part)
 {
     int idx = 0; /* linear array index math variable */
-    /* geometry computation */
-    Real distance = 0.0;
-    Real distX = 0.0;
-    Real distY = 0.0;
-    Real distZ = 0.0;
-    const Real *ptk = NULL;
+    Real info[10] = {0.0}; /* store calculated geometry information */
     const int offset = space->nodeFlagOffset;
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        ptk = particle->headAddress + geoCount * particle->entryN; /* point to particle */
+        const Real *ptk = particle->headAddress + geoCount * particle->entryN;
         const int iCenter = (int)((ptk[0] - space->xMin) * space->ddx) + space->ng;
         const int jCenter = (int)((ptk[1] - space->yMin) * space->ddy) + space->ng;
         const int kCenter = (int)((ptk[2] - space->zMin) * space->ddz) + space->ng;
-        const Real safetyCoe = 1.5; /* zoom the search range */
+        const Real safetyCoe = 1.2; /* zoom the search range */
         const int iRange = (int)(safetyCoe * ptk[3] * space->ddx);
         const int jRange = (int)(safetyCoe * ptk[3] * space->ddy);
         const int kRange = (int)(safetyCoe * ptk[3] * space->ddz);
@@ -133,12 +128,9 @@ static int LocateSolidGeometry(Space *space, const Particle *particle, const Par
         for (int k = kSub; k < kSup; ++k) {
             for (int j = jSub; j < jSup; ++j) {
                 for (int i = iSub; i < iSup; ++i) {
-                    idx = IndexMath(k, j, i, space);
-                    distX = space->xMin + (i - space->ng) * space->dx - ptk[0];
-                    distY = space->yMin + (j - space->ng) * space->dy - ptk[1];
-                    distZ = space->zMin + (k - space->ng) * space->dz - ptk[2];
-                    distance = distX * distX + distY * distY + distZ * distZ - ptk[3] * ptk[3];
+                    CalculateGeometryInformation(info, k, j, i, geoCount, space, particle);
                     if (0 > distance) { /* in the solid geometry */
+                    idx = IndexMath(k, j, i, space);
                         space->nodeFlag[idx] = -offset - geoCount; /* geometry are linked */
                     }
                 }
@@ -246,7 +238,11 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
                         continue;
                     }
                 }
-                LinearReconstruction(Uo, k, j, i, geoID, U, space, particle, flow);
+    /* obtain the node coordinates of the image point */
+    imageI = i + (int)(2 * distToSurface * normalX * space->ddx);
+    imageJ = j + (int)(2 * distToSurface * normalY * space->ddy);
+    imageK = k + (int)(2 * distToSurface * normalZ * space->ddz);
+                Reconstruction(Uo, k, j, i, geoID, U, space, particle, flow);
                 ConservativeByPrimitive(U, idx * space->dimU, Uo, flow);
             }
         }
@@ -271,19 +267,6 @@ static int LinearReconstruction(Real Uo[], const int k, const int j, const int i
 {
     Real posMatrix[4][4] = {{0.0}}; /* position matrix for interpolation */
     Real rhsVector[4][5] = {{0.0}}; /* right hand side vectors for five variables, solution vectors use the same space */
-    const Real *ptk = particle->headAddress + geoID * particle->entryN; /* point to storage of current particle */
-    const Real distX = space->xMin + (i - space->ng) * space->dx - ptk[0];
-    const Real distY = space->yMin + (j - space->ng) * space->dy - ptk[1];
-    const Real distZ = space->zMin + (k - space->ng) * space->dz - ptk[2];
-    const Real distToCenter = sqrt(distX * distX + distY * distY + distZ * distZ);
-    const Real normalX = distX / distToCenter;
-    const Real normalY = distY / distToCenter;
-    const Real normalZ = distZ / distToCenter;
-    const Real distToSurface = ptk[3] - distToCenter;
-    /* obtain the node coordinates of the image point */
-    const int imageI = i + (int)(2 * distToSurface * normalX * space->ddx);
-    const int imageJ = j + (int)(2 * distToSurface * normalY * space->ddy);
-    const int imageK = k + (int)(2 * distToSurface * normalZ * space->ddz);
     /*
      * Originally the interpolation stencil should contain the boundary point,
      * however, this will complicate the problem very much. Therefore, the
@@ -368,6 +351,24 @@ static int LinearReconstruction(Real Uo[], const int k, const int j, const int i
     Uo[2] = -Uo[2];
     Uo[3] = -Uo[3];
     return 0;
+}
+int CalculateGeometryInformation(Real info[], const int k, const int j, const int i, 
+        const int geoID, const Space *space, const Particle *particle)
+{
+    /* point to storage of current particle */
+    const Real *ptk = particle->headAddress + geoID * particle->entryN;
+    /* x, y, z distance */
+    info[0] = space->xMin + (i - space->ng) * space->dx - ptk[0];
+    info[1] = space->yMin + (j - space->ng) * space->dy - ptk[1];
+    info[2] = space->zMin + (k - space->ng) * space->dz - ptk[2];
+    /* distance to center */
+    info[3] = sqrt(info[0] * info[0] + info[1] * info[1] + info[2] * info[2]);
+    /* distance to surface, positive means in the geometry */
+    info[4] = ptk[3] - info[3];
+    /* x, y, z normal vector components */
+    info[5] = info[0] / info[3];
+    info[6] = info[1] / info[3];
+    info[7] = info[2] / info[3];
 }
 static int Min(const int x, const int y)
 {
