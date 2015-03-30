@@ -8,9 +8,9 @@
  ****************************************************************************/
 #include "datastream.h"
 #include <stdio.h> /* standard library for input and output */
-#include"paraview.h"
-#include"parasight.h"
-#include"ensight.h"
+#include "paraview.h"
+#include "parasight.h"
+#include "ensight.h"
 #include "commons.h"
 /****************************************************************************
  * Function definitions
