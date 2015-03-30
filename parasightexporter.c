@@ -77,7 +77,7 @@ int InitializeParasightTransientCaseFile(ParasightSet *enSet)
     fprintf(filePointer, "\n"); 
     fprintf(filePointer, "TIME\n"); 
     fprintf(filePointer, "time set:         1\n"); 
-    fprintf(filePointer, "number of steps:          0\n"); 
+    fprintf(filePointer, "number of steps:          0          \n");
     fprintf(filePointer, "filename start number:    0\n"); 
     fprintf(filePointer, "filename increment:       1\n"); 
     fprintf(filePointer, "time values:  "); 
@@ -149,7 +149,7 @@ static int WriteParasightCaseFile(ParasightSet *enSet, const Time *time)
             break;
         }
     }
-    fprintf(filePointer, "number of steps:   %d", (time->outputCount + 1)); 
+    fprintf(filePointer, "number of steps:          %d", (time->outputCount + 1)); 
     /* add the time flag of current export to the transient case */
     fseek(filePointer, 0, SEEK_END); // seek to the end of file
     if ((time->outputCount % 5) == 0) { /* print to a new line every x outputs */
