@@ -58,9 +58,8 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space,
      * of particles will not exceed one grid per time step based on the CFL
      * condition of flow. Therefore, only ghost nodes need to be verified.
      */
-    const int stencilN = 2; /* number of stencils for interpolation */
     int idx = 0; /* linear array index math variable */
-    int idxh = 0; /* index variable */
+    Real Uo[6] = {0.0}; /* store weighted primitives */
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
@@ -73,28 +72,9 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space,
                 if (0 < info[4]) { /* still in the solid geometry */
                     continue;
                 }
-                /* 
-                 * Search around the node to find required fluid nodes as
-                 * interpolation stencil.
-                 */
-                Real Uo[6] = {0.0}; /* store weighted primitives */
-                Real Uoh[6] = {0.0}; /* store weighted primitives */
-                int tally = 0; /* number of current stencil */
-                for (int loop = 0; (tally < stencilN) && (loop < 56); ++loop) {
-                    const int ih = i + path[loop][0];
-                    const int jh = j + path[loop][1];
-                    const int kh = k + path[loop][2];
-                    idxh = IndexMath(kh, jh, ih, space);
-                    if (0 != space->nodeFlag[idxh]) { /* it's not a fluid node */
-                        continue;
-                    }
-                    PrimitiveByConservative(Uoh, idxh * space->dimU, U, flow);
-                    for (int dim = 0; dim < space->dimU; ++dim) {
-                        Uo[dim] = Uo[dim] + (1 / stencilN) * Uoh[dim];
-                    }
-                    ++tally; /* increase the tally */
-                }
                 /* reconstruction of flow values */
+                Reconstruction(Uo, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
+                        k, j, i, U, space, flow);
                 ConservativeByPrimitive(U, idx * space->dimU, Uo, flow);
             }
         }

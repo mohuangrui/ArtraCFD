@@ -35,6 +35,17 @@ extern int ComputeDomainGeometryGCIBM(Space *, Particle *, const Partition *);
 extern int BoundaryConditionGCIBM(Real *U, const Space *, const Particle *, 
         const Partition *, const Flow *);
 /*
+ * Flow values reconstruction
+ *
+ * Function
+ *      Reconstruction of the values of primitive vector Uo for a spatial
+ *      point (z, y, x) based on the neighbours around node (k, j, i). 
+ *      The inversed distance approach is adopted here.
+ */
+extern int Reconstruction(Real Uo[], const Real z, const Real y, const Real x,
+        const int k, const int j, const int i, const Real *U, const Space *,
+        const Flow *);
+/*
  * Calculate geometry information
  *
  * Function

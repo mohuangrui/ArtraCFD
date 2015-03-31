@@ -9,7 +9,6 @@
  * Required Header Files
  ****************************************************************************/
 #include "gcibm.h"
-#include "linearsystem.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
 #include "commons.h"
@@ -23,9 +22,6 @@ static int IdentifySolidNodesAtNumericalBoundary(Space *, const Particle *,
         const Partition *);
 static int SearchFluidNodes(const int k, const int j, const int i, 
         const int offset, const Space *);
-static int Reconstruction(Real Uo[], const int k, const int j, const int i,
-        const int geoID, const Real *U, const Space *, const Particle *, 
-        const Flow *);
 static int Min(const int x, const int y);
 static int Max(const int x, const int y);
 /****************************************************************************
@@ -208,11 +204,8 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
         const Partition *part, const Flow *flow)
 {
     int idx = 0; /* linear array index math variable */
-    Real info[10] = {0.0}; /* store calculated geometry information */
     Real Uo[6] = {0.0}; /* save reconstructed primitives */
-    int imageI = 0;
-    int imageJ = 0;
-    int imageK = 0;
+    Real info[10] = {0.0}; /* store calculated geometry information */
     int geoID = 0; /* geometry id */
     const int offset = space->nodeFlagOffset;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
@@ -229,11 +222,21 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
                     }
                 }
                 CalculateGeometryInformation(info, k, j, i, geoID, space, particle);
-                /* obtain the node coordinates of the image point */
-                imageI = i + (int)(2 * info[4] * info[5] * space->ddx);
-                imageJ = j + (int)(2 * info[4] * info[6] * space->ddy);
-                imageK = k + (int)(2 * info[4] * info[7] * space->ddz);
-                Reconstruction(Uo, k, j, i, geoID, U, space, particle, flow);
+                /* obtain the spatial coordinates of the image point */
+                const Real imageX = info[0] + 2 * info[4] * info[5];
+                const Real imageY = info[1] + 2 * info[4] * info[6];
+                const Real imageZ = info[2] + 2 * info[4] * info[7];
+                Reconstruction(Uo, imageZ, imageY, imageX, 
+                        ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space), 
+                        U, space, flow);
+                /*
+                 * Apply no-slip wall boundary conditions to get primitive values at nodes
+                 * in wall. That is, keep scalars and flip vectors after reflection.
+                 * variable phi_ghost = 2 * phi_o - phi_image 
+                 */
+                Uo[1] = -Uo[1];
+                Uo[2] = -Uo[2];
+                Uo[3] = -Uo[3];
                 ConservativeByPrimitive(U, idx * space->dimU, Uo, flow);
             }
         }
@@ -241,66 +244,53 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
     return 0;
 }
 /*
- * Reconstruction of the values of primitive vector Uo for a non-fluid node.
- * Variable phi is reconstructed by a two-step linear reconstruction:
- *
- * phi = 2 * phi_o - phi_image 
- * (scalar phi = phi_o = phi_image, vector phi_o = 0, thus phi = - phi_image)
- * phi_image = a0 + a1 * x + a2 * y + a3 * z
- *
- * ai are undetermined coefficients which will be determined by 
- * solving a linear system at neighbour nodes of the image point under the
- * assumption that linear distribution of phi(x,y,z) is also valid for the
- * neighbour nodes.
+ * Reconstruction of the values of primitive vector Uo for a spatial
+ * point (z, y, x) based on the neighbours around node (k, j, i). 
+ * The inversed distance approach is adopted here.
  */
-static int Reconstruction(Real Uo[], const int k, const int j, const int i, const int geoID, 
-        const Real *U, const Space *space, const Particle *particle, const Flow *flow)
+int Reconstruction(Real Uo[], const Real z, const Real y, const Real x,
+        const int k, const int j, const int i, const Real *U,
+        const Space *space, const Flow *flow)
 {
-    /*
-     * Originally the interpolation stencil should contain the boundary point,
-     * however, this will complicate the problem very much. Therefore, the
-     * influence of boundary conditions at wall will only be applied in the
-     * first relationship, and the interpolation stencils are all fluid node.
-     */
+    int idxh = 0; /* linear array index math variable */
+    Real Uoh[6] = {0.0}; /* primitive at target node */
+    Real Uow[6] = {0.0}; /* weighted primitive values */
+    const Real tiny = 0.001 * (space->dx + space->dy + space->dz);
+    Real weight = 0.0; /* weight factor */
+    Real weightSum = 0.0; /* weight normalizer */
     /* 
-     * Search around the image node to find required fluid nodes as
-     * interpolation stencil. Because the node coordinates of the image node
-     * are always downward truncated, therefore, the prior search directions 
-     * are better to set as 0 (current node) or +1 (upward direction).
+     * Search around the specified node to find required fluid nodes as
+     * interpolation stencil.
      */
-    const int stencilN = 4; /* number of stencils for interpolation */
-    int tally = 0; /* number of current stencil */
-    int idxh = 0; /* index variable */
-    Real Uoh[6] = {0.0};
-    for (int loop = 0; (tally < stencilN) && (loop < 57); ++loop) {
-        if (0 != space->nodeFlag[idxh]) { /* it's not a fluid node */
-            continue;
+    for (int kh = -1; kh < 2; ++kh) {
+        for (int jh = -1; jh < 2; ++jh) {
+            for (int ih = -1; ih < 2; ++ih) {
+                idxh = IndexMath(k + kh, j + jh, i + ih, space);
+                if (0 != space->nodeFlag[idxh]) { /* it's not a fluid node */
+                    continue;
+                }
+                const Real distX = ComputeX(i + ih, space) - x;
+                const Real distY = ComputeY(j + jh, space) - y;
+                const Real distZ = ComputeZ(k + kh, space) - z;
+                weight = distX * distX + distY * distY + distZ * distZ;
+                if (tiny > weight) { /* avoid overflow of too small distance */
+                    weight = tiny;
+                }
+                weight = 1 / weight;
+                weightSum = weightSum + weight; /* accumulate normalizer */
+                PrimitiveByConservative(Uoh, idxh * space->dimU, U, flow);
+                for (int dim = 0; dim < space->dimU; ++dim) {
+                    Uow[dim] = Uow[dim] + Uoh[dim] * weight;
+                }
+            }
         }
-        /* 
-         * Obtain the coordinates of the stencil and save to matrix. One
-         * approach is to save the space coordinates to construct the matrix
-         * for the linear system. However, this will easily result a singular
-         * matrix or a matrix which can not be easily processed by Gaussian
-         * elimination or LU decomposition even with pivoting. The second
-         * approach is to use the node coordinates to do the construction,
-         * which is equivalent because of the same degree of freedom. 
-         */
-        /* construct the right hand vectors */
-        PrimitiveByConservative(Uoh, idxh * space->dimU, U, flow);
-        ++tally; /* increase the tally */
     }
     /*
-     * Solve the linear systems for five variables to obtain their
-     * corresponding interpolation coefficients. Solutions are stored in the
-     * same space of the right hand side matrix.
+     * Obtain the reconstructed primitive vector.
      */
-    /*
-     * Apply no-slip wall boundary conditions to get primitive values at nodes
-     * in wall. That is, keep scalars and flip vectors after reflection.
-     */
-    Uo[1] = -Uo[1];
-    Uo[2] = -Uo[2];
-    Uo[3] = -Uo[3];
+    for (int dim = 0; dim < space->dimU; ++dim) {
+        Uo[dim] = Uow[dim] / weightSum;
+    }
     return 0;
 }
 int CalculateGeometryInformation(Real info[], const int k, const int j, const int i, 
@@ -308,18 +298,23 @@ int CalculateGeometryInformation(Real info[], const int k, const int j, const in
 {
     /* point to storage of current particle */
     const Real *ptk = particle->headAddress + geoID * particle->entryN;
-    /* x, y, z distance */
-    info[0] = ComputeX(i, space) - ptk[0];
-    info[1] = ComputeY(j, space) - ptk[1];
-    info[2] = ComputeZ(k, space) - ptk[2];
+    /* x, y, z coordinates */
+    info[0] = ComputeX(i, space);
+    info[1] = ComputeY(j, space);
+    info[2] = ComputeZ(k, space);
+    /* temporary store the x, y, z distance to particle center */
+    info[5] = info[0] - ptk[0];
+    info[6] = info[1] - ptk[1];
+    info[7] = info[2] - ptk[2];
     /* distance to center */
-    info[3] = sqrt(info[0] * info[0] + info[1] * info[1] + info[2] * info[2]);
+    info[3] = sqrt(info[5] * info[5] + info[6] * info[6] + info[7] * info[7]);
     /* distance to surface, positive means in the geometry */
     info[4] = ptk[3] - info[3];
     /* x, y, z normal vector components */
-    info[5] = info[0] / info[3];
-    info[6] = info[1] / info[3];
-    info[7] = info[2] / info[3];
+    info[5] = info[5] / info[3];
+    info[6] = info[6] / info[3];
+    info[7] = info[7] / info[3];
+    return 0;
 }
 static int Min(const int x, const int y)
 {
