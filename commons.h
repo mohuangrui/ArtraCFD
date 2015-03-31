@@ -662,6 +662,18 @@ extern int RetrieveStorage(void *pointer);
  */
 extern int IndexMath(const int k, const int j, const int i, const Space *space);
 /*
+ * Coordinates transformation
+ *
+ * Function
+ *      transform coordinates between node coordinates and general coordinates.
+ */
+extern int ComputeK(const Real z, const Space *);
+extern int ComputeJ(const Real y, const Space *);
+extern int ComputeI(const Real x, const Space *);
+extern Real ComputeZ(const int k, const Space *);
+extern Real ComputeY(const int j, const Space *);
+extern Real ComputeX(const int i, const Space *);
+/*
  * Compute the values of primitive variable vector.
  *
  * Parameter

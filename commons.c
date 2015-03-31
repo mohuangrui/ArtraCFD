@@ -163,6 +163,30 @@ int IndexMath(const int k, const int j, const int i, const Space *space)
 {
     return ((k * space->jMax + j) * space->iMax + i);
 }
+int ComputeK(const Real z, const Space *space)
+{
+    return (int)((z - space->zMin) * space->ddz) + space->ng;
+}
+int ComputeJ(const Real y, const Space *space)
+{
+    return (int)((y - space->yMin) * space->ddy) + space->ng;
+}
+int ComputeI(const Real x, const Space *space)
+{
+    return (int)((x - space->xMin) * space->ddx) + space->ng;
+}
+Real ComputeZ(const int k, const Space *space)
+{
+    return (space->zMin + (k - space->ng) * space->dz);
+}
+Real ComputeY(const int j, const Space *space)
+{
+    return (space->yMin + (j - space->ng) * space->dy);
+}
+Real ComputeX(const int i, const Space *space)
+{
+    return (space->xMin + (i - space->ng) * space->dx);
+}
 /*
  * Get value of primitive variable vector.
  * [rho, u, v, w, p, T]
