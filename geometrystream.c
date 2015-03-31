@@ -124,7 +124,7 @@ int WriteGeometryData(const Particle *particle, const Time *time)
     }
     fprintf(filePointer, "N: %d\n", particle->totalN); /* number of objects */
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        Real *ptk = particle->headAddress + geoCount * particle->entryN;
+        const Real *ptk = particle->headAddress + geoCount * particle->entryN;
         fprintf(filePointer, "%.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g\n",
                 ptk[0], ptk[1], ptk[2], ptk[3], ptk[4], ptk[5], 
                 ptk[6], ptk[7]);

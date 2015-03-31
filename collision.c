@@ -19,8 +19,8 @@ static int SurfaceForceIntegration(const Real *U, const Space *space,
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int ParticleSpatialEvolution(Real *U, const Real dt, Space *space, Particle *particle, 
-        const Partition *part, const Flow *flow)
+int ParticleSpatialEvolution(Real *U, const Real dt, Space *space, 
+        Particle *particle, const Partition *part, const Flow *flow)
 {
     /*
      * Compute the forces acting on particles.
@@ -30,16 +30,12 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space, Particle *par
      * Update particle velocity and position
      */
     int geoID = 0; /* geometry id */
-    Real *ptk = NULL;
-    Real distance = 0.0;
-    Real distX = 0.0;
-    Real distY = 0.0;
-    Real distZ = 0.0;
+    Real info[10] = {0.0}; /* store calculated geometry information */
     Real mass = 0.0;
     const Real pi = acos(-1);
     const int offset = space->nodeFlagOffset;
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        ptk = particle->headAddress + geoCount * particle->entryN;
+        Real *ptk = particle->headAddress + geoCount * particle->entryN;
         if (0 == space->dx * space->dy * space->dz) {
             mass = ptk[4] * pi * ptk[3] * ptk[3];
         } else {
@@ -86,12 +82,8 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space, Particle *par
                     continue;
                 }
                 geoID = space->nodeFlag[idx] - offset; /* extract geometry information */
-                ptk = particle->headAddress + geoID * particle->entryN;
-                distX = space->xMin + (i - space->ng) * space->dx - ptk[0];
-                distY = space->yMin + (j - space->ng) * space->dy - ptk[1];
-                distZ = space->zMin + (k - space->ng) * space->dz - ptk[2];
-                distance = distX * distX + distY * distY + distZ * distZ - ptk[3] * ptk[3];
-                if (0 > distance) { /* still in the solid geometry */
+                CalculateGeometryInformation(info, k, j, i, geoID, space, particle);
+                if (0 < info[4]) { /* still in the solid geometry */
                     continue;
                 }
                 /* 
@@ -142,21 +134,14 @@ static int SurfaceForceIntegration(const Real *U, const Space *space, Particle *
 {
     int idx = 0; /* linear array index math variable */
     int geoID = 0; /* geometry id */
-    Real *ptk = NULL;
-    Real distX = 0.0;
-    Real distY = 0.0;
-    Real distZ = 0.0;
-    Real distToCenter = 0.0;
-    Real normalX = 0.0;
-    Real normalY = 0.0;
-    Real normalZ = 0.0;
+    Real info[10] = {0.0}; /* store calculated geometry information */
     Real ds = 0.0;
     const Real pi = acos(-1);
     Real p = 0.0;
     const int offset = space->nodeFlagOffset;
     /* reset some non accumulative information of particles to zero */
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        ptk = particle->headAddress + geoCount * particle->entryN;
+        Real *ptk = particle->headAddress + geoCount * particle->entryN;
         ptk[8] = 0; /* force at x direction */
         ptk[9] = 0; /* force at y direction */
         ptk[10] = 0; /* force at z direction */
@@ -170,20 +155,14 @@ static int SurfaceForceIntegration(const Real *U, const Space *space, Particle *
                     continue;
                 }
                 geoID = space->nodeFlag[idx] - offset; /* extract geometry information */
-                ptk = particle->headAddress + geoID * particle->entryN;
-                distX = space->xMin + (i - space->ng) * space->dx - ptk[0];
-                distY = space->yMin + (j - space->ng) * space->dy - ptk[1];
-                distZ = space->zMin + (k - space->ng) * space->dz - ptk[2];
-                distToCenter = sqrt(distX * distX + distY * distY + distZ * distZ);
-                normalX = distX / distToCenter;
-                normalY = distY / distToCenter;
-                normalZ = distZ / distToCenter;
+                Real *ptk = particle->headAddress + geoID * particle->entryN;
+                CalculateGeometryInformation(info, k, j, i, geoID, space, particle);
                 idx = idx * space->dimU; /* switch to index field variable */
                 p = (flow->gamma - 1.0) * (U[idx+4] - 0.5 * 
                         (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]);
-                ptk[8] = -p * normalX; /* increase fx by pressure projection on x */
-                ptk[9] = -p * normalY; /* increase fy by pressure projection on y */
-                ptk[10] = -p * normalZ; /* increase fz by pressure projection on z */
+                ptk[8] = -p * info[5]; /* increase fx by pressure projection on x */
+                ptk[9] = -p * info[6]; /* increase fy by pressure projection on y */
+                ptk[10] = -p * info[7]; /* increase fz by pressure projection on z */
                 ptk[11] = ptk[11] + 1; /* count the number of ghost node of current particle */
 
             }
@@ -191,7 +170,7 @@ static int SurfaceForceIntegration(const Real *U, const Space *space, Particle *
     }
     /* calibrate the sum of discrete forces into integration */
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        ptk = particle->headAddress + geoCount * particle->entryN;
+        Real *ptk = particle->headAddress + geoCount * particle->entryN;
         if (0 == space->dx * space->dy * space->dz) { /* space dimension collapsed */
             ds = 2.0 * pi * ptk[3] / ptk[11]; /* circle perimeter */
         } else {

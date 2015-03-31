@@ -21,6 +21,8 @@ static int LocateSolidGeometry(Space *, const Particle *, const Partition *);
 static int IdentifyGhostNodes(Space *, const Partition *);
 static int IdentifySolidNodesAtNumericalBoundary(Space *, const Particle *, 
         const Partition *);
+static int SearchFluidNodes(const int k, const int j, const int i, 
+        const int offset, const Space *);
 static int LinearReconstruction(Real Uo[], const int k, const int j, const int i,
         const int geoID, const Real *U, const Space *, const Particle *, const Flow *);
 static int Min(const int x, const int y);
@@ -129,8 +131,8 @@ static int LocateSolidGeometry(Space *space, const Particle *particle, const Par
             for (int j = jSub; j < jSup; ++j) {
                 for (int i = iSub; i < iSup; ++i) {
                     CalculateGeometryInformation(info, k, j, i, geoCount, space, particle);
-                    if (0 > distance) { /* in the solid geometry */
-                    idx = IndexMath(k, j, i, space);
+                    if (0 < info[4]) { /* in the solid geometry */
+                        idx = IndexMath(k, j, i, space);
                         space->nodeFlag[idx] = -offset - geoCount; /* geometry are linked */
                     }
                 }
@@ -142,14 +144,6 @@ static int LocateSolidGeometry(Space *space, const Particle *particle, const Par
 static int IdentifyGhostNodes(Space *space, const Partition *part)
 {
     int idx = 0; /* linear array index math variable */
-    int idxW = 0; /* index at West */
-    int idxE = 0; /* index at East */
-    int idxS = 0; /* index at South */
-    int idxN = 0; /* index at North */
-    int idxF = 0; /* index at Front */
-    int idxB = 0; /* index at Back */
-    /* criteria */
-    int flag = 0;
     const int offset = space->nodeFlagOffset;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
@@ -158,16 +152,8 @@ static int IdentifyGhostNodes(Space *space, const Partition *part)
                 if (-offset < space->nodeFlag[idx]) { /* it's not solid node */
                     continue;
                 }
-                idxW = IndexMath(k, j, i - 1, space);
-                idxE = IndexMath(k, j, i + 1, space);
-                idxS = IndexMath(k, j - 1, i, space);
-                idxN = IndexMath(k, j + 1, i, space);
-                idxF = IndexMath(k - 1, j, i, space);
-                idxB = IndexMath(k + 1, j, i, space);
-                flag = space->nodeFlag[idxW] * space->nodeFlag[idxE] * 
-                    space->nodeFlag[idxS] * space->nodeFlag[idxN] * 
-                    space->nodeFlag[idxF] * space->nodeFlag[idxB];
-                if (0 == flag) { /* if exist one neighbour is fluid, then it's ghost */
+                /* if exist one neighbour is fluid, then it's ghost */
+                if (0 == SearchFluidNodes(k, j, i, 1, space)) {
                     space->nodeFlag[idx] = -space->nodeFlag[idx]; /* geometry conserved */
                 }
             }
@@ -179,14 +165,6 @@ static int IdentifySolidNodesAtNumericalBoundary(Space *space,
         const Particle *particle, const Partition *part)
 {
     int idx = 0; /* linear array index math variable */
-    int idxW = 0; /* index at West */
-    int idxE = 0; /* index at East */
-    int idxS = 0; /* index at South */
-    int idxN = 0; /* index at North */
-    int idxF = 0; /* index at Front */
-    int idxB = 0; /* index at Back */
-    /* criteria */
-    int flag = 0;
     const int offset = space->nodeFlagOffset;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
@@ -196,16 +174,7 @@ static int IdentifySolidNodesAtNumericalBoundary(Space *space,
                     continue;
                 }
                 for (int order = 2; order <= 2; ++order) {
-                    idxW = IndexMath(k, j, i - order, space);
-                    idxE = IndexMath(k, j, i + order, space);
-                    idxS = IndexMath(k, j - order, i, space);
-                    idxN = IndexMath(k, j + order, i, space);
-                    idxF = IndexMath(k - order, j, i, space);
-                    idxB = IndexMath(k + order, j, i, space);
-                    flag = space->nodeFlag[idxW] * space->nodeFlag[idxE] * 
-                        space->nodeFlag[idxS] * space->nodeFlag[idxN] * 
-                        space->nodeFlag[idxF] * space->nodeFlag[idxB];
-                    if (0 == flag) { /* solid required for numerical boundary */
+                    if (0 == SearchFluidNodes(k, j, i, order, space)) {
                         space->nodeFlag[idx] = space->nodeFlag[idx] - particle->totalN;
                     }
                 }
@@ -213,6 +182,21 @@ static int IdentifySolidNodesAtNumericalBoundary(Space *space,
         }
     }
     return 0;
+}
+static int SearchFluidNodes(const int k, const int j, const int i, 
+        const int offset, const Space *space)
+{
+    const int idxW = IndexMath(k, j, i - offset, space);
+    const int idxE = IndexMath(k, j, i + offset, space);
+    const int idxS = IndexMath(k, j - offset, i, space);
+    const int idxN = IndexMath(k, j + offset, i, space);
+    const int idxF = IndexMath(k - offset, j, i, space);
+    const int idxB = IndexMath(k + offset, j, i, space);
+    const int flag = 
+        space->nodeFlag[idxW] * space->nodeFlag[idxE] * 
+        space->nodeFlag[idxS] * space->nodeFlag[idxN] * 
+        space->nodeFlag[idxF] * space->nodeFlag[idxB];
+    return flag;
 }
 /*
  * Boundary condition for interior ghost nodes and solid nodes at numerical
@@ -222,7 +206,11 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
         const Partition *part, const Flow *flow)
 {
     int idx = 0; /* linear array index math variable */
+    Real info[10] = {0.0}; /* store calculated geometry information */
     Real Uo[6] = {0.0}; /* save reconstructed primitives */
+    int imageI = 0;
+    int imageJ = 0;
+    int imageK = 0;
     int geoID = 0; /* geometry id */
     const int offset = space->nodeFlagOffset;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
@@ -238,10 +226,11 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
                         continue;
                     }
                 }
-    /* obtain the node coordinates of the image point */
-    imageI = i + (int)(2 * distToSurface * normalX * space->ddx);
-    imageJ = j + (int)(2 * distToSurface * normalY * space->ddy);
-    imageK = k + (int)(2 * distToSurface * normalZ * space->ddz);
+                CalculateGeometryInformation(info, k, j, i, geoID, space, particle);
+                /* obtain the node coordinates of the image point */
+                imageI = i + (int)(2 * info[4] * info[5] * space->ddx);
+                imageJ = j + (int)(2 * info[4] * info[6] * space->ddy);
+                imageK = k + (int)(2 * info[4] * info[7] * space->ddz);
                 Reconstruction(Uo, k, j, i, geoID, U, space, particle, flow);
                 ConservativeByPrimitive(U, idx * space->dimU, Uo, flow);
             }
