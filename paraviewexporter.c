@@ -161,12 +161,10 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
                             data = U[idx+3] / U[idx];
                             break;
                         case 4: /* p */
-                            data = (flow->gamma - 1.0) * (U[idx+4] - 0.5 * 
-                                    (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]);
+                            data = ComputePressure(idx, U, flow);
                             break;
                         case 5: /* T */
-                            data = (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + 
-                                        U[idx+3] * U[idx+3]) / U[idx]) / (U[idx] * flow->cv);
+                            data = ComputeTemperature(idx, U, flow);
                             break;
                         case 6: /* node flag */
                             idx = idx / space->dimU;
@@ -205,9 +203,9 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                vector[0] = space->xMin + (i - space->ng) * space->dx;
-                vector[1] = space->yMin + (j - space->ng) * space->dy;
-                vector[2] = space->zMin + (k - space->ng) * space->dz;
+                vector[0] = ComputeX(i, space);
+                vector[1] = ComputeY(j, space);
+                vector[2] = ComputeZ(k, space);
                 fprintf(filePointer, "%.6g %.6g %.6g ", vector[0], vector[1], vector[2]);
             }
         }

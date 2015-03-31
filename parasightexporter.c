@@ -210,7 +210,7 @@ static int WriteParasightGeometryFile(ParasightSet *enSet, const Space *space,
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                data = space->xMin + (i - space->ng) * space->dx;
+                data = ComputeX(i, space);
                 fwrite(&data, sizeof(ParasightReal), 1, filePointer);
             }
         }
@@ -219,7 +219,7 @@ static int WriteParasightGeometryFile(ParasightSet *enSet, const Space *space,
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                data = space->yMin + (j - space->ng) * space->dy;
+                data = ComputeY(j, space);
                 fwrite(&data, sizeof(ParasightReal), 1, filePointer);
             }
         }
@@ -228,7 +228,7 @@ static int WriteParasightGeometryFile(ParasightSet *enSet, const Space *space,
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                data = space->zMin + (k - space->ng) * space->dz;
+                data = ComputeZ(k, space);
                 fwrite(&data, sizeof(ParasightReal), 1, filePointer);
             }
         }
@@ -287,12 +287,10 @@ static int WriteParasightVariableFile(const Real *U, ParasightSet *enSet,
                             data = U[idx+3] / U[idx];
                             break;
                         case 4: /* p */
-                            data = (flow->gamma - 1.0) * (U[idx+4] - 0.5 * 
-                                    (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]);
+                            data = ComputePressure(idx, U, flow);
                             break;
                         case 5: /* T */
-                            data = (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + 
-                                        U[idx+3] * U[idx+3]) / U[idx]) / (U[idx] * flow->cv);
+                            data = ComputeTemperature(idx, U, flow);
                             break;
                         case 6: /* node flag */
                             idx = idx / space->dimU;

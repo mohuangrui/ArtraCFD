@@ -144,9 +144,7 @@ static int SurfaceForceIntegration(const Real *U, const Space *space,
                 geoID = space->nodeFlag[idx] - offset; /* extract geometry information */
                 Real *ptk = particle->headAddress + geoID * particle->entryN;
                 CalculateGeometryInformation(info, k, j, i, geoID, space, particle);
-                idx = idx * space->dimU; /* switch to index field variable */
-                p = (flow->gamma - 1.0) * (U[idx+4] - 0.5 * 
-                        (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]);
+                p = ComputePressure(idx * space->dimU, U, flow);
                 ptk[8] = -p * info[5]; /* increase fx by pressure projection on x */
                 ptk[9] = -p * info[6]; /* increase fy by pressure projection on y */
                 ptk[10] = -p * info[7]; /* increase fz by pressure projection on z */
