@@ -150,28 +150,25 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
                 flag = 0; /* always initialize flag to zero */
                 switch (part->typeIC[n]) {
                     case 1: /* plane */
-                        xh = (space->xMin + (i - space->ng) * space->dx - x) * normalX;
-                        yh = (space->yMin + (j - space->ng) * space->dy - y) * normalY;
-                        zh = (space->zMin + (k - space->ng) * space->dz - z) * normalZ;
+                        xh = (ComputeX(i, space) - x) * normalX;
+                        yh = (ComputeY(j, space) - y) * normalY;
+                        zh = (ComputeZ(k, space) - z) * normalZ;
                         if (0 <= (xh + yh + zh)) { /* on the normal direction or the plane */
                             flag = 1; /* set flag to true */
                         }
                         break;
                     case 2: /* sphere */
-                        xh = (space->xMin + (i - space->ng) * space->dx - x);
-                        yh = (space->yMin + (j - space->ng) * space->dy - y);
-                        zh = (space->zMin + (k - space->ng) * space->dz - z);
+                        xh = (ComputeX(i, space) - x);
+                        yh = (ComputeY(j, space) - y);
+                        zh = (ComputeZ(k, space) - z);
                         if (0 >= (xh * xh + yh * yh + zh * zh - r * r)) { /* in or on the sphere */
                             flag = 1; /* set flag to true */
                         }
                         break;
                     case 3: /* box */
-                        normalX = (space->xMin + (i - space->ng) * space->dx - x) * 
-                            (space->xMin + (i - space->ng) * space->dx - xh);
-                        normalY = (space->yMin + (j - space->ng) * space->dy - y) * 
-                            (space->yMin + (j - space->ng) * space->dy - yh);
-                        normalZ = (space->zMin + (k - space->ng) * space->dz - z) * 
-                            (space->zMin + (k - space->ng) * space->dz - zh);
+                        normalX = (ComputeX(i, space) - x) * (ComputeX(i, space) - xh);
+                        normalY = (ComputeY(j, space) - y) * (ComputeY(j, space) - yh);
+                        normalZ = (ComputeZ(k, space) - z) * (ComputeZ(k, space) - zh);
                         if ((0 >= normalX) && (0 >= normalY) && (0 >= normalZ)) { /* in or on the box */
                             flag = 1; /* set flag to true */
                         }
