@@ -32,12 +32,12 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
             FatalError("failed to write data at probes...");
         }
         fprintf(filePointer, "# points      rho     u       v       w       p       T\n"); 
-        int iA = (int)((flow->probePos[n][0] - space->xMin) * space->ddx) + space->ng;
-        int jA = (int)((flow->probePos[n][1] - space->yMin) * space->ddy) + space->ng;
-        int kA = (int)((flow->probePos[n][2] - space->zMin) * space->ddz) + space->ng;
-        int iB = (int)((flow->probePos[n][3] - space->xMin) * space->ddx) + space->ng;
-        int jB = (int)((flow->probePos[n][4] - space->yMin) * space->ddy) + space->ng;
-        int kB = (int)((flow->probePos[n][5] - space->zMin) * space->ddz) + space->ng;
+        int iA = ComputeI(flow->probePos[n][0], space);
+        int jA = ComputeJ(flow->probePos[n][1], space);
+        int kA = ComputeK(flow->probePos[n][2], space);
+        int iB = ComputeI(flow->probePos[n][3], space);
+        int jB = ComputeJ(flow->probePos[n][4], space);
+        int kB = ComputeK(flow->probePos[n][5], space);
         /* adjust index range into flow region */
         iA = Min(part->iSup[0] - 1, Max(part->iSub[0], iA));
         jA = Min(part->jSup[0] - 1, Max(part->jSub[0], jA));

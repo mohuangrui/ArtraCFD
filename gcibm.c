@@ -23,8 +23,9 @@ static int IdentifySolidNodesAtNumericalBoundary(Space *, const Particle *,
         const Partition *);
 static int SearchFluidNodes(const int k, const int j, const int i, 
         const int offset, const Space *);
-static int LinearReconstruction(Real Uo[], const int k, const int j, const int i,
-        const int geoID, const Real *U, const Space *, const Particle *, const Flow *);
+static int Reconstruction(Real Uo[], const int k, const int j, const int i,
+        const int geoID, const Real *U, const Space *, const Particle *, 
+        const Flow *);
 static int Min(const int x, const int y);
 static int Max(const int x, const int y);
 /****************************************************************************
@@ -113,9 +114,9 @@ static int LocateSolidGeometry(Space *space, const Particle *particle, const Par
     const int offset = space->nodeFlagOffset;
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
         const Real *ptk = particle->headAddress + geoCount * particle->entryN;
-        const int iCenter = (int)((ptk[0] - space->xMin) * space->ddx) + space->ng;
-        const int jCenter = (int)((ptk[1] - space->yMin) * space->ddy) + space->ng;
-        const int kCenter = (int)((ptk[2] - space->zMin) * space->ddz) + space->ng;
+        const int iCenter = ComputeI(ptk[0], space);
+        const int jCenter = ComputeJ(ptk[1], space);
+        const int kCenter = ComputeK(ptk[2], space);
         const Real safetyCoe = 1.2; /* zoom the search range */
         const int iRange = (int)(safetyCoe * ptk[3] * space->ddx);
         const int jRange = (int)(safetyCoe * ptk[3] * space->ddy);
@@ -183,6 +184,10 @@ static int IdentifySolidNodesAtNumericalBoundary(Space *space,
     }
     return 0;
 }
+/*
+ * Search around current node and check whether current node has at
+ * least one fluid node regarding to the specified coordinate offset.
+ */
 static int SearchFluidNodes(const int k, const int j, const int i, 
         const int offset, const Space *space)
 {
@@ -192,15 +197,12 @@ static int SearchFluidNodes(const int k, const int j, const int i,
     const int idxN = IndexMath(k, j + offset, i, space);
     const int idxF = IndexMath(k - offset, j, i, space);
     const int idxB = IndexMath(k + offset, j, i, space);
-    const int flag = 
-        space->nodeFlag[idxW] * space->nodeFlag[idxE] * 
-        space->nodeFlag[idxS] * space->nodeFlag[idxN] * 
-        space->nodeFlag[idxF] * space->nodeFlag[idxB];
-    return flag;
+    return (space->nodeFlag[idxW] * space->nodeFlag[idxE] * 
+            space->nodeFlag[idxS] * space->nodeFlag[idxN] * 
+            space->nodeFlag[idxF] * space->nodeFlag[idxB]);
 }
 /*
- * Boundary condition for interior ghost nodes and solid nodes at numerical
- * boundary.
+ * Boundary condition for interior ghost and solid nodes at numerical boundary.
  */
 int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle, 
         const Partition *part, const Flow *flow)
@@ -251,11 +253,9 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
  * assumption that linear distribution of phi(x,y,z) is also valid for the
  * neighbour nodes.
  */
-static int LinearReconstruction(Real Uo[], const int k, const int j, const int i, const int geoID, 
+static int Reconstruction(Real Uo[], const int k, const int j, const int i, const int geoID, 
         const Real *U, const Space *space, const Particle *particle, const Flow *flow)
 {
-    Real posMatrix[4][4] = {{0.0}}; /* position matrix for interpolation */
-    Real rhsVector[4][5] = {{0.0}}; /* right hand side vectors for five variables, solution vectors use the same space */
     /*
      * Originally the interpolation stencil should contain the boundary point,
      * however, this will complicate the problem very much. Therefore, the
@@ -268,30 +268,11 @@ static int LinearReconstruction(Real Uo[], const int k, const int j, const int i
      * are always downward truncated, therefore, the prior search directions 
      * are better to set as 0 (current node) or +1 (upward direction).
      */
-    /* build an adequate search path */
-    const int path[57][3] = { /* n paths for i, j, k */
-        {0, 0, 0}, {1, 1, 1}, {1, 1, 0}, {1, 0, 1},
-        {0, 1, 1}, {1, 0, 0}, {0, 1, 0}, {0, 0, 1},
-        {-1, 0, 0}, {0, -1, 0}, {0, 0, -1}, {-1, 1, 0},
-        {-1, 0, 1}, {1, -1, 0}, {0, -1, 1}, {1, 0, -1},
-        {0, 1, -1}, {-1, 1, 1}, {1, -1, 1}, {1, 1, -1},
-        {-1, -1, 0}, {-1, 0, -1}, {0, -1, -1}, {-1, -1, 1},
-        {-1, 1, -1}, {1, -1, -1}, {-1, -1, -1},
-        {2, 0, 0}, {0, 2, 0}, {0, 0, 2}, {2, 1, 0}, {2, 0, 1},
-        {1, 2, 0}, {0, 2, 1}, {1, 0, 2}, {0, 1, 2},
-        {-2, 0, 0}, {0, -2, 0}, {0, 0, -2}, {-2, -1, 0}, {-2, 0, -1},
-        {-1, -2, 0}, {0, -2, -1}, {-1, 0, -2}, {0, -1, -2},
-        {2, -1, 0}, {2, 0, -1}, {-1, 2, 0}, {0, 2, -1}, {-1, 0, 2}, {0, -1, 2},
-        {-2, 1, 0}, {-2, 0, 1}, {1, -2, 0}, {0, -2, 1}, {1, 0, -2}, {0, 1, -2}};
     const int stencilN = 4; /* number of stencils for interpolation */
     int tally = 0; /* number of current stencil */
     int idxh = 0; /* index variable */
     Real Uoh[6] = {0.0};
     for (int loop = 0; (tally < stencilN) && (loop < 57); ++loop) {
-        const int ih = imageI + path[loop][0];
-        const int jh = imageJ + path[loop][1];
-        const int kh = imageK + path[loop][2];
-        idxh = IndexMath(kh, jh, ih, space);
         if (0 != space->nodeFlag[idxh]) { /* it's not a fluid node */
             continue;
         }
@@ -304,15 +285,8 @@ static int LinearReconstruction(Real Uo[], const int k, const int j, const int i
          * approach is to use the node coordinates to do the construction,
          * which is equivalent because of the same degree of freedom. 
          */
-        posMatrix[tally][0] = 1;
-        posMatrix[tally][1] = (Real)(ih); 
-        posMatrix[tally][2] = (Real)(jh);
-        posMatrix[tally][3] = (Real)(kh);
         /* construct the right hand vectors */
         PrimitiveByConservative(Uoh, idxh * space->dimU, U, flow);
-        for (int dim = 0; dim < space->dimU; ++dim) {
-            rhsVector[tally][dim] = Uoh[dim];
-        }
         ++tally; /* increase the tally */
     }
     /*
@@ -320,18 +294,6 @@ static int LinearReconstruction(Real Uo[], const int k, const int j, const int i
      * corresponding interpolation coefficients. Solutions are stored in the
      * same space of the right hand side matrix.
      */
-    MatrixLinearSystemSolver(4, posMatrix, space->dimU, rhsVector, rhsVector);
-    /*
-     * Obtain the interpolation coordinates of image point and do the
-     * interpolation.
-     */
-    const Real imageX = (Real)(i) + 2 * distToSurface * normalX * space->ddx;
-    const Real imageY = (Real)(j) + 2 * distToSurface * normalY * space->ddy;
-    const Real imageZ = (Real)(k) + 2 * distToSurface * normalZ * space->ddz;
-    for (int m = 0; m < space->dimU; ++m) {
-        Uo[m] = rhsVector[0][m] + rhsVector[1][m] * imageX + 
-            rhsVector[2][m] * imageY + rhsVector[3][m] * imageZ;
-    }
     /*
      * Apply no-slip wall boundary conditions to get primitive values at nodes
      * in wall. That is, keep scalars and flip vectors after reflection.
@@ -347,9 +309,9 @@ int CalculateGeometryInformation(Real info[], const int k, const int j, const in
     /* point to storage of current particle */
     const Real *ptk = particle->headAddress + geoID * particle->entryN;
     /* x, y, z distance */
-    info[0] = space->xMin + (i - space->ng) * space->dx - ptk[0];
-    info[1] = space->yMin + (j - space->ng) * space->dy - ptk[1];
-    info[2] = space->zMin + (k - space->ng) * space->dz - ptk[2];
+    info[0] = ComputeX(i, space) - ptk[0];
+    info[1] = ComputeY(j, space) - ptk[1];
+    info[2] = ComputeZ(k, space) - ptk[2];
     /* distance to center */
     info[3] = sqrt(info[0] * info[0] + info[1] * info[1] + info[2] * info[2]);
     /* distance to surface, positive means in the geometry */
