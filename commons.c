@@ -218,8 +218,8 @@ int ConservativeByPrimitive(Real *U, const int idx, const Real Uo[], const Flow 
 }
 Real ComputePressure(const int idx, const Real *U, const Flow *flow)
 {
-    return  ((flow->gamma - 1.0) * (U[idx+4] - 0.5 * 
-                ((U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx])));
+    return ((flow->gamma - 1.0) * (U[idx+4] - 0.5 * ((U[idx+1] * U[idx+1] + 
+                        U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx])));
 }
 Real ComputeTemperature(const int idx, const Real *U, const Flow *flow)
 {
