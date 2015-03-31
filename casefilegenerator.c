@@ -51,7 +51,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "space begin\n");
     fprintf(filePointer, "-3, -3, 0          # xmin, ymin, zmin of space domain\n");
     fprintf(filePointer, "3, 3, 0            # xmax, ymax, zmax of space domain (max = min if collapse)\n");
-    fprintf(filePointer, "100, 100, 1        # x, y, z mesh number (integer, 1 if a dimension collapsed)\n");
+    fprintf(filePointer, "1000, 1000, 1      # x, y, z mesh number (integer, 1 if a dimension collapsed)\n");
     fprintf(filePointer, "1                  # number of exterior ghost cells layers (integer, >=1)\n");
     fprintf(filePointer, "space end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");

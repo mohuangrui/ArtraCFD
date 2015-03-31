@@ -683,6 +683,8 @@ extern Real ComputeX(const int i, const Space *);
  *      0 -- successful
  */
 extern int PrimitiveByConservative(Real Uo[], const int idx, const Real *U, const Flow *);
+extern Real ComputePressure(const int idx, const Real *U, const Flow *flow);
+extern Real ComputeTemperature(const int idx, const Real *U, const Flow *flow);
 /*
  * Compute and update conservative variable vector.
  *

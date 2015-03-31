@@ -31,7 +31,7 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space,
      */
     int geoID = 0; /* geometry id */
     Real info[10] = {0.0}; /* store calculated geometry information */
-    Real mass = 0.0;
+    Real mass = 0.0; /* mass of particles */
     const Real pi = acos(-1);
     const int offset = space->nodeFlagOffset;
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
@@ -58,19 +58,6 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space,
      * of particles will not exceed one grid per time step based on the CFL
      * condition of flow. Therefore, only ghost nodes need to be verified.
      */
-    /* build an adequate search path */
-    const int path[56][3] = { /* n paths for i, j, k */
-        {1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {-1, 0, 0}, {0, -1, 0}, {0, 0, -1},
-        {1, 1, 0}, {1, 0, 1}, {0, 1, 1}, {-1, -1, 0}, {-1, 0, -1}, {0, -1, -1},
-        {1, 1, 1}, {-1, -1, -1}, {1, -1, 0}, {1, 0, -1}, {0, 1, -1}, {0, -1, 1},
-        {-1, 1, 0}, {-1, 0, 1}, {1, 1, -1}, {1, -1, 1}, {-1, 1, 1}, {1, -1, -1},
-        {-1, 1, -1}, {-1, -1, 1},
-        {2, 0, 0}, {0, 2, 0}, {0, 0, 2}, {2, 1, 0}, {2, 0, 1},
-        {1, 2, 0}, {0, 2, 1}, {1, 0, 2}, {0, 1, 2},
-        {-2, 0, 0}, {0, -2, 0}, {0, 0, -2}, {-2, -1, 0}, {-2, 0, -1},
-        {-1, -2, 0}, {0, -2, -1}, {-1, 0, -2}, {0, -1, -2},
-        {2, -1, 0}, {2, 0, -1}, {-1, 2, 0}, {0, 2, -1}, {-1, 0, 2}, {0, -1, 2},
-        {-2, 1, 0}, {-2, 0, 1}, {1, -2, 0}, {0, -2, 1}, {1, 0, -2}, {0, 1, -2}};
     const int stencilN = 2; /* number of stencils for interpolation */
     int idx = 0; /* linear array index math variable */
     int idxh = 0; /* index variable */
@@ -129,13 +116,13 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space,
  * particle surface will increase correspondingly with the increase of mesh 
  * resolution while saving remarkable computation effort.
  */
-static int SurfaceForceIntegration(const Real *U, const Space *space, Particle *particle, 
-        const Partition *part, const Flow *flow)
+static int SurfaceForceIntegration(const Real *U, const Space *space, 
+        Particle *particle, const Partition *part, const Flow *flow)
 {
     int idx = 0; /* linear array index math variable */
     int geoID = 0; /* geometry id */
     Real info[10] = {0.0}; /* store calculated geometry information */
-    Real ds = 0.0;
+    Real ds = 0.0; /* surface differential area */
     const Real pi = acos(-1);
     Real p = 0.0;
     const int offset = space->nodeFlagOffset;
