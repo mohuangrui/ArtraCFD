@@ -117,13 +117,13 @@ static int LocateSolidGeometry(Space *space, const Particle *particle, const Par
         const int iRange = (int)(safetyCoe * ptk[3] * space->ddx);
         const int jRange = (int)(safetyCoe * ptk[3] * space->ddy);
         const int kRange = (int)(safetyCoe * ptk[3] * space->ddz);
-        /* sup plus two for dimension collapses */
-        const int kSub = Max(kCenter - kRange, part->kSub[0]);
-        const int kSup = Min(kCenter + kRange + 2, part->kSup[0]);
-        const int jSub = Max(jCenter - jRange, part->jSub[0]);
-        const int jSup = Min(jCenter + jRange + 2, part->jSup[0]);
-        const int iSub = Max(iCenter - iRange, part->iSub[0]);
-        const int iSup = Min(iCenter + iRange + 2, part->iSup[0]);
+        /* determine search range according to valid flow region */
+        const int kSub = Min(part->kSup[0] - 1, Max(part->kSub[0], kCenter - kRange));
+        const int kSup = Min(part->kSup[0] - 1, Max(part->kSub[0], kCenter + kRange)) + 1;
+        const int jSub = Min(part->jSup[0] - 1, Max(part->jSub[0], jCenter - jRange));
+        const int jSup = Min(part->jSup[0] - 1, Max(part->jSub[0], jCenter + jRange)) + 1;
+        const int iSub = Min(part->iSup[0] - 1, Max(part->iSub[0], iCenter - iRange));
+        const int iSup = Min(part->iSup[0] - 1, Max(part->iSub[0], iCenter + iRange)) + 1;
         for (int k = kSub; k < kSup; ++k) {
             for (int j = jSub; j < jSup; ++j) {
                 for (int i = iSub; i < iSup; ++i) {

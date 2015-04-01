@@ -163,17 +163,24 @@ int IndexMath(const int k, const int j, const int i, const Space *space)
 {
     return ((k * space->jMax + j) * space->iMax + i);
 }
+/*
+ * Coordinates transformations.
+ * When transform from spatial coordinates to node coordinates, a half
+ * grid distance shift is necessary to ensure obtaining a closest node
+ * coordinates considering the downward truncation of (int). 
+ * Note: current rounding conversion only works for positive float.
+ */
 int ComputeK(const Real z, const Space *space)
 {
-    return (int)((z - space->zMin) * space->ddz) + space->ng;
+    return (int)((z - space->zMin) * space->ddz + 0.5) + space->ng;
 }
 int ComputeJ(const Real y, const Space *space)
 {
-    return (int)((y - space->yMin) * space->ddy) + space->ng;
+    return (int)((y - space->yMin) * space->ddy + 0.5) + space->ng;
 }
 int ComputeI(const Real x, const Space *space)
 {
-    return (int)((x - space->xMin) * space->ddx) + space->ng;
+    return (int)((x - space->xMin) * space->ddx + 0.5) + space->ng;
 }
 Real ComputeZ(const int k, const Space *space)
 {
