@@ -102,6 +102,10 @@ static int InitializeDomainGeometry(Space *space, const Partition *part)
  * is search each particle and find all the nodes inside current particle.
  * The second method is adopted here for performance reason, although it's much
  * more complicated than the first one.
+ * Be cautious with the validity of any calculated index. It's extremely
+ * necessary to adjust the index into the valid flow region or check the
+ * validity of the index to avoid index exceed array bound limits and 
+ * mysterious bugs.
  */
 static int LocateSolidGeometry(Space *space, const Particle *particle, const Partition *part)
 {
@@ -193,6 +197,7 @@ static int SearchFluidNodes(const int k, const int j, const int i,
     const int idxN = IndexMath(k, j + offset, i, space);
     const int idxF = IndexMath(k - offset, j, i, space);
     const int idxB = IndexMath(k + offset, j, i, space);
+    /* caution: enough ghost layers are quired to avoid illegal index */
     return (space->nodeFlag[idxW] * space->nodeFlag[idxE] * 
             space->nodeFlag[idxS] * space->nodeFlag[idxN] * 
             space->nodeFlag[idxF] * space->nodeFlag[idxB]);
@@ -213,7 +218,7 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = IndexMath(k, j, i, space);
                 if (-offset - particle->totalN >= space->nodeFlag[idx]) { /* solid */
-                    geoID = space->nodeFlag[idx] + offset + particle->totalN; /* extract geometry */
+                    geoID = space->nodeFlag[idx] + offset + particle->totalN;
                 } else {
                     if (offset <= space->nodeFlag[idx]) { /* ghost */
                         geoID = space->nodeFlag[idx] - offset; /* extract geometry */

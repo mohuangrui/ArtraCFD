@@ -666,6 +666,11 @@ extern int IndexMath(const int k, const int j, const int i, const Space *space);
  *
  * Function
  *      transform coordinates between node coordinates and general coordinates.
+ * Notice
+ *      Be cautious with the validity of any calculated index. It's extremely
+ *      necessary to adjust the index into the valid flow region or check the
+ *      validity of the index to avoid index exceed array bound limits and 
+ *      mysterious bugs.
  */
 extern int ComputeK(const Real z, const Space *);
 extern int ComputeJ(const Real y, const Space *);
