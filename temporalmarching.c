@@ -22,8 +22,6 @@
  ****************************************************************************/
 static Real ComputeTimeStepByCFL(const Real *U, const Space *, const Time *, 
         const Partition *, const Flow *);
-static Real MinPositive(const Real valueA, const Real valueB);
-static Real Max(const Real valueA, const Real valueB);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -124,37 +122,14 @@ static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Time *
                     continue;
                 }
                 PrimitiveByConservative(Uo, idx * space->dimU, U, flow);
-                velocity = sqrt(flow->gamma * Uo[4] / Uo[0]) + Max(fabs(Uo[1]), Max(fabs(Uo[2]), fabs(Uo[3])));
+                velocity = sqrt(flow->gamma * Uo[4] / Uo[0]) + MaxReal(fabs(Uo[1]), MaxReal(fabs(Uo[2]), fabs(Uo[3])));
                 if (velocityMax < velocity) {
                     velocityMax = velocity;
                 }
             }
         }
     }
-    return time->numCFL * MinPositive(space->dx, MinPositive(space->dy, space->dz)) / velocityMax;
-}
-static Real MinPositive(const Real valueA, const Real valueB)
-{
-    if ((0 >= valueA) && (0 >= valueB)) {
-        return 1.0e15;
-    }
-    if (0 >= valueA) {
-        return valueB;
-    }
-    if (0 >= valueB) {
-        return valueA;
-    }
-    if (valueA < valueB) {
-        return valueA;
-    }
-    return valueB;
-}
-static Real Max(const Real valueA, const Real valueB)
-{
-    if (valueA > valueB) {
-        return valueA;
-    }
-    return valueB;
+    return time->numCFL * MinReal(space->dx, MinReal(space->dy, space->dz)) / velocityMax;
 }
 /* a good practice: end file with a newline */
 

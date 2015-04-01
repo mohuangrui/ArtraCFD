@@ -580,8 +580,8 @@ static int CheckCaseSettingData(const Space *space, const Time *time, const Flow
 {
     ShowInformation("  Preliminary case data checking ...");
     /* space */
-    if ((0 > (space->xMax - space->xMin)) || (0 > (space->yMax - space->yMin)) ||
-            (0 > (space->zMax - space->zMin))) {
+    if ((0 >= (space->xMax - space->xMin)) || (0 >= (space->yMax - space->yMin)) ||
+            (0 >= (space->zMax - space->zMin))) {
         FatalError("wrong domian region values in case settings");
     }
     if ((1 > space->nz) || (1 > space->ny) || (1 > space->nx)

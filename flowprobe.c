@@ -11,11 +11,6 @@
 #include <stdlib.h> /* support for abs operation */
 #include "commons.h"
 /****************************************************************************
- * Static Function Declarations
- ****************************************************************************/
-static int Min(const int x, const int y);
-static int Max(const int x, const int y);
-/****************************************************************************
  * Function definitions
  ****************************************************************************/
 int WriteComputedDataAtProbes(const int stepCount, const Real *U, 
@@ -32,26 +27,20 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
             FatalError("failed to write data at probes...");
         }
         fprintf(filePointer, "# points      rho     u       v       w       p       T\n"); 
-        int iA = ComputeI(flow->probePos[n][0], space);
-        int jA = ComputeJ(flow->probePos[n][1], space);
-        int kA = ComputeK(flow->probePos[n][2], space);
-        int iB = ComputeI(flow->probePos[n][3], space);
-        int jB = ComputeJ(flow->probePos[n][4], space);
-        int kB = ComputeK(flow->probePos[n][5], space);
-        /* adjust index range into flow region */
-        iA = Min(part->iSup[0] - 1, Max(part->iSub[0], iA));
-        jA = Min(part->jSup[0] - 1, Max(part->jSub[0], jA));
-        kA = Min(part->kSup[0] - 1, Max(part->kSub[0], kA));
-        iB = Min(part->iSup[0] - 1, Max(part->iSub[0], iB));
-        jB = Min(part->jSup[0] - 1, Max(part->jSub[0], jB));
-        kB = Min(part->kSup[0] - 1, Max(part->kSub[0], kB));
+        /* compute and adjust index range into flow region */
+        int iA = FlowRegionI(ComputeI(flow->probePos[n][0], space), part);
+        int jA = FlowRegionJ(ComputeJ(flow->probePos[n][1], space), part);
+        int kA = FlowRegionK(ComputeK(flow->probePos[n][2], space), part);
+        int iB = FlowRegionI(ComputeI(flow->probePos[n][3], space), part);
+        int jB = FlowRegionJ(ComputeJ(flow->probePos[n][4], space), part);
+        int kB = FlowRegionK(ComputeK(flow->probePos[n][5], space), part);
         int stepN = flow->probe[n] - 1;
         if (1 > stepN) { /* set to lowest resolution if happens */
             stepN = 1;
         }
         if ((abs(iB - iA) < stepN) && (abs(jB - jA) < stepN) && (abs(kB - kA) < stepN)) {
             /* set to highest resolution allowed */
-            stepN = Max(abs(iB - iA), Max(abs(jB - jA), abs(kB - kA)));
+            stepN = MaxInt(abs(iB - iA), MaxInt(abs(jB - jA), abs(kB - kA)));
         }
         const Real xStep = (Real)(iB - iA) / (Real)(stepN);
         const Real yStep = (Real)(jB - jA) / (Real)(stepN);
@@ -68,20 +57,6 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
         fclose(filePointer); /* close current opened file */
     }
     return 0;
-}
-static int Min(const int x, const int y)
-{
-    if (x < y) {
-        return x;
-    }
-    return y;
-}
-static int Max(const int x, const int y)
-{
-    if (x > y) {
-        return x;
-    }
-    return y;
 }
 /* a good practice: end file with a newline */
 

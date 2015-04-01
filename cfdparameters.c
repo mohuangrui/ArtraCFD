@@ -53,14 +53,13 @@ int ComputeCFDParameters(Space *space, Time *time, Flow *flow)
  * Upper exterior ghost: Sub = n + ng; Sup = n + 2 *ng;
  *
  * In this program, 2D and 3D space are unified, that is, a 2D space
- * will automatically transfer to a zero-thickness 3D space with
+ * will be equivalent to a non-zero thickness 3D space with
  * 1 cells(that is, three node layers) in the collapsed direction.
  * These three node layers are treated as Domain Boundary, 
  * inner node, Domain Boundary respectively. Periodic boundary 
- * condition will be forced on these two boundaries. Here the concept
- * that a zero-thickness 3D space with 2 cells is that the space is 
- * physically zero-thickness(it's still 2D), but numerically has
- * one cells(three node layers) in this direction.  
+ * condition need to be forced on these two boundaries.
+ * That is, dimension collapse should be achieved by single cell 
+ * with periodic boundary conditions;
  */
 static int NodeBasedMeshNumberRefine(Space *space)
 {
@@ -91,21 +90,9 @@ static int InitializeCFDParameters(Space *space, Time *time, Flow *flow)
     space->xMin = space->xMin / flow->refLength;
     space->yMin = space->yMin / flow->refLength;
     space->zMin = space->zMin / flow->refLength;
-    if (0 < space->dx) {
-        space->ddx = 1.0 / space->dx;
-    } else { /* zero mesh size has zero reciprocal */
-        space->ddx = 0;
-    }
-    if (0 < space->dy) {
-        space->ddy = 1.0 / space->dy;
-    } else { /* zero mesh size has zero reciprocal */
-        space->ddy = 0;
-    }
-    if (0 < space->dz) {
-        space->ddz = 1.0 / space->dz;
-    } else { /* zero mesh size has zero reciprocal */
-        space->ddz = 0;
-    }
+    space->ddx = 1.0 / space->dx;
+    space->ddy = 1.0 / space->dy;
+    space->ddz = 1.0 / space->dz;
     /* time */
     time->totalTime = time->totalTime * flow->refVelocity / flow->refLength;
     if ((0 > time->totalStep)) {

@@ -22,8 +22,6 @@ static int IdentifySolidNodesAtNumericalBoundary(Space *, const Particle *,
         const Partition *);
 static int SearchFluidNodes(const int k, const int j, const int i, 
         const int offset, const Space *);
-static int Min(const int x, const int y);
-static int Max(const int x, const int y);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -122,12 +120,12 @@ static int LocateSolidGeometry(Space *space, const Particle *particle, const Par
         const int jRange = (int)(safetyCoe * ptk[3] * space->ddy);
         const int kRange = (int)(safetyCoe * ptk[3] * space->ddz);
         /* determine search range according to valid flow region */
-        const int kSub = Min(part->kSup[0] - 1, Max(part->kSub[0], kCenter - kRange));
-        const int kSup = Min(part->kSup[0] - 1, Max(part->kSub[0], kCenter + kRange)) + 1;
-        const int jSub = Min(part->jSup[0] - 1, Max(part->jSub[0], jCenter - jRange));
-        const int jSup = Min(part->jSup[0] - 1, Max(part->jSub[0], jCenter + jRange)) + 1;
-        const int iSub = Min(part->iSup[0] - 1, Max(part->iSub[0], iCenter - iRange));
-        const int iSup = Min(part->iSup[0] - 1, Max(part->iSub[0], iCenter + iRange)) + 1;
+        const int kSub = FlowRegionK(kCenter - kRange, part);
+        const int kSup = FlowRegionK(kCenter + kRange, part) + 1;
+        const int jSub = FlowRegionJ(jCenter - jRange, part);
+        const int jSup = FlowRegionJ(jCenter + jRange, part) + 1;
+        const int iSub = FlowRegionI(iCenter - iRange, part);
+        const int iSup = FlowRegionI(iCenter + iRange, part) + 1;
         for (int k = kSub; k < kSup; ++k) {
             for (int j = jSub; j < jSup; ++j) {
                 for (int i = iSub; i < iSup; ++i) {
@@ -267,10 +265,13 @@ int Reconstruction(Real Uo[], const Real z, const Real y, const Real x,
      * Search around the specified node to find required fluid nodes as
      * interpolation stencil.
      */
-    for (int kh = -1; kh < 2; ++kh) {
-        for (int jh = -1; jh < 2; ++jh) {
-            for (int ih = -1; ih < 2; ++ih) {
+    for (int kh = -2; kh < 3; ++kh) {
+        for (int jh = -2; jh < 3; ++jh) {
+            for (int ih = -2; ih < 3; ++ih) {
                 idxh = IndexMath(k + kh, j + jh, i + ih, space);
+                if ((0 > idxh) || (space->nMax <= idxh)) { /* check index */
+                    continue; /* illegal index */
+                }
                 if (0 != space->nodeFlag[idxh]) { /* it's not a fluid node */
                     continue;
                 }
@@ -320,20 +321,6 @@ int CalculateGeometryInformation(Real info[], const int k, const int j, const in
     info[6] = info[6] / info[3];
     info[7] = info[7] / info[3];
     return 0;
-}
-static int Min(const int x, const int y)
-{
-    if (x < y) {
-        return x;
-    }
-    return y;
-}
-static int Max(const int x, const int y)
-{
-    if (x > y) {
-        return x;
-    }
-    return y;
 }
 /* a good practice: end file with a newline */
 

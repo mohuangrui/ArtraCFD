@@ -675,9 +675,19 @@ extern int IndexMath(const int k, const int j, const int i, const Space *space);
 extern int ComputeK(const Real z, const Space *);
 extern int ComputeJ(const Real y, const Space *);
 extern int ComputeI(const Real x, const Space *);
+extern int FlowRegionK(const int k, const Partition *);
+extern int FlowRegionJ(const int j, const Partition *);
+extern int FlowRegionI(const int i, const Partition *);
 extern Real ComputeZ(const int k, const Space *);
 extern Real ComputeY(const int j, const Space *);
 extern Real ComputeX(const int i, const Space *);
+/*
+ * Common math functions
+ */
+extern Real MinReal(const Real x, const Real y);
+extern Real MaxReal(const Real x, const Real y);
+extern int MinInt(const int x, const int y);
+extern int MaxInt(const int x, const int y);
 /*
  * Compute the values of primitive variable vector.
  *
