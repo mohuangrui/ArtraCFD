@@ -94,9 +94,10 @@ CC := gcc
 #    -O2       Optimize for speed and enable some optimization (default)
 #    -O3       Enable all optimizations as O2, and intensive loop optimizations
 #    -fast     Enables SSE3, SSE2 and SSE instruction sets optimizations
-#  Use Valgrind for memory access check (http://valgrind.org/)
+#  Use Valgrind for memory access and cache missing check (http://valgrind.org/)
 #    -g -O0    Use this flag to compile the program, then run command line
 #    valgrind --leak-check=full --track-origins=yes artracfd arg1 arg2
+#    valgrind --tool=cachegrind artracfd arg1 arg2
 #  Use google-perftools for performance check (http://goog-perftools.sourceforge.net/)
 #   -g         Use this flag to compile the program
 #   -lprofiler add this flag to the value of LFLAGS
