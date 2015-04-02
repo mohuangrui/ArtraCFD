@@ -28,7 +28,7 @@
           <Argument value="$PV_SERVER_HOST$"/>
           <Argument value="sh"/>
           <Argument value="-c"/>
-          <Argument value="&#x27;module load mpi/openmpi-x86_64; DISPLAY=:1 exec mpirun -n $PV_NODES$ pvserver --reverse-connection --client-host=localhost --server-port=$PV_SERVER_PORT$ --connect-id=$PV_CONNECT_ID$&#x27;"/>
+          <Argument value="&#x27;module load mpi/openmpi-x86_64; DISPLAY=:0 exec mpirun -n $PV_NODES$ pvserver --reverse-connection --client-host=localhost --server-port=$PV_SERVER_PORT$ --connect-id=$PV_CONNECT_ID$&#x27;"/>
         </Arguments>
       </Command>
     </CommandStartup>
