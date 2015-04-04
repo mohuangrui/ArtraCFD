@@ -414,6 +414,8 @@
  * - Above Intermediate
  *   Expert C Programming: Deep C Secrets - Peter van der Linden
  * - Software engineering
+ *   The Practice of Programming by Brian W. Kernighan and Rob Pike
+ *   Advanced Programming in the UNIX Environment
  *   Writing Scientific Software: a guide to good style, by Suely Oliveira
  *   and David Stewart
  *
@@ -435,16 +437,53 @@
  *   dereferencing a pointer!
  ****************************************************************************/
 /*
- * Define some universe data type for portability and maintenance
+ * Define some universe data type for portability and maintenance.
  */
 typedef double Real;
 /*
+ * Define some global integer constants for array bounds, identifiers, etc.
+ * enum statement is used instead of macros for handling these magic numbers.
+ */
+typedef enum {
+    /* dimension of conservative vector */
+    DIMU = 5, /* rho, rho_u, rho_v, rho_w, rho_eT */
+    /* dimension of primitive vector */
+    DIMUo = 6,  /* rho, u, v, w, p, T */
+    /* 
+     * offset of node flag range
+     * >= offset:           interior ghost node, 
+     * <= -offset:          interior solid node,
+     * <= -offset - totalN: interior solid node required for numerical boundary,
+     * otherwise:           fluid node and boundary or exterior ghost node.
+     * totalN is the total number of particles.
+     */
+    OFFSET = 10, 
+    /* identifier of fluid nodes */
+    FLUID = 0,
+    /* identifier of boundary and exterior ghost nodes */
+    EXTERIOR = -1,
+    /* entry number of particle information */
+    ENTRYPTK = 11, /* x, y, z, r, rho, u, v, w, fx, fy, fz */
+    /* entry number of calculated geometry information */
+    ENTRYGEO = 7, /* x, y, z, distance to surface, normalX, normalY, normalZ */
+    /* maximum number of probes to support, extra 2 needed */
+    NPROBE = 12,
+    /* entry number of probe information */
+    ENTRYPROBE = 6, /* x1, y1, z1, x2, y2, z2 */
+    /* number of inner subpartitions */
+    NSUBPART = 13, /* flow region, [west, east, south, north, front, back] x [BC, Ghost] */
+    /* max index of inner partitions of physical BC */
+    NBC = 7, /* flow region, [west, east, south, north, front, back] x [BC] */
+    /* maximum number of regional initionalizer to support, extra 1 needed */
+    NIC = 11,
+    /* entry number of regional initionalizer information */
+    ENTRYIC = 15, /* x1, y1, z1, r, x2, y2, z2, ..., primitive variables */
+} Constants;
+/*
  * Field variables of flow
  *
- * Conservative variables are vectors with five elements (rho, rho_u, rho_v,
- * rho_w, rho_eT), while each element is a three dimensional array in 3D space.
- * Thus, the conservative variables need to be presented as a 4 dimensional
- * array in 3D flow.
+ * Conservative variables are vectors with many elements, with each element
+ * is a three dimensional array in 3D space.
  *
  * Using high order pointers (arrays) is complicated. The pointers in the 
  * array of arrays of arrays waste space and the malloc( ) calls are 
@@ -464,7 +503,7 @@ typedef double Real;
  * result is fewer cache misses and much better performance.
  *
  * This code use nested loops with linear array and index math instead nested
- * loops with multi-dimensional arrays, because we need to store five
+ * loops with multi-dimensional arrays. Because we need to store a sequence of
  * conservative variables at each (k,j,i), the most efficient index arrangement
  * should be the following:
  *
@@ -482,7 +521,7 @@ typedef struct {
     Real *Un; /* store the "old" field data for intermediate calculation */
     Real *U; /* store updating field data, and updated data after every computation  */
     Real *Uswap; /* an auxiliary storage space */
-}Field;
+} Field;
 /*
  * Space domain parameters
  */
@@ -495,7 +534,6 @@ typedef struct {
     int jMax; /* total node number in y */
     int kMax; /* total node number in z */
     int nMax; /* total node number */
-    int dimU; /* dimension of field variable vector */
     Real dx; /* mesh size in x */
     Real dy; /* mesh size in y */
     Real dz; /* mesh size in z */
@@ -508,17 +546,15 @@ typedef struct {
     Real xMax; /* coordinates define the space domain */
     Real yMax; /* coordinates define the space domain */
     Real zMax; /* coordinates define the space domain */
-    int nodeFlagOffset; /* node type separator */
     int *nodeFlag; /* node type integer flag: normal, ghost, solid, etc. */
-}Space;
+} Space;
 /*
  * Particle Entities
  */
 typedef struct {
     int totalN; /* total number of particles */
-    int entryN; /* number of information entries for each particle */
     Real *headAddress; /* record the head address that stores information */
-}Particle;
+} Particle;
 /*
  * Time domain parameters
  */
@@ -533,7 +569,7 @@ typedef struct {
     int totalOutputTimes; /* total times of exporting computed data */
     int outputCount; /* exporting data count */
     int dataStreamer; /* types of data streamer */
-}Time;
+} Time;
 /*
  * Flow properties and physics parameters
  */
@@ -549,37 +585,35 @@ typedef struct {
     Real refDensity; /* characteristic density */
     Real refVelocity;  /*characteristic velocity */
     Real refTemperature; /* characteristic temperature */
-    int probe[12]; /* store various information of probes */
-    Real probePos[11][6]; /* store position information of probes */
-}Flow;
+    int probe[NPROBE]; /* store tally and resolution information of probes */
+    Real probePos[NPROBE][ENTRYPROBE]; /* store position information of probes */
+} Flow;
 /*
  * Domain partition structure
  */
 typedef struct {
     int totalN; /* total number of domain partitions */
-    int subN; /* inner partitions for each partition */
-    int kSub[13]; /* inner decomposition control for each partition */
-    int kSup[13];
-    int jSub[13];
-    int jSup[13];
-    int iSub[13];
-    int iSup[13];
-    int normalZ[7]; /* outer surface normal vector of each inner part */
-    int normalY[7];
-    int normalX[7];
-    int typeBC[7]; /* BC type of each inner part */
-    Real valueBC[7][6]; /* BC values of each inner part */
-    char name[13][15]; /* store names of each inner part */
-    int typeIC[11]; /* list structure for recording regional initial conditions */
-    Real valueIC[11][15]; /* queue data structure for storing regional initial values */
-}Partition;
+    int kSub[NSUBPART]; /* inner decomposition control for each partition */
+    int kSup[NSUBPART];
+    int jSub[NSUBPART];
+    int jSup[NSUBPART];
+    int iSub[NSUBPART];
+    int iSup[NSUBPART];
+    int normalZ[NBC]; /* outer surface normal vector of physical BC parts */
+    int normalY[NBC];
+    int normalX[NBC];
+    int typeBC[NBC]; /* BC types recorder */
+    Real valueBC[NBC][DIMUo]; /* BC values of each BC part */
+    int typeIC[NIC]; /* list structure for recording regional initial conditions */
+    Real valueIC[NIC][ENTRYIC]; /* queue data structure for storing regional initial values */
+} Partition;
 /*
  * Program command line arguments and overall control
  */
 typedef struct {
     char runMode; /* mode: [s] serial, [i] interact, [t] threaded, [m] mpi, [g] gpu */
     int processorN; /* number of processors */
-}Control;
+} Control;
 /****************************************************************************
  * Public Functions Declaration
  ****************************************************************************/
@@ -660,7 +694,7 @@ extern int RetrieveStorage(void *pointer);
  * Returns
  *      int -- the calculated index value
  */
-extern int IndexMath(const int k, const int j, const int i, const Space *space);
+extern int IndexMath(const int k, const int j, const int i, const Space *);
 /*
  * Coordinates transformation
  *
@@ -692,21 +726,21 @@ extern int MaxInt(const int x, const int y);
  * Compute the values of primitive variable vector.
  *
  * Parameter
- *      Uo[] -- a array stores the returned values of [rho, u, v, w, p, T].
+ *      Uo[] -- a array stores the returned values of primitives.
  *      idx  -- the index of current node.
  * Returns
  *      0 -- successful
  */
 extern int PrimitiveByConservative(Real Uo[], const int idx, const Real *U, const Flow *);
-extern Real ComputePressure(const int idx, const Real *U, const Flow *flow);
-extern Real ComputeTemperature(const int idx, const Real *U, const Flow *flow);
+extern Real ComputePressure(const int idx, const Real *U, const Flow *);
+extern Real ComputeTemperature(const int idx, const Real *U, const Flow *);
 /*
  * Compute and update conservative variable vector.
  *
  * Function
  *      Compute and update conservative variable vector according to primitive values.
  */
-extern int ConservativeByPrimitive(Real *U, const int idx, const Real Uo[], const Flow *flow);
+extern int ConservativeByPrimitive(Real *U, const int idx, const Real Uo[], const Flow *);
 #endif
 /* a good practice: end file with a newline */
 

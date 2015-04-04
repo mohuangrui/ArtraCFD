@@ -36,7 +36,6 @@ int main(int argc, char *argv[])
         .jMax = 0,
         .kMax = 0,
         .nMax = 0,
-        .dimU = 0,
         .dx = 0.0,
         .dy = 0.0,
         .dz = 0.0,
@@ -49,11 +48,9 @@ int main(int argc, char *argv[])
         .xMax = 0.0,
         .yMax = 0.0,
         .zMax = 0.0,
-        .nodeFlagOffset = 0,
         .nodeFlag = NULL};
     Particle theParticle = { /* particle entities */
         .totalN = 0,
-        .entryN = 0,
         .headAddress = NULL};
     Time theTime = { /* time dimensions */
         .restart = 0,
@@ -82,7 +79,6 @@ int main(int argc, char *argv[])
         .probePos = {{0.0}}};
     Partition thePart = { /* domain partition control */
         .totalN = 1,
-        .subN = 0,
         .kSub = {0},
         .kSup = {0},
         .jSub = {0},
@@ -94,7 +90,6 @@ int main(int argc, char *argv[])
         .normalX = {0},
         .typeBC = {0},
         .valueBC = {{0.0}},
-        .name = {{'\0'}},
         .typeIC = {0},
         .valueIC = {{0.0}}};
     Control theControl = { /* program overall control */

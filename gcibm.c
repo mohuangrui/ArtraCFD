@@ -21,17 +21,12 @@ static int IdentifyGhostNodes(Space *, const Partition *);
 static int IdentifySolidNodesAtNumericalBoundary(Space *, const Particle *, 
         const Partition *);
 static int SearchFluidNodes(const int k, const int j, const int i, 
-        const int offset, const Space *);
+        const int h, const Space *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
 /*
  * These functions identify the type of each node: 
- * -1:                  boundary and exterior ghost node,
- * 0:                   interior fluid node,
- * <= -offset:          interior solid node,
- * >= offset:           interior ghost node, 
- * <= -offset - totalN: interior solid node required for numerical boundary.
  *
  * Procedures are:
  * -- initialize node flag of boundary and exterior nodes to boundary type,
@@ -184,17 +179,17 @@ static int IdentifySolidNodesAtNumericalBoundary(Space *space,
 }
 /*
  * Search around current node and check whether current node has at
- * least one fluid node regarding to the specified coordinate offset.
+ * least one fluid node regarding to the specified coordinate range.
  */
 static int SearchFluidNodes(const int k, const int j, const int i, 
-        const int offset, const Space *space)
+        const int h, const Space *space)
 {
-    const int idxW = IndexMath(k, j, i - offset, space);
-    const int idxE = IndexMath(k, j, i + offset, space);
-    const int idxS = IndexMath(k, j - offset, i, space);
-    const int idxN = IndexMath(k, j + offset, i, space);
-    const int idxF = IndexMath(k - offset, j, i, space);
-    const int idxB = IndexMath(k + offset, j, i, space);
+    const int idxW = IndexMath(k, j, i - h, space);
+    const int idxE = IndexMath(k, j, i + h, space);
+    const int idxS = IndexMath(k, j - h, i, space);
+    const int idxN = IndexMath(k, j + h, i, space);
+    const int idxF = IndexMath(k - h, j, i, space);
+    const int idxB = IndexMath(k + h, j, i, space);
     /* caution: enough ghost layers are quired to avoid illegal index */
     return (space->nodeFlag[idxW] * space->nodeFlag[idxE] * 
             space->nodeFlag[idxS] * space->nodeFlag[idxN] * 
