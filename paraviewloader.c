@@ -93,13 +93,13 @@ static int LoadParaviewVariableFile(Real *U, ParaviewSet *paraSet,
     if (sizeof(ParaviewReal) == sizeof(float)) {
         strncpy(format, "%g", sizeof format); /* float type */
     }
-    for (int dim = 0; dim < space->dimU; ++dim) {
+    for (int dim = 0; dim < DIMU; ++dim) {
         fgets(currentLine, sizeof currentLine, filePointer);
         for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
             for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
                 for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                     fscanf(filePointer, format, &data);
-                    idx = IndexMath(k, j, i, space) * space->dimU;
+                    idx = IndexMath(k, j, i, space) * DIMU;
                     switch (dim) {
                         case 0: /* rho */
                             U[idx] = data;
@@ -114,8 +114,7 @@ static int LoadParaviewVariableFile(Real *U, ParaviewSet *paraSet,
                             U[idx+3] = U[idx] * data;
                             break;
                         case 4: /* p */
-                            U[idx+4] = data / (flow->gamma - 1.0) + 0.5 * 
-                                (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx];
+                            U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] + data / flow->gammaMinusOne;
                             break;
                         default:
                             break;
