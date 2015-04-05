@@ -93,6 +93,7 @@ static int InitializeCFDParameters(Space *space, Time *time, Flow *flow)
     space->ddx = 1.0 / space->dx;
     space->ddy = 1.0 / space->dy;
     space->ddz = 1.0 / space->dz;
+    space->tinyL = 1.0e-3 * MinReal(space->dz, MinReal(space->dx, space->dy));
     /* time */
     time->totalTime = time->totalTime * flow->refVelocity / flow->refLength;
     if ((0 > time->totalStep)) {
@@ -100,6 +101,7 @@ static int InitializeCFDParameters(Space *space, Time *time, Flow *flow)
     }
     /* fluid and flow */
     flow->gamma = 1.4;
+    flow->gammaMinusOne = flow->gamma - 1;
     flow->gasR = 8.314462175;
     /* reference Mach number */
     flow->refMa = flow->refVelocity / sqrt(flow->gamma * flow->gasR * flow->refTemperature);

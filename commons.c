@@ -236,7 +236,6 @@ int MaxInt(const int x, const int y)
 }
 /*
  * Get value of primitive variable vector.
- * [rho, u, v, w, p, T]
  */
 int PrimitiveByConservative(Real Uo[], const int idx, const Real *U, const Flow *flow)
 {
@@ -244,14 +243,11 @@ int PrimitiveByConservative(Real Uo[], const int idx, const Real *U, const Flow 
     Uo[1] = U[idx+1] / U[idx];
     Uo[2] = U[idx+2] / U[idx];
     Uo[3] = U[idx+3] / U[idx];
-    Uo[4] = (flow->gamma - 1.0) * (U[idx+4] - 0.5 * 
-            ((U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]));
-    Uo[5] = (Uo[4] / U[idx]) / flow->gasR;
+    Uo[4] = (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) * flow->gammaMinusOne;
     return 0;
 }
 /*
- * Compute and update conservative variable vector according to primitive
- * values.
+ * Compute conservative variable vector according to primitives.
  */
 int ConservativeByPrimitive(Real *U, const int idx, const Real Uo[], const Flow *flow)
 {
@@ -259,19 +255,16 @@ int ConservativeByPrimitive(Real *U, const int idx, const Real Uo[], const Flow 
     U[idx+1] = Uo[0] * Uo[1];
     U[idx+2] = Uo[0] * Uo[2];
     U[idx+3] = Uo[0] * Uo[3];
-    U[idx+4] = Uo[4] / (flow->gamma - 1.0) + 
-        0.5 * Uo[0] * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]);
+    U[idx+4] = 0.5 * Uo[0] * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]) + Uo[4] / flow->gammaMinusOne; 
     return 0;
 }
 Real ComputePressure(const int idx, const Real *U, const Flow *flow)
 {
-    return ((flow->gamma - 1.0) * (U[idx+4] - 0.5 * ((U[idx+1] * U[idx+1] + 
-                        U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx])));
+    return (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) * flow->gammaMinusOne;
 }
 Real ComputeTemperature(const int idx, const Real *U, const Flow *flow)
 {
-    return ((U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + 
-                    U[idx+3] * U[idx+3]) / U[idx]) / (U[idx] * flow->cv));
+    return (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) / (U[idx] * flow->cv);
 }
 /* a good practice: end file with a newline */
 

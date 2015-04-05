@@ -447,8 +447,8 @@ typedef double Real;
 typedef enum {
     /* dimension of conservative vector */
     DIMU = 5, /* rho, rho_u, rho_v, rho_w, rho_eT */
-    /* dimension of primitive vector */
-    DIMUo = 6,  /* rho, u, v, w, p, T */
+    /* dimension of primitive vector, contents depend on specific situations */
+    DIMUo = 6,  /* rho, u, v, w, [p, hT], [T, c, others] */
     /* 
      * offset of node flag range
      * >= offset:           interior ghost node, 
@@ -474,6 +474,8 @@ typedef enum {
     NSUBPART = 13, /* flow region, [west, east, south, north, front, back] x [BC, Ghost] */
     /* max index of inner partitions of physical BC */
     NBC = 7, /* flow region, [west, east, south, north, front, back] x [BC] */
+    /* entry number of BC information */
+    ENTRYBC = 6, /* primitive variables */
     /* maximum number of regional initionalizer to support, extra 1 needed */
     NIC = 11,
     /* entry number of regional initionalizer information */
@@ -540,6 +542,7 @@ typedef struct {
     Real ddx; /* reciprocal of mesh size in x */
     Real ddy; /* reciprocal of mesh size in y */
     Real ddz; /* reciprocal of mesh size in z */
+    Real tinyL; /* smallest admitable length scale related to grid size */
     Real xMin; /* coordinates define the space domain */
     Real yMin; /* coordinates define the space domain */
     Real zMin; /* coordinates define the space domain */
@@ -578,6 +581,7 @@ typedef struct {
     Real refMu; /* reference dynamic viscosity for Sutherland's law */
     Real refPr; /* reference Prandtl number */
     Real gamma; /* heat capacity ratio */
+    Real gammaMinusOne; /* heat capacity ratio minus one */
     Real gasR; /* the gas constant */
     Real cv; /* specific heat capacity at constant volume */
     Real delta; /* numerical dissipation */
@@ -603,7 +607,7 @@ typedef struct {
     int normalY[NBC];
     int normalX[NBC];
     int typeBC[NBC]; /* BC types recorder */
-    Real valueBC[NBC][DIMUo]; /* BC values of each BC part */
+    Real valueBC[NBC][ENTRYBC]; /* BC values of each BC part */
     int typeIC[NIC]; /* list structure for recording regional initial conditions */
     Real valueIC[NIC][ENTRYIC]; /* queue data structure for storing regional initial values */
 } Partition;
@@ -728,8 +732,8 @@ extern int MaxInt(const int x, const int y);
  * Parameter
  *      Uo[] -- a array stores the returned values of primitives.
  *      idx  -- the index of current node.
- * Returns
- *      0 -- successful
+ * Notice
+ *      calculated values are [rho, u, v, w, p]
  */
 extern int PrimitiveByConservative(Real Uo[], const int idx, const Real *U, const Flow *);
 extern Real ComputePressure(const int idx, const Real *U, const Flow *);
