@@ -300,6 +300,7 @@ static int ApplyWeighting(Real Uo[], Real weight, const Real Uoh[], const Real t
     Uo[3] = Uo[3] + Uoh[3] * weight; /* w */
     Uo[4] = Uo[4] + Uoh[4] * weight; /* p */
     Uo[DIMUo-1] = Uo[DIMUo-1] + weight; /* accumulate normalizer */
+    return 0;
 }
 int NormalizeReconstructedValues(Real Uo[])
 {
@@ -309,6 +310,7 @@ int NormalizeReconstructedValues(Real Uo[])
     Uo[2] = Uo[2] / Uo[DIMUo-1]; /* v */
     Uo[3] = Uo[3] / Uo[DIMUo-1]; /* w */
     Uo[4] = Uo[4] / Uo[DIMUo-1]; /* p */
+    return 0;
 }
 Real InGeometry(const int k, const int j, const int i, const Real *ptk, const Space *space)
 {
