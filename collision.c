@@ -29,17 +29,14 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space,
     /*
      * Update particle velocity and position
      */
-    int geoID = 0; /* geometry id */
-    Real info[10] = {0.0}; /* store calculated geometry information */
+    Real *ptk = NULL;
     Real mass = 0.0; /* mass of particles */
-    const Real pi = acos(-1);
-    const int offset = space->nodeFlagOffset;
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        Real *ptk = particle->headAddress + geoCount * particle->entryN;
-        if (0 == space->dx * space->dy * space->dz) {
-            mass = ptk[4] * pi * ptk[3] * ptk[3];
+        ptk = IndexGeometry(geoCount, particle);
+        if (1 == space->collapsed) {
+            mass = ptk[4] * ptk[3] * ptk[3] * flow->pi;
         } else {
-            mass = ptk[4] * (4.0 / 3.0) * pi * ptk[3] * ptk[3] * ptk[3];
+            mass = ptk[4] * (4.0 / 3.0) * ptk[3] * ptk[3] * ptk[3] * flow->pi;
         }
         /* velocity */
         ptk[5] = ptk[5] + dt * ptk[8] / mass;
@@ -59,23 +56,30 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space,
      * condition of flow. Therefore, only ghost nodes need to be verified.
      */
     int idx = 0; /* linear array index math variable */
-    Real Uo[6] = {0.0}; /* store weighted primitives */
+    Real Uo[DIMUo] = {0.0}; /* store weighted primitives */
+    int geoID = 0; /* geometry id */
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = IndexMath(k, j, i, space);
-                if (offset > space->nodeFlag[idx]) { /* it's not a ghost */
+                if (OFFSET > space->nodeFlag[idx]) { /* it's not a ghost */
                     continue;
                 }
-                geoID = space->nodeFlag[idx] - offset; /* extract geometry information */
-                CalculateGeometryInformation(info, k, j, i, geoID, space, particle);
-                if (0 < info[4]) { /* still in the solid geometry */
+                geoID = space->nodeFlag[idx] - OFFSET; /* extract geometry information */
+                ptk = IndexGeometry(geoID, particle);
+                if (0 > InGeometry(k, j, i, ptk, space)) { /* still in the solid geometry */
                     continue;
                 }
                 /* reconstruction of flow values */
-                Reconstruction(Uo, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
-                        k, j, i, U, space, flow);
-                ConservativeByPrimitive(U, idx * space->dimU, Uo, flow);
+                InverseDistanceWeighting(Uo, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
+                        k, j, i, 2, U, space, flow);
+                /* Normalize the weighted values as reconstructed values. */
+                Uo[0] = Uo[0] / Uo[DIMUo-1]; /* rho */
+                Uo[1] = Uo[1] / Uo[DIMUo-1]; /* u */
+                Uo[2] = Uo[2] / Uo[DIMUo-1]; /* v */
+                Uo[3] = Uo[3] / Uo[DIMUo-1]; /* w */
+                Uo[4] = Uo[4] / Uo[DIMUo-1]; /* p */
+                ConservativeByPrimitive(U, idx * DIMU, Uo, flow);
             }
         }
     }
@@ -101,14 +105,13 @@ static int SurfaceForceIntegration(const Real *U, const Space *space,
 {
     int idx = 0; /* linear array index math variable */
     int geoID = 0; /* geometry id */
-    Real info[10] = {0.0}; /* store calculated geometry information */
+    Real *ptk = NULL;
+    Real info[INFOGEO] = {0.0}; /* store calculated geometry information */
     Real ds = 0.0; /* surface differential area */
-    const Real pi = acos(-1);
     Real p = 0.0;
-    const int offset = space->nodeFlagOffset;
     /* reset some non accumulative information of particles to zero */
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        Real *ptk = particle->headAddress + geoCount * particle->entryN;
+        ptk = IndexGeometry(geoCount, particle);
         ptk[8] = 0; /* force at x direction */
         ptk[9] = 0; /* force at y direction */
         ptk[10] = 0; /* force at z direction */
@@ -118,13 +121,13 @@ static int SurfaceForceIntegration(const Real *U, const Space *space,
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = IndexMath(k, j, i, space);
-                if (offset > space->nodeFlag[idx]) { /* it's not a ghost */
+                if (OFFSET > space->nodeFlag[idx]) { /* it's not a ghost */
                     continue;
                 }
-                geoID = space->nodeFlag[idx] - offset; /* extract geometry information */
-                Real *ptk = particle->headAddress + geoID * particle->entryN;
-                CalculateGeometryInformation(info, k, j, i, geoID, space, particle);
-                p = ComputePressure(idx * space->dimU, U, flow);
+                geoID = space->nodeFlag[idx] - OFFSET; /* extract geometry information */
+                ptk = IndexGeometry(geoID, particle);
+                CalculateGeometryInformation(info, k, j, i, ptk, space);
+                p = ComputePressure(idx * DIMU, U, flow);
                 ptk[8] = -p * info[5]; /* increase fx by pressure projection on x */
                 ptk[9] = -p * info[6]; /* increase fy by pressure projection on y */
                 ptk[10] = -p * info[7]; /* increase fz by pressure projection on z */
@@ -135,11 +138,11 @@ static int SurfaceForceIntegration(const Real *U, const Space *space,
     }
     /* calibrate the sum of discrete forces into integration */
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        Real *ptk = particle->headAddress + geoCount * particle->entryN;
-        if (0 == space->dx * space->dy * space->dz) { /* space dimension collapsed */
-            ds = 2.0 * pi * ptk[3] / ptk[11]; /* circle perimeter */
+        ptk = IndexGeometry(geoCount, particle);
+        if (1 == space->collapsed) { /* space dimension collapsed */
+            ds = 2.0 * ptk[3] / ptk[11] * flow->pi; /* circle perimeter */
         } else {
-            ds = 4.0 * pi * ptk[3] * ptk[3] / ptk[11]; /* sphere surface */
+            ds = 4.0 * ptk[3] * ptk[3] / ptk[11] * flow->pi; /* sphere surface */
         }
         ptk[8] = ptk[8] * ds;
         ptk[9] = ptk[9] * ds;

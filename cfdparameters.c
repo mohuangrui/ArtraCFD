@@ -63,6 +63,10 @@ int ComputeCFDParameters(Space *space, Time *time, Flow *flow)
  */
 static int NodeBasedMeshNumberRefine(Space *space)
 {
+    /* check whether space collapsed */
+    if (0 == (space->nz - 1) * (space->ny - 1) * (space->nx - 1)) {
+        space->collapsed = 1;
+    }
     /* change from number of cells to number of node layers */
     space->nz = space->nz + 2;
     space->ny = space->ny + 2;
@@ -103,6 +107,7 @@ static int InitializeCFDParameters(Space *space, Time *time, Flow *flow)
     flow->gamma = 1.4;
     flow->gammaMinusOne = flow->gamma - 1;
     flow->gasR = 8.314462175;
+    flow->pi = acos(-1);
     /* reference Mach number */
     flow->refMa = flow->refVelocity / sqrt(flow->gamma * flow->gasR * flow->refTemperature);
     /* reference dynamic viscosity for viscosity normalization and modify Sutherland's law */

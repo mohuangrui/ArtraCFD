@@ -465,7 +465,7 @@ typedef enum {
     /* entry number of particle information */
     ENTRYPTK = 12, /* x, y, z, r, rho, u, v, w, fx, fy, fz, tally */
     /* entry number of calculated geometry information */
-    INFOGEO = 7, /* x, y, z, distance to surface, normalX, normalY, normalZ */
+    INFOGEO = 8, /* x, y, z, distance to center, to surface, normalX, normalY, normalZ */
     /* maximum number of probes to support */
     NPROBE = 10,
     /* entry number of probe information */
@@ -536,6 +536,7 @@ typedef struct {
     int jMax; /* total node number in y */
     int iMax; /* total node number in x */
     int nMax; /* total node number */
+    int collapsed; /* space collapse flag */
     Real dz; /* mesh size in z */
     Real dy; /* mesh size in y */
     Real dx; /* mesh size in x */
@@ -584,6 +585,7 @@ typedef struct {
     Real gammaMinusOne; /* heat capacity ratio minus one */
     Real gasR; /* the gas constant */
     Real cv; /* specific heat capacity at constant volume */
+    Real pi; /* pi */
     Real delta; /* numerical dissipation */
     Real refLength; /* characteristic length */
     Real refDensity; /* characteristic density */
