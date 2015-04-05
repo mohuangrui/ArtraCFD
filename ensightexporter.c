@@ -194,13 +194,11 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
     int nodeCount[3] = {0, 0, 0}; /* i j k node number in each part */
     int blankID = 0; /* Ensight geometry iblank entry */
     EnsightReal data = 0.0; /* the ensight data format */
-    char partName[10] = "part 0"; /* name of each part */
     for (int partCount = 0, partNum = 1; partCount < NSUBPART; ++partCount, ++partNum) {
         strncpy(enSet->stringData, "part", sizeof(EnsightString));
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
         fwrite(&partNum, sizeof(int), 1, filePointer);
-        snprintf(partName, sizeof partName, "part %d", partCount);
-        strncpy(enSet->stringData, partName, sizeof(EnsightString));
+        snprintf(enSet->stringData, sizeof(EnsightString), "part %d", partCount);
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
         strncpy(enSet->stringData, "block iblanked", sizeof(EnsightString));
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
