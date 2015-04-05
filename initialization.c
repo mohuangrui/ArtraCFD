@@ -53,13 +53,12 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
 {
     ShowInformation("  Non-restart run initializing...");
     /* extract initial values */
-    const Real Uo[6] = {
+    const Real Uo[DIMUo] = {
         part->valueBC[0][0],
         part->valueBC[0][1],
         part->valueBC[0][2],
         part->valueBC[0][3],
-        part->valueBC[0][4],
-        0.0};
+        part->valueBC[0][4]};
     /*
      * Initialize the interior field
      */
@@ -67,7 +66,7 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = IndexMath(k, j, i, space) * space->dimU;
+                idx = IndexMath(k, j, i, space) * DIMU;
                 ConservativeByPrimitive(U, idx, Uo, flow);
             }
         }
@@ -75,7 +74,7 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
     /*
      * Regional initializer for specific flow regions
      */
-    for (int n = 1; n <= part->typeIC[0]; ++n) {
+    for (int n = 0; n < part->tallyIC; ++n) {
         ApplyRegionalInitializer(n, U, space, part, flow);
     }
     /*
@@ -86,12 +85,10 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
 }
 /*
  * The handling of regional initialization for specific flow region is achieved
- * through the cooperation of two data structures:
- * The typeIC array keeps a list of the types of regional initialization, with
- * the first element typeIC[0] as a tally, as well as a pointer to search and 
- * manipulate the array when reading in a type entry.
- * The valueIC array is a queue data structure which stored the information of
- * the corresponding IC type.
+ * through the cooperation of three data structures:
+ * The tallyIC counts the number of initializers.
+ * The typeIC array keeps a list of the types of regional initialization.
+ * The valueIC array stored the information of the corresponding IC type.
  * IC types and corresponding information entries:
  * 1: plane (x, y, z, normalX, normalY, normalZ, rho, u, v, w, p)
  * 2: sphere (x, y, z, r, rho, u, v, w, p)
@@ -107,13 +104,12 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
     const Real x = part->valueIC[n][0];
     const Real y = part->valueIC[n][1];
     const Real z = part->valueIC[n][2];
-    const Real Uo[6] = {
-        part->valueIC[n][10],
-        part->valueIC[n][11],
-        part->valueIC[n][12],
-        part->valueIC[n][13],
-        part->valueIC[n][14],
-        0.0};
+    const Real Uo[DIMUo] = {
+        part->valueIC[n][ENTRYIC-5],
+        part->valueIC[n][ENTRYIC-4],
+        part->valueIC[n][ENTRYIC-3],
+        part->valueIC[n][ENTRYIC-2],
+        part->valueIC[n][ENTRYIC-1]};
     /* the vary part */
     Real r = 0.0;
     Real xh = 0.0;
@@ -166,10 +162,10 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
                         }
                         break;
                     case 3: /* box */
-                        normalX = (ComputeX(i, space) - x) * (ComputeX(i, space) - xh);
-                        normalY = (ComputeY(j, space) - y) * (ComputeY(j, space) - yh);
-                        normalZ = (ComputeZ(k, space) - z) * (ComputeZ(k, space) - zh);
-                        if ((0 >= normalX) && (0 >= normalY) && (0 >= normalZ)) { /* in or on the box */
+                        xh = (ComputeX(i, space) - x) * (ComputeX(i, space) - xh);
+                        yh = (ComputeY(j, space) - y) * (ComputeY(j, space) - yh);
+                        zh = (ComputeZ(k, space) - z) * (ComputeZ(k, space) - zh);
+                        if ((0 >= xh) && (0 >= yh) && (0 >= zh)) { /* in or on the box */
                             flag = 1; /* set flag to true */
                         }
                         break;
@@ -177,7 +173,7 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
                         break;
                 }
                 if (1 == flag) { /* current node meets the condition */
-                    idx = IndexMath(k, j, i, space) * space->dimU;
+                    idx = IndexMath(k, j, i, space) * DIMU;
                     ConservativeByPrimitive(U, idx, Uo, flow);
                 }
             }
