@@ -528,27 +528,27 @@ typedef struct {
  * Space domain parameters
  */
 typedef struct {
-    int nx; /* mesh number in x */
-    int ny; /* mesh number in y */
     int nz; /* mesh number in z */
+    int ny; /* mesh number in y */
+    int nx; /* mesh number in x */
     int ng; /* number of layers of ghost cells */
-    int iMax; /* total node number in x */
-    int jMax; /* total node number in y */
     int kMax; /* total node number in z */
+    int jMax; /* total node number in y */
+    int iMax; /* total node number in x */
     int nMax; /* total node number */
-    Real dx; /* mesh size in x */
-    Real dy; /* mesh size in y */
     Real dz; /* mesh size in z */
-    Real ddx; /* reciprocal of mesh size in x */
-    Real ddy; /* reciprocal of mesh size in y */
+    Real dy; /* mesh size in y */
+    Real dx; /* mesh size in x */
     Real ddz; /* reciprocal of mesh size in z */
+    Real ddy; /* reciprocal of mesh size in y */
+    Real ddx; /* reciprocal of mesh size in x */
     Real tinyL; /* smallest admitable length scale related to grid size */
-    Real xMin; /* coordinates define the space domain */
-    Real yMin; /* coordinates define the space domain */
     Real zMin; /* coordinates define the space domain */
-    Real xMax; /* coordinates define the space domain */
-    Real yMax; /* coordinates define the space domain */
+    Real yMin; /* coordinates define the space domain */
+    Real xMin; /* coordinates define the space domain */
     Real zMax; /* coordinates define the space domain */
+    Real yMax; /* coordinates define the space domain */
+    Real xMax; /* coordinates define the space domain */
     int *nodeFlag; /* node type integer flag: normal, ghost, solid, etc. */
 } Space;
 /*
