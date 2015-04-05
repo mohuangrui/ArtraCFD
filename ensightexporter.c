@@ -193,13 +193,14 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
     int idx = 0; /* linear array index math variable */
     int nodeCount[3] = {0, 0, 0}; /* i j k node number in each part */
     int blankID = 0; /* Ensight geometry iblank entry */
-    const int offset = space->nodeFlagOffset;
     EnsightReal data = 0.0; /* the ensight data format */
-    for (int partCount = 0, partNum = 1; partCount < part->subN; ++partCount, ++partNum) {
+    char partName[10] = "part 0"; /* name of each part */
+    for (int partCount = 0, partNum = 1; partCount < NSUBPART; ++partCount, ++partNum) {
         strncpy(enSet->stringData, "part", sizeof(EnsightString));
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
         fwrite(&partNum, sizeof(int), 1, filePointer);
-        strncpy(enSet->stringData, part->name[partCount], sizeof(EnsightString));
+        snprintf(partName, sizeof partName, "part %d", partCount);
+        strncpy(enSet->stringData, partName, sizeof(EnsightString));
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
         strncpy(enSet->stringData, "block iblanked", sizeof(EnsightString));
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
@@ -247,7 +248,7 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
             for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                 for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
                     idx = IndexMath(k, j, i, space);
-                    if ((-offset < space->nodeFlag[idx]) && (offset > space->nodeFlag[idx])) {
+                    if ((-OFFSET < space->nodeFlag[idx]) && (OFFSET > space->nodeFlag[idx])) {
                         blankID = 1;
                     } else { /* inner nodes in geometry */
                         blankID = 0;
@@ -285,7 +286,7 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
         /* first line description per file */
         strncpy(enSet->stringData, "scalar variable", sizeof(EnsightString));
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        for (int partCount = 0, partNum = 1; partCount < part->subN; ++partCount, ++partNum) {
+        for (int partCount = 0, partNum = 1; partCount < NSUBPART; ++partCount, ++partNum) {
             /* binary file format */
             strncpy(enSet->stringData, "part", sizeof(EnsightString));
             fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
@@ -296,7 +297,7 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
             for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
                 for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                     for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                        idx = IndexMath(k, j, i, space) * space->dimU;
+                        idx = IndexMath(k, j, i, space) * DIMU;
                         switch (dim) {
                             case 0: /* rho */
                                 data = U[idx];
@@ -337,7 +338,7 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
     /* binary file format */
     strncpy(enSet->stringData, "vector variable", sizeof(EnsightString));
     fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-    for (int partCount = 0, partNum = 1; partCount < part->subN; ++partCount, ++partNum) {
+    for (int partCount = 0, partNum = 1; partCount < NSUBPART; ++partCount, ++partNum) {
         strncpy(enSet->stringData, "part", sizeof(EnsightString));
         fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
         fwrite(&partNum, sizeof(int), 1, filePointer);
@@ -352,7 +353,7 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
             for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
                 for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                     for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
-                        idx = IndexMath(k, j, i, space) * space->dimU;
+                        idx = IndexMath(k, j, i, space) * DIMU;
                         switch (dim) {
                             case 1: /* u */
                                 data = U[idx+1] / U[idx];

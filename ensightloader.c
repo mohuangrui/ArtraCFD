@@ -78,14 +78,14 @@ static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,
     int idx = 0; /* linear array index math variable */
     EnsightReal data = 0.0; /* the ensight data format */
     const char nameSuffix[5][10] = {"rho", "u", "v", "w", "p"};
-    for (int dim = 0; dim < space->dimU; ++dim) {
+    for (int dim = 0; dim < DIMU; ++dim) {
         snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
         filePointer = fopen(enSet->fileName, "rb");
         if (NULL == filePointer) {
             FatalError("failed to open restart data files...");
         }
         fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        for (int partCount = 0, partNum = 1; partCount < part->subN; ++partCount) {
+        for (int partCount = 0, partNum = 1; partCount < NSUBPART; ++partCount) {
             fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
             fread(&partNum, sizeof(int), 1, filePointer);
             fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
@@ -93,7 +93,7 @@ static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,
                 for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
                     for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
                         fread(&data, sizeof(EnsightReal), 1, filePointer);
-                        idx = IndexMath(k, j, i, space) * space->dimU;
+                        idx = IndexMath(k, j, i, space) * DIMU;
                         switch (dim) {
                             case 0: /* rho */
                                 U[idx] = data;
@@ -108,8 +108,7 @@ static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,
                                 U[idx+3] = U[idx] * data;
                                 break;
                             case 4: /* p */
-                                U[idx+4] = data / (flow->gamma - 1.0) + 0.5 * 
-                                    (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx];
+                                U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] + data / flow->gammaMinusOne;
                                 break;
                             default:
                                 break;

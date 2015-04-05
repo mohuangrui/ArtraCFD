@@ -445,7 +445,7 @@ typedef double Real;
  * enum statement is used instead of macros for handling these magic numbers.
  */
 typedef enum {
-    /* dimension of conservative vector */
+    /* dimension of conservative vector, maximum independent primitives */
     DIMU = 5, /* rho, rho_u, rho_v, rho_w, rho_eT */
     /* dimension of primitive vector, contents depend on specific situations */
     DIMUo = 6,  /* rho, u, v, w, [p, hT], [T, c, others] */
@@ -470,15 +470,15 @@ typedef enum {
     NPROBE = 10,
     /* entry number of probe information */
     ENTRYPROBE = 7, /* x1, y1, z1, x2, y2, z2, resolution */
-    /* number of inner subpartitions */
+    /* number of inner sub partitions */
     NSUBPART = 13, /* flow region, [west, east, south, north, front, back] x [BC, Ghost] */
     /* max index of inner partitions of physical BC */
     NBC = 7, /* flow region, [west, east, south, north, front, back] x [BC] */
     /* entry number of BC information */
     ENTRYBC = 6, /* rho, u, v, w, p, T */
-    /* maximum number of regional initionalizer to support */
+    /* maximum number of regional initializer to support */
     NIC = 10,
-    /* entry number of regional initionalizer information */
+    /* entry number of regional initializer information */
     ENTRYIC = 11, /* x1, y1, z1, [r, x2], y2, z2, ..., primitive variables */
 } Constants;
 /*
