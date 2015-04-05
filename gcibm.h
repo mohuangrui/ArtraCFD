@@ -35,16 +35,33 @@ extern int ComputeDomainGeometryGCIBM(Space *, Particle *, const Partition *);
 extern int BoundaryConditionGCIBM(Real *U, const Space *, const Particle *, 
         const Partition *, const Flow *);
 /*
- * Flow values reconstruction
+ * Inverse Distance Weighting
  *
  * Function
  *      Reconstruction of the values of primitive vector Uo for a spatial
- *      point (z, y, x) based on the neighbours around node (k, j, i). 
- *      The inversed distance approach is adopted here.
+ *      point (z, y, x) based on the neighbours around node (k, j, i) in
+ *      index range h by inversed distance weighting.
+ *
+ * Return
+ *      Weighted values without normalization, the normalization factor is
+ *      saved and returned at the last element of Uo.
  */
-extern int Reconstruction(Real Uo[], const Real z, const Real y, const Real x,
-        const int k, const int j, const int i, const Real *U, const Space *,
-        const Flow *);
+extern int InverseDistanceWeighting(Real Uo[], const Real z, const Real y, const Real x,
+        const int k, const int j, const int i, const int h, const Real *U, 
+        const Space *, const Flow *);
+/*
+ * In geometry criteria
+ *
+ * Function
+ *      Check node whether locates in the geometry pointed by the geometry
+ *      pointer.
+ *
+ * Return
+ *      negative -- in current geometry
+ *      zero     -- on current geometry
+ *      positive -- out of current geometry
+ */
+extern Real InGeometry(const int k, const int j, const int i, const Real *ptk, const Space *);
 /*
  * Calculate geometry information
  *
@@ -53,7 +70,7 @@ extern int Reconstruction(Real Uo[], const Real z, const Real y, const Real x,
  *      Calculate geometry information of current node.
  */
 extern int CalculateGeometryInformation(Real info[], const int k, const int j, 
-        const int i, const int geoID, const Space *, const Particle *);
+        const int i, const Real *ptk, const Space *);
 #endif
 /* a good practice: end file with a newline */
 

@@ -64,17 +64,12 @@ int ComputeDomainGeometryGCIBM(Space *space, Particle *particle, const Partition
 static int InitializeDomainGeometry(Space *space, const Partition *part)
 {
     /*
-     * Set the value of offset to specify the range assignment for node type
-     * identifier.
-     */
-    space->nodeFlagOffset = 10;
-    /*
      * Initialize the entire domain to boundary type. Operation can be achieved
      * by a single loop since all data are stored by linear arrays.
      */
     int idx = 0; /* linear array index math variable */
     for (idx = 0; idx < space->nMax; ++idx) {
-        space->nodeFlag[idx] = -1;
+        space->nodeFlag[idx] = EXTERIOR;
     }
     /*
      * Initialize inner nodes to fluid type.
@@ -83,7 +78,7 @@ static int InitializeDomainGeometry(Space *space, const Partition *part)
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = IndexMath(k, j, i, space);
-                space->nodeFlag[idx] = 0;
+                space->nodeFlag[idx] = FLUID;
             }
         }
     }
@@ -103,31 +98,28 @@ static int InitializeDomainGeometry(Space *space, const Partition *part)
 static int LocateSolidGeometry(Space *space, const Particle *particle, const Partition *part)
 {
     int idx = 0; /* linear array index math variable */
-    Real info[10] = {0.0}; /* store calculated geometry information */
-    const int offset = space->nodeFlagOffset;
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        const Real *ptk = particle->headAddress + geoCount * particle->entryN;
-        const int iCenter = ComputeI(ptk[0], space);
-        const int jCenter = ComputeJ(ptk[1], space);
-        const int kCenter = ComputeK(ptk[2], space);
+        const Real *ptk = IndexGeometry(geoCount, particle);
+        const int centerI = ComputeI(ptk[0], space);
+        const int centerJ = ComputeJ(ptk[1], space);
+        const int centerK = ComputeK(ptk[2], space);
         const Real safetyCoe = 1.2; /* zoom the search range */
-        const int iRange = (int)(safetyCoe * ptk[3] * space->ddx);
-        const int jRange = (int)(safetyCoe * ptk[3] * space->ddy);
-        const int kRange = (int)(safetyCoe * ptk[3] * space->ddz);
+        const int rangeK = (int)(safetyCoe * ptk[3] * space->ddz);
+        const int rangeJ = (int)(safetyCoe * ptk[3] * space->ddy);
+        const int rangeI = (int)(safetyCoe * ptk[3] * space->ddx);
         /* determine search range according to valid flow region */
-        const int kSub = FlowRegionK(kCenter - kRange, part);
-        const int kSup = FlowRegionK(kCenter + kRange, part) + 1;
-        const int jSub = FlowRegionJ(jCenter - jRange, part);
-        const int jSup = FlowRegionJ(jCenter + jRange, part) + 1;
-        const int iSub = FlowRegionI(iCenter - iRange, part);
-        const int iSup = FlowRegionI(iCenter + iRange, part) + 1;
+        const int kSub = FlowRegionK(centerK - rangeK, part);
+        const int kSup = FlowRegionK(centerK + rangeK, part) + 1;
+        const int jSub = FlowRegionJ(centerJ - rangeJ, part);
+        const int jSup = FlowRegionJ(centerJ + rangeJ, part) + 1;
+        const int iSub = FlowRegionI(centerI - rangeI, part);
+        const int iSup = FlowRegionI(centerI + rangeI, part) + 1;
         for (int k = kSub; k < kSup; ++k) {
             for (int j = jSub; j < jSup; ++j) {
                 for (int i = iSub; i < iSup; ++i) {
-                    CalculateGeometryInformation(info, k, j, i, geoCount, space, particle);
-                    if (0 < info[4]) { /* in the solid geometry */
+                    if (0 > InGeometry(k, j, i, ptk, space)) {
                         idx = IndexMath(k, j, i, space);
-                        space->nodeFlag[idx] = -offset - geoCount; /* geometry are linked */
+                        space->nodeFlag[idx] = -OFFSET - geoCount; /* geometry are linked */
                     }
                 }
             }
@@ -138,12 +130,11 @@ static int LocateSolidGeometry(Space *space, const Particle *particle, const Par
 static int IdentifyGhostNodes(Space *space, const Partition *part)
 {
     int idx = 0; /* linear array index math variable */
-    const int offset = space->nodeFlagOffset;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = IndexMath(k, j, i, space);
-                if (-offset < space->nodeFlag[idx]) { /* it's not solid node */
+                if (-OFFSET < space->nodeFlag[idx]) { /* it's not solid node */
                     continue;
                 }
                 /* if exist one neighbour is fluid, then it's ghost */
@@ -159,12 +150,11 @@ static int IdentifySolidNodesAtNumericalBoundary(Space *space,
         const Particle *particle, const Partition *part)
 {
     int idx = 0; /* linear array index math variable */
-    const int offset = space->nodeFlagOffset;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = IndexMath(k, j, i, space);
-                if (-offset < space->nodeFlag[idx]) { /* it's not solid node */
+                if (-OFFSET < space->nodeFlag[idx]) { /* it's not solid node */
                     continue;
                 }
                 for (int order = 2; order <= 2; ++order) {
@@ -202,31 +192,40 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
         const Partition *part, const Flow *flow)
 {
     int idx = 0; /* linear array index math variable */
-    Real Uo[6] = {0.0}; /* save reconstructed primitives */
-    Real info[10] = {0.0}; /* store calculated geometry information */
+    Real Uo[DIMUo] = {0.0}; /* save reconstructed primitives */
+    Real info[INFOGEO] = {0.0}; /* store calculated geometry information */
     int geoID = 0; /* geometry id */
-    const int offset = space->nodeFlagOffset;
+    Real *ptk = NULL;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = IndexMath(k, j, i, space);
-                if (-offset - particle->totalN >= space->nodeFlag[idx]) { /* solid */
-                    geoID = space->nodeFlag[idx] + offset + particle->totalN;
+                if (-OFFSET - particle->totalN >= space->nodeFlag[idx]) { /* solid */
+                    geoID = space->nodeFlag[idx] + OFFSET + particle->totalN;
                 } else {
-                    if (offset <= space->nodeFlag[idx]) { /* ghost */
-                        geoID = space->nodeFlag[idx] - offset; /* extract geometry */
+                    if (OFFSET <= space->nodeFlag[idx]) { /* ghost */
+                        geoID = space->nodeFlag[idx] - OFFSET; /* extract geometry */
                     } else { /* not a numerical boundary node */
                         continue;
                     }
                 }
-                CalculateGeometryInformation(info, k, j, i, geoID, space, particle);
+                ptk = IndexGeometry(geoID, particle);
+                CalculateGeometryInformation(info, k, j, i, ptk, space);
                 /* obtain the spatial coordinates of the image point */
                 const Real imageX = info[0] + 2 * info[4] * info[5];
                 const Real imageY = info[1] + 2 * info[4] * info[6];
                 const Real imageZ = info[2] + 2 * info[4] * info[7];
-                Reconstruction(Uo, imageZ, imageY, imageX, 
+                InverseDistanceWeighting(Uo, imageZ, imageY, imageX, 
                         ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space), 
-                        U, space, flow);
+                        2, U, space, flow);
+                /*
+                 * Normalize the weighted values as reconstructed values.
+                 */
+                Uo[0] = Uo[0] / Uo[DIMUo-1]; /* rho */
+                Uo[1] = Uo[1] / Uo[DIMUo-1]; /* u */
+                Uo[2] = Uo[2] / Uo[DIMUo-1]; /* v */
+                Uo[3] = Uo[3] / Uo[DIMUo-1]; /* w */
+                Uo[4] = Uo[4] / Uo[DIMUo-1]; /* p */
                 /*
                  * Apply no-slip wall boundary conditions to get primitive values at nodes
                  * in wall. That is, keep scalars and flip vectors after reflection.
@@ -235,70 +234,70 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
                 Uo[1] = -Uo[1];
                 Uo[2] = -Uo[2];
                 Uo[3] = -Uo[3];
-                ConservativeByPrimitive(U, idx * space->dimU, Uo, flow);
+                ConservativeByPrimitive(U, idx * DIMU, Uo, flow);
             }
         }
     }
     return 0;
 }
-/*
- * Reconstruction of the values of primitive vector Uo for a spatial
- * point (z, y, x) based on the neighbours around node (k, j, i). 
- * The inversed distance approach is adopted here.
- */
-int Reconstruction(Real Uo[], const Real z, const Real y, const Real x,
-        const int k, const int j, const int i, const Real *U,
+int InverseDistanceWeighting(Real Uo[], const Real z, const Real y, const Real x,
+        const int k, const int j, const int i, const int h, const Real *U,
         const Space *space, const Flow *flow)
 {
     int idxh = 0; /* linear array index math variable */
-    Real Uoh[6] = {0.0}; /* primitive at target node */
-    Real Uow[6] = {0.0}; /* weighted primitive values */
-    const Real tiny = 0.001 * (space->dx + space->dy + space->dz);
+    Real Uoh[DIMUo] = {0.0}; /* primitive at target node */
     Real weight = 0.0; /* weight factor */
-    Real weightSum = 0.0; /* weight normalizer */
+    /* reset */
+    for (int dim = 0; dim < DIMUo; ++dim) {
+        Uo[dim] = 0.0;
+    }
     /* 
      * Search around the specified node to find required fluid nodes as
      * interpolation stencil.
      */
-    for (int kh = -2; kh < 3; ++kh) {
-        for (int jh = -2; jh < 3; ++jh) {
-            for (int ih = -2; ih < 3; ++ih) {
+    for (int kh = -h; kh <= h; ++kh) {
+        for (int jh = -h; jh <= h; ++jh) {
+            for (int ih = -h; ih <= h; ++ih) {
                 idxh = IndexMath(k + kh, j + jh, i + ih, space);
-                if ((0 > idxh) || (space->nMax <= idxh)) { /* check index */
+                if ((0 > idxh) || (space->nMax <= idxh)) {
                     continue; /* illegal index */
                 }
-                if (0 != space->nodeFlag[idxh]) { /* it's not a fluid node */
+                if (FLUID != space->nodeFlag[idxh]) {
                     continue;
                 }
-                const Real distX = ComputeX(i + ih, space) - x;
-                const Real distY = ComputeY(j + jh, space) - y;
                 const Real distZ = ComputeZ(k + kh, space) - z;
+                const Real distY = ComputeY(j + jh, space) - y;
+                const Real distX = ComputeX(i + ih, space) - x;
+                /* use distance square to avoid expensive sqrt */
                 weight = distX * distX + distY * distY + distZ * distZ;
-                if (tiny > weight) { /* avoid overflow of too small distance */
-                    weight = tiny;
+                if (space->tinyL > weight) { /* avoid overflow of too small distance */
+                    weight = space->tinyL;
                 }
                 weight = 1 / weight;
-                weightSum = weightSum + weight; /* accumulate normalizer */
-                PrimitiveByConservative(Uoh, idxh * space->dimU, U, flow);
-                for (int dim = 0; dim < space->dimU; ++dim) {
-                    Uow[dim] = Uow[dim] + Uoh[dim] * weight;
-                }
+                PrimitiveByConservative(Uoh, idxh * DIMU, U, flow);
+                /* no loop to avoid loop overload */
+                Uo[0] = Uo[0] + Uoh[0] * weight; /* rho */
+                Uo[1] = Uo[1] + Uoh[1] * weight; /* u */
+                Uo[2] = Uo[2] + Uoh[2] * weight; /* v */
+                Uo[3] = Uo[3] + Uoh[3] * weight; /* w */
+                Uo[4] = Uo[4] + Uoh[4] * weight; /* p */
+                Uo[DIMUo-1] = Uo[DIMUo-1] + weight; /* accumulate normalizer */
             }
         }
     }
-    /*
-     * Obtain the reconstructed primitive vector.
-     */
-    for (int dim = 0; dim < space->dimU; ++dim) {
-        Uo[dim] = Uow[dim] / weightSum;
-    }
     return 0;
 }
-int CalculateGeometryInformation(Real info[], const int k, const int j, const int i, 
-        const int geoID, const Space *space, const Particle *particle)
+Real InGeometry(const int k, const int j, const int i, const Real *ptk, const Space *space)
 {
-    /* point to storage of current particle */
-    const Real *ptk = particle->headAddress + geoID * particle->entryN;
+    /* x, y, z distance to center */
+    const Real lX = ComputeX(i, space) - ptk[0];
+    const Real lY = ComputeY(j, space) - ptk[1];
+    const Real lZ = ComputeZ(k, space) - ptk[2];
+    return (lX * lX + lY * lY + lZ * lZ - ptk[3] * ptk[3]);
+}
+int CalculateGeometryInformation(Real info[], const int k, const int j, const int i, 
+        const Real *ptk, const Space *space)
+{
     /* x, y, z coordinates */
     info[0] = ComputeX(i, space);
     info[1] = ComputeY(j, space);
@@ -309,7 +308,7 @@ int CalculateGeometryInformation(Real info[], const int k, const int j, const in
     info[7] = info[2] - ptk[2];
     /* distance to center */
     info[3] = sqrt(info[5] * info[5] + info[6] * info[6] + info[7] * info[7]);
-    /* distance to surface, positive means in the geometry */
+    /* distance to surface */
     info[4] = ptk[3] - info[3];
     /* x, y, z normal vector components */
     info[5] = info[5] / info[3];

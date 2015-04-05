@@ -465,7 +465,7 @@ typedef enum {
     /* entry number of particle information */
     ENTRYPTK = 12, /* x, y, z, r, rho, u, v, w, fx, fy, fz, tally */
     /* entry number of calculated geometry information */
-    ENTRYGEO = 7, /* x, y, z, distance to surface, normalX, normalY, normalZ */
+    INFOGEO = 7, /* x, y, z, distance to surface, normalX, normalY, normalZ */
     /* maximum number of probes to support */
     NPROBE = 10,
     /* entry number of probe information */
@@ -702,12 +702,12 @@ extern int RetrieveStorage(void *pointer);
  */
 extern int IndexMath(const int k, const int j, const int i, const Space *);
 /*
- * Index particle
+ * Index geometry
  *
  * Function
- *      Compute the address pointed to current particle information.
+ *      Compute the address pointed to current geometry information.
  */
-extern Real *IndexParticle(const int geoID, const Particle *particle);
+extern Real *IndexGeometry(const int geoID, const Particle *particle);
 /*
  * Coordinates transformation
  *
