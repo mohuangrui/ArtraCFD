@@ -1,5 +1,5 @@
 /****************************************************************************
- * Geometry Data Loader                                                     *
+ * Geometry Data Loader and Writer                                          *
  * Programmer: Huangrui Mo                                                  *
  * - Follow the Google's C/C++ style Guide.                                 *
  * - This file defines a loader for geometry data                           *
@@ -93,8 +93,7 @@ static int ReadGeometryData(FILE **filePointerPointer, Particle *particle)
      * 0, 1, 2, 3,    4,    5, 6, 7,        8,  9, 10,  11      total: 12
      *    need to be read in                  calculated
      */
-    particle->entryN = 12;
-    particle->headAddress = AssignStorage(particle->totalN * particle->entryN, "Real");
+    particle->headAddress = AssignStorage(particle->totalN * ENTRYPTK, "Real");
     /* read and store data per object*/
     char currentLine[500] = {'\0'}; /* store the current read line */
     /* set format specifier according to the type of Real */
@@ -103,7 +102,7 @@ static int ReadGeometryData(FILE **filePointerPointer, Particle *particle)
         strncpy(format, "%g, %g, %g, %g, %g, %g, %g, %g", sizeof format); /* float type */
     }
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        Real *ptk = particle->headAddress + geoCount * particle->entryN;
+        Real *ptk = IndexParticle(geoCount, particle) ;
         fgets(currentLine, sizeof currentLine, filePointer);
         sscanf(currentLine, format, ptk + 0, ptk + 1, ptk + 2, ptk + 3, ptk + 4, ptk + 5,
                 ptk + 6, ptk + 7);
@@ -124,7 +123,7 @@ int WriteGeometryData(const Particle *particle, const Time *time)
     }
     fprintf(filePointer, "N: %d\n", particle->totalN); /* number of objects */
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        const Real *ptk = particle->headAddress + geoCount * particle->entryN;
+        const Real *ptk = IndexParticle(geoCount, particle);
         fprintf(filePointer, "%.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g\n",
                 ptk[0], ptk[1], ptk[2], ptk[3], ptk[4], ptk[5], 
                 ptk[6], ptk[7]);

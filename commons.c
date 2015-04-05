@@ -163,6 +163,10 @@ int IndexMath(const int k, const int j, const int i, const Space *space)
 {
     return ((k * space->jMax + j) * space->iMax + i);
 }
+Real *IndexParticle(const int geoID, const Particle *particle)
+{
+    return particle->headAddress + geoID * ENTRYPTK;
+}
 /*
  * Coordinates transformations.
  * When transform from spatial coordinates to node coordinates, a half

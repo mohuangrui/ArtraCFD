@@ -463,7 +463,7 @@ typedef enum {
     /* identifier of boundary and exterior ghost nodes */
     EXTERIOR = -1,
     /* entry number of particle information */
-    ENTRYPTK = 11, /* x, y, z, r, rho, u, v, w, fx, fy, fz */
+    ENTRYPTK = 12, /* x, y, z, r, rho, u, v, w, fx, fy, fz, tally */
     /* entry number of calculated geometry information */
     ENTRYGEO = 7, /* x, y, z, distance to surface, normalX, normalY, normalZ */
     /* maximum number of probes to support */
@@ -677,7 +677,7 @@ extern int ShowInformation(const char *statement);
  */
 extern void *AssignStorage(const int idxMax, const char *dataType);
 /*
- * Retrieve storage from a pointer.
+ * Retrieve storage from a pointer
  *
  * Parameter
  *      pointer -- the pointer that contains the storage address
@@ -693,7 +693,7 @@ extern void *AssignStorage(const int idxMax, const char *dataType);
  */
 extern int RetrieveStorage(void *pointer);
 /*
- * Index math.
+ * Index math
  *
  * Function
  *      calculate the index of current node.
@@ -701,6 +701,13 @@ extern int RetrieveStorage(void *pointer);
  *      int -- the calculated index value
  */
 extern int IndexMath(const int k, const int j, const int i, const Space *);
+/*
+ * Index particle
+ *
+ * Function
+ *      Compute the address pointed to current particle information.
+ */
+extern Real *IndexParticle(const int geoID, const Particle *particle);
 /*
  * Coordinates transformation
  *
@@ -729,7 +736,7 @@ extern Real MaxReal(const Real x, const Real y);
 extern int MinInt(const int x, const int y);
 extern int MaxInt(const int x, const int y);
 /*
- * Compute the values of primitive variable vector.
+ * Compute the values of primitive variable vector
  *
  * Parameter
  *      Uo[] -- a array stores the returned values of primitives.
@@ -741,7 +748,7 @@ extern int PrimitiveByConservative(Real Uo[], const int idx, const Real *U, cons
 extern Real ComputePressure(const int idx, const Real *U, const Flow *);
 extern Real ComputeTemperature(const int idx, const Real *U, const Flow *);
 /*
- * Compute and update conservative variable vector.
+ * Compute and update conservative variable vector
  *
  * Function
  *      Compute and update conservative variable vector according to primitive values.

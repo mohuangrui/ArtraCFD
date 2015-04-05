@@ -30,18 +30,6 @@
 int DomainPartition(Partition *part, const Space *space)
 {
     ShowInformation("Domain partitioning...");
-    part->subN = 13; /* control number of inner partitions to be written out */
-    const char partName[13][15] = {
-        "Interior",
-        "Domain West",       "Domain East", 
-        "Domain South",      "Domain North", 
-        "Domain Front",      "Domain Back",
-        "West Ghost",        "East Ghost", 
-        "South Ghost",       "North Ghost", 
-        "Front Ghost",       "Back Ghost"};
-    for (int partCount = 0; partCount < part->subN; ++partCount) {
-        strncpy(part->name[partCount], partName[partCount], sizeof part->name[partCount]);
-    }
     /*
      * Outward facing surface unit normal vector values of each inner part, the
      * introducing of surface normal vector can provide great advantange: every
