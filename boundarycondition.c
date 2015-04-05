@@ -16,7 +16,7 @@
  ****************************************************************************/
 static int ApplyBoundaryConditions(const int, Real *, const Space *, 
         const Partition *, const Flow *);
-static int ZeroGradientFlow(Real *U, const int idx, const int idxh, const Space *);
+static int ZeroGradientFlow(Real *U, const int idx, const int idxh);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -64,7 +64,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                     case 2: /* outflow */
                         /* Calculate inner neighbour nodes according to normal vector direction. */
                         idxh = IndexMath(k - normalZ, j - normalY, i - normalX, space) * DIMU;
-                        ZeroGradientFlow(U, idx, idxh, space);
+                        ZeroGradientFlow(U, idx, idxh);
                         break;
                     case 3: /* slip wall, zero-gradient scalar and tangential component, zero normal component */
                         idxh = IndexMath(k - normalZ, j - normalY, i - normalX, space) * DIMU;
@@ -95,11 +95,11 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                     case 5: /* primary periodic pair, apply boundary translation */
                         idxh = IndexMath(k - (space->nz - 2) * normalZ, j - (space->ny - 2) * normalY, 
                                 i - (space->nx - 2) * normalX, space) * DIMU;
-                        ZeroGradientFlow(U, idx, idxh, space);
+                        ZeroGradientFlow(U, idx, idxh);
                         break;
                     case -5: /* auxiliary periodic pair, apply zero gradient flow */
                         idxh = IndexMath(k - normalZ, j - normalY, i - normalX, space) * DIMU;
-                        ZeroGradientFlow(U, idx, idxh, space);
+                        ZeroGradientFlow(U, idx, idxh);
                         break;
                     default:
                         break;
@@ -115,7 +115,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         case 2: /* outflow */
                         case 5: /* primary periodic pair */
                         case -5: /* auxiliary periodic pair */
-                            ZeroGradientFlow(U, idx, idxh, space);
+                            ZeroGradientFlow(U, idx, idxh);
                             break;
                         default: /* linear interpolation will automatically apply the method of image */
                             idxhh = IndexMath(k + (ng-2) * normalZ, j + (ng-2) * normalY, i + (ng-2) * normalX, space) * DIMU;
@@ -135,7 +135,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
     }
     return 0;
 }
-static int ZeroGradientFlow(Real *U, const int idx, const int idxh, const Space *space)
+static int ZeroGradientFlow(Real *U, const int idx, const int idxh)
 {
     /* no loop to avoid loop averload */
     U[idx] = U[idxh];
