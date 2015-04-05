@@ -475,7 +475,7 @@ typedef enum {
     /* max index of inner partitions of physical BC */
     NBC = 7, /* flow region, [west, east, south, north, front, back] x [BC] */
     /* entry number of BC information */
-    ENTRYBC = 6, /* primitive variables */
+    ENTRYBC = 6, /* rho, u, v, w, p, T */
     /* maximum number of regional initionalizer to support, extra 1 needed */
     NIC = 11,
     /* entry number of regional initionalizer information */
