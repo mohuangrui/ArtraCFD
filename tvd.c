@@ -31,7 +31,7 @@ static int ComputeReconstructedFluxX(
         Real Fhat[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow, const Real dt);
 static int CalculateReconstructedFlux(
-        Real Fhat[], const Real F[], const Real Fh[], Real R[][5], const Real Phi[]);
+        Real Fhat[], const Real F[], const Real Fh[], Real R[][DIMU], const Real Phi[]);
 static int ComputeFluxDecompositionCoefficientPhiZ(
         Real Phi[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow, const Real dt);
@@ -78,24 +78,24 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlphaX(
         Real lambda[], Real alpha[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
 static int CalculateAlpha(
-        Real alpha[], Real L[][5], const Real deltaU[]);
+        Real alpha[], Real L[][DIMU], const Real deltaU[]);
 static int ComputeEigenvaluesAndEigenvectorSpaceLZ(
-        Real lambda[], Real L[][5], const int k, const int j, const int i, 
+        Real lambda[], Real L[][DIMU], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
 static int ComputeEigenvaluesAndEigenvectorSpaceLY(
-        Real lambda[], Real L[][5], const int k, const int j, const int i, 
+        Real lambda[], Real L[][DIMU], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
 static int ComputeEigenvaluesAndEigenvectorSpaceLX(
-        Real lambda[], Real L[][5], const int k, const int j, const int i, 
+        Real lambda[], Real L[][DIMU], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
 static int ComputeEigenvectorSpaceRZ(
-        Real R[][5], const int k, const int j, const int i, 
+        Real R[][DIMU], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
 static int ComputeEigenvectorSpaceRY(
-        Real R[][5], const int k, const int j, const int i, 
+        Real R[][DIMU], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
 static int ComputeEigenvectorSpaceRX(
-        Real R[][5], const int k, const int j, const int i, 
+        Real R[][DIMU], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow);
 static int ComputeRoeAverageZ(
         Real Uo[], const int k, const int j, const int i, 
@@ -194,23 +194,23 @@ int SpatialDiscretizationAndComputation(Real *U, const Real dt, Real *Uswap,
 }
 static int Lz(Real *U, const Real *Un, const Space *space, const Partition *part, const Flow *flow, const Real dt)
 {
-    Real Fhat[5] = {0.0}; /* reconstructed flux vector */
-    Real Fhath[5] = {0.0}; /* reconstructed flux vector at neighbour */
-    Real gradG[5] = {0.0}; /* spatial gradient of viscous flux vector */
+    Real Fhat[DIMU] = {0.0}; /* reconstructed flux vector */
+    Real Fhath[DIMU] = {0.0}; /* reconstructed flux vector at neighbour */
+    Real gradG[DIMU] = {0.0}; /* spatial gradient of viscous flux vector */
     int idx = 0; /* linear array index math variable */
     const Real r = dt * space->ddz;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = IndexMath(k, j, i, space);
-                if (0 != space->nodeFlag[idx]) { /* it's not a fluid */
+                if (FLUID != space->nodeFlag[idx]) { /* it's not a fluid */
                     continue;
                 }
                 ComputeReconstructedFluxZ(Fhat, k, j, i, Un, space, flow, dt);
                 ComputeReconstructedFluxZ(Fhath, k - 1, j, i, Un, space, flow, dt);
                 ComputeViscousFluxGradientZ(gradG, k, j, i, Un, space, flow);
-                idx = idx * space->dimU; /* change idx to field variable */
-                for (int dim = 0; dim < 5; ++dim) {
+                idx = idx * DIMU; /* change idx to field variable */
+                for (int dim = 0; dim < DIMU; ++dim) {
                     U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
                 }
             }
@@ -220,23 +220,23 @@ static int Lz(Real *U, const Real *Un, const Space *space, const Partition *part
 }
 static int Ly(Real *U, const Real *Un, const Space *space, const Partition *part, const Flow *flow, const Real dt)
 {
-    Real Fhat[5] = {0.0}; /* reconstructed flux vector */
-    Real Fhath[5] = {0.0}; /* reconstructed flux vector at neighbour */
-    Real gradG[5] = {0.0}; /* spatial gradient of viscous flux vector */
+    Real Fhat[DIMU] = {0.0}; /* reconstructed flux vector */
+    Real Fhath[DIMU] = {0.0}; /* reconstructed flux vector at neighbour */
+    Real gradG[DIMU] = {0.0}; /* spatial gradient of viscous flux vector */
     int idx = 0; /* linear array index math variable */
     const Real r = dt * space->ddy;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = IndexMath(k, j, i, space);
-                if (0 != space->nodeFlag[idx]) { /* it's not a fluid */
+                if (FLUID != space->nodeFlag[idx]) { /* it's not a fluid */
                     continue;
                 }
                 ComputeReconstructedFluxY(Fhat, k, j, i, Un, space, flow, dt);
                 ComputeReconstructedFluxY(Fhath, k, j - 1, i, Un, space, flow, dt);
                 ComputeViscousFluxGradientY(gradG, k, j, i, Un, space, flow);
-                idx = idx * space->dimU; /* change idx to field variable */
-                for (int dim = 0; dim < 5; ++dim) {
+                idx = idx * DIMU; /* change idx to field variable */
+                for (int dim = 0; dim < DIMU; ++dim) {
                     U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
                 }
             }
@@ -246,23 +246,23 @@ static int Ly(Real *U, const Real *Un, const Space *space, const Partition *part
 }
 static int Lx(Real *U, const Real *Un, const Space *space, const Partition *part, const Flow *flow, const Real dt)
 {
-    Real Fhat[5] = {0.0}; /* reconstructed flux vector */
-    Real Fhath[5] = {0.0}; /* reconstructed flux vector at neighbour */
-    Real gradG[5] = {0.0}; /* spatial gradient of viscous flux vector */
+    Real Fhat[DIMU] = {0.0}; /* reconstructed flux vector */
+    Real Fhath[DIMU] = {0.0}; /* reconstructed flux vector at neighbour */
+    Real gradG[DIMU] = {0.0}; /* spatial gradient of viscous flux vector */
     int idx = 0; /* linear array index math variable */
     const Real r = dt * space->ddx;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = IndexMath(k, j, i, space);
-                if (0 != space->nodeFlag[idx]) { /* it's not a fluid */
+                if (FLUID != space->nodeFlag[idx]) { /* it's not a fluid */
                     continue;
                 }
                 ComputeReconstructedFluxX(Fhat, k, j, i, Un, space, flow, dt);
                 ComputeReconstructedFluxX(Fhath, k, j, i - 1, Un, space, flow, dt);
                 ComputeViscousFluxGradientX(gradG, k, j, i, Un, space, flow);
-                idx = idx * space->dimU; /* change idx to field variable */
-                for (int dim = 0; dim < 5; ++dim) {
+                idx = idx * DIMU; /* change idx to field variable */
+                for (int dim = 0; dim < DIMU; ++dim) {
                     U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
                 }
             }
@@ -274,10 +274,10 @@ static int ComputeReconstructedFluxZ(
         Real Fhat[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow, const Real dt)
 {
-    Real F[5] = {0.0}; /* flux at current node */
-    Real Fh[5] = {0.0}; /* flux at neighbour */
-    Real R[5][5] = {{0.0}}; /* vector space {Rn} */
-    Real Phi[5] = {0.0}; /* flux projection or decomposition coefficients on vector space {Rn} */
+    Real F[DIMU] = {0.0}; /* flux at current node */
+    Real Fh[DIMU] = {0.0}; /* flux at neighbour */
+    Real R[DIMU][DIMU] = {{0.0}}; /* vector space {Rn} */
+    Real Phi[DIMU] = {0.0}; /* flux projection or decomposition coefficients on vector space {Rn} */
     ComputeNonViscousFluxZ(F, k, j, i, U, space, flow);
     ComputeNonViscousFluxZ(Fh, k + 1, j, i, U, space, flow);
     ComputeEigenvectorSpaceRZ(R, k, j, i, U, space, flow);
@@ -289,10 +289,10 @@ static int ComputeReconstructedFluxY(
         Real Fhat[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow, const Real dt)
 {
-    Real F[5] = {0.0}; /* flux at current node */
-    Real Fh[5] = {0.0}; /* flux at neighbour */
-    Real R[5][5] = {{0.0}}; /* vector space {Rn} */
-    Real Phi[5] = {0.0}; /* flux projection or decomposition coefficients on vector space {Rn} */
+    Real F[DIMU] = {0.0}; /* flux at current node */
+    Real Fh[DIMU] = {0.0}; /* flux at neighbour */
+    Real R[DIMU][DIMU] = {{0.0}}; /* vector space {Rn} */
+    Real Phi[DIMU] = {0.0}; /* flux projection or decomposition coefficients on vector space {Rn} */
     ComputeNonViscousFluxY(F, k, j, i, U, space, flow);
     ComputeNonViscousFluxY(Fh, k, j + 1, i, U, space, flow);
     ComputeEigenvectorSpaceRY(R, k, j, i, U, space, flow);
@@ -304,10 +304,10 @@ static int ComputeReconstructedFluxX(
         Real Fhat[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow, const Real dt)
 {
-    Real F[5] = {0.0}; /* flux at current node */
-    Real Fh[5] = {0.0}; /* flux at neighbour */
-    Real R[5][5] = {{0.0}}; /* vector space {Rn} */
-    Real Phi[5] = {0.0}; /* flux projection or decomposition coefficients on vector space {Rn} */
+    Real F[DIMU] = {0.0}; /* flux at current node */
+    Real Fh[DIMU] = {0.0}; /* flux at neighbour */
+    Real R[DIMU][DIMU] = {{0.0}}; /* vector space {Rn} */
+    Real Phi[DIMU] = {0.0}; /* flux projection or decomposition coefficients on vector space {Rn} */
     ComputeNonViscousFluxX(F, k, j, i, U, space, flow);
     ComputeNonViscousFluxX(Fh, k, j, i + 1, U, space, flow);
     ComputeEigenvectorSpaceRX(R, k, j, i, U, space, flow);
@@ -316,16 +316,16 @@ static int ComputeReconstructedFluxX(
     return 0;
 }
 static int CalculateReconstructedFlux(
-        Real Fhat[], const Real F[], const Real Fh[], Real R[][5], const Real Phi[])
+        Real Fhat[], const Real F[], const Real Fh[], Real R[][DIMU], const Real Phi[])
 {
-    Real RPhi[5] = {0.0}; /* R x Phi */
-    for (int row = 0; row < 5; ++row) {
+    Real RPhi[DIMU] = {0.0}; /* R x Phi */
+    for (int row = 0; row < DIMU; ++row) {
         RPhi[row] = 0;
-        for (int dummy = 0; dummy < 5; ++dummy) {
+        for (int dummy = 0; dummy < DIMU; ++dummy) {
             RPhi[row] = RPhi[row] + R[row][dummy] * Phi[dummy];
         }
     }
-    for (int row = 0; row < 5; ++row) {
+    for (int row = 0; row < DIMU; ++row) {
         Fhat[row] = 0.5 * (F[row] + Fh[row] + RPhi[row]);
     }
     return 0;
@@ -334,18 +334,18 @@ static int ComputeFluxDecompositionCoefficientPhiZ(
         Real Phi[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow, const Real dt)
 {
-    Real g[5] = {0.0}; /* TVD function g at current node */
-    Real gh[5] = {0.0}; /* TVD function g at neighbour */
-    Real gamma[5] = {0.0}; /* TVD function gamma */
-    Real lambda[5] = {0.0}; /* eigenvalues */
-    Real alpha[5] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
-    Real delta[5] = {0.0}; /* numerical dissipation */
+    Real g[DIMU] = {0.0}; /* TVD function g at current node */
+    Real gh[DIMU] = {0.0}; /* TVD function g at neighbour */
+    Real gamma[DIMU] = {0.0}; /* TVD function gamma */
+    Real lambda[DIMU] = {0.0}; /* eigenvalues */
+    Real alpha[DIMU] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
+    Real delta[DIMU] = {0.0}; /* numerical dissipation */
     ComputeEigenvaluesAndDecompositionCoefficientAlphaZ(lambda, alpha, k, j, i, U, space, flow);
     ComputeFunctionGZ(g, k, j, i, U, space, flow, dt);
     ComputeFunctionGZ(gh, k + 1, j, i, U, space, flow, dt);
     ComputeNumericalDissipationDeltaZ(delta, k, j, i, U, space, flow);
     CalculateGamma(gamma, g, gh, alpha);
-    for (int row = 0; row < 5; ++row) {
+    for (int row = 0; row < DIMU; ++row) {
         Phi[row] = g[row] + gh[row] - Q(lambda[row] + gamma[row], delta[row]) * alpha[row];
     }
     return 0;
@@ -354,18 +354,18 @@ static int ComputeFluxDecompositionCoefficientPhiY(
         Real Phi[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow, const Real dt)
 {
-    Real g[5] = {0.0}; /* TVD function g at current node */
-    Real gh[5] = {0.0}; /* TVD function g at neighbour */
-    Real gamma[5] = {0.0}; /* TVD function gamma */
-    Real lambda[5] = {0.0}; /* eigenvalues */
-    Real alpha[5] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
-    Real delta[5] = {0.0}; /* numerical dissipation */
+    Real g[DIMU] = {0.0}; /* TVD function g at current node */
+    Real gh[DIMU] = {0.0}; /* TVD function g at neighbour */
+    Real gamma[DIMU] = {0.0}; /* TVD function gamma */
+    Real lambda[DIMU] = {0.0}; /* eigenvalues */
+    Real alpha[DIMU] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
+    Real delta[DIMU] = {0.0}; /* numerical dissipation */
     ComputeEigenvaluesAndDecompositionCoefficientAlphaY(lambda, alpha, k, j, i, U, space, flow);
     ComputeFunctionGY(g, k, j, i, U, space, flow, dt);
     ComputeFunctionGY(gh, k, j + 1, i, U, space, flow, dt);
     ComputeNumericalDissipationDeltaY(delta, k, j, i, U, space, flow);
     CalculateGamma(gamma, g, gh, alpha);
-    for (int row = 0; row < 5; ++row) {
+    for (int row = 0; row < DIMU; ++row) {
         Phi[row] = g[row] + gh[row] - Q(lambda[row] + gamma[row], delta[row]) * alpha[row];
     }
     return 0;
@@ -374,18 +374,18 @@ static int ComputeFluxDecompositionCoefficientPhiX(
         Real Phi[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow, const Real dt)
 {
-    Real g[5] = {0.0}; /* TVD function g at current node */
-    Real gh[5] = {0.0}; /* TVD function g at neighbour */
-    Real gamma[5] = {0.0}; /* TVD function gamma */
-    Real lambda[5] = {0.0}; /* eigenvalues */
-    Real alpha[5] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
-    Real delta[5] = {0.0}; /* numerical dissipation */
+    Real g[DIMU] = {0.0}; /* TVD function g at current node */
+    Real gh[DIMU] = {0.0}; /* TVD function g at neighbour */
+    Real gamma[DIMU] = {0.0}; /* TVD function gamma */
+    Real lambda[DIMU] = {0.0}; /* eigenvalues */
+    Real alpha[DIMU] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
+    Real delta[DIMU] = {0.0}; /* numerical dissipation */
     ComputeEigenvaluesAndDecompositionCoefficientAlphaX(lambda, alpha, k, j, i, U, space, flow);
     ComputeFunctionGX(g, k, j, i, U, space, flow, dt);
     ComputeFunctionGX(gh, k, j, i + 1, U, space, flow, dt);
     ComputeNumericalDissipationDeltaX(delta, k, j, i, U, space, flow);
     CalculateGamma(gamma, g, gh, alpha);
-    for (int row = 0; row < 5; ++row) {
+    for (int row = 0; row < DIMU; ++row) {
         Phi[row] = g[row] + gh[row] - Q(lambda[row] + gamma[row], delta[row]) * alpha[row];
     }
     return 0;
@@ -394,14 +394,14 @@ static int ComputeFunctionGZ(
         Real g[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow, const Real dt)
 {
-    Real lambda[5] = {0.0}; /* eigenvalues */
-    Real lambdah[5] = {0.0}; /* eigenvalues at neighbour */
-    Real alpha[5] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
-    Real alphah[5] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
-    Real delta[5] = {0.0}; /* numerical dissipation */
-    Real deltah[5] = {0.0}; /* numerical dissipation */
-    Real sigma[5] = {0.0}; /* TVD function sigma */
-    Real sigmah[5] = {0.0}; /* TVD function sigma at neighbour */
+    Real lambda[DIMU] = {0.0}; /* eigenvalues */
+    Real lambdah[DIMU] = {0.0}; /* eigenvalues at neighbour */
+    Real alpha[DIMU] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
+    Real alphah[DIMU] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
+    Real delta[DIMU] = {0.0}; /* numerical dissipation */
+    Real deltah[DIMU] = {0.0}; /* numerical dissipation */
+    Real sigma[DIMU] = {0.0}; /* TVD function sigma */
+    Real sigmah[DIMU] = {0.0}; /* TVD function sigma at neighbour */
     const Real r = dt * space->ddz;
     ComputeEigenvaluesAndDecompositionCoefficientAlphaZ(lambda, alpha, k, j, i, U, space, flow);
     ComputeNumericalDissipationDeltaZ(delta, k, j, i, U, space, flow);
@@ -409,7 +409,7 @@ static int ComputeFunctionGZ(
     ComputeEigenvaluesAndDecompositionCoefficientAlphaZ(lambdah, alphah, k - 1, j, i, U, space, flow);
     ComputeNumericalDissipationDeltaZ(deltah, k - 1, j, i, U, space, flow);
     CalculateSigma(sigmah, lambdah, deltah, r);
-    for (int row = 0; row < 5; ++row) {
+    for (int row = 0; row < DIMU; ++row) {
         g[row] = minmod(sigma[row] * alpha[row], sigmah[row] * alphah[row]);
     }
     return 0;
@@ -418,14 +418,14 @@ static int ComputeFunctionGY(
         Real g[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow, const Real dt)
 {
-    Real lambda[5] = {0.0}; /* eigenvalues */
-    Real lambdah[5] = {0.0}; /* eigenvalues at neighbour */
-    Real alpha[5] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
-    Real alphah[5] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
-    Real delta[5] = {0.0}; /* numerical dissipation */
-    Real deltah[5] = {0.0}; /* numerical dissipation */
-    Real sigma[5] = {0.0}; /* TVD function sigma */
-    Real sigmah[5] = {0.0}; /* TVD function sigma at neighbour */
+    Real lambda[DIMU] = {0.0}; /* eigenvalues */
+    Real lambdah[DIMU] = {0.0}; /* eigenvalues at neighbour */
+    Real alpha[DIMU] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
+    Real alphah[DIMU] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
+    Real delta[DIMU] = {0.0}; /* numerical dissipation */
+    Real deltah[DIMU] = {0.0}; /* numerical dissipation */
+    Real sigma[DIMU] = {0.0}; /* TVD function sigma */
+    Real sigmah[DIMU] = {0.0}; /* TVD function sigma at neighbour */
     const Real r = dt * space->ddy;
     ComputeEigenvaluesAndDecompositionCoefficientAlphaY(lambda, alpha, k, j, i, U, space, flow);
     ComputeNumericalDissipationDeltaY(delta, k, j, i, U, space, flow);
@@ -433,7 +433,7 @@ static int ComputeFunctionGY(
     ComputeEigenvaluesAndDecompositionCoefficientAlphaY(lambdah, alphah, k, j - 1, i, U, space, flow);
     ComputeNumericalDissipationDeltaY(deltah, k, j - 1, i, U, space, flow);
     CalculateSigma(sigmah, lambdah, deltah, r);
-    for (int row = 0; row < 5; ++row) {
+    for (int row = 0; row < DIMU; ++row) {
         g[row] = minmod(sigma[row] * alpha[row], sigmah[row] * alphah[row]);
     }
     return 0;
@@ -442,14 +442,14 @@ static int ComputeFunctionGX(
         Real g[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow, const Real dt)
 {
-    Real lambda[5] = {0.0}; /* eigenvalues */
-    Real lambdah[5] = {0.0}; /* eigenvalues at neighbour */
-    Real alpha[5] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
-    Real alphah[5] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
-    Real delta[5] = {0.0}; /* numerical dissipation */
-    Real deltah[5] = {0.0}; /* numerical dissipation */
-    Real sigma[5] = {0.0}; /* TVD function sigma */
-    Real sigmah[5] = {0.0}; /* TVD function sigma at neighbour */
+    Real lambda[DIMU] = {0.0}; /* eigenvalues */
+    Real lambdah[DIMU] = {0.0}; /* eigenvalues at neighbour */
+    Real alpha[DIMU] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
+    Real alphah[DIMU] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
+    Real delta[DIMU] = {0.0}; /* numerical dissipation */
+    Real deltah[DIMU] = {0.0}; /* numerical dissipation */
+    Real sigma[DIMU] = {0.0}; /* TVD function sigma */
+    Real sigmah[DIMU] = {0.0}; /* TVD function sigma at neighbour */
     const Real r = dt * space->ddx;
     ComputeEigenvaluesAndDecompositionCoefficientAlphaX(lambda, alpha, k, j, i, U, space, flow);
     ComputeNumericalDissipationDeltaX(delta, k, j, i, U, space, flow);
@@ -457,7 +457,7 @@ static int ComputeFunctionGX(
     ComputeEigenvaluesAndDecompositionCoefficientAlphaX(lambdah, alphah, k, j, i - 1, U, space, flow);
     ComputeNumericalDissipationDeltaX(deltah, k, j, i - 1, U, space, flow);
     CalculateSigma(sigmah, lambdah, deltah, r);
-    for (int row = 0; row < 5; ++row) {
+    for (int row = 0; row < DIMU; ++row) {
         g[row] = minmod(sigma[row] * alpha[row], sigmah[row] * alphah[row]);
     }
     return 0;
@@ -465,7 +465,7 @@ static int ComputeFunctionGX(
 static int CalculateGamma(
         Real gamma[], const Real g[], const Real gh[], const Real alpha[])
 {
-    for (int row = 0; row < 5; ++row) {
+    for (int row = 0; row < DIMU; ++row) {
         if (0 != alpha[row]) {
             gamma[row] = (gh[row] - g[row]) / alpha[row];
         }
@@ -478,7 +478,7 @@ static int CalculateGamma(
 static int CalculateSigma(
         Real sigma[], const Real lambda[], const Real delta[], const Real r)
 {
-    for (int row = 0; row < 5; ++row) {
+    for (int row = 0; row < DIMU; ++row) {
         sigma[row] = 0.5 * (Q(lambda[row], delta[row]) - r * lambda[row] * lambda[row]);
     }
     return 0;
@@ -487,15 +487,15 @@ static int ComputeNumericalDissipationDeltaZ(
         Real delta[], const int k, const int j, const int i,
         const Real *U, const Space *space, const Flow *flow)
 {
-    Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
+    Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
     /* numerical dissipation in [0.05, 0.25], 0.125 is recommended */
     ComputeRoeAverageZ(Uo, k, j, i, U, space, flow);
     const Real u = Uo[1];
     const Real v = Uo[2];
     const Real w = Uo[3];
     const Real c = Uo[5];
-    for (int row = 0; row < 5; ++row) {
-        delta[row] = flow->delta * (fabs(u) + fabs(v) + fabs(w) + c); 
+    for (int row = 0; row < DIMU; ++row) {
+        delta[row] = (fabs(u) + fabs(v) + fabs(w) + c) * flow->delta; 
     }
     return 0;
 }
@@ -503,15 +503,15 @@ static int ComputeNumericalDissipationDeltaY(
         Real delta[], const int k, const int j, const int i,
         const Real *U, const Space *space, const Flow *flow)
 {
-    Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
+    Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
     /* numerical dissipation in [0.05, 0.25], 0.125 is recommended */
     ComputeRoeAverageY(Uo, k, j, i, U, space, flow);
     const Real u = Uo[1];
     const Real v = Uo[2];
     const Real w = Uo[3];
     const Real c = Uo[5];
-    for (int row = 0; row < 5; ++row) {
-        delta[row] = flow->delta * (fabs(u) + fabs(v) + fabs(w) + c); 
+    for (int row = 0; row < DIMU; ++row) {
+        delta[row] = (fabs(u) + fabs(v) + fabs(w) + c) * flow->delta; 
     }
     return 0;
 }
@@ -519,15 +519,15 @@ static int ComputeNumericalDissipationDeltaX(
         Real delta[], const int k, const int j, const int i,
         const Real *U, const Space *space, const Flow *flow)
 {
-    Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
+    Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
     /* numerical dissipation in [0.05, 0.25], 0.125 is recommended */
     ComputeRoeAverageX(Uo, k, j, i, U, space, flow);
     const Real u = Uo[1];
     const Real v = Uo[2];
     const Real w = Uo[3];
     const Real c = Uo[5];
-    for (int row = 0; row < 5; ++row) {
-        delta[row] = flow->delta * (fabs(u) + fabs(v) + fabs(w) + c); 
+    for (int row = 0; row < DIMU; ++row) {
+        delta[row] = (fabs(u) + fabs(v) + fabs(w) + c) * flow->delta; 
     }
     return 0;
 }
@@ -570,10 +570,10 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlphaZ(
         Real lambda[], Real alpha[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = IndexMath(k, j, i, space) * space->dimU;
-    const int idxh = IndexMath(k + 1, j, i, space) * space->dimU;;
-    Real L[5][5] = {{0.0}}; /* store left eigenvectors */
-    const Real deltaU[5] = {
+    const int idx = IndexMath(k, j, i, space) * DIMU;
+    const int idxh = IndexMath(k + 1, j, i, space) * DIMU;;
+    Real L[DIMU][DIMU] = {{0.0}}; /* store left eigenvectors */
+    const Real deltaU[DIMU] = {
         U[idxh+0] - U[idx+0],
         U[idxh+1] - U[idx+1],
         U[idxh+2] - U[idx+2],
@@ -587,10 +587,10 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlphaY(
         Real lambda[], Real alpha[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = IndexMath(k, j, i, space) * space->dimU;
-    const int idxh = IndexMath(k, j + 1, i, space) * space->dimU;;
-    Real L[5][5] = {{0.0}}; /* store left eigenvectors */
-    const Real deltaU[5] = {
+    const int idx = IndexMath(k, j, i, space) * DIMU;
+    const int idxh = IndexMath(k, j + 1, i, space) * DIMU;;
+    Real L[DIMU][DIMU] = {{0.0}}; /* store left eigenvectors */
+    const Real deltaU[DIMU] = {
         U[idxh+0] - U[idx+0],
         U[idxh+1] - U[idx+1],
         U[idxh+2] - U[idx+2],
@@ -604,10 +604,10 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlphaX(
         Real lambda[], Real alpha[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = IndexMath(k, j, i, space) * space->dimU;
-    const int idxh = IndexMath(k, j, i + 1, space) * space->dimU;;
-    Real L[5][5] = {{0.0}}; /* store left eigenvectors */
-    const Real deltaU[5] = {
+    const int idx = IndexMath(k, j, i, space) * DIMU;
+    const int idxh = IndexMath(k, j, i + 1, space) * DIMU;;
+    Real L[DIMU][DIMU] = {{0.0}}; /* store left eigenvectors */
+    const Real deltaU[DIMU] = {
         U[idxh+0] - U[idx+0],
         U[idxh+1] - U[idx+1],
         U[idxh+2] - U[idx+2],
@@ -618,21 +618,21 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlphaX(
     return 0;
 }
 static int CalculateAlpha(
-        Real alpha[], Real L[][5], const Real deltaU[])
+        Real alpha[], Real L[][DIMU], const Real deltaU[])
 {
-    for (int row = 0; row < 5; ++row) {
+    for (int row = 0; row < DIMU; ++row) {
         alpha[row] = 0;
-        for (int dummy = 0; dummy < 5; ++dummy) {
+        for (int dummy = 0; dummy < DIMU; ++dummy) {
             alpha[row] = alpha[row] + L[row][dummy] * deltaU[dummy];
         }
     }
     return 0;
 }
 static int ComputeEigenvaluesAndEigenvectorSpaceLZ(
-        Real lambda[], Real L[][5], const int k, const int j, const int i, 
+        Real lambda[], Real L[][DIMU], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
+    Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
     ComputeRoeAverageZ(Uo, k, j, i, U, space, flow);
     const Real u = Uo[1];
     const Real v = Uo[2];
@@ -650,10 +650,10 @@ static int ComputeEigenvaluesAndEigenvectorSpaceLZ(
     return 0;
 }
 static int ComputeEigenvaluesAndEigenvectorSpaceLY(
-        Real lambda[], Real L[][5], const int k, const int j, const int i, 
+        Real lambda[], Real L[][DIMU], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
+    Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
     ComputeRoeAverageY(Uo, k, j, i, U, space, flow);
     const Real u = Uo[1];
     const Real v = Uo[2];
@@ -671,10 +671,10 @@ static int ComputeEigenvaluesAndEigenvectorSpaceLY(
     return 0;
 }
 static int ComputeEigenvaluesAndEigenvectorSpaceLX(
-        Real lambda[], Real L[][5], const int k, const int j, const int i, 
+        Real lambda[], Real L[][DIMU], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
+    Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
     ComputeRoeAverageX(Uo, k, j, i, U, space, flow);
     const Real u = Uo[1];
     const Real v = Uo[2];
@@ -692,10 +692,10 @@ static int ComputeEigenvaluesAndEigenvectorSpaceLX(
     return 0;
 }
 static int ComputeEigenvectorSpaceRZ(
-        Real R[][5], const int k, const int j, const int i, 
+        Real R[][DIMU], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
+    Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
     ComputeRoeAverageZ(Uo, k, j, i, U, space, flow);
     const Real u = Uo[1];
     const Real v = Uo[2];
@@ -711,10 +711,10 @@ static int ComputeEigenvectorSpaceRZ(
     return 0;
 }
 static int ComputeEigenvectorSpaceRY(
-        Real R[][5], const int k, const int j, const int i, 
+        Real R[][DIMU], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
+    Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
     ComputeRoeAverageY(Uo, k, j, i, U, space, flow);
     const Real u = Uo[1];
     const Real v = Uo[2];
@@ -730,10 +730,10 @@ static int ComputeEigenvectorSpaceRY(
     return 0;
 }
 static int ComputeEigenvectorSpaceRX(
-        Real R[][5], const int k, const int j, const int i, 
+        Real R[][DIMU], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    Real Uo[6] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
+    Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
     ComputeRoeAverageX(Uo, k, j, i, U, space, flow);
     const Real u = Uo[1];
     const Real v = Uo[2];
@@ -752,8 +752,8 @@ static int ComputeRoeAverageZ(
         Real Uo[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = IndexMath(k, j, i, space) * space->dimU;
-    const int idxh = IndexMath(k + 1, j, i, space) * space->dimU;;
+    const int idx = IndexMath(k, j, i, space) * DIMU;
+    const int idxh = IndexMath(k + 1, j, i, space) * DIMU;;
     CalculateRoeAverageUo(Uo, idx, idxh, U, flow);
     return 0;
 }
@@ -761,8 +761,8 @@ static int ComputeRoeAverageY(
         Real Uo[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = IndexMath(k, j, i, space) * space->dimU;
-    const int idxh = IndexMath(k, j + 1, i, space) * space->dimU;;
+    const int idx = IndexMath(k, j, i, space) * DIMU;
+    const int idxh = IndexMath(k, j + 1, i, space) * DIMU;;
     CalculateRoeAverageUo(Uo, idx, idxh, U, flow);
     return 0;
 }
@@ -770,8 +770,8 @@ static int ComputeRoeAverageX(
         Real Uo[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = IndexMath(k, j, i, space) * space->dimU;
-    const int idxh = IndexMath(k, j, i + 1, space) * space->dimU;;
+    const int idx = IndexMath(k, j, i, space) * DIMU;
+    const int idxh = IndexMath(k, j, i + 1, space) * DIMU;;
     CalculateRoeAverageUo(Uo, idx, idxh, U, flow);
     return 0;
 }
@@ -779,36 +779,38 @@ static int CalculateRoeAverageUo(
         Real Uo[], const int idx, const int idxh, 
         const Real *U, const Flow *flow)
 {
-    const Real rho = U[idx+0];
+    const Real gamma = flow->gamma;
+    const Real rho = U[idx];
     const Real u = U[idx+1] / rho;
     const Real v = U[idx+2] / rho;
     const Real w = U[idx+3] / rho;
-    const Real hT = flow->gamma * U[idx+4] / rho - 0.5 * (u * u + v * v + w * w) * (flow->gamma - 1.0);
-    const Real rho_h = U[idxh+0];
+    const Real hT = (U[idx+4] / rho) * gamma - 0.5 * (u * u + v * v + w * w) * (gamma - 1.0);
+    const Real rho_h = U[idxh];
     const Real u_h = U[idxh+1] / rho_h;
     const Real v_h = U[idxh+2] / rho_h;
     const Real w_h = U[idxh+3] / rho_h;
-    const Real hT_h = flow->gamma * U[idxh+4] / rho_h - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h) * (flow->gamma - 1.0);
+    const Real hT_h = (U[idxh+4] / rho_h) * gamma - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h) * (gamma - 1.0);
     const Real D = sqrt(rho_h / rho);
     //Uo[0] = rho * (0.5 * (1.0 + D)) * (0.5 * (1.0 + D)); /* rho average, not required */
     Uo[1] = (u + D * u_h) / (1.0 + D); /* u average */
     Uo[2] = (v + D * v_h) / (1.0 + D); /* v average */
     Uo[3] = (w + D * w_h) / (1.0 + D); /* w average */
     Uo[4] = (hT + D * hT_h) / (1.0 + D); /* hT average */
-    Uo[5] = sqrt((flow->gamma - 1.0) * (Uo[4] - 0.5 * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]))); /* the speed of sound */
+    Uo[5] = sqrt((gamma - 1.0) * (Uo[4] - 0.5 * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]))); /* the speed of sound */
     return 0;
 }
 static int ComputeNonViscousFluxZ(
         Real F[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = IndexMath(k, j, i, space) * space->dimU;
-    const Real rho = U[idx+0];
+    const int idx = IndexMath(k, j, i, space) * DIMU;
+    const Real gamma = flow->gamma;
+    const Real rho = U[idx];
     const Real u = U[idx+1] / rho;
     const Real v = U[idx+2] / rho;
     const Real w = U[idx+3] / rho;
     const Real eT = U[idx+4] / rho;
-    const Real p = (flow->gamma - 1.0) * rho * (eT - 0.5 * (u * u + v * v + w * w));
+    const Real p = (gamma - 1.0) * rho * (eT - 0.5 * (u * u + v * v + w * w));
     F[0] = rho * w;
     F[1] = rho * w * u;
     F[2] = rho * w * v;
@@ -820,13 +822,14 @@ static int ComputeNonViscousFluxY(
         Real F[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = IndexMath(k, j, i, space) * space->dimU;
-    const Real rho = U[idx+0];
+    const int idx = IndexMath(k, j, i, space) * DIMU;
+    const Real gamma = flow->gamma;
+    const Real rho = U[idx];
     const Real u = U[idx+1] / rho;
     const Real v = U[idx+2] / rho;
     const Real w = U[idx+3] / rho;
     const Real eT = U[idx+4] / rho;
-    const Real p = (flow->gamma - 1.0) * rho * (eT - 0.5 * (u * u + v * v + w * w));
+    const Real p = (gamma - 1.0) * rho * (eT - 0.5 * (u * u + v * v + w * w));
     F[0] = rho * v;
     F[1] = rho * v * u;
     F[2] = rho * v * v + p;
@@ -838,13 +841,14 @@ static int ComputeNonViscousFluxX(
         Real F[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = IndexMath(k, j, i, space) * space->dimU;
-    const Real rho = U[idx+0];
+    const int idx = IndexMath(k, j, i, space) * DIMU;
+    const Real gamma = flow->gamma;
+    const Real rho = U[idx];
     const Real u = U[idx+1] / rho;
     const Real v = U[idx+2] / rho;
     const Real w = U[idx+3] / rho;
     const Real eT = U[idx+4] / rho;
-    const Real p = (flow->gamma - 1.0) * rho * (eT - 0.5 * (u * u + v * v + w * w));
+    const Real p = (gamma - 1.0) * rho * (eT - 0.5 * (u * u + v * v + w * w));
     F[0] = rho * u;
     F[1] = rho * u * u + p;
     F[2] = rho * u * v;
@@ -867,10 +871,9 @@ static int ComputeViscousFluxGradientZ(
         Real gradG[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    Real hG[5] = {0.0}; /* viscous flux vector */
-    Real Gh[5] = {0.0}; /* viscous flux vector */
+    Real hG[DIMU] = {0.0}; /* viscous flux vector */
+    Real Gh[DIMU] = {0.0}; /* viscous flux vector */
     Real h = 0; /* reciprocal of differencing distance */
-    const int offset = space->nodeFlagOffset;
     /* default is central scheme */
     int hl = k - 1;
     int hr = k + 1;
@@ -883,10 +886,10 @@ static int ComputeViscousFluxGradientZ(
     /* check ghost */
     const int idxl = IndexMath(hl, j, i, space);
     const int idxr = IndexMath(hr, j, i, space);
-    if (offset <= space->nodeFlag[idxl]) {
+    if (OFFSET <= space->nodeFlag[idxl]) {
         ++hl;
     }
-    if (offset <= space->nodeFlag[idxr]) {
+    if (OFFSET <= space->nodeFlag[idxr]) {
         --hr;
     }
     if (0 != (hr - hl)) { /* only do calculation when needed */
@@ -894,7 +897,7 @@ static int ComputeViscousFluxGradientZ(
         ComputeViscousFluxZ(hG, hl, j, i, U, space, flow);
         ComputeViscousFluxZ(Gh, hr, j, i, U, space, flow);
     }
-    for (int row = 0; row < 5; ++row) {
+    for (int row = 0; row < DIMU; ++row) {
         gradG[row] = h * (Gh[row] - hG[row]);
     }
     return 0;
@@ -903,10 +906,9 @@ static int ComputeViscousFluxGradientY(
         Real gradG[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    Real hG[5] = {0.0}; /* viscous flux vector */
-    Real Gh[5] = {0.0}; /* viscous flux vector */
+    Real hG[DIMU] = {0.0}; /* viscous flux vector */
+    Real Gh[DIMU] = {0.0}; /* viscous flux vector */
     Real h = 0; /* reciprocal of differencing distance */
-    const int offset = space->nodeFlagOffset;
     /* default is central scheme */
     int hl = j - 1;
     int hr = j + 1;
@@ -919,10 +921,10 @@ static int ComputeViscousFluxGradientY(
     /* check ghost */
     const int idxl = IndexMath(k, hl, i, space);
     const int idxr = IndexMath(k, hr, i, space);
-    if (offset <= space->nodeFlag[idxl]) {
+    if (OFFSET <= space->nodeFlag[idxl]) {
         ++hl;
     }
-    if (offset <= space->nodeFlag[idxr]) {
+    if (OFFSET <= space->nodeFlag[idxr]) {
         --hr;
     }
     if (0 != (hr - hl)) { /* only do calculation when needed */
@@ -930,7 +932,7 @@ static int ComputeViscousFluxGradientY(
         ComputeViscousFluxY(hG, k, hl, i, U, space, flow);
         ComputeViscousFluxY(Gh, k, hr, i, U, space, flow);
     }
-    for (int row = 0; row < 5; ++row) {
+    for (int row = 0; row < DIMU; ++row) {
         gradG[row] = h * (Gh[row] - hG[row]);
     }
     return 0;
@@ -939,10 +941,9 @@ static int ComputeViscousFluxGradientX(
         Real gradG[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    Real hG[5] = {0.0}; /* viscous flux vector */
-    Real Gh[5] = {0.0}; /* viscous flux vector */
+    Real hG[DIMU] = {0.0}; /* viscous flux vector */
+    Real Gh[DIMU] = {0.0}; /* viscous flux vector */
     Real h = 0; /* reciprocal of differencing distance */
-    const int offset = space->nodeFlagOffset;
     /* default is central scheme */
     int hl = i - 1;
     int hr = i + 1;
@@ -955,10 +956,10 @@ static int ComputeViscousFluxGradientX(
     /* check ghost */
     const int idxl = IndexMath(k, j, hl, space);
     const int idxr = IndexMath(k, j, hr, space);
-    if (offset <= space->nodeFlag[idxl]) {
+    if (OFFSET <= space->nodeFlag[idxl]) {
         ++hl;
     }
-    if (offset <= space->nodeFlag[idxr]) {
+    if (OFFSET <= space->nodeFlag[idxr]) {
         --hr;
     }
     if (0 != (hr - hl)) { /* only do calculation when needed */
@@ -966,7 +967,7 @@ static int ComputeViscousFluxGradientX(
         ComputeViscousFluxX(hG, k, j, hl, U, space, flow);
         ComputeViscousFluxX(Gh, k, j, hr, U, space, flow);
     }
-    for (int row = 0; row < 5; ++row) {
+    for (int row = 0; row < DIMU; ++row) {
         gradG[row] = h * (Gh[row] - hG[row]);
     }
     return 0;
@@ -975,13 +976,13 @@ static int ComputeViscousFluxZ(
         Real G[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = IndexMath(k, j, i, space) * space->dimU;
-    const int idxW = IndexMath(k, j, i - 1, space) * space->dimU;
-    const int idxE = IndexMath(k, j, i + 1, space) * space->dimU;
-    const int idxS = IndexMath(k, j - 1, i, space) * space->dimU;
-    const int idxN = IndexMath(k, j + 1, i, space) * space->dimU;
-    const int idxF = IndexMath(k - 1, j, i, space) * space->dimU;
-    const int idxB = IndexMath(k + 1, j, i, space) * space->dimU;
+    const int idx = IndexMath(k, j, i, space) * DIMU;
+    const int idxW = IndexMath(k, j, i - 1, space) * DIMU;
+    const int idxE = IndexMath(k, j, i + 1, space) * DIMU;
+    const int idxS = IndexMath(k, j - 1, i, space) * DIMU;
+    const int idxN = IndexMath(k, j + 1, i, space) * DIMU;
+    const int idxF = IndexMath(k - 1, j, i, space) * DIMU;
+    const int idxB = IndexMath(k + 1, j, i, space) * DIMU;
 
     /* calculate derivatives in z direction */
     const Real rhoB = U[idxB+0];
@@ -1043,13 +1044,13 @@ static int ComputeViscousFluxY(
         Real G[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = IndexMath(k, j, i, space) * space->dimU;
-    const int idxW = IndexMath(k, j, i - 1, space) * space->dimU;
-    const int idxE = IndexMath(k, j, i + 1, space) * space->dimU;
-    const int idxS = IndexMath(k, j - 1, i, space) * space->dimU;
-    const int idxN = IndexMath(k, j + 1, i, space) * space->dimU;
-    const int idxF = IndexMath(k - 1, j, i, space) * space->dimU;
-    const int idxB = IndexMath(k + 1, j, i, space) * space->dimU;
+    const int idx = IndexMath(k, j, i, space) * DIMU;
+    const int idxW = IndexMath(k, j, i - 1, space) * DIMU;
+    const int idxE = IndexMath(k, j, i + 1, space) * DIMU;
+    const int idxS = IndexMath(k, j - 1, i, space) * DIMU;
+    const int idxN = IndexMath(k, j + 1, i, space) * DIMU;
+    const int idxF = IndexMath(k - 1, j, i, space) * DIMU;
+    const int idxB = IndexMath(k + 1, j, i, space) * DIMU;
 
     /* calculate derivatives in z direction */
     const Real vB = U[idxB+2] / U[idxB+0];
@@ -1111,13 +1112,13 @@ static int ComputeViscousFluxX(
         Real G[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Flow *flow)
 {
-    const int idx = IndexMath(k, j, i, space) * space->dimU;
-    const int idxW = IndexMath(k, j, i - 1, space) * space->dimU;
-    const int idxE = IndexMath(k, j, i + 1, space) * space->dimU;
-    const int idxS = IndexMath(k, j - 1, i, space) * space->dimU;
-    const int idxN = IndexMath(k, j + 1, i, space) * space->dimU;
-    const int idxF = IndexMath(k - 1, j, i, space) * space->dimU;
-    const int idxB = IndexMath(k + 1, j, i, space) * space->dimU;
+    const int idx = IndexMath(k, j, i, space) * DIMU;
+    const int idxW = IndexMath(k, j, i - 1, space) * DIMU;
+    const int idxE = IndexMath(k, j, i + 1, space) * DIMU;
+    const int idxS = IndexMath(k, j - 1, i, space) * DIMU;
+    const int idxN = IndexMath(k, j + 1, i, space) * DIMU;
+    const int idxF = IndexMath(k - 1, j, i, space) * DIMU;
+    const int idxB = IndexMath(k + 1, j, i, space) * DIMU;
 
     /* calculate derivatives in z direction */
     const Real uB = U[idxB+1] / U[idxB+0];
