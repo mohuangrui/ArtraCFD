@@ -26,7 +26,7 @@ int RungeKutta(Field *field, const Real dt, Space *space, Particle *particle,
      * Operation can be achieved by a single loop since all data are stored by
      * linear arrays.
      */
-    for (int idx = 0; idx < (space->nMax * space->dimU); ++idx) {
+    for (int idx = 0; idx < (space->nMax * DIMU); ++idx) {
         field->Un[idx] = field->U[idx];
     }
     /*
@@ -46,7 +46,7 @@ int RungeKutta(Field *field, const Real dt, Space *space, Particle *particle,
      */
     const Real coeA = 3.0 / 4.0; /* caution! float operation required! */
     const Real coeB = 1.0 / 4.0; /* caution! float operation required! */
-    for (int idx = 0; idx < (space->nMax * space->dimU); ++idx) {
+    for (int idx = 0; idx < (space->nMax * DIMU); ++idx) {
         field->U[idx] = coeA * field->Un[idx] + coeB * field->U[idx];
     }
     /*
@@ -58,7 +58,7 @@ int RungeKutta(Field *field, const Real dt, Space *space, Particle *particle,
      */
     const Real coeAA = 1.0 / 3.0; /* caution! float operation required! */
     const Real coeBB = 2.0 / 3.0; /* caution! float operation required! */
-    for (int idx = 0; idx < (space->nMax * space->dimU); ++idx) {
+    for (int idx = 0; idx < (space->nMax * DIMU); ++idx) {
         field->U[idx] = coeAA * field->Un[idx] + coeBB * field->U[idx];
     }
     return 0;
