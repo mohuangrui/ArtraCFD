@@ -574,7 +574,7 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlphaZ(
     const int idxh = IndexMath(k + 1, j, i, space) * DIMU;;
     Real L[DIMU][DIMU] = {{0.0}}; /* store left eigenvectors */
     const Real deltaU[DIMU] = {
-        U[idxh+0] - U[idx+0],
+        U[idxh] - U[idx],
         U[idxh+1] - U[idx+1],
         U[idxh+2] - U[idx+2],
         U[idxh+3] - U[idx+3],
@@ -591,7 +591,7 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlphaY(
     const int idxh = IndexMath(k, j + 1, i, space) * DIMU;;
     Real L[DIMU][DIMU] = {{0.0}}; /* store left eigenvectors */
     const Real deltaU[DIMU] = {
-        U[idxh+0] - U[idx+0],
+        U[idxh] - U[idx],
         U[idxh+1] - U[idx+1],
         U[idxh+2] - U[idx+2],
         U[idxh+3] - U[idx+3],
@@ -608,7 +608,7 @@ static int ComputeEigenvaluesAndDecompositionCoefficientAlphaX(
     const int idxh = IndexMath(k, j, i + 1, space) * DIMU;;
     Real L[DIMU][DIMU] = {{0.0}}; /* store left eigenvectors */
     const Real deltaU[DIMU] = {
-        U[idxh+0] - U[idx+0],
+        U[idxh] - U[idx],
         U[idxh+1] - U[idx+1],
         U[idxh+2] - U[idx+2],
         U[idxh+3] - U[idx+3],
@@ -985,14 +985,14 @@ static int ComputeViscousFluxZ(
     const int idxB = IndexMath(k + 1, j, i, space) * DIMU;
 
     /* calculate derivatives in z direction */
-    const Real rhoB = U[idxB+0];
+    const Real rhoB = U[idxB];
     const Real uB = U[idxB+1] / rhoB;
     const Real vB = U[idxB+2] / rhoB;
     const Real wB = U[idxB+3] / rhoB;
     const Real eTB = U[idxB+4] / rhoB;
     const Real TB = (eTB - 0.5 * (uB * uB + vB * vB + wB * wB)) / flow->cv;
 
-    const Real rhoF = U[idxF+0];
+    const Real rhoF = U[idxF];
     const Real uF = U[idxF+1] / rhoF;
     const Real vF = U[idxF+2] / rhoF;
     const Real wF = U[idxF+3] / rhoF;
@@ -1005,23 +1005,23 @@ static int ComputeViscousFluxZ(
     const Real dT_dz = (TB - TF) * (0.5 * space->ddz);
 
     /* calculate derivatives in y direction */
-    const Real vN = U[idxN+2] / U[idxN+0];
-    const Real wN = U[idxN+3] / U[idxN+0];
-    const Real vS = U[idxS+2] / U[idxS+0];
-    const Real wS = U[idxS+3] / U[idxS+0];
+    const Real vN = U[idxN+2] / U[idxN];
+    const Real wN = U[idxN+3] / U[idxN];
+    const Real vS = U[idxS+2] / U[idxS];
+    const Real wS = U[idxS+3] / U[idxS];
     const Real dv_dy = (vN - vS) * (0.5 * space->ddy);
     const Real dw_dy = (wN - wS) * (0.5 * space->ddy);
 
     /* calculate derivatives in x direction */
-    const Real uE = U[idxE+1] / U[idxE+0];
-    const Real wE = U[idxE+3] / U[idxE+0];
-    const Real uW = U[idxW+1] / U[idxW+0];
-    const Real wW = U[idxW+3] / U[idxW+0];
+    const Real uE = U[idxE+1] / U[idxE];
+    const Real wE = U[idxE+3] / U[idxE];
+    const Real uW = U[idxW+1] / U[idxW];
+    const Real wW = U[idxW+3] / U[idxW];
     const Real du_dx = (uE - uW) * (0.5 * space->ddx);
     const Real dw_dx = (wE - wW) * (0.5 * space->ddx);
 
     /* the primitive variables in current point */
-    const Real rho = U[idx+0];
+    const Real rho = U[idx];
     const Real u = U[idx+1] / rho;
     const Real v = U[idx+2] / rho;
     const Real w = U[idx+3] / rho;
@@ -1053,22 +1053,22 @@ static int ComputeViscousFluxY(
     const int idxB = IndexMath(k + 1, j, i, space) * DIMU;
 
     /* calculate derivatives in z direction */
-    const Real vB = U[idxB+2] / U[idxB+0];
-    const Real wB = U[idxB+3] / U[idxB+0];
-    const Real vF = U[idxF+2] / U[idxF+0];
-    const Real wF = U[idxF+3] / U[idxF+0];
+    const Real vB = U[idxB+2] / U[idxB];
+    const Real wB = U[idxB+3] / U[idxB];
+    const Real vF = U[idxF+2] / U[idxF];
+    const Real wF = U[idxF+3] / U[idxF];
     const Real dv_dz = (vB - vF) * (0.5 * space->ddz);
     const Real dw_dz = (wB - wF) * (0.5 * space->ddz);
 
     /* calculate derivatives in y direction */
-    const Real rhoN = U[idxN+0];
+    const Real rhoN = U[idxN];
     const Real uN = U[idxN+1] / rhoN;
     const Real vN = U[idxN+2] / rhoN;
     const Real wN = U[idxN+3] / rhoN;
     const Real eTN = U[idxN+4] / rhoN;
     const Real TN = (eTN - 0.5 * (uN * uN + vN * vN + wN * wN)) / flow->cv;
 
-    const Real rhoS = U[idxS+0];
+    const Real rhoS = U[idxS];
     const Real uS = U[idxS+1] / rhoS;
     const Real vS = U[idxS+2] / rhoS;
     const Real wS = U[idxS+3] / rhoS;
@@ -1081,15 +1081,15 @@ static int ComputeViscousFluxY(
     const Real dT_dy = (TN - TS) * (0.5 * space->ddy);
 
     /* calculate derivatives in x direction */
-    const Real uE = U[idxE+1] / U[idxE+0];
-    const Real vE = U[idxE+2] / U[idxE+0];
-    const Real uW = U[idxW+1] / U[idxW+0];
-    const Real vW = U[idxW+2] / U[idxW+0];
+    const Real uE = U[idxE+1] / U[idxE];
+    const Real vE = U[idxE+2] / U[idxE];
+    const Real uW = U[idxW+1] / U[idxW];
+    const Real vW = U[idxW+2] / U[idxW];
     const Real du_dx = (uE - uW) * (0.5 * space->ddx);
     const Real dv_dx = (vE - vW) * (0.5 * space->ddx);
 
     /* the primitive variables in current point */
-    const Real rho = U[idx+0];
+    const Real rho = U[idx];
     const Real u = U[idx+1] / rho;
     const Real v = U[idx+2] / rho;
     const Real w = U[idx+3] / rho;
@@ -1121,30 +1121,30 @@ static int ComputeViscousFluxX(
     const int idxB = IndexMath(k + 1, j, i, space) * DIMU;
 
     /* calculate derivatives in z direction */
-    const Real uB = U[idxB+1] / U[idxB+0];
-    const Real uF = U[idxF+1] / U[idxF+0];
-    const Real wB = U[idxB+3] / U[idxB+0];
-    const Real wF = U[idxF+3] / U[idxF+0];
+    const Real uB = U[idxB+1] / U[idxB];
+    const Real uF = U[idxF+1] / U[idxF];
+    const Real wB = U[idxB+3] / U[idxB];
+    const Real wF = U[idxF+3] / U[idxF];
     const Real du_dz = (uB - uF) * (0.5 * space->ddz);
     const Real dw_dz = (wB - wF) * (0.5 * space->ddz);
 
     /* calculate derivatives in y direction */
-    const Real uN = U[idxN+1] / U[idxN+0];
-    const Real uS = U[idxS+1] / U[idxS+0];
-    const Real vN = U[idxN+2] / U[idxN+0];
-    const Real vS = U[idxS+2] / U[idxS+0];
+    const Real uN = U[idxN+1] / U[idxN];
+    const Real uS = U[idxS+1] / U[idxS];
+    const Real vN = U[idxN+2] / U[idxN];
+    const Real vS = U[idxS+2] / U[idxS];
     const Real du_dy = (uN - uS) * (0.5 * space->ddy);
     const Real dv_dy = (vN - vS) * (0.5 * space->ddy);
 
     /* calculate derivatives in x direction */
-    const Real rhoE = U[idxE+0];
+    const Real rhoE = U[idxE];
     const Real uE = U[idxE+1] / rhoE;
     const Real vE = U[idxE+2] / rhoE;
     const Real wE = U[idxE+3] / rhoE;
     const Real eTE = U[idxE+4] / rhoE;
     const Real TE = (eTE - 0.5 * (uE * uE + vE * vE + wE * wE)) / flow->cv;
 
-    const Real rhoW = U[idxW+0];
+    const Real rhoW = U[idxW];
     const Real uW = U[idxW+1] / rhoW;
     const Real vW = U[idxW+2] / rhoW;
     const Real wW = U[idxW+3] / rhoW;
@@ -1157,7 +1157,7 @@ static int ComputeViscousFluxX(
     const Real dT_dx = (TE - TW) * (0.5 * space->ddx);
 
     /* the primitive variables in current point */
-    const Real rho = U[idx+0];
+    const Real rho = U[idx];
     const Real u = U[idx+1] / rho;
     const Real v = U[idx+2] / rho;
     const Real w = U[idx+3] / rho;
