@@ -37,7 +37,7 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
     }
     /* obtain the desired export time interval */
     const Real exportTimeInterval = (time->totalTime - time->currentTime) / (Real)(time->totalOutputTimes);
-    const Real probeExportInterval = (time->totalTime - time->currentTime) / (Real)(flow->probe[11]);
+    const Real probeExportInterval = (time->totalTime - time->currentTime) / (Real)(flow->outputProbe);
     Real accumulatedTime = 0.0; /* used for control when to export data */
     Real probeAccumulatedTime = 0.0; /* used for control when to export probe data */
     /* set some timers for monitoring time consuming of process */
@@ -110,7 +110,7 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
 static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Time *time, 
         const Partition *part, const Flow *flow)
 {
-    Real Uo[6] = {0.0};
+    Real Uo[DIMUo] = {0.0};
     Real velocity = 0.0;
     Real velocityMax = 1.0e-38;
     int idx = 0; /* linear array index math variable */
@@ -118,18 +118,18 @@ static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Time *
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = IndexMath(k, j, i, space);
-                if (0 != space->nodeFlag[idx]) { /* if it's not fluid */
+                if (FLUID != space->nodeFlag[idx]) {
                     continue;
                 }
-                PrimitiveByConservative(Uo, idx * space->dimU, U, flow);
-                velocity = sqrt(flow->gamma * Uo[4] / Uo[0]) + MaxReal(fabs(Uo[1]), MaxReal(fabs(Uo[2]), fabs(Uo[3])));
+                PrimitiveByConservative(Uo, idx * DIMU, U, flow);
+                velocity = MaxReal(fabs(Uo[3]), MaxReal(fabs(Uo[1]), fabs(Uo[2]))) + sqrt((Uo[4] / Uo[0]) * flow->gamma);
                 if (velocityMax < velocity) {
                     velocityMax = velocity;
                 }
             }
         }
     }
-    return time->numCFL * MinReal(space->dx, MinReal(space->dy, space->dz)) / velocityMax;
+    return time->numCFL * MinReal(space->dx, MinReal(space->dz, space->dy)) / velocityMax;
 }
 /* a good practice: end file with a newline */
 
