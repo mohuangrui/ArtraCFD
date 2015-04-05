@@ -79,7 +79,7 @@ static int LoadParasightVariableFile(Real *U, ParasightSet *enSet,
     ParasightReal data = 0.0; /* the Parasight data format */
     const char nameSuffix[5][10] = {"rho", "u", "v", "w", "p"};
     int partNum = 1;
-    for (int dim = 0; dim < space->dimU; ++dim) {
+    for (int dim = 0; dim < DIMU; ++dim) {
         snprintf(enSet->fileName, sizeof(ParasightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
         filePointer = fopen(enSet->fileName, "rb");
         if (NULL == filePointer) {
@@ -93,7 +93,7 @@ static int LoadParasightVariableFile(Real *U, ParasightSet *enSet,
             for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
                 for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                     fread(&data, sizeof(ParasightReal), 1, filePointer);
-                    idx = IndexMath(k, j, i, space) * space->dimU;
+                    idx = IndexMath(k, j, i, space) * DIMU;
                     switch (dim) {
                         case 0: /* rho */
                             U[idx] = data;
@@ -108,8 +108,7 @@ static int LoadParasightVariableFile(Real *U, ParasightSet *enSet,
                             U[idx+3] = U[idx] * data;
                             break;
                         case 4: /* p */
-                            U[idx+4] = data / (flow->gamma - 1.0) + 0.5 * 
-                                (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx];
+                            U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] + data / flow->gammaMinusOne;
                             break;
                         default:
                             break;

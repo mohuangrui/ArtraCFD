@@ -272,7 +272,7 @@ static int WriteParasightVariableFile(const Real *U, ParasightSet *enSet,
         for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
             for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
                 for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                    idx = IndexMath(k, j, i, space) * space->dimU;
+                    idx = IndexMath(k, j, i, space) * DIMU;
                     switch (dim) {
                         case 0: /* rho */
                             data = U[idx];
@@ -293,7 +293,7 @@ static int WriteParasightVariableFile(const Real *U, ParasightSet *enSet,
                             data = ComputeTemperature(idx, U, flow);
                             break;
                         case 6: /* node flag */
-                            idx = idx / space->dimU;
+                            idx = idx / DIMU;
                             data = space->nodeFlag[idx];
                         default:
                             break;
@@ -329,7 +329,7 @@ static int WriteParasightVariableFile(const Real *U, ParasightSet *enSet,
         for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
             for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
                 for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                    idx = IndexMath(k, j, i, space) * space->dimU;
+                    idx = IndexMath(k, j, i, space) * DIMU;
                     switch (dim) {
                         case 1: /* u */
                             data = U[idx+1] / U[idx];
