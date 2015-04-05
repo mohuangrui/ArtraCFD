@@ -74,11 +74,7 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space,
                 InverseDistanceWeighting(Uo, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
                         k, j, i, 2, U, space, flow);
                 /* Normalize the weighted values as reconstructed values. */
-                Uo[0] = Uo[0] / Uo[DIMUo-1]; /* rho */
-                Uo[1] = Uo[1] / Uo[DIMUo-1]; /* u */
-                Uo[2] = Uo[2] / Uo[DIMUo-1]; /* v */
-                Uo[3] = Uo[3] / Uo[DIMUo-1]; /* w */
-                Uo[4] = Uo[4] / Uo[DIMUo-1]; /* p */
+                NormalizeReconstructedValues(Uo);
                 ConservativeByPrimitive(U, idx * DIMU, Uo, flow);
             }
         }

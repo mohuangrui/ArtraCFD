@@ -49,6 +49,7 @@ extern int BoundaryConditionGCIBM(Real *U, const Space *, const Particle *,
 extern int InverseDistanceWeighting(Real Uo[], const Real z, const Real y, const Real x,
         const int k, const int j, const int i, const int h, const Real *U, 
         const Space *, const Flow *);
+extern int NormalizeReconstructedValues(Real Uo[]);
 /*
  * In geometry criteria
  *
