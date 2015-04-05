@@ -466,20 +466,20 @@ typedef enum {
     ENTRYPTK = 11, /* x, y, z, r, rho, u, v, w, fx, fy, fz */
     /* entry number of calculated geometry information */
     ENTRYGEO = 7, /* x, y, z, distance to surface, normalX, normalY, normalZ */
-    /* maximum number of probes to support, extra 2 needed */
-    NPROBE = 12,
+    /* maximum number of probes to support */
+    NPROBE = 10,
     /* entry number of probe information */
-    ENTRYPROBE = 6, /* x1, y1, z1, x2, y2, z2 */
+    ENTRYPROBE = 7, /* x1, y1, z1, x2, y2, z2, resolution */
     /* number of inner subpartitions */
     NSUBPART = 13, /* flow region, [west, east, south, north, front, back] x [BC, Ghost] */
     /* max index of inner partitions of physical BC */
     NBC = 7, /* flow region, [west, east, south, north, front, back] x [BC] */
     /* entry number of BC information */
     ENTRYBC = 6, /* rho, u, v, w, p, T */
-    /* maximum number of regional initionalizer to support, extra 1 needed */
-    NIC = 11,
+    /* maximum number of regional initionalizer to support */
+    NIC = 10,
     /* entry number of regional initionalizer information */
-    ENTRYIC = 15, /* x1, y1, z1, r, x2, y2, z2, ..., primitive variables */
+    ENTRYIC = 11, /* x1, y1, z1, [r, x2], y2, z2, ..., primitive variables */
 } Constants;
 /*
  * Field variables of flow
@@ -589,8 +589,9 @@ typedef struct {
     Real refDensity; /* characteristic density */
     Real refVelocity;  /*characteristic velocity */
     Real refTemperature; /* characteristic temperature */
-    int probe[NPROBE]; /* store tally and resolution information of probes */
-    Real probePos[NPROBE][ENTRYPROBE]; /* store position information of probes */
+    int outputProbe; /* times to write probe information */
+    int tallyProbe; /* tally of probes */
+    Real probe[NPROBE][ENTRYPROBE]; /* store information of probes */
 } Flow;
 /*
  * Domain partition structure
@@ -608,8 +609,9 @@ typedef struct {
     int normalX[NBC];
     int typeBC[NBC]; /* BC types recorder */
     Real valueBC[NBC][ENTRYBC]; /* BC values of each BC part */
-    int typeIC[NIC]; /* list structure for recording regional initial conditions */
-    Real valueIC[NIC][ENTRYIC]; /* queue data structure for storing regional initial values */
+    int tallyIC; /* tally of regional initializers */
+    int typeIC[NIC]; /* record type of each initializer */
+    Real valueIC[NIC][ENTRYIC]; /* store initializer values */
 } Partition;
 /*
  * Program command line arguments and overall control

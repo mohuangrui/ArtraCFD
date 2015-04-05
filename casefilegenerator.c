@@ -212,7 +212,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#probe begin\n");
     fprintf(filePointer, "#-1, 0, 0          # x, y, z of the first end point of line\n");
     fprintf(filePointer, "#1, 0, 0           # x, y, z of the second end point of line\n");
-    fprintf(filePointer, "#500               # number of points on line (integer)\n");
+    fprintf(filePointer, "#500               # number of points on line\n");
     fprintf(filePointer, "#probe end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");

@@ -77,8 +77,9 @@ int main(int argc, char *argv[])
         .refDensity = 0.0,
         .refVelocity = 0.0,
         .refTemperature = 0.0,
-        .probe = {0},
-        .probePos = {{0.0}}};
+        .outputProbe = 0,
+        .tallyProbe = 0,
+        .probe = {{0.0}}};
     Partition thePart = { /* domain partition control */
         .totalN = 1,
         .kSub = {0},
@@ -92,6 +93,7 @@ int main(int argc, char *argv[])
         .normalX = {0},
         .typeBC = {0},
         .valueBC = {{0.0}},
+        .tallyIC = 0,
         .typeIC = {0},
         .valueIC = {{0.0}}};
     Control theControl = { /* program overall control */
