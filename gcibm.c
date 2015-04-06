@@ -293,7 +293,7 @@ static int ApplyWeighting(Real Uo[], Real distance, const Real Uoh[], const Real
     }
     distance = 1 / distance; /* compute weight */
     for (int n = 0; n < (DIMUo - 1); ++n) {
-        Uo[n] = Uo[n] + Uoh[0] * distance;
+        Uo[n] = Uo[n] + Uoh[n] * distance;
     }
     Uo[DIMUo-1] = Uo[DIMUo-1] + distance; /* accumulate normalizer */
     return 0;
