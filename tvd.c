@@ -804,13 +804,12 @@ static int ComputeNonViscousFluxZ(
         const Real *U, const Space *space, const Flow *flow)
 {
     const int idx = IndexMath(k, j, i, space) * DIMU;
-    const Real gamma = flow->gamma;
     const Real rho = U[idx];
     const Real u = U[idx+1] / rho;
     const Real v = U[idx+2] / rho;
     const Real w = U[idx+3] / rho;
     const Real eT = U[idx+4] / rho;
-    const Real p = (gamma - 1.0) * rho * (eT - 0.5 * (u * u + v * v + w * w));
+    const Real p = rho * (eT - 0.5 * (u * u + v * v + w * w)) * (flow->gamma - 1.0);
     F[0] = rho * w;
     F[1] = rho * w * u;
     F[2] = rho * w * v;
@@ -823,13 +822,12 @@ static int ComputeNonViscousFluxY(
         const Real *U, const Space *space, const Flow *flow)
 {
     const int idx = IndexMath(k, j, i, space) * DIMU;
-    const Real gamma = flow->gamma;
     const Real rho = U[idx];
     const Real u = U[idx+1] / rho;
     const Real v = U[idx+2] / rho;
     const Real w = U[idx+3] / rho;
     const Real eT = U[idx+4] / rho;
-    const Real p = (gamma - 1.0) * rho * (eT - 0.5 * (u * u + v * v + w * w));
+    const Real p = rho * (eT - 0.5 * (u * u + v * v + w * w)) * (flow->gamma - 1.0);
     F[0] = rho * v;
     F[1] = rho * v * u;
     F[2] = rho * v * v + p;
@@ -842,13 +840,12 @@ static int ComputeNonViscousFluxX(
         const Real *U, const Space *space, const Flow *flow)
 {
     const int idx = IndexMath(k, j, i, space) * DIMU;
-    const Real gamma = flow->gamma;
     const Real rho = U[idx];
     const Real u = U[idx+1] / rho;
     const Real v = U[idx+2] / rho;
     const Real w = U[idx+3] / rho;
     const Real eT = U[idx+4] / rho;
-    const Real p = (gamma - 1.0) * rho * (eT - 0.5 * (u * u + v * v + w * w));
+    const Real p = rho * (eT - 0.5 * (u * u + v * v + w * w)) * (flow->gamma - 1.0);
     F[0] = rho * u;
     F[1] = rho * u * u + p;
     F[2] = rho * u * v;

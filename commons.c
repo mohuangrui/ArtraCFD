@@ -247,7 +247,7 @@ int PrimitiveByConservative(Real Uo[], const int idx, const Real *U, const Flow 
     Uo[1] = U[idx+1] / U[idx];
     Uo[2] = U[idx+2] / U[idx];
     Uo[3] = U[idx+3] / U[idx];
-    Uo[4] = (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) * flow->gammaMinusOne;
+    Uo[4] = (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) * (flow->gamma - 1.0);
     return 0;
 }
 /*
@@ -259,12 +259,12 @@ int ConservativeByPrimitive(Real *U, const int idx, const Real Uo[], const Flow 
     U[idx+1] = Uo[0] * Uo[1];
     U[idx+2] = Uo[0] * Uo[2];
     U[idx+3] = Uo[0] * Uo[3];
-    U[idx+4] = 0.5 * Uo[0] * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]) + Uo[4] / flow->gammaMinusOne; 
+    U[idx+4] = 0.5 * Uo[0] * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]) + Uo[4] / (flow->gamma - 1.0); 
     return 0;
 }
 Real ComputePressure(const int idx, const Real *U, const Flow *flow)
 {
-    return (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) * flow->gammaMinusOne;
+    return (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) * (flow->gamma - 1.0);
 }
 Real ComputeTemperature(const int idx, const Real *U, const Flow *flow)
 {

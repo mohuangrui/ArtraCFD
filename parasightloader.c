@@ -108,7 +108,7 @@ static int LoadParasightVariableFile(Real *U, ParasightSet *enSet,
                             U[idx+3] = U[idx] * data;
                             break;
                         case 4: /* p */
-                            U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] + data / flow->gammaMinusOne;
+                            U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] + data / (flow->gamma - 1.0);
                             break;
                         default:
                             break;

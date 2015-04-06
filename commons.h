@@ -395,6 +395,11 @@
  *   * accurate discretization (including estimating accuracy),
  *   * flexibility,
  *   * efficiency (speed and memory).
+ * - What Every Computer Scientist Should Know About Floating-Point Arithmetic.
+ *   assign a value which is beyond the maximum value of that data type
+ *   compiler will assign +INF if number is positive and -INF if number is
+ *   negative. If assign a value witch is less than minimum value of
+ *   that data type then complier will assign a garbage value or zero.
  *
  ****************************************************************************/
 /****************************************************************************
@@ -479,7 +484,7 @@ typedef enum {
     /* maximum number of regional initializer to support */
     NIC = 10,
     /* entry number of regional initializer information */
-    ENTRYIC = 11, /* x1, y1, z1, [r, x2], y2, z2, ..., primitive variables */
+    ENTRYIC = 11, /* x1, y1, z1, [r, x2], [y2], [z2], ..., primitive variables */
 } Constants;
 /*
  * Field variables of flow
@@ -582,7 +587,6 @@ typedef struct {
     Real refMu; /* reference dynamic viscosity for Sutherland's law */
     Real refPr; /* reference Prandtl number */
     Real gamma; /* heat capacity ratio */
-    Real gammaMinusOne; /* heat capacity ratio minus one */
     Real gasR; /* the gas constant */
     Real cv; /* specific heat capacity at constant volume */
     Real pi; /* pi */

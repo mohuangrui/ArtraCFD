@@ -10,6 +10,7 @@
 #include "cfdparameters.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
+#include <limits.h> /* sizes of integral types */
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
@@ -101,11 +102,10 @@ static int InitializeCFDParameters(Space *space, Time *time, Flow *flow)
     /* time */
     time->totalTime = time->totalTime * flow->refVelocity / flow->refLength;
     if ((0 > time->totalStep)) {
-        time->totalStep = 9000000;
+        time->totalStep = INT_MAX;
     }
     /* fluid and flow */
     flow->gamma = 1.4;
-    flow->gammaMinusOne = flow->gamma - 1;
     flow->gasR = 8.314462175;
     flow->pi = acos(-1);
     /* reference Mach number */

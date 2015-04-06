@@ -505,8 +505,10 @@ static int WriteVerifyData(const Space *space, const Time *time, const Flow *flo
     fprintf(filePointer, "#                    >> Field Data Probes <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "total number of times of exporting probe data: %d\n", flow->outputProbe);
     for (int n = 0; n < flow->tallyProbe; ++n) {
+        if (0 == n) {
+            fprintf(filePointer, "total number of times of exporting probe data: %d\n", flow->outputProbe);
+        }
         fprintf(filePointer, "#\n");
         fprintf(filePointer, "probe %d\n", (n + 1));
         fprintf(filePointer, "x, y, z of the first end point: %.6g, %.6g, %.6g\n", 

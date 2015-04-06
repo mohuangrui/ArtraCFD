@@ -22,7 +22,7 @@ static int IdentifySolidNodesAtNumericalBoundary(Space *, const Particle *,
         const Partition *);
 static int SearchFluidNodes(const int k, const int j, const int i, 
         const int h, const Space *);
-static int ApplyWeighting(Real Uo[], Real weight, const Real Uoh[], const Real tiny);
+static int ApplyWeighting(Real Uo[], Real distance, const Real Uoh[], const Real tiny);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -237,9 +237,8 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
                 /* Normalize the weighted values of the image point */
                 NormalizeReconstructedValues(Uo);
                 /*
-                 * Apply no-slip wall boundary conditions to get primitive values at nodes
-                 * in wall. That is, keep scalars and flip vectors after reflection.
-                 * variable phi_ghost = 2 * phi_o - phi_image 
+                 * Apply linear reconstruction to get primitive values at nodes
+                 * in wall. That is, variable phi_ghost = 2 * phi_o - phi_image 
                  */
                 Uo[1] = -Uo[1];
                 Uo[2] = -Uo[2];
@@ -256,7 +255,7 @@ int InverseDistanceWeighting(Real Uo[], const Real z, const Real y, const Real x
 {
     int idxh = 0; /* linear array index math variable */
     Real Uoh[DIMUo] = {0.0}; /* primitive at target node */
-    Real weight = 0.0; /* weight factor */
+    Real distance = 0.0;
     /* reset */
     for (int dim = 0; dim < DIMUo; ++dim) {
         Uo[dim] = 0.0;
@@ -279,37 +278,31 @@ int InverseDistanceWeighting(Real Uo[], const Real z, const Real y, const Real x
                 const Real distY = ComputeY(j + jh, space) - y;
                 const Real distX = ComputeX(i + ih, space) - x;
                 /* use distance square to avoid expensive sqrt */
-                weight = distX * distX + distY * distY + distZ * distZ;
+                distance = distX * distX + distY * distY + distZ * distZ;
                 PrimitiveByConservative(Uoh, idxh * DIMU, U, flow);
-                ApplyWeighting(Uo, weight, Uoh, space->tinyL);
+                ApplyWeighting(Uo, distance, Uoh, space->tinyL);
             }
         }
     }
     return 0;
 }
-static int ApplyWeighting(Real Uo[], Real weight, const Real Uoh[], const Real tiny)
+static int ApplyWeighting(Real Uo[], Real distance, const Real Uoh[], const Real tiny)
 {
-    if (tiny > weight) { /* avoid overflow of too small distance */
-        weight = tiny;
+    if (tiny > distance) { /* avoid overflow of too small distance */
+        distance = tiny;
     }
-    weight = 1 / weight;
-    /* no loop to avoid loop overload */
-    Uo[0] = Uo[0] + Uoh[0] * weight; /* rho */
-    Uo[1] = Uo[1] + Uoh[1] * weight; /* u */
-    Uo[2] = Uo[2] + Uoh[2] * weight; /* v */
-    Uo[3] = Uo[3] + Uoh[3] * weight; /* w */
-    Uo[4] = Uo[4] + Uoh[4] * weight; /* p */
-    Uo[DIMUo-1] = Uo[DIMUo-1] + weight; /* accumulate normalizer */
+    distance = 1 / distance; /* compute weight */
+    for (int n = 0; n < (DIMUo - 1); ++n) {
+        Uo[n] = Uo[n] + Uoh[0] * distance;
+    }
+    Uo[DIMUo-1] = Uo[DIMUo-1] + distance; /* accumulate normalizer */
     return 0;
 }
 int NormalizeReconstructedValues(Real Uo[])
 {
-    /* Normalize the weighted values, no loop to avoid loop overload */
-    Uo[0] = Uo[0] / Uo[DIMUo-1]; /* rho */
-    Uo[1] = Uo[1] / Uo[DIMUo-1]; /* u */
-    Uo[2] = Uo[2] / Uo[DIMUo-1]; /* v */
-    Uo[3] = Uo[3] / Uo[DIMUo-1]; /* w */
-    Uo[4] = Uo[4] / Uo[DIMUo-1]; /* p */
+    for (int n = 0; n < (DIMUo - 1); ++n) {
+        Uo[n] = Uo[n] / Uo[DIMUo-1];
+    }
     return 0;
 }
 Real InGeometry(const int k, const int j, const int i, const Real *ptk, const Space *space)

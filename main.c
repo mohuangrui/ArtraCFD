@@ -70,7 +70,6 @@ int main(int argc, char *argv[])
         .refMu = 0.0,
         .refPr = 0.0,
         .gamma = 0.0,
-        .gammaMinusOne = 0.0,
         .gasR = 0.0,
         .cv = 0.0,
         .pi = 0.0,

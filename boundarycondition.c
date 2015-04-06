@@ -74,7 +74,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         U[idx+3] = (!normalZ) * U[idxh+3];
                         if (0 > Uo[5]) { /* adiabatic, dT/dn = 0 */
                             U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] + 
-                                ComputePressure(idxh, U, flow) / flow->gammaMinusOne;
+                                ComputePressure(idxh, U, flow) / (flow->gamma - 1.0);
                         } else { /* constant wall temperature, T = Tw */
                             U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] +
                                 U[idx] * Uo[5] * flow->cv;
@@ -87,7 +87,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         U[idx+2] = 0.0;
                         U[idx+3] = 0.0;
                         if (0 > Uo[5]) { /* adiabatic, dT/dn = 0 */
-                            U[idx+4] = ComputePressure(idxh, U, flow) / flow->gammaMinusOne;
+                            U[idx+4] = ComputePressure(idxh, U, flow) / (flow->gamma - 1.0);
                         } else { /* constant wall temperature, T = Tw */
                             U[idx+4] = U[idx] * Uo[5] * flow->cv;
                         }
@@ -126,7 +126,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                             U[idx+2] = U[idx] * (2.0 * Uoh[2] - Uohh[2]);
                             U[idx+3] = U[idx] * (2.0 * Uoh[3] - Uohh[3]);
                             U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] + 
-                                Uoh[4] / flow->gammaMinusOne;
+                                Uoh[4] / (flow->gamma - 1.0);
                             break;
                     }
                 }
@@ -137,12 +137,9 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
 }
 static int ZeroGradientFlow(Real *U, const int idx, const int idxh)
 {
-    /* no loop to avoid loop averload */
-    U[idx] = U[idxh];
-    U[idx+1] = U[idxh+1];
-    U[idx+2] = U[idxh+2];
-    U[idx+3] = U[idxh+3];
-    U[idx+4] = U[idxh+4];
+    for (int dim = 0; dim < DIMU; ++dim) {
+        U[idx+dim] = U[idxh+dim];
+    }
     return 0;
 }
 /* a good practice: end file with a newline */

@@ -112,7 +112,7 @@ static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Time *
 {
     Real Uo[DIMUo] = {0.0};
     Real velocity = 0.0;
-    Real velocityMax = 1.0e-38;
+    Real velocityMax = 1.0e-37;
     int idx = 0; /* linear array index math variable */
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
