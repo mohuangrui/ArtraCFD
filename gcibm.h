@@ -19,10 +19,6 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Initialize domain geometry
- */
-extern int InitializeDomainGeometry(Space *);
-/*
  * Compute domain geometry
  *
  * Function

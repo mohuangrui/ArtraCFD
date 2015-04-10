@@ -15,6 +15,7 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
+static int InitializeDomainGeometry(Space *, const Partition *);
 static int LocateSolidGeometry(Space *, const Particle *, const Partition *);
 static int IdentifyGhostNodes(Space *, const Partition *);
 static int IdentifySolidNodesAtNumericalBoundary(Space *, const Particle *, 
@@ -29,7 +30,8 @@ static int ApplyWeighting(Real Uo[], Real distance, const Real Uoh[], const Real
  * These functions identify the type of each node: 
  *
  * Procedures are:
- * -- initialize node flag of boundary and exterior nodes to boundary type;
+ * -- initialize node flag of boundary and exterior nodes to boundary type,
+ *    and inner nodes to fluid type;
  * -- identify all inner nodes that are in solid geometry as solid node;
  * -- identify ghost nodes according to the node type of its neighbours;
  * -- identify whether a solid node required for numerical boundary.
@@ -52,7 +54,15 @@ static int ApplyWeighting(Real Uo[], Real distance, const Real Uoh[], const Real
  * The rational is that don't store every information for each ghost node, but
  * only store necessary information. When need it, access and calculate it.
  */
-int InitializeDomainGeometry(Space *space)
+int ComputeDomainGeometryGCIBM(Space *space, Particle *particle, const Partition *part)
+{
+    InitializeDomainGeometry(space, part);
+    LocateSolidGeometry(space, particle, part);
+    IdentifyGhostNodes(space, part);
+    IdentifySolidNodesAtNumericalBoundary(space, particle, part);
+    return 0;
+}
+static int InitializeDomainGeometry(Space *space, const Partition *part)
 {
     /*
      * Initialize the entire domain to boundary type. Operation can be achieved
@@ -62,33 +72,54 @@ int InitializeDomainGeometry(Space *space)
     for (idx = 0; idx < space->nMax; ++idx) {
         space->nodeFlag[idx] = EXTERIOR;
     }
-    return 0;
-}
-int ComputeDomainGeometryGCIBM(Space *space, Particle *particle, const Partition *part)
-{
-    LocateSolidGeometry(space, particle, part);
-    IdentifyGhostNodes(space, part);
-    IdentifySolidNodesAtNumericalBoundary(space, particle, part);
+    /*
+     * Initialize inner nodes to fluid type.
+     */
+    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
+                idx = IndexMath(k, j, i, space);
+                space->nodeFlag[idx] = FLUID;
+            }
+        }
+    }
     return 0;
 }
 /*
  * When locate solid nodes, there are two approaches available. One is search
  * over each node and verify each node regarding to all the particles; another
  * is search each particle and find all the nodes inside current particle.
- * The second method will fail if two particles are overlaped.
+ * The second method is adopted here for performance reason, although it's much
+ * more complicated than the first one.
+ * Be cautious with the validity of any calculated index. It's extremely
+ * necessary to adjust the index into the valid flow region or check the
+ * validity of the index to avoid index exceed array bound limits and 
+ * mysterious bugs.
  */
 static int LocateSolidGeometry(Space *space, const Particle *particle, const Partition *part)
 {
     int idx = 0; /* linear array index math variable */
-    Real *ptk = NULL; /* geometry pointer */
-    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = IndexMath(k, j, i, space);
-                space->nodeFlag[idx] = FLUID; /* reset to fluid */
-                for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-                    ptk = IndexGeometry(geoCount, particle);
-                    if (0 > InGeometry(k, j, i, ptk, space)) { /* in the geometry */
+    for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
+        const Real *ptk = IndexGeometry(geoCount, particle);
+        const int centerI = ComputeI(ptk[0], space);
+        const int centerJ = ComputeJ(ptk[1], space);
+        const int centerK = ComputeK(ptk[2], space);
+        const Real safetyCoe = 1.2; /* zoom the search range */
+        const int rangeK = (int)(safetyCoe * ptk[3] * space->ddz);
+        const int rangeJ = (int)(safetyCoe * ptk[3] * space->ddy);
+        const int rangeI = (int)(safetyCoe * ptk[3] * space->ddx);
+        /* determine search range according to valid flow region */
+        const int kSub = FlowRegionK(centerK - rangeK, part);
+        const int kSup = FlowRegionK(centerK + rangeK, part) + 1;
+        const int jSub = FlowRegionJ(centerJ - rangeJ, part);
+        const int jSup = FlowRegionJ(centerJ + rangeJ, part) + 1;
+        const int iSub = FlowRegionI(centerI - rangeI, part);
+        const int iSup = FlowRegionI(centerI + rangeI, part) + 1;
+        for (int k = kSub; k < kSup; ++k) {
+            for (int j = jSub; j < jSup; ++j) {
+                for (int i = iSub; i < iSup; ++i) {
+                    if (0 > InGeometry(k, j, i, ptk, space)) {
+                        idx = IndexMath(k, j, i, space);
                         space->nodeFlag[idx] = -OFFSET - geoCount; /* geometry are linked */
                     }
                 }
