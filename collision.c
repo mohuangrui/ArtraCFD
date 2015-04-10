@@ -128,9 +128,9 @@ static int SurfaceForceIntegration(const Real *U, const Space *space,
     /* calibrate the sum of discrete forces into integration */
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
         ptk = IndexGeometry(geoCount, particle);
-        ptk[8] = ptk[8] * ptk[12] * ptk[11];
-        ptk[9] = ptk[9] * ptk[12] * ptk[11];
-        ptk[10] = ptk[10] * ptk[12] * ptk[11];
+        ptk[8] = ptk[8] * ptk[12] / ptk[11];
+        ptk[9] = ptk[9] * ptk[12] / ptk[11];
+        ptk[10] = ptk[10] * ptk[12] / ptk[11];
     }
     return 0;
 }
