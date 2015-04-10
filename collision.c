@@ -124,9 +124,9 @@ static int SurfaceForceIntegration(const Real *U, const Space *space,
                 ptk = IndexGeometry(geoID, particle);
                 CalculateGeometryInformation(info, k, j, i, ptk, space);
                 p = ComputePressure(idx * DIMU, U, flow);
-                ptk[8] = -p * info[5]; /* increase fx by pressure projection on x */
-                ptk[9] = -p * info[6]; /* increase fy by pressure projection on y */
-                ptk[10] = -p * info[7]; /* increase fz by pressure projection on z */
+                ptk[8] = ptk[8] - p * info[5]; /* increase fx by pressure projection on x */
+                ptk[9] = ptk[9] - p * info[6]; /* increase fy by pressure projection on y */
+                ptk[10] = ptk[10] - p * info[7]; /* increase fz by pressure projection on z */
                 ptk[11] = ptk[11] + 1; /* count the number of ghost node of current particle */
 
             }
