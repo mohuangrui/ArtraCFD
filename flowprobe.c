@@ -11,6 +11,12 @@
 #include <stdlib.h> /* support for abs operation */
 #include "commons.h"
 /****************************************************************************
+ * Static Function Declarations
+ ****************************************************************************/
+static int FlowRegionK(const int k, const Partition *);
+static int FlowRegionJ(const int j, const Partition *);
+static int FlowRegionI(const int i, const Partition *);
+/****************************************************************************
  * Function definitions
  ****************************************************************************/
 int WriteComputedDataAtProbes(const int stepCount, const Real *U, 
@@ -57,6 +63,18 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
         fclose(filePointer); /* close current opened file */
     }
     return 0;
+}
+static int FlowRegionK(const int k, const Partition *part)
+{
+    return MinInt(part->kSup[0] - 1, MaxInt(part->kSub[0], k));
+}
+static int FlowRegionJ(const int j, const Partition *part)
+{
+    return MinInt(part->jSup[0] - 1, MaxInt(part->jSub[0], j));
+}
+static int FlowRegionI(const int i, const Partition *part)
+{
+    return MinInt(part->iSup[0] - 1, MaxInt(part->iSub[0], i));
 }
 /* a good practice: end file with a newline */
 

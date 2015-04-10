@@ -186,18 +186,6 @@ int ComputeI(const Real x, const Space *space)
 {
     return (int)((x - space->xMin) * space->ddx + 0.5) + space->ng;
 }
-int FlowRegionK(const int k, const Partition *part)
-{
-    return MinInt(part->kSup[0] - 1, MaxInt(part->kSub[0], k));
-}
-int FlowRegionJ(const int j, const Partition *part)
-{
-    return MinInt(part->jSup[0] - 1, MaxInt(part->jSub[0], j));
-}
-int FlowRegionI(const int i, const Partition *part)
-{
-    return MinInt(part->iSup[0] - 1, MaxInt(part->iSub[0], i));
-}
 Real ComputeZ(const int k, const Space *space)
 {
     return (space->zMin + (k - space->ng) * space->dz);
