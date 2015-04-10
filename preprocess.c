@@ -33,7 +33,7 @@ int Preprocess(Field *field, Space *space, Particle *particle, Time *time,
     ComputeCFDParameters(space, time, flow);
     DomainPartition(part, space);
     ProgramMemoryAllocate(field, space);
-    LoadGeometryData(particle, time);
+    LoadGeometryData(particle, space, time, flow);
     ComputeDomainGeometryGCIBM(space, particle, part);
     return 0;
 }

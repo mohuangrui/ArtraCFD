@@ -16,6 +16,7 @@
  ****************************************************************************/
 static int NonrestartGeometryLoader(Particle *);
 static int RestartGeometryLoader(Particle *);
+static int ComputeGeometryParameters(Particle *, const Space *, const Flow *);
 static int ReadGeometryData(FILE **, Particle *);
 /****************************************************************************
  * Function definitions
@@ -23,13 +24,15 @@ static int ReadGeometryData(FILE **, Particle *);
 /*
  * This function load geometry data from the geometry file.
  */
-int LoadGeometryData(Particle *particle, const Time *time)
+int LoadGeometryData(Particle *particle, const Space *space, const Time *time,
+        const Flow *flow)
 {
     if (0 == time->restart) { /* if non-restart, read input file */
         NonrestartGeometryLoader(particle);
     } else { /* if restart, read the particle file */
         RestartGeometryLoader(particle);
     }
+    ComputeGeometryParameters(particle, space, flow);
     return 0;
 }
 static int NonrestartGeometryLoader(Particle *particle)
@@ -89,8 +92,8 @@ static int ReadGeometryData(FILE **filePointerPointer, Particle *particle)
     }
     /* 
      * Assign storage to store particle information:
-     * x, y, z, r, density, u, v, w,       fx, fy, fz, tally 
-     * 0, 1, 2, 3,    4,    5, 6, 7,        8,  9, 10,  11      total: 12
+     * x, y, z, r, density, u, v, w,       fx, fy, fz, tally  area  1/mass
+     * 0, 1, 2, 3,    4,    5, 6, 7,        8,  9, 10,  11     12     13           total: 14
      *    need to be read in                  calculated
      */
     particle->headAddress = AssignStorage(particle->totalN * ENTRYPTK, "Real");
@@ -109,6 +112,21 @@ static int ReadGeometryData(FILE **filePointerPointer, Particle *particle)
     }
     *filePointerPointer = filePointer; /* return a updated value of file pointer */
     return 0;
+}
+static int ComputeGeometryParameters(Particle *particle, const Space *space, const Flow *flow)
+{
+    for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
+        Real *ptk = IndexGeometry(geoCount, particle);
+        if (1 == space->collapsed) { /* space dimension collapsed */
+            ptk[12] = 2.0 * ptk[3] * flow->pi; /* circle perimeter */
+            ptk[13] = ptk[4] * ptk[3] * ptk[3] * flow->pi; /* circle mass */
+        } else {
+            ptk[12] = 4.0 * ptk[3] * ptk[3] * flow->pi; /* sphere surface */
+            ptk[13] = ptk[4] * (4.0 / 3.0) * ptk[3] * ptk[3] * ptk[3] * flow->pi; /* sphere mass */
+        }
+        /* get the mass reciprocal */
+        ptk[13] = 1 / ptk[13];
+    }
 }
 /*
  * Write geometry information for restart.

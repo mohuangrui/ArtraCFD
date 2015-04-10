@@ -468,7 +468,7 @@ typedef enum {
     /* identifier of boundary and exterior ghost nodes */
     EXTERIOR = -1,
     /* entry number of particle information */
-    ENTRYPTK = 12, /* x, y, z, r, rho, u, v, w, fx, fy, fz, tally */
+    ENTRYPTK = 14, /* x, y, z, r, rho, u, v, w, fx, fy, fz, tally, area, 1/mass */
     /* entry number of calculated geometry information */
     INFOGEO = 8, /* x, y, z, distance to center, to surface, normalX, normalY, normalZ */
     /* maximum number of probes to support */

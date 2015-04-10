@@ -30,18 +30,12 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space,
      * Update particle velocity and position
      */
     Real *ptk = NULL;
-    Real mass = 0.0; /* mass of particles */
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
         ptk = IndexGeometry(geoCount, particle);
-        if (1 == space->collapsed) {
-            mass = ptk[4] * ptk[3] * ptk[3] * flow->pi;
-        } else {
-            mass = ptk[4] * (4.0 / 3.0) * ptk[3] * ptk[3] * ptk[3] * flow->pi;
-        }
         /* velocity */
-        ptk[5] = ptk[5] + dt * ptk[8] / mass;
-        ptk[6] = ptk[6] + dt * ptk[9] / mass;
-        ptk[7] = ptk[7] + dt * ptk[10] / mass;
+        ptk[5] = ptk[5] + dt * ptk[8] * ptk[13];
+        ptk[6] = ptk[6] + dt * ptk[9] * ptk[13];
+        ptk[7] = ptk[7] + dt * ptk[10] * ptk[13];
         /* spatial position */
         ptk[0] = ptk[0] + ptk[5] * dt;
         ptk[1] = ptk[1] + ptk[6] * dt;
@@ -103,7 +97,6 @@ static int SurfaceForceIntegration(const Real *U, const Space *space,
     int geoID = 0; /* geometry id */
     Real *ptk = NULL;
     Real info[INFOGEO] = {0.0}; /* store calculated geometry information */
-    Real ds = 0.0; /* surface differential area */
     Real p = 0.0;
     /* reset some non accumulative information of particles to zero */
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
@@ -135,14 +128,9 @@ static int SurfaceForceIntegration(const Real *U, const Space *space,
     /* calibrate the sum of discrete forces into integration */
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
         ptk = IndexGeometry(geoCount, particle);
-        if (1 == space->collapsed) { /* space dimension collapsed */
-            ds = 2.0 * ptk[3] / ptk[11] * flow->pi; /* circle perimeter */
-        } else {
-            ds = 4.0 * ptk[3] * ptk[3] / ptk[11] * flow->pi; /* sphere surface */
-        }
-        ptk[8] = ptk[8] * ds;
-        ptk[9] = ptk[9] * ds;
-        ptk[10] = ptk[10] * ds;
+        ptk[8] = ptk[8] * ptk[12] * ptk[11];
+        ptk[9] = ptk[9] * ptk[12] * ptk[11];
+        ptk[10] = ptk[10] * ptk[12] * ptk[11];
     }
     return 0;
 }
