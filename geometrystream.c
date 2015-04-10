@@ -127,6 +127,7 @@ static int ComputeGeometryParameters(Particle *particle, const Space *space, con
         /* get the mass reciprocal */
         ptk[13] = 1 / ptk[13];
     }
+    return 0;
 }
 /*
  * Write geometry information for restart.
