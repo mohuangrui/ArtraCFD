@@ -121,7 +121,6 @@ static int SurfaceForceIntegration(const Real *U, const Space *space,
                 ptk[9] = ptk[9] - p * info[6]; /* increase fy by pressure projection on y */
                 ptk[10] = ptk[10] - p * info[7]; /* increase fz by pressure projection on z */
                 ptk[11] = ptk[11] + 1; /* count the number of ghost node of current particle */
-
             }
         }
     }
