@@ -76,6 +76,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                             U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] + 
                                 ComputePressure(idxh, U, flow) / (flow->gamma - 1.0);
                         } else { /* constant wall temperature, T = Tw */
+                            U[idx] = ComputePressure(idxh, U, flow) / (Uo[5] * flow->gasR);
                             U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] +
                                 U[idx] * Uo[5] * flow->cv;
                         }
@@ -89,6 +90,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         if (0 > Uo[5]) { /* adiabatic, dT/dn = 0 */
                             U[idx+4] = ComputePressure(idxh, U, flow) / (flow->gamma - 1.0);
                         } else { /* constant wall temperature, T = Tw */
+                            U[idx] = ComputePressure(idxh, U, flow) / (Uo[5] * flow->gasR);
                             U[idx+4] = U[idx] * Uo[5] * flow->cv;
                         }
                         break;
