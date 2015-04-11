@@ -203,7 +203,7 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = IndexMath(k, j, i, space);
                 if (-OFFSET - particle->totalN >= space->nodeFlag[idx]) { /* solid */
-                    geoID = space->nodeFlag[idx] + OFFSET + particle->totalN;
+                    geoID = -space->nodeFlag[idx] - OFFSET - particle->totalN;
                 } else {
                     if (OFFSET <= space->nodeFlag[idx]) { /* ghost */
                         geoID = space->nodeFlag[idx] - OFFSET; /* extract geometry */
