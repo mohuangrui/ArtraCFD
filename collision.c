@@ -101,10 +101,10 @@ static int SurfaceForceIntegration(const Real *U, const Space *space,
     /* reset some non accumulative information of particles to zero */
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
         ptk = IndexGeometry(geoCount, particle);
-        ptk[8] = 0; /* force at x direction */
-        ptk[9] = 0; /* force at y direction */
-        ptk[10] = 0; /* force at z direction */
-        ptk[11] = 0; /* ghost node count */
+        ptk[8] = 0; /* fx */
+        ptk[9] = 0; /* fy */
+        ptk[10] = 0; /* fz */
+        ptk[11] = 0; /* tally */
     }
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
@@ -117,10 +117,10 @@ static int SurfaceForceIntegration(const Real *U, const Space *space,
                 ptk = IndexGeometry(geoID, particle);
                 CalculateGeometryInformation(info, k, j, i, ptk, space);
                 p = ComputePressure(idx * DIMU, U, flow);
-                ptk[8] = ptk[8] - p * info[5]; /* increase fx by pressure projection on x */
-                ptk[9] = ptk[9] - p * info[6]; /* increase fy by pressure projection on y */
-                ptk[10] = ptk[10] - p * info[7]; /* increase fz by pressure projection on z */
-                ptk[11] = ptk[11] + 1; /* count the number of ghost node of current particle */
+                ptk[8] = ptk[8] - p * info[5]; /* integrate fx */
+                ptk[9] = ptk[9] - p * info[6]; /* integrate fy */
+                ptk[10] = ptk[10] - p * info[7]; /* integrate fz */
+                ptk[11] = ptk[11] + 1; /* count number of ghosts */
             }
         }
     }
