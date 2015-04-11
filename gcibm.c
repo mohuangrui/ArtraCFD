@@ -158,7 +158,7 @@ static int IdentifySolidNodesAtNumericalBoundary(Space *space,
                 if (-OFFSET < space->nodeFlag[idx]) { /* it's not solid node */
                     continue;
                 }
-                for (int order = 2; order <= 2; ++order) {
+                for (int order = 2; order <= 2; ++order) { /* total ghost layers required */
                     if (0 == SearchFluidNodes(k, j, i, order, space)) {
                         space->nodeFlag[idx] = space->nodeFlag[idx] - particle->totalN;
                     }
