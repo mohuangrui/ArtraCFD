@@ -36,7 +36,6 @@ int LoadComputedDataParaview(Real *U, const Space *space, Time *time,
 static int LoadParaviewDataFile(ParaviewSet *paraSet, Time *time)
 {
     FILE *filePointer = NULL;
-    /* current filename */
     filePointer = fopen("restart.pvd", "r");
     if (NULL == filePointer) {
         FatalError("failed to open restart file: restart.pvd...");
