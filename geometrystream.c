@@ -153,6 +153,11 @@ static int ComputeGeometryParameters(Particle *particle, const Space *space, con
 {
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
         Real *ptk = IndexGeometry(geoCount, particle);
+        /* initialize other uninitialized values */
+        ptk[8] = 0;
+        ptk[9] = 0;
+        ptk[10] = 0;
+        ptk[11] = 0;
         if (1 == space->collapsed) { /* space dimension collapsed */
             ptk[12] = 2.0 * ptk[3] * flow->pi; /* circle perimeter */
             ptk[13] = ptk[4] * ptk[3] * ptk[3] * flow->pi; /* circle mass */
