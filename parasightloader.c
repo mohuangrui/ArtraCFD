@@ -7,15 +7,16 @@
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "parasight.h"
+#include "parasightstream.h"
 #include <stdio.h> /* standard library for input and output */
 #include <string.h> /* manipulating strings */
+#include "ensight.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int LoadParasightCaseFile(ParasightSet *, Time *);
-static int LoadParasightVariableFile(Real *U, ParasightSet *,
+static int LoadParasightCaseFile(EnsightSet *, Time *);
+static int LoadParasightVariableFile(Real *U, EnsightSet *,
         const Space *, const Partition *, const Flow *);
 /****************************************************************************
  * Function definitions
@@ -26,8 +27,8 @@ static int LoadParasightVariableFile(Real *U, ParasightSet *,
 int LoadComputedDataParasight(Real *U, const Space *space, Time *time,
         const Partition *part, const Flow *flow)
 {
-    ParasightSet enSet = { /* initialize Parasight environment */
-        .baseName = "restart", /* data file base name */
+    EnsightSet enSet = { /* initialize Parasight environment */
+        .baseName = "parasight", /* data file base name */
         .fileName = {'\0'}, /* data file name */
         .stringData = {'\0'}, /* string data recorder */
     };
@@ -35,12 +36,10 @@ int LoadComputedDataParasight(Real *U, const Space *space, Time *time,
     LoadParasightVariableFile(U, &enSet, space, part, flow);
     return 0;
 }
-static int LoadParasightCaseFile(ParasightSet *enSet, Time *time)
+static int LoadParasightCaseFile(EnsightSet *enSet, Time *time)
 {
     FILE *filePointer = NULL;
-    /* current filename */
-    snprintf(enSet->fileName, sizeof(ParasightString), "%s.case", enSet->baseName); 
-    filePointer = fopen(enSet->fileName, "r");
+    filePointer = fopen("restart.case", "r");
     if (NULL == filePointer) {
         FatalError("failed to open restart case file: restart.case...");
     }
@@ -69,30 +68,35 @@ static int LoadParasightCaseFile(ParasightSet *enSet, Time *time)
     fgets(currentLine, sizeof currentLine, filePointer);
     sscanf(currentLine, "%*s %*s %*s %*s %d", &(time->stepCount)); 
     fclose(filePointer); /* close current opened file */
+    /* store updated basename in filename */
+    snprintf(enSet->fileName, sizeof(EnsightString), "%s%05d", 
+            enSet->baseName, time->outputCount); 
+    /* basename is updated here! */
+    snprintf(enSet->baseName, sizeof(EnsightString), "%s", enSet->fileName); 
     return 0;
 }
-static int LoadParasightVariableFile(Real *U, ParasightSet *enSet,
+static int LoadParasightVariableFile(Real *U, EnsightSet *enSet,
         const Space *space, const Partition *part, const Flow *flow)
 {
     FILE *filePointer = NULL;
     int idx = 0; /* linear array index math variable */
-    ParasightReal data = 0.0; /* the Parasight data format */
+    EnsightReal data = 0.0; /* the Parasight data format */
     const char nameSuffix[5][10] = {"rho", "u", "v", "w", "p"};
     int partNum = 1;
     for (int dim = 0; dim < DIMU; ++dim) {
-        snprintf(enSet->fileName, sizeof(ParasightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
+        snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
         filePointer = fopen(enSet->fileName, "rb");
         if (NULL == filePointer) {
             FatalError("failed to open restart data files...");
         }
-        fread(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
-        fread(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
+        fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
+        fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
         fread(&partNum, sizeof(int), 1, filePointer);
-        fread(enSet->stringData, sizeof(char), sizeof(ParasightString), filePointer);
+        fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
         for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
             for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
                 for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                    fread(&data, sizeof(ParasightReal), 1, filePointer);
+                    fread(&data, sizeof(EnsightReal), 1, filePointer);
                     idx = IndexMath(k, j, i, space) * DIMU;
                     switch (dim) {
                         case 0: /* rho */

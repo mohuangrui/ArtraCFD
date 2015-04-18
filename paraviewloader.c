@@ -6,9 +6,10 @@
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "paraview.h"
+#include "paraviewstream.h"
 #include <stdio.h> /* standard library for input and output */
 #include <string.h> /* manipulating strings */
+#include "paraview.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
@@ -23,7 +24,7 @@ int LoadComputedDataParaview(Real *U, const Space *space, Time *time,
         const Partition *part, const Flow *flow)
 {
     ParaviewSet paraSet = { /* initialize ParaviewSet environment */
-        .baseName = "restart", /* data file base name */
+        .baseName = "paraview", /* data file base name */
         .fileName = {'\0'}, /* data file name */
         .floatType = "Float32", /* paraview data type */
         .byteOrder = "LittleEndian" /* byte order of data */
@@ -36,8 +37,7 @@ static int LoadParaviewDataFile(ParaviewSet *paraSet, Time *time)
 {
     FILE *filePointer = NULL;
     /* current filename */
-    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.pvd", paraSet->baseName); 
-    filePointer = fopen(paraSet->fileName, "r");
+    filePointer = fopen("restart.pvd", "r");
     if (NULL == filePointer) {
         FatalError("failed to open restart file: restart.pvd...");
     }
@@ -67,12 +67,18 @@ static int LoadParaviewDataFile(ParaviewSet *paraSet, Time *time)
     fgets(currentLine, sizeof currentLine, filePointer);
     sscanf(currentLine, "%*s %*s %d", &(time->stepCount)); 
     fclose(filePointer); /* close current opened file */
+    /* store updated basename in filename */
+    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s%05d", 
+            paraSet->baseName, time->outputCount); 
+    /* basename is updated here! */
+    snprintf(paraSet->baseName, sizeof(ParaviewString), "%s", paraSet->fileName); 
     return 0;
 }
 static int LoadParaviewVariableFile(Real *U, ParaviewSet *paraSet,
         const Space *space, const Partition *part, const Flow *flow)
 {
     FILE *filePointer = NULL;
+    /* current filename */
     snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.vts", paraSet->baseName); 
     filePointer = fopen(paraSet->fileName, "r");
     if (NULL == filePointer) {

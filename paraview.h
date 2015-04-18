@@ -11,7 +11,6 @@
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "commons.h"
 /****************************************************************************
  * Data Structure Declarations
  ****************************************************************************/
@@ -29,33 +28,6 @@ typedef struct {
     ParaviewString floatType; /* Paraview data type */
     ParaviewString byteOrder; /* byte order of data */
 }ParaviewSet;
-/****************************************************************************
- * Public Functions Declaration
- ****************************************************************************/
-/*
- * Paraview format data exporter
- *
- * Function
- *      Export conservative field data vector variable:
- *      U = [rho, rho_u, rho_v, rho_w, rho_eT]
- *      to primitive variables = [rho, u, v, w, p, T]
- *      to binary data files with Paraview data format.
- * Notice
- *      U is a linear array that stores all the values.
- *      These data are in sequential state 
- *      and can be accessed by linear index math.
- */
-extern int WriteComputedDataParaview(const Real * U, const Space *, 
-        const Time *, const Partition *, const Flow *);
-/*
- * Paraview data loader
- *
- * Function
- *      Load computed data from output files which are written in Paraview
- *      format.
- */
-extern int LoadComputedDataParaview(Real *U, const Space *, Time *,
-        const Partition *, const Flow *);
 #endif
 /* a good practice: end file with a newline */
 

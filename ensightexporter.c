@@ -7,9 +7,10 @@
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "ensight.h"
+#include "ensightstream.h"
 #include <stdio.h> /* standard library for input and output */
 #include <string.h> /* manipulating strings */
+#include "ensight.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations

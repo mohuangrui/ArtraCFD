@@ -7,9 +7,10 @@
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "ensight.h"
+#include "ensightstream.h"
 #include <stdio.h> /* standard library for input and output */
 #include <string.h> /* manipulating strings */
+#include "ensight.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
@@ -27,7 +28,7 @@ int LoadComputedDataEnsight(Real *U, const Space *space, Time *time,
         const Partition *part, const Flow *flow)
 {
     EnsightSet enSet = { /* initialize Ensight environment */
-        .baseName = "restart", /* data file base name */
+        .baseName = "ensight", /* data file base name */
         .fileName = {'\0'}, /* data file name */
         .stringData = {'\0'}, /* string data recorder */
     };
@@ -38,9 +39,7 @@ int LoadComputedDataEnsight(Real *U, const Space *space, Time *time,
 static int LoadEnsightCaseFile(EnsightSet *enSet, Time *time)
 {
     FILE *filePointer = NULL;
-    /* current filename */
-    snprintf(enSet->fileName, sizeof(EnsightString), "%s.case", enSet->baseName); 
-    filePointer = fopen(enSet->fileName, "r");
+    filePointer = fopen("restart.case", "r");
     if (NULL == filePointer) {
         FatalError("failed to open restart case file: restart.case...");
     }
@@ -69,6 +68,11 @@ static int LoadEnsightCaseFile(EnsightSet *enSet, Time *time)
     fgets(currentLine, sizeof currentLine, filePointer);
     sscanf(currentLine, "%*s %*s %*s %*s %d", &(time->stepCount)); 
     fclose(filePointer); /* close current opened file */
+    /* store updated basename in filename */
+    snprintf(enSet->fileName, sizeof(EnsightString), "%s%05d", 
+            enSet->baseName, time->outputCount); 
+    /* basename is updated here! */
+    snprintf(enSet->baseName, sizeof(EnsightString), "%s", enSet->fileName); 
     return 0;
 }
 static int LoadEnsightVariableFile(Real *U, EnsightSet *enSet,

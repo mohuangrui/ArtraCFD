@@ -6,9 +6,10 @@
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "paraview.h"
+#include "paraviewstream.h"
 #include <stdio.h> /* standard library for input and output */
 #include <string.h> /* manipulating strings */
+#include "paraview.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
