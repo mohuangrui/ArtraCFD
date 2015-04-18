@@ -192,7 +192,7 @@ static int InitializeTransientParaviewDataFile(ParaviewSet *paraSet)
 {
     FILE *filePointer = fopen("particle.pvd", "w");
     if (NULL == filePointer) {
-        FatalError("failed to write data to transient case file...");
+        FatalError("failed to write data to transient geometry file...");
     }
     /* output information to file */
     fprintf(filePointer, "<?xml version=\"1.0\"?>\n");
@@ -215,7 +215,7 @@ static int WriteSteadyParaviewDataFile(ParaviewSet *paraSet, const Time *time)
     snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.pvd", paraSet->baseName); 
     FILE *filePointer = fopen(paraSet->fileName, "w");
     if (NULL == filePointer) {
-        FatalError("failed to write data to steady case file...");
+        FatalError("failed to write data to steady geometry file...");
     }
     /* output information to file */
     fprintf(filePointer, "<?xml version=\"1.0\"?>\n");
@@ -234,9 +234,9 @@ static int WriteSteadyParaviewDataFile(ParaviewSet *paraSet, const Time *time)
     /*
      * Add the current export to the transient case
      */
-    filePointer = fopen("paraview.pvd", "r+");
+    filePointer = fopen("particle.pvd", "r+");
     if (NULL == filePointer) {
-        FatalError("failed to add data to transient file...");
+        FatalError("failed to add data to transient geometry file...");
     }
     /* seek the target line for adding information */
     char currentLine[200] = {'\0'}; /* store the current read line */
