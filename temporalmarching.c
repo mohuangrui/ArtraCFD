@@ -20,8 +20,8 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static Real ComputeTimeStepByCFL(const Real *U, const Space *, const Time *, 
-        const Partition *, const Flow *);
+static Real ComputeTimeStepByCFL(const Real *U, const Space *, 
+        const Particle *, const Time *, const Partition *, const Flow *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -49,7 +49,7 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
         /*
          * Calculate dt for current time step
          */
-        time->dt = ComputeTimeStepByCFL(field->U, space, time, part, flow);
+        time->dt = ComputeTimeStepByCFL(field->U, space, particle, time, part, flow);
         /*
          * Update current time stamp, if current time exceeds the total time, 
          * recompute the value of dt to make current time equal total time.
@@ -107,13 +107,24 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
     ShowInformation("Session End");
     return 0;
 }
-static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Time *time, 
-        const Partition *part, const Flow *flow)
+static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Particle *particle, 
+        const Time *time, const Partition *part, const Flow *flow)
 {
-    Real Uo[DIMUo] = {0.0};
     Real velocity = 0.0;
     Real velocityMax = 1.0e-37;
+    /*
+     * Incorporate particle dynamics into CFL condition.
+     */
+    Real *ptk = NULL;
+    for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
+        ptk = IndexGeometry(geoCount, particle);
+        velocity = MaxReal(fabs(ptk[7]), MaxReal(fabs(ptk[5]), fabs(ptk[6])));
+        if (velocityMax < velocity) {
+            velocityMax = velocity;
+        }
+    }
     int idx = 0; /* linear array index math variable */
+    Real Uo[DIMUo] = {0.0};
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
