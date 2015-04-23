@@ -123,6 +123,9 @@ static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Partic
             velocityMax = velocity;
         }
     }
+    /*
+     * Incorporate fluid dynamics into CFL condition.
+     */
     int idx = 0; /* linear array index math variable */
     Real Uo[DIMUo] = {0.0};
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
