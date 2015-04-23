@@ -222,9 +222,9 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
                         2, U, space, flow);
                 NormalizeReconstructedValues(Uow);
                 /* enforce boundary condition at boundary point */
-                Uow[1] = 0;
-                Uow[2] = 0;
-                Uow[3] = 0;
+                Uow[1] = ptk[5];
+                Uow[2] = ptk[6];
+                Uow[3] = ptk[7];
                 /* obtain the spatial coordinates of the image point */
                 const Real imageX = info[0] + 2 * info[4] * info[5];
                 const Real imageY = info[1] + 2 * info[4] * info[6];
@@ -240,9 +240,9 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
                  * Apply linear reconstruction to get primitive values at nodes
                  * in wall. That is, variable phi_ghost = 2 * phi_o - phi_image 
                  */
-                Uo[1] = -Uo[1];
-                Uo[2] = -Uo[2];
-                Uo[3] = -Uo[3];
+                Uo[1] = 2 * Uow[1] - Uo[1];
+                Uo[2] = 2 * Uow[2] - Uo[2];
+                Uo[3] = 2 * Uow[3] - Uo[3];
                 ConservativeByPrimitive(U, idx * DIMU, Uo, flow);
             }
         }
