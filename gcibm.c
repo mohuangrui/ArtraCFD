@@ -37,7 +37,7 @@ static int ApplyWeighting(Real Uo[], Real distance, const Real Uoh[], const Real
  * -- identify whether a solid node required for numerical boundary.
  *
  * It's necessary to difference boundary nodes and inner nodes because this
- * will not make incorrect mark of ghost nodes at nearby of domain boundaries.
+ * will not make incorrect mark of ghost nodes nearby domain boundaries.
  * It's necessary to difference ghost node and interior solid node which is
  * also required for numerical boundary because the latter is only required for
  * a numerical scheme has an accuracy order higher than 2nd. Besides, the ghost
