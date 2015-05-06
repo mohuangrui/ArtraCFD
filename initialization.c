@@ -171,10 +171,8 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
                 zh = (z - z1);
                 switch (part->typeIC[n]) {
                     case 1: /* plane */
-                        xh = xh * normalX;
-                        yh = yh * normalY;
-                        zh = zh * normalZ;
-                        if (0 <= (xh + yh + zh)) { /* on the normal direction or the plane */
+                        dot = xh * normalX + yh * normalY + zh * normalZ;
+                        if (0 <= dot) { /* on the normal direction or the plane */
                             flag = 1; /* set flag to true */
                         }
                         break;
