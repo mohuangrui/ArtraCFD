@@ -484,7 +484,7 @@ typedef enum {
     /* maximum number of regional initializer to support */
     NIC = 10,
     /* entry number of regional initializer information */
-    ENTRYIC = 11, /* x1, y1, z1, [r, x2], [y2], [z2], ..., primitive variables */
+    ENTRYIC = 12, /* x1, y1, z1, [r, x2], [y2], [z2], ..., primitive variables */
 } Constants;
 /*
  * Field variables of flow

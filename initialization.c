@@ -93,6 +93,7 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
  * 1: plane (x, y, z, normalX, normalY, normalZ, rho, u, v, w, p)
  * 2: sphere (x, y, z, r, rho, u, v, w, p)
  * 3: box (xmin, ymin, zmin, xmax, ymax, zmax, rho, u, v, w, p)
+ * 4: cylinder (x1, y1, z1, x2, y2, z2, r, rho, u, v, w, p)
  */
 static int ApplyRegionalInitializer(const int n, Real *U, const Space *space, 
         const Partition *part, const Flow *flow)
@@ -101,9 +102,9 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
      * Acquire the specialized information data entries
      */
     /* the fix index part */
-    const Real x = part->valueIC[n][0];
-    const Real y = part->valueIC[n][1];
-    const Real z = part->valueIC[n][2];
+    const Real x1 = part->valueIC[n][0];
+    const Real y1 = part->valueIC[n][1];
+    const Real z1 = part->valueIC[n][2];
     const Real Uo[DIMUo] = {
         part->valueIC[n][ENTRYIC-5],
         part->valueIC[n][ENTRYIC-4],
@@ -112,9 +113,9 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
         part->valueIC[n][ENTRYIC-1]};
     /* the vary part */
     Real r = 0.0;
-    Real xh = 0.0;
-    Real yh = 0.0;
-    Real zh = 0.0;
+    Real x2 = 0.0;
+    Real y2 = 0.0;
+    Real z2 = 0.0;
     Real normalZ = 0.0;
     Real normalY = 0.0;
     Real normalX = 0.0;
@@ -128,9 +129,15 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
             r = part->valueIC[n][3];
             break;
         case 3: /* box */
-            xh = part->valueIC[n][3];
-            yh = part->valueIC[n][4];
-            zh = part->valueIC[n][5];
+            x2 = part->valueIC[n][3];
+            y2 = part->valueIC[n][4];
+            z2 = part->valueIC[n][5];
+            break;
+        case 4: /* cylinder */
+            x2 = part->valueIC[n][3];
+            y2 = part->valueIC[n][4];
+            z2 = part->valueIC[n][5];
+            r = part->valueIC[n][6];
             break;
         default:
             break;
@@ -140,32 +147,57 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
      */
     int idx = 0;
     int flag = 0; /* control flag for whether current node in the region */
+    const Real xVec = x2 - x1;
+    const Real yVec = y2 - y1;
+    const Real zVec = z2 - z1;
+    const Real lVecSquare = xVec * xVec + yVec * yVec + zVec * zVec;
+    Real x = 0.0;
+    Real y = 0.0;
+    Real z = 0.0;
+    Real xh = 0.0;
+    Real yh = 0.0;
+    Real zh = 0.0;
+    Real dot = 0.0;
+    Real distSquare = 0.0;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 flag = 0; /* always initialize flag to zero */
+                x = ComputeX(i, space);
+                y = ComputeY(j, space);
+                z = ComputeZ(k, space);
+                xh = (x - x1);
+                yh = (y - y1);
+                zh = (z - z1);
                 switch (part->typeIC[n]) {
                     case 1: /* plane */
-                        xh = (ComputeX(i, space) - x) * normalX;
-                        yh = (ComputeY(j, space) - y) * normalY;
-                        zh = (ComputeZ(k, space) - z) * normalZ;
+                        xh = xh * normalX;
+                        yh = yh * normalY;
+                        zh = zh * normalZ;
                         if (0 <= (xh + yh + zh)) { /* on the normal direction or the plane */
                             flag = 1; /* set flag to true */
                         }
                         break;
                     case 2: /* sphere */
-                        xh = (ComputeX(i, space) - x);
-                        yh = (ComputeY(j, space) - y);
-                        zh = (ComputeZ(k, space) - z);
                         if (0 >= (xh * xh + yh * yh + zh * zh - r * r)) { /* in or on the sphere */
                             flag = 1; /* set flag to true */
                         }
                         break;
                     case 3: /* box */
-                        xh = (ComputeX(i, space) - x) * (ComputeX(i, space) - xh);
-                        yh = (ComputeY(j, space) - y) * (ComputeY(j, space) - yh);
-                        zh = (ComputeZ(k, space) - z) * (ComputeZ(k, space) - zh);
+                        xh = xh * (x - x2);
+                        yh = yh * (y - y2);
+                        zh = zh * (z - z2);
                         if ((0 >= xh) && (0 >= yh) && (0 >= zh)) { /* in or on the box */
+                            flag = 1; /* set flag to true */
+                        }
+                        break;
+                    case 4: /* cylinder */
+                        dot = xh * xVec + yh * yVec + zh * zVec;
+                        if ((0 > dot) || (lVecSquare < dot)) { /* outside the two ends */
+                            break;
+                        }
+                        distSquare = xh * xh + yh * yh + zh * zh - dot * dot / lVecSquare;
+                        if (r * r >= distSquare) { /* in or on the cylinder */
                             flag = 1; /* set flag to true */
                         }
                         break;

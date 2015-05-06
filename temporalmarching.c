@@ -36,8 +36,10 @@ int TemporalMarching(Field *field, Space *space, Particle *particle,
         return 1;
     }
     /* obtain the desired export time interval */
-    const Real exportTimeInterval = (time->totalTime - time->currentTime) / (Real)(time->totalOutputTimes);
-    const Real probeExportInterval = (time->totalTime - time->currentTime) / (Real)(flow->outputProbe);
+    const Real exportTimeInterval = (time->totalTime - time->currentTime) / 
+        (Real)(MaxInt(time->totalOutputTimes - time->outputCount, 1));
+    const Real probeExportInterval = (time->totalTime - time->currentTime) / 
+        (Real)(flow->outputProbe);
     Real accumulatedTime = 0.0; /* used for control when to export data */
     Real probeAccumulatedTime = 0.0; /* used for control when to export probe data */
     /* set some timers for monitoring time consuming of process */

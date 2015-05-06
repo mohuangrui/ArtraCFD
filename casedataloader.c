@@ -213,6 +213,21 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
             ++part->tallyIC; /* regional initializer count and pointer */
             continue;
         }
+        if (0 == strncmp(currentLine, "cylinder initialization begin", sizeof currentLine)) {
+            /* optional entry do not increase entry count */
+            part->typeIC[part->tallyIC] = 4; /* IC type id */
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatIII, part->valueIC[part->tallyIC] + 0, 
+                    part->valueIC[part->tallyIC] + 1, part->valueIC[part->tallyIC] + 2); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatIII, part->valueIC[part->tallyIC] + 3, 
+                    part->valueIC[part->tallyIC] + 4, part->valueIC[part->tallyIC] + 5); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, part->valueIC[part->tallyIC] + 6); 
+            ReadConsecutiveRealData(&filePointer, part->valueIC[part->tallyIC] + ENTRYIC - 5, 5);
+            ++part->tallyIC; /* regional initializer count and pointer */
+            continue;
+        }
         if (0 == strncmp(currentLine, "probe control begin", sizeof currentLine)) {
             /* optional entry do not increase entry count */
             fgets(currentLine, sizeof currentLine, filePointer);
