@@ -10,6 +10,7 @@
 #include "temporalmarching.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
+#include <float.h> /* size of floating point values */
 #include "rungekutta.h"
 #include "collision.h"
 #include "datastream.h"
@@ -113,7 +114,7 @@ static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Partic
         const Time *time, const Partition *part, const Flow *flow)
 {
     Real velocity = 0.0;
-    Real velocityMax = 1.0e-37;
+    Real velocityMax = FLT_MIN;
     /*
      * Incorporate particle dynamics into CFL condition.
      */

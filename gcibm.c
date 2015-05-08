@@ -11,6 +11,7 @@
 #include "gcibm.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
+#include <float.h> /* size of floating point values */
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
@@ -254,11 +255,11 @@ int InverseDistanceWeighting(Real Uo[], const Real z, const Real y, const Real x
         const Space *space, const Flow *flow)
 {
     int idxh = 0; /* linear array index math variable */
+    int tally = 0; /* stencil count and zero stencil detector */
     Real Uoh[DIMUo] = {0.0}; /* primitive at target node */
     Real distance = 0.0;
-    /* reset */
     for (int dim = 0; dim < DIMUo; ++dim) {
-        Uo[dim] = 0.0;
+        Uo[dim] = 0.0; /* reset */
     }
     /* 
      * Search around the specified node to find required fluid nodes as
@@ -274,15 +275,24 @@ int InverseDistanceWeighting(Real Uo[], const Real z, const Real y, const Real x
                 if (FLUID != space->nodeFlag[idxh]) {
                     continue;
                 }
+                ++tally;
                 const Real distZ = ComputeZ(k + kh, space) - z;
                 const Real distY = ComputeY(j + jh, space) - y;
                 const Real distX = ComputeX(i + ih, space) - x;
                 /* use distance square to avoid expensive sqrt */
                 distance = distX * distX + distY * distY + distZ * distZ;
                 PrimitiveByConservative(Uoh, idxh * DIMU, U, flow);
+                if (!((0 < Uoh[0]) && (FLT_MAX > Uoh[0]))) {
+                    fprintf(stderr, "k=%d, j=%d, i=%d, rho=%.6g\n", k + kh, j + jh, i + ih, Uoh[0]);
+                    FatalError("illegal density encountered, solution diverges...");
+                }
                 ApplyWeighting(Uo, distance, Uoh, space->tinyL);
             }
         }
+    }
+    if (0 == tally) {
+        fprintf(stderr, "k=%d, j=%d, i=%d, rho=%.6g\n", k, j, i);
+        FatalError("zero stencil encountered...");
     }
     return 0;
 }
