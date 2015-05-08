@@ -291,7 +291,7 @@ int InverseDistanceWeighting(Real Uo[], const Real z, const Real y, const Real x
         }
     }
     if (0 == tally) {
-        fprintf(stderr, "k=%d, j=%d, i=%d, rho=%.6g\n", k, j, i);
+        fprintf(stderr, "k=%d, j=%d, i=%d\n", k, j, i);
         FatalError("zero stencil encountered...");
     }
     return 0;
