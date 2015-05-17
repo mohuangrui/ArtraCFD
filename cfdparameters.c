@@ -98,7 +98,7 @@ static int InitializeCFDParameters(Space *space, Time *time, Flow *flow)
     space->ddz = 1.0 / space->dz;
     space->ddy = 1.0 / space->dy;
     space->ddx = 1.0 / space->dx;
-    space->tinyL = 1.0e-3 * MinReal(space->dx, MinReal(space->dz, space->dy));
+    space->tinyL = 1.0e-6 * MinReal(space->dx, MinReal(space->dz, space->dy));
     /* time */
     time->totalTime = time->totalTime * flow->refVelocity / flow->refLength;
     if ((0 > time->totalStep)) {
