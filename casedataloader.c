@@ -567,9 +567,7 @@ static int CheckCaseSettingData(const Space *space, const Time *time, const Flow
         FatalError("wrong values in reference section of case settings");
     }
     /* initialization */
-    if ((0 > part->valueBC[0][0]) || (0 > part->valueBC[0][1]) || 
-            (0 > part->valueBC[0][2]) || (0 > part->valueBC[0][3]) ||
-            (0 > part->valueBC[0][4])) {
+    if ((0 > part->valueBC[0][0]) || (0 > part->valueBC[0][4])) {
         FatalError("wrong values in initialization section of case settings");
     }
     return 0;
