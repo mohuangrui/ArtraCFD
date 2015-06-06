@@ -16,7 +16,7 @@
  ****************************************************************************/
 static int ApplyBoundaryConditions(const int, Real *, const Space *, 
         const Partition *, const Flow *);
-static int ZeroGradientFlow(Real *U, const int idx, const int idxh);
+static int ZeroGradientFlow(Real *, const int, const int);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -36,7 +36,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
     int idx = 0; /* linear array index math variable */
     int idxh = 0; /* index at one node distance */
     int idxhh = 0; /* index at two nodes distance */
-    const Real Uo[DIMUo] = { /* obtain primitive values of current boundary */
+    Real Uo[DIMUo] = { /* obtain primitive values of current boundary */
         part->valueBC[partID][0],
         part->valueBC[partID][1],
         part->valueBC[partID][2],
@@ -66,33 +66,31 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         idxh = IndexMath(k - normalZ, j - normalY, i - normalX, space) * DIMU;
                         ZeroGradientFlow(U, idx, idxh);
                         break;
-                    case 3: /* slip wall, zero-gradient scalar and tangential component, zero normal component */
+                    case 3: /* slip wall, zero-gradient for scalar and tangential component, zero for normal component */
                         idxh = IndexMath(k - normalZ, j - normalY, i - normalX, space) * DIMU;
-                        U[idx] = U[idxh];
-                        U[idx+1] = (!normalX) * U[idxh+1];
-                        U[idx+2] = (!normalY) * U[idxh+2];
-                        U[idx+3] = (!normalZ) * U[idxh+3];
+                        PrimitiveByConservative(Uoh, idxh, U, flow);
+                        Uo[1] = (!normalX) * Uoh[1];
+                        Uo[2] = (!normalY) * Uoh[2];
+                        Uo[3] = (!normalZ) * Uoh[3];
+                        Uo[4] = Uoh[4]; /* zero normal gradient of pressure */
                         if (0 > Uo[5]) { /* adiabatic, dT/dn = 0 */
-                            U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] + 
-                                ComputePressure(idxh, U, flow) / (flow->gamma - 1.0);
-                        } else { /* constant wall temperature, T = Tw */
-                            U[idx] = ComputePressure(idxh, U, flow) / (Uo[5] * flow->gasR);
-                            U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] +
-                                U[idx] * Uo[5] * flow->cv;
-                        }
+                            Uo[5] = Uoh[5];
+                        } /* otherwise, use specified constant wall temperature, T = Tw */
+                        Uo[0] = Uo[4] / (flow->gasR * Uo[5]); /* compute density */
+                        ConservativeByPrimitive(U, idx, Uo, flow);
                         break;
                     case 4: /* noslip wall */
                         idxh = IndexMath(k - normalZ, j - normalY, i - normalX, space) * DIMU;
-                        U[idx] = U[idxh];
-                        U[idx+1] = 0.0;
-                        U[idx+2] = 0.0;
-                        U[idx+3] = 0.0;
+                        PrimitiveByConservative(Uoh, idxh, U, flow);
+                        Uo[1] = 0;
+                        Uo[2] = 0;
+                        Uo[3] = 0;
+                        Uo[4] = Uoh[4]; /* zero normal gradient of pressure */
                         if (0 > Uo[5]) { /* adiabatic, dT/dn = 0 */
-                            U[idx+4] = ComputePressure(idxh, U, flow) / (flow->gamma - 1.0);
-                        } else { /* constant wall temperature, T = Tw */
-                            U[idx] = ComputePressure(idxh, U, flow) / (Uo[5] * flow->gasR);
-                            U[idx+4] = U[idx] * Uo[5] * flow->cv;
-                        }
+                            Uo[5] = Uoh[5];
+                        } /* otherwise, use specified constant wall temperature, T = Tw */
+                        Uo[0] = Uo[4] / (flow->gasR * Uo[5]); /* compute density */
+                        ConservativeByPrimitive(U, idx, Uo, flow);
                         break;
                     case 5: /* primary periodic pair, apply boundary translation */
                         idxh = IndexMath(k - (space->nz - 2) * normalZ, j - (space->ny - 2) * normalY, 
