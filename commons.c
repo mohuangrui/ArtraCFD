@@ -248,6 +248,7 @@ int PrimitiveByConservative(Real Uo[], const int idx, const Real *U, const Flow 
     Uo[2] = U[idx+2] / U[idx];
     Uo[3] = U[idx+3] / U[idx];
     Uo[4] = (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) * (flow->gamma - 1.0);
+    Uo[5] = Uo[4] / (flow->gasR * Uo[0]);
     return 0;
 }
 /*

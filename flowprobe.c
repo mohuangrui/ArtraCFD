@@ -51,8 +51,8 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
             const int i = iA + (int)(m * xStep);
             idx = IndexMath(k, j, i, space) * DIMU;
             PrimitiveByConservative(Uo, idx, U, flow);
-            fprintf(filePointer, "%d     %.6g      %.6g     %.6g      %.6g      %.6g\n",
-                    m, Uo[0], Uo[1], Uo[2], Uo[3], Uo[4]); 
+            fprintf(filePointer, "%d     %.6g      %.6g     %.6g      %.6g      %.6g    %.6g\n",
+                    m, Uo[0], Uo[1], Uo[2], Uo[3], Uo[4], Uo[5]); 
         }
         fclose(filePointer); /* close current opened file */
     }

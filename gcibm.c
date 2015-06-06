@@ -21,9 +21,8 @@ static int LocateSolidGeometry(Space *, const Particle *, const Partition *);
 static int IdentifyGhostNodes(Space *, const Partition *);
 static int IdentifySolidNodesAtNumericalBoundary(Space *, const Particle *, 
         const Partition *);
-static int SearchFluidNodes(const int k, const int j, const int i, 
-        const int h, const Space *);
-static int ApplyWeighting(Real Uo[], Real distance, const Real Uoh[], const Real tiny);
+static int SearchFluidNodes(const int, const int, const int, const int, const Space *);
+static int ApplyWeighting(Real [], Real, const Real [], const Real);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
