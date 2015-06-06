@@ -26,7 +26,7 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
         if (NULL == filePointer) {
             FatalError("failed to write data at probes...");
         }
-        fprintf(filePointer, "# points      rho     u       v       w       p\n"); 
+        fprintf(filePointer, "# points      rho     u       v       w       p       T\n"); 
         /* compute and adjust index range into flow region */
         int iA = FlowRegionI(ComputeI(flow->probe[n][0], space), part);
         int jA = FlowRegionJ(ComputeJ(flow->probe[n][1], space), part);
@@ -51,7 +51,7 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
             const int i = iA + (int)(m * xStep);
             idx = IndexMath(k, j, i, space) * DIMU;
             PrimitiveByConservative(Uo, idx, U, flow);
-            fprintf(filePointer, "%d     %.6g      %.6g     %.6g      %.6g      %.6g    %.6g\n",
+            fprintf(filePointer, "%d     %.6g      %.6g     %.6g      %.6g      %.6g      %.6g\n",
                     m, Uo[0], Uo[1], Uo[2], Uo[3], Uo[4], Uo[5]); 
         }
         fclose(filePointer); /* close current opened file */
