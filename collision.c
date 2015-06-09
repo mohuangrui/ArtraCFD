@@ -32,14 +32,14 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space,
     Real *ptk = NULL;
     for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
         ptk = IndexGeometry(geoCount, particle);
-        /* velocity */
-        ptk[5] = ptk[5] + dt * ptk[8] * ptk[13];
-        ptk[6] = ptk[6] + dt * ptk[9] * ptk[13];
-        ptk[7] = ptk[7] + dt * ptk[10] * ptk[13];
-        /* spatial position */
-        ptk[0] = ptk[0] + ptk[5] * dt;
-        ptk[1] = ptk[1] + ptk[6] * dt;
-        ptk[2] = ptk[2] + ptk[7] * dt;
+        /* velocity: v(t) = v(t0) + f/m * dt */
+        ptk[5] = ptk[5] + ptk[8] * ptk[13] * dt;
+        ptk[6] = ptk[6] + ptk[9] * ptk[13] * dt;
+        ptk[7] = ptk[7] + ptk[10] * ptk[13] * dt;
+        /* spatial position: x(t) = x(t0) + v(t) * dt - 1/2 * f/m * dt^2 */
+        ptk[0] = ptk[0] + ptk[5] * dt - 0.5 * ptk[8] * ptk[13] * dt * dt;
+        ptk[1] = ptk[1] + ptk[6] * dt - 0.5 * ptk[9] * ptk[13] * dt * dt;
+        ptk[2] = ptk[2] + ptk[7] * dt - 0.5 * ptk[10] * ptk[13] * dt * dt;
     }
     /*
      * After the spatial positions of particles updated, some inner nodes fall

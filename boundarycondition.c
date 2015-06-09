@@ -76,7 +76,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         if (0 > Uo[5]) { /* adiabatic, dT/dn = 0 */
                             Uo[5] = Uoh[5];
                         } /* otherwise, use specified constant wall temperature, T = Tw */
-                        Uo[0] = Uo[4] / (flow->gasR * Uo[5]); /* compute density */
+                        Uo[0] = Uo[4] / (Uo[5] * flow->gasR); /* compute density */
                         ConservativeByPrimitive(U, idx, Uo, flow);
                         break;
                     case 4: /* noslip wall */
@@ -89,7 +89,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         if (0 > Uo[5]) { /* adiabatic, dT/dn = 0 */
                             Uo[5] = Uoh[5];
                         } /* otherwise, use specified constant wall temperature, T = Tw */
-                        Uo[0] = Uo[4] / (flow->gasR * Uo[5]); /* compute density */
+                        Uo[0] = Uo[4] / (Uo[5] * flow->gasR); /* compute density */
                         ConservativeByPrimitive(U, idx, Uo, flow);
                         break;
                     case 5: /* primary periodic pair, apply boundary translation */
