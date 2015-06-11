@@ -1,8 +1,12 @@
 /****************************************************************************
- * Flow Initialization                                                      *
- * Programmer: Huangrui Mo                                                  *
- * - Follow the Google's C/C++ style Guide.                                 *
- * - This file defines a function that handles flow initialization.         *
+ *                              ArtraCFD                                    *
+ *                          <By Huangrui Mo>                                *
+ * Copyright (C) 2014-2018 Huangrui Mo <huangrui.mo@gmail.com>              *
+ * This file is part of ArtraCFD.                                           *
+ * ArtraCFD is free software: you can redistribute it and/or modify it      *
+ * under the terms of the GNU General Public License as published by        *
+ * the Free Software Foundation, either version 3 of the License, or        *
+ * (at your option) any later version.                                      *
  ****************************************************************************/
 /****************************************************************************
  * Required Header Files
@@ -10,18 +14,18 @@
 #include "initialization.h"
 #include <stdio.h> /* standard library for input and output */
 #include <string.h> /* manipulating strings */
-#include "boundarycondition.h"
-#include "datastream.h"
-#include "geometrystream.h"
+#include "boundary_treatment.h"
+#include "data_stream.h"
+#include "geometry_stream.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int FirstRunInitializer(Real *U, const Space *, const Particle *,
+static int NonRestartInitializer(Real *U, const Space *, const Geometry *,
         const Partition *, const Flow *);
 static int ApplyRegionalInitializer(const int, Real *U, const Space *, 
         const Partition *, const Flow *);
-static int RestartInitializer(Real *U, const Space *, const Particle *, Time *, 
+static int RestartInitializer(Real *U, const Space *, const Geometry *, Time *, 
         const Partition *, const Flow *);
 /****************************************************************************
  * Function definitions
@@ -30,25 +34,25 @@ static int RestartInitializer(Real *U, const Space *, const Particle *, Time *,
  * This function initializes the entire flow field. Initialization will be 
  * done differently determined by the restart status.
  */
-int InitializeFlowField(Real *U, const Space *space, const Particle *particle,
+int InitializeFlowField(Real *U, const Space *space, const Geometry *geometry,
         Time *time, const Partition *part, const Flow *flow)
 {
     ShowInformation("Initializing flow field...");
     if (0 == time->restart) { /* non restart */
-        FirstRunInitializer(U, space, particle, part, flow);
+        NonRestartInitializer(U, space, geometry, part, flow);
         /* if this is a first run, output initial data */
         WriteComputedData(U, space, time, part, flow);
-        WriteGeometryData(particle, time);
+        WriteGeometryData(geometry, time);
     } else {
-        RestartInitializer(U, space, particle, time, part, flow);
+        RestartInitializer(U, space, geometry, time, part, flow);
     }
     ShowInformation("Session End");
     return 0;
 }
 /*
- * The first run initialization will assign values to field variables.
+ * The non-restart initialization will assign values to field variables.
  */
-static int FirstRunInitializer(Real *U, const Space *space, const Particle *particle, 
+static int NonRestartInitializer(Real *U, const Space *space, const Geometry *geometry, 
         const Partition *part, const Flow *flow)
 {
     ShowInformation("  Non-restart run initializing...");
@@ -80,7 +84,7 @@ static int FirstRunInitializer(Real *U, const Space *space, const Particle *part
     /*
      * Boundary conditions and treatments to obtain an entire initialized flow field
      */
-    BoundaryCondtionsAndTreatments(U, space, particle, part, flow);
+    BoundaryCondtionsAndTreatments(U, space, geometry, part, flow);
     return 0;
 }
 /*
@@ -215,7 +219,7 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
  * If this is a restart run, then initialize flow field by reading field data
  * from restart files.
  */
-static int RestartInitializer(Real *U, const Space *space, const Particle *particle, 
+static int RestartInitializer(Real *U, const Space *space, const Geometry *geometry, 
         Time *time, const Partition *part, const Flow *flow)
 {
     ShowInformation("  Restart run initializing...");
@@ -226,7 +230,7 @@ static int RestartInitializer(Real *U, const Space *space, const Particle *parti
     /*
      * Boundary conditions and treatments to obtain an entire initialized flow field
      */
-    BoundaryCondtionsAndTreatments(U, space, particle, part, flow);
+    BoundaryCondtionsAndTreatments(U, space, geometry, part, flow);
     return 0;
 }
 /* a good practice: end file with a newline */
