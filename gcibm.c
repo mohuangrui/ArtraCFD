@@ -1,9 +1,12 @@
 /****************************************************************************
- * Space Domain Meshing                                                     *
- * Programmer: Huangrui Mo                                                  *
- * - Follow the Google's C/C++ style Guide.                                 *
- * - This file use ghost cell immersed boundary method to handle complex    *
- *   geometries                                                             *
+ *                              ArtraCFD                                    *
+ *                          <By Huangrui Mo>                                *
+ * Copyright (C) 2014-2018 Huangrui Mo <huangrui.mo@gmail.com>              *
+ * This file is part of ArtraCFD.                                           *
+ * ArtraCFD is free software: you can redistribute it and/or modify it      *
+ * under the terms of the GNU General Public License as published by        *
+ * the Free Software Foundation, either version 3 of the License, or        *
+ * (at your option) any later version.                                      *
  ****************************************************************************/
 /****************************************************************************
  * Required Header Files
@@ -17,9 +20,9 @@
  * Static Function Declarations
  ****************************************************************************/
 static int InitializeDomainGeometry(Space *, const Partition *);
-static int LocateSolidGeometry(Space *, const Particle *, const Partition *);
+static int LocateSolidGeometry(Space *, const Geometry *, const Partition *);
 static int IdentifyGhostNodes(Space *, const Partition *);
-static int IdentifySolidNodesAtNumericalBoundary(Space *, const Particle *, 
+static int IdentifySolidNodesAtNumericalBoundary(Space *, const Geometry *, 
         const Partition *);
 static int SearchFluidNodes(const int, const int, const int, const int, const Space *);
 static int ApplyWeighting(Real [], Real, const Real [], const Real);
@@ -54,12 +57,12 @@ static int ApplyWeighting(Real [], Real, const Real [], const Real);
  * The rational is that don't store every information for each ghost node, but
  * only store necessary information. When need it, access and calculate it.
  */
-int ComputeDomainGeometryGCIBM(Space *space, Particle *particle, const Partition *part)
+int ComputeDomainGeometryGCIBM(Space *space, Geometry *geometry, const Partition *part)
 {
     InitializeDomainGeometry(space, part);
-    LocateSolidGeometry(space, particle, part);
+    LocateSolidGeometry(space, geometry, part);
     IdentifyGhostNodes(space, part);
-    IdentifySolidNodesAtNumericalBoundary(space, particle, part);
+    IdentifySolidNodesAtNumericalBoundary(space, geometry, part);
     return 0;
 }
 static int InitializeDomainGeometry(Space *space, const Partition *part)
@@ -87,8 +90,8 @@ static int InitializeDomainGeometry(Space *space, const Partition *part)
 }
 /*
  * When locate solid nodes, there are two approaches available. One is search
- * over each node and verify each node regarding to all the particles; another
- * is search each particle and find all the nodes inside current particle.
+ * over each node and verify each node regarding to all the geometries; another
+ * is search each geometry and find all the nodes inside current geometry.
  * The second method is adopted here for performance reason, although it's much
  * more complicated than the first one.
  * Be cautious with the validity of any calculated index. It's extremely
@@ -96,18 +99,18 @@ static int InitializeDomainGeometry(Space *space, const Partition *part)
  * validity of the index to avoid index exceed array bound limits and 
  * mysterious bugs.
  */
-static int LocateSolidGeometry(Space *space, const Particle *particle, const Partition *part)
+static int LocateSolidGeometry(Space *space, const Geometry *geometry, const Partition *part)
 {
     int idx = 0; /* linear array index math variable */
-    for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        const Real *ptk = IndexGeometry(geoCount, particle);
-        const int centerI = ComputeI(ptk[0], space);
-        const int centerJ = ComputeJ(ptk[1], space);
-        const int centerK = ComputeK(ptk[2], space);
+    for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
+        const Real *geo = IndexGeometry(geoCount, geometry);
+        const int centerI = ComputeI(geo[0], space);
+        const int centerJ = ComputeJ(geo[1], space);
+        const int centerK = ComputeK(geo[2], space);
         const Real safetyCoe = 1.2; /* zoom the search range */
-        const int rangeK = (int)(safetyCoe * ptk[3] * space->ddz);
-        const int rangeJ = (int)(safetyCoe * ptk[3] * space->ddy);
-        const int rangeI = (int)(safetyCoe * ptk[3] * space->ddx);
+        const int rangeK = (int)(safetyCoe * geo[3] * space->ddz);
+        const int rangeJ = (int)(safetyCoe * geo[3] * space->ddy);
+        const int rangeI = (int)(safetyCoe * geo[3] * space->ddx);
         /* determine search range according to valid flow region */
         const int kSub = FlowRegionK(centerK - rangeK, part);
         const int kSup = FlowRegionK(centerK + rangeK, part) + 1;
@@ -118,7 +121,7 @@ static int LocateSolidGeometry(Space *space, const Particle *particle, const Par
         for (int k = kSub; k < kSup; ++k) {
             for (int j = jSub; j < jSup; ++j) {
                 for (int i = iSub; i < iSup; ++i) {
-                    if (0 > InGeometry(k, j, i, ptk, space)) {
+                    if (0 > InGeometry(k, j, i, geo, space)) {
                         idx = IndexMath(k, j, i, space);
                         space->nodeFlag[idx] = -OFFSET - geoCount; /* geometry are linked */
                     }
@@ -148,7 +151,7 @@ static int IdentifyGhostNodes(Space *space, const Partition *part)
     return 0;
 }
 static int IdentifySolidNodesAtNumericalBoundary(Space *space, 
-        const Particle *particle, const Partition *part)
+        const Geometry *geometry, const Partition *part)
 {
     int idx = 0; /* linear array index math variable */
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
@@ -160,7 +163,7 @@ static int IdentifySolidNodesAtNumericalBoundary(Space *space,
                 }
                 for (int order = 2; order <= 2; ++order) { /* total ghost layers required */
                     if (0 == SearchFluidNodes(k, j, i, order, space)) {
-                        space->nodeFlag[idx] = space->nodeFlag[idx] - particle->totalN;
+                        space->nodeFlag[idx] = space->nodeFlag[idx] - geometry->totalN;
                     }
                 }
             }
@@ -189,7 +192,7 @@ static int SearchFluidNodes(const int k, const int j, const int i,
 /*
  * Boundary condition for interior ghost and solid nodes at numerical boundary.
  */
-int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle, 
+int BoundaryConditionGCIBM(Real *U, const Space *space, const Geometry *geometry, 
         const Partition *part, const Flow *flow)
 {
     int idx = 0; /* linear array index math variable */
@@ -197,13 +200,13 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
     Real Uow[DIMUo] = {0.0}; /* reconstructed primitives at boundary point */
     Real info[INFOGEO] = {0.0}; /* store calculated geometry information */
     int geoID = 0; /* geometry id */
-    Real *ptk = NULL;
+    Real *geo = NULL;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = IndexMath(k, j, i, space);
-                if (-OFFSET - particle->totalN >= space->nodeFlag[idx]) { /* solid */
-                    geoID = -space->nodeFlag[idx] - OFFSET - particle->totalN;
+                if (-OFFSET - geometry->totalN >= space->nodeFlag[idx]) { /* solid */
+                    geoID = -space->nodeFlag[idx] - OFFSET - geometry->totalN;
                 } else {
                     if (OFFSET <= space->nodeFlag[idx]) { /* ghost */
                         geoID = space->nodeFlag[idx] - OFFSET; /* extract geometry */
@@ -211,8 +214,8 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
                         continue;
                     }
                 }
-                ptk = IndexGeometry(geoID, particle);
-                CalculateGeometryInformation(info, k, j, i, ptk, space);
+                geo = IndexGeometry(geoID, geometry);
+                CalculateGeometryInformation(info, k, j, i, geo, space);
                 /* obtain the spatial coordinates of the boundary point */
                 const Real wallX = info[0] + info[4] * info[5];
                 const Real wallY = info[1] + info[4] * info[6];
@@ -222,9 +225,9 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Particle *particle
                         2, U, space, flow);
                 NormalizeReconstructedValues(Uow);
                 /* enforce boundary condition at boundary point */
-                Uow[1] = ptk[5];
-                Uow[2] = ptk[6];
-                Uow[3] = ptk[7];
+                Uow[1] = geo[5];
+                Uow[2] = geo[6];
+                Uow[3] = geo[7];
                 /* obtain the spatial coordinates of the image point */
                 const Real imageX = info[0] + 2 * info[4] * info[5];
                 const Real imageY = info[1] + 2 * info[4] * info[6];
@@ -314,29 +317,29 @@ int NormalizeReconstructedValues(Real Uo[])
     }
     return 0;
 }
-Real InGeometry(const int k, const int j, const int i, const Real *ptk, const Space *space)
+Real InGeometry(const int k, const int j, const int i, const Real *geo, const Space *space)
 {
     /* x, y, z distance to center */
-    const Real lX = ComputeX(i, space) - ptk[0];
-    const Real lY = ComputeY(j, space) - ptk[1];
-    const Real lZ = ComputeZ(k, space) - ptk[2];
-    return (lX * lX + lY * lY + lZ * lZ - ptk[3] * ptk[3]);
+    const Real lX = ComputeX(i, space) - geo[0];
+    const Real lY = ComputeY(j, space) - geo[1];
+    const Real lZ = ComputeZ(k, space) - geo[2];
+    return (lX * lX + lY * lY + lZ * lZ - geo[3] * geo[3]);
 }
 int CalculateGeometryInformation(Real info[], const int k, const int j, const int i, 
-        const Real *ptk, const Space *space)
+        const Real *geo, const Space *space)
 {
     /* x, y, z coordinates */
     info[0] = ComputeX(i, space);
     info[1] = ComputeY(j, space);
     info[2] = ComputeZ(k, space);
-    /* temporary store the x, y, z distance to particle center */
-    info[5] = info[0] - ptk[0];
-    info[6] = info[1] - ptk[1];
-    info[7] = info[2] - ptk[2];
+    /* temporary store the x, y, z distance to geometry center */
+    info[5] = info[0] - geo[0];
+    info[6] = info[1] - geo[1];
+    info[7] = info[2] - geo[2];
     /* distance to center */
     info[3] = sqrt(info[5] * info[5] + info[6] * info[6] + info[7] * info[7]);
     /* distance to surface */
-    info[4] = ptk[3] - info[3];
+    info[4] = geo[3] - info[3];
     /* x, y, z normal vector components */
     info[5] = info[5] / info[3];
     info[6] = info[6] / info[3];
