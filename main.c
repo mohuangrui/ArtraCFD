@@ -27,11 +27,12 @@ int main(int argc, char *argv[])
     /*
      * Declare and initialize variables
      */    
-    Field theField = { /* flow field variables */
+    Field theField = {
         .Un = NULL,
         .U = NULL,
-        .Uswap = NULL};
-    Space theSpace = { /* space dimensions */
+        .Uswap = NULL
+    };
+    Space theSpace = {
         .nz = 0,
         .ny = 0,
         .nx = 0,
@@ -54,22 +55,24 @@ int main(int argc, char *argv[])
         .zMax = 0.0,
         .yMax = 0.0,
         .xMax = 0.0,
-        .nodeFlag = NULL};
-    Geometry theGeometry = { /* geometry entities */
-        .totalN = 0,
-        .headAddress = NULL};
-    Time theTime = { /* time dimensions */
+        .nodeFlag = NULL
+    };
+    Time theTime = {
         .restart = 0,
-        .totalTime = 0.0,
-        .currentTime = 0.0,
+        .end = 0.0,
+        .now = 0.0,
         .dt = 0.0,
         .numCFL = 0.0,
-        .totalStep = 0,
+        .stepN = 0,
         .stepCount = 0,
-        .totalOutputTimes = 0,
+        .outputN = 0,
         .outputCount = 0,
-        .dataStreamer = 0};
-    Flow theFlow = { /* flow parameters */
+        .dataStreamer = 0,
+        .outputProbe = 0,
+        .tallyProbe = 0,
+        .probe = {{0.0}}
+    };
+    Model theModel = {
         .refMa = 0.0,
         .refMu = 0.0,
         .refPr = 0.0,
@@ -81,11 +84,9 @@ int main(int argc, char *argv[])
         .refLength = 0.0,
         .refDensity = 0.0,
         .refVelocity = 0.0,
-        .refTemperature = 0.0,
-        .outputProbe = 0,
-        .tallyProbe = 0,
-        .probe = {{0.0}}};
-    Partition thePart = { /* domain partition control */
+        .refTemperature = 0.0
+    };
+    Partition thePart = {
         .totalN = 1,
         .kSub = {0},
         .kSup = {0},
@@ -100,10 +101,16 @@ int main(int argc, char *argv[])
         .valueBC = {{0.0}},
         .tallyIC = 0,
         .typeIC = {0},
-        .valueIC = {{0.0}}};
-    Control theControl = { /* program overall control */
+        .valueIC = {{0.0}}
+    };
+    Geometry theGeometry = {
+        .totalN = 0,
+        .headAddress = NULL
+    };
+    Control theControl = {
         .runMode = 'i',
-        .processorN = 1};
+        .processorN = 1
+    };
     /*
      * Program Entrance
      */
@@ -111,11 +118,11 @@ int main(int argc, char *argv[])
     /*
      * Preprocessing
      */
-    Preprocess(&theField, &theSpace, &theGeometry, &theTime, &thePart, &theFlow);
+    Preprocess(&theField, &theSpace, &theTime, &theModel, &thePart, &theGeometry);
     /*
      * Solve
      */
-    Solve(&theField, &theSpace, &theGeometry, &theTime, &thePart, &theFlow);
+    Solve(&theField, &theSpace, &theTime, &theModel, &thePart, &theGeometry);
     /*
      * Postprocessing
      */

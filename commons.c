@@ -190,15 +190,15 @@ int ComputeI(const Real x, const Space *space)
 {
     return (int)((x - space->xMin) * space->ddx + 0.5) + space->ng;
 }
-int FlowRegionK(const int k, const Partition *part)
+int ValidRegionK(const int k, const Partition *part)
 {
     return MinInt(part->kSup[0] - 1, MaxInt(part->kSub[0], k));
 }
-int FlowRegionJ(const int j, const Partition *part)
+int ValidRegionJ(const int j, const Partition *part)
 {
     return MinInt(part->jSup[0] - 1, MaxInt(part->jSub[0], j));
 }
-int FlowRegionI(const int i, const Partition *part)
+int ValidRegionI(const int i, const Partition *part)
 {
     return MinInt(part->iSup[0] - 1, MaxInt(part->iSub[0], i));
 }
@@ -245,35 +245,35 @@ int MaxInt(const int x, const int y)
 /*
  * Get value of primitive variable vector.
  */
-int PrimitiveByConservative(Real Uo[], const int idx, const Real *U, const Flow *flow)
+int PrimitiveByConservative(Real Uo[], const int idx, const Real *U, const Model *model)
 {
     Uo[0] = U[idx];
     Uo[1] = U[idx+1] / U[idx];
     Uo[2] = U[idx+2] / U[idx];
     Uo[3] = U[idx+3] / U[idx];
-    Uo[4] = (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) * (flow->gamma - 1.0);
-    Uo[5] = Uo[4] / (Uo[0] * flow->gasR);
+    Uo[4] = (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) * (model->gamma - 1.0);
+    Uo[5] = Uo[4] / (Uo[0] * model->gasR);
     return 0;
 }
 /*
  * Compute conservative variable vector according to primitives.
  */
-int ConservativeByPrimitive(Real *U, const int idx, const Real Uo[], const Flow *flow)
+int ConservativeByPrimitive(Real *U, const int idx, const Real Uo[], const Model *model)
 {
     U[idx] = Uo[0];
     U[idx+1] = Uo[0] * Uo[1];
     U[idx+2] = Uo[0] * Uo[2];
     U[idx+3] = Uo[0] * Uo[3];
-    U[idx+4] = 0.5 * Uo[0] * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]) + Uo[4] / (flow->gamma - 1.0); 
+    U[idx+4] = 0.5 * Uo[0] * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]) + Uo[4] / (model->gamma - 1.0); 
     return 0;
 }
-Real ComputePressure(const int idx, const Real *U, const Flow *flow)
+Real ComputePressure(const int idx, const Real *U, const Model *model)
 {
-    return (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) * (flow->gamma - 1.0);
+    return (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) * (model->gamma - 1.0);
 }
-Real ComputeTemperature(const int idx, const Real *U, const Flow *flow)
+Real ComputeTemperature(const int idx, const Real *U, const Model *model)
 {
-    return (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) / (U[idx] * flow->cv);
+    return (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) / (U[idx] * model->cv);
 }
 /* a good practice: end file with a newline */
 

@@ -475,13 +475,13 @@ typedef enum {
     /* entry number of calculated geometry information */
     INFOGEO = 8, /* x, y, z, distance to center, to surface, normalX, normalY, normalZ */
     /* maximum number of probes to support */
-    NPROBE = 10,
+    NPROBE = 4,
     /* entry number of probe information */
     ENTRYPROBE = 7, /* x1, y1, z1, x2, y2, z2, resolution */
     /* number of inner sub partitions */
-    NSUBPART = 13, /* flow region, [west, east, south, north, front, back] x [BC, Ghost] */
+    NSUBPART = 13, /* interior region, [west, east, south, north, front, back] x [BC, Ghost] */
     /* max index of inner partitions of physical BC */
-    NBC = 7, /* flow region, [west, east, south, north, front, back] x [BC] */
+    NBC = 7, /* interior region, [west, east, south, north, front, back] x [BC] */
     /* entry number of BC information */
     ENTRYBC = 6, /* rho, u, v, w, p, T */
     /* maximum number of regional initializer to support */
@@ -490,7 +490,7 @@ typedef enum {
     ENTRYIC = 12, /* x1, y1, z1, [r, x2], [y2], [z2], ..., primitive variables */
 } Constants;
 /*
- * Field variables of flow
+ * Field variables
  *
  * Conservative variables are vectors with many elements, with each element
  * is a three dimensional array in 3D space.
@@ -561,29 +561,25 @@ typedef struct {
     int *nodeFlag; /* node type integer flag: normal, ghost, solid, etc. */
 } Space;
 /*
- * Geometry Entities
- */
-typedef struct {
-    int totalN; /* total number of geometries */
-    Real *headAddress; /* record the head address that stores information */
-} Geometry;
-/*
  * Time domain parameters
  */
 typedef struct {
     int restart; /* restart flag */
-    Real totalTime; /* total evolution time */
-    Real currentTime; /* current time recorder */
+    Real end; /* total evolution time */
+    Real now; /* current time recorder */
     Real dt; /* time step size */
     Real numCFL; /* CFL number */
-    int totalStep; /* total number of steps */
+    int stepN; /* total number of steps */
     int stepCount; /* step number count */
-    int totalOutputTimes; /* total times of exporting computed data */
+    int outputN; /* total times of exporting computed data */
     int outputCount; /* exporting data count */
     int dataStreamer; /* types of data streamer */
+    int outputProbe; /* times to write probe information */
+    int tallyProbe; /* tally of probes */
+    Real probe[NPROBE][ENTRYPROBE]; /* store information of probes */
 } Time;
 /*
- * Flow properties and physics parameters
+ * Model properties and physics parameters
  */
 typedef struct {
     Real refMa; /* reference Mach number */
@@ -598,10 +594,7 @@ typedef struct {
     Real refDensity; /* characteristic density */
     Real refVelocity;  /*characteristic velocity */
     Real refTemperature; /* characteristic temperature */
-    int outputProbe; /* times to write probe information */
-    int tallyProbe; /* tally of probes */
-    Real probe[NPROBE][ENTRYPROBE]; /* store information of probes */
-} Flow;
+} Model;
 /*
  * Domain partition structure
  */
@@ -622,6 +615,13 @@ typedef struct {
     int typeIC[NIC]; /* record type of each initializer */
     Real valueIC[NIC][ENTRYIC]; /* store initializer values */
 } Partition;
+/*
+ * Geometry Entities
+ */
+typedef struct {
+    int totalN; /* total number of geometries */
+    Real *headAddress; /* record the head address that stores information */
+} Geometry;
 /*
  * Program command line arguments and overall control
  */
@@ -724,16 +724,16 @@ extern Real *IndexGeometry(const int geoID, const Geometry *geometry);
  *      transform coordinates between node coordinates and general coordinates.
  * Notice
  *      Be cautious with the validity of any calculated index. It's extremely
- *      necessary to adjust the index into the valid flow region or check the
+ *      necessary to adjust the index into the valid interior region or check
  *      validity of the index to avoid index exceed array bound limits and 
  *      mysterious bugs.
  */
 extern int ComputeK(const Real z, const Space *);
 extern int ComputeJ(const Real y, const Space *);
 extern int ComputeI(const Real x, const Space *);
-extern int FlowRegionK(const int k, const Partition *);
-extern int FlowRegionJ(const int j, const Partition *);
-extern int FlowRegionI(const int i, const Partition *);
+extern int ValidRegionK(const int k, const Partition *);
+extern int ValidRegionJ(const int j, const Partition *);
+extern int ValidRegionI(const int i, const Partition *);
 extern Real ComputeZ(const int k, const Space *);
 extern Real ComputeY(const int j, const Space *);
 extern Real ComputeX(const int i, const Space *);
@@ -753,16 +753,16 @@ extern int MaxInt(const int x, const int y);
  * Notice
  *      calculated values are [rho, u, v, w, p]
  */
-extern int PrimitiveByConservative(Real Uo[], const int idx, const Real *U, const Flow *);
-extern Real ComputePressure(const int idx, const Real *U, const Flow *);
-extern Real ComputeTemperature(const int idx, const Real *U, const Flow *);
+extern int PrimitiveByConservative(Real Uo[], const int idx, const Real *U, const Model *);
+extern Real ComputePressure(const int idx, const Real *U, const Model *);
+extern Real ComputeTemperature(const int idx, const Real *U, const Model *);
 /*
  * Compute and update conservative variable vector
  *
  * Function
  *      Compute and update conservative variable vector according to primitive values.
  */
-extern int ConservativeByPrimitive(Real *U, const int idx, const Real Uo[], const Flow *);
+extern int ConservativeByPrimitive(Real *U, const int idx, const Real Uo[], const Model *);
 #endif
 /* a good practice: end file with a newline */
 
