@@ -47,7 +47,7 @@
  *      and can be accessed by linear index math.
  */
 extern int WriteComputedDataParasight(const Real * U, const Space *, 
-        const Time *, const Partition *, const Flow *);
+        const Time *, const Model *, const Partition *);
 /*
  * Parasight format data loader
  *
@@ -55,8 +55,8 @@ extern int WriteComputedDataParasight(const Real * U, const Space *,
  *      Load computed data from output files which are written in Parasight
  *      format.
  */
-extern int LoadComputedDataParasight(Real *U, const Space *, Time *,
-        const Partition *, const Flow *);
+extern int LoadComputedDataParasight(Real *U, const Space *, Time *, const Model *,
+        const Partition *);
 #endif
 /* a good practice: end file with a newline */
 

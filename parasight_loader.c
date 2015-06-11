@@ -19,9 +19,9 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int LoadParasightCaseFile(EnsightSet *, Time *);
-static int LoadParasightVariableFile(Real *U, EnsightSet *,
-        const Space *, const Partition *, const Flow *);
+static int LoadParasightCaseFile(Time *, EnsightSet *);
+static int LoadParasightVariableFile(Real *U, const Space *, const Model *,
+        const Partition *, EnsightSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -29,18 +29,18 @@ static int LoadParasightVariableFile(Real *U, EnsightSet *,
  * Load necessary flow information from computed data
  */
 int LoadComputedDataParasight(Real *U, const Space *space, Time *time,
-        const Partition *part, const Flow *flow)
+        const Model *model, const Partition *part)
 {
     EnsightSet enSet = { /* initialize Parasight environment */
         .baseName = "parasight", /* data file base name */
         .fileName = {'\0'}, /* data file name */
         .stringData = {'\0'}, /* string data recorder */
     };
-    LoadParasightCaseFile(&enSet, time);
-    LoadParasightVariableFile(U, &enSet, space, part, flow);
+    LoadParasightCaseFile(time, &enSet);
+    LoadParasightVariableFile(U, space, model, part, &enSet);
     return 0;
 }
-static int LoadParasightCaseFile(EnsightSet *enSet, Time *time)
+static int LoadParasightCaseFile(Time *time, EnsightSet *enSet)
 {
     FILE *filePointer = NULL;
     filePointer = fopen("restart.case", "r");
@@ -67,7 +67,7 @@ static int LoadParasightCaseFile(EnsightSet *enSet, Time *time)
     sscanf(currentLine, "%*s %*s %*s %*s %d", &(time->outputCount)); 
     /* get restart time */
     fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, format, &(time->currentTime)); 
+    sscanf(currentLine, format, &(time->now)); 
     /* get current step number */
     fgets(currentLine, sizeof currentLine, filePointer);
     sscanf(currentLine, "%*s %*s %*s %*s %d", &(time->stepCount)); 
@@ -79,8 +79,8 @@ static int LoadParasightCaseFile(EnsightSet *enSet, Time *time)
     snprintf(enSet->baseName, sizeof(EnsightString), "%s", enSet->fileName); 
     return 0;
 }
-static int LoadParasightVariableFile(Real *U, EnsightSet *enSet,
-        const Space *space, const Partition *part, const Flow *flow)
+static int LoadParasightVariableFile(Real *U, const Space *space, const Model *model,
+        const Partition *part, EnsightSet *enSet)
 {
     FILE *filePointer = NULL;
     int idx = 0; /* linear array index math variable */
@@ -116,7 +116,7 @@ static int LoadParasightVariableFile(Real *U, EnsightSet *enSet,
                             U[idx+3] = U[idx] * data;
                             break;
                         case 4: /* p */
-                            U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] + data / (flow->gamma - 1.0);
+                            U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] + data / (model->gamma - 1.0);
                             break;
                         default:
                             break;

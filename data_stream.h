@@ -36,8 +36,8 @@
  *      These data are in sequential state 
  *      and can be accessed by linear index math.
  */
-extern int WriteComputedData(const Real * U, const Space *, 
-        const Time *, const Partition *, const Flow *);
+extern int WriteComputedData(const Real * U, const Space *, const Time *, 
+        const Model *, const Partition *);
 /*
  * Data loader
  *
@@ -45,8 +45,8 @@ extern int WriteComputedData(const Real * U, const Space *,
  *      Load computed data from output files which are written in specific
  *      format.
  */
-extern int LoadComputedData(Real *U, const Space *, Time *,
-        const Partition *, const Flow *);
+extern int LoadComputedData(Real *U, const Space *, Time *, const Model *,
+        const Partition *);
 #endif
 /* a good practice: end file with a newline */
 

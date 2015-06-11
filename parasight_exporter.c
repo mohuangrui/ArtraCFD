@@ -20,11 +20,10 @@
  * Static Function Declarations
  ****************************************************************************/
 static int InitializeParasightTransientCaseFile(EnsightSet *);
-static int WriteParasightCaseFile(EnsightSet *, const Time *);
-static int WriteParasightGeometryFile(EnsightSet *, const Space *, 
-        const Partition *);
-static int WriteParasightVariableFile(const Real *, EnsightSet *, const Space *,
-        const Partition *, const Flow *);
+static int WriteParasightCaseFile(const Time *, EnsightSet *);
+static int WriteParasightGeometryFile(const Space *, const Partition *, EnsightSet *);
+static int WriteParasightVariableFile(const Real *, const Space *, const Model *,
+        const Partition *, EnsightSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -34,7 +33,7 @@ static int WriteParasightVariableFile(const Real *, EnsightSet *, const Space *,
  * default base file name and export step tag. 
  */
 int WriteComputedDataParasight(const Real *U, const Space *space, 
-        const Time *time, const Partition *part, const Flow *flow)
+        const Time *time, const Model *model, const Partition *part)
 {
     ShowInformation("  writing field data to file...");
     EnsightSet enSet = { /* initialize Parasight environment */
@@ -44,10 +43,10 @@ int WriteComputedDataParasight(const Real *U, const Space *space,
     };
     if (0 == time->stepCount) { /* this is the initialization step */
         InitializeParasightTransientCaseFile(&enSet);
-        WriteParasightGeometryFile(&enSet, space, part);
+        WriteParasightGeometryFile(space, part, &enSet);
     }
-    WriteParasightCaseFile(&enSet, time);
-    WriteParasightVariableFile(U, &enSet, space, part, flow);
+    WriteParasightCaseFile(time, &enSet);
+    WriteParasightVariableFile(U, space, model, part, &enSet);
     return 0;
 }
 /*
@@ -89,7 +88,7 @@ int InitializeParasightTransientCaseFile(EnsightSet *enSet)
 /*
  * Parasight case files
  */
-static int WriteParasightCaseFile(EnsightSet *enSet, const Time *time)
+static int WriteParasightCaseFile(const Time *time, EnsightSet *enSet)
 {
     /*
      * Write the steady case file of current step.
@@ -123,7 +122,7 @@ static int WriteParasightCaseFile(EnsightSet *enSet, const Time *time)
     fprintf(filePointer, "\n"); 
     fprintf(filePointer, "VARIABLE\n"); 
     fprintf(filePointer, "constant per case:  Order %d\n", time->outputCount);
-    fprintf(filePointer, "constant per case:  Time  %.6g\n", time->currentTime);
+    fprintf(filePointer, "constant per case:  Time  %.6g\n", time->now);
     fprintf(filePointer, "constant per case:  Step  %d\n", time->stepCount);
     fprintf(filePointer, "scalar per node:    rho   %s.rho\n", enSet->baseName); 
     fprintf(filePointer, "scalar per node:    u     %s.u\n", enSet->baseName); 
@@ -157,15 +156,14 @@ static int WriteParasightCaseFile(EnsightSet *enSet, const Time *time)
     if ((time->outputCount % 5) == 0) { /* print to a new line every x outputs */
         fprintf(filePointer, "\n"); 
     }
-    fprintf(filePointer, "%.6g ", time->currentTime); 
+    fprintf(filePointer, "%.6g ", time->now); 
     fclose(filePointer); /* close current opened file */
     return 0;
 }
 /*
  * Parasight geometry file
  */
-static int WriteParasightGeometryFile(EnsightSet *enSet, const Space *space,
-        const Partition *part)
+static int WriteParasightGeometryFile(const Space *space, const Partition *part, EnsightSet *enSet)
 {
     /*
      * Write the geometry file (Binary Form).
@@ -247,8 +245,8 @@ static int WriteParasightGeometryFile(EnsightSet *enSet, const Space *space,
  * the same IJK order as the coordinates. (The number of nodes in the
  * part are obtained from the corresponding Parasight Gold geometry file.)
  */
-static int WriteParasightVariableFile(const Real *U, EnsightSet *enSet,
-        const Space *space, const Partition *part, const Flow *flow)
+static int WriteParasightVariableFile(const Real *U, const Space *space,
+        const Model *model, const Partition *part, EnsightSet *enSet)
 {
     FILE *filePointer = NULL;
     int idx = 0; /* linear array index math variable */
@@ -292,10 +290,10 @@ static int WriteParasightVariableFile(const Real *U, EnsightSet *enSet,
                             data = U[idx+3] / U[idx];
                             break;
                         case 4: /* p */
-                            data = ComputePressure(idx, U, flow);
+                            data = ComputePressure(idx, U, model);
                             break;
                         case 5: /* T */
-                            data = ComputeTemperature(idx, U, flow);
+                            data = ComputeTemperature(idx, U, model);
                             break;
                         case 6: /* node flag */
                             idx = idx / DIMU;

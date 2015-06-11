@@ -105,7 +105,7 @@ static int SolutionEvolution(Field *field, Space *space, Time *time,
             fprintf(stdout, "  data export time consuming: %.6gs\n", operationTime);
         }
         if ((probeRecord >= probeInterval) || (0 == time->now - time->end) || (time->stepCount == time->stepN)) {
-            WriteComputedDataAtProbes(time->stepCount, field->U, space, model, part);
+            WriteComputedDataAtProbes(field->U, space, time, model, part);
             probeRecord = 0; /* reset probe accumulated time */
         }
     }

@@ -24,15 +24,15 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Flow field initializer
+ * Field initializer
  *
  * Function
- *      Initialize the flow field variable.
+ *      Initialize the field variable.
  *      non restart -- initialize by specified data.
  *      restart -- initialize by restart data.
  */
-extern int InitializeFlowField(Real *U, const Space *, const Geometry *, Time *,
-        const Partition *, const Flow *);
+extern int InitializeField(Real *U, const Space *, Time *, const Model *model,
+        const Partition *, const Geometry *);
 #endif
 /* a good practice: end file with a newline */
 

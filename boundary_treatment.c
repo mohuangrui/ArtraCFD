@@ -18,24 +18,24 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ApplyBoundaryConditions(const int, Real *, const Space *, 
-        const Partition *, const Flow *);
-static int ZeroGradientFlow(Real *, const int, const int);
+static int ApplyBoundaryConditions(const int, Real *, const Space *,
+        const Model *, const Partition *);
+static int ZeroGradient(Real *, const int, const int);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int BoundaryCondtionsAndTreatments(Real *U, const Space *space, 
-        const Geometry *geometry, const Partition *part, const Flow *flow)
+int BoundaryCondtionsAndTreatments(Real *U, const Space *space, const Model *model, 
+        const Partition *part, const Geometry *geometry)
 {
     for (int partID = 1; partID < 7; ++partID) {
-        ApplyBoundaryConditions(partID, U, space, part, flow);
+        ApplyBoundaryConditions(partID, U, space, model, part);
     }
     /* Boundary conditions and treatments for interior ghost cells */
-    BoundaryConditionGCIBM(U, space, geometry, part, flow);
+    BoundaryConditionGCIBM(U, space, model, part, geometry);
     return 0;
 }
-static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space, 
-        const Partition *part, const Flow *flow)
+static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space,
+        const Model *model, const Partition *part)
 {
     int idx = 0; /* linear array index math variable */
     int idxh = 0; /* index at one node distance */
@@ -63,16 +63,16 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                  */
                 switch (part->typeBC[partID]) {
                     case 1: /* inflow */
-                        ConservativeByPrimitive(U, idx, Uo, flow);
+                        ConservativeByPrimitive(U, idx, Uo, model);
                         break;
                     case 2: /* outflow */
                         /* Calculate inner neighbour nodes according to normal vector direction. */
                         idxh = IndexMath(k - normalZ, j - normalY, i - normalX, space) * DIMU;
-                        ZeroGradientFlow(U, idx, idxh);
+                        ZeroGradient(U, idx, idxh);
                         break;
                     case 3: /* slip wall, zero-gradient for scalar and tangential component, zero for normal component */
                         idxh = IndexMath(k - normalZ, j - normalY, i - normalX, space) * DIMU;
-                        PrimitiveByConservative(Uoh, idxh, U, flow);
+                        PrimitiveByConservative(Uoh, idxh, U, model);
                         Uo[1] = (!normalX) * Uoh[1];
                         Uo[2] = (!normalY) * Uoh[2];
                         Uo[3] = (!normalZ) * Uoh[3];
@@ -80,12 +80,12 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         if (0 > Uo[5]) { /* adiabatic, dT/dn = 0 */
                             Uo[5] = Uoh[5];
                         } /* otherwise, use specified constant wall temperature, T = Tw */
-                        Uo[0] = Uo[4] / (Uo[5] * flow->gasR); /* compute density */
-                        ConservativeByPrimitive(U, idx, Uo, flow);
+                        Uo[0] = Uo[4] / (Uo[5] * model->gasR); /* compute density */
+                        ConservativeByPrimitive(U, idx, Uo, model);
                         break;
                     case 4: /* noslip wall */
                         idxh = IndexMath(k - normalZ, j - normalY, i - normalX, space) * DIMU;
-                        PrimitiveByConservative(Uoh, idxh, U, flow);
+                        PrimitiveByConservative(Uoh, idxh, U, model);
                         Uo[1] = 0;
                         Uo[2] = 0;
                         Uo[3] = 0;
@@ -93,17 +93,17 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         if (0 > Uo[5]) { /* adiabatic, dT/dn = 0 */
                             Uo[5] = Uoh[5];
                         } /* otherwise, use specified constant wall temperature, T = Tw */
-                        Uo[0] = Uo[4] / (Uo[5] * flow->gasR); /* compute density */
-                        ConservativeByPrimitive(U, idx, Uo, flow);
+                        Uo[0] = Uo[4] / (Uo[5] * model->gasR); /* compute density */
+                        ConservativeByPrimitive(U, idx, Uo, model);
                         break;
                     case 5: /* primary periodic pair, apply boundary translation */
                         idxh = IndexMath(k - (space->nz - 2) * normalZ, j - (space->ny - 2) * normalY, 
                                 i - (space->nx - 2) * normalX, space) * DIMU;
-                        ZeroGradientFlow(U, idx, idxh);
+                        ZeroGradient(U, idx, idxh);
                         break;
-                    case -5: /* auxiliary periodic pair, apply zero gradient flow */
+                    case -5: /* auxiliary periodic pair, apply zero gradient */
                         idxh = IndexMath(k - normalZ, j - normalY, i - normalX, space) * DIMU;
-                        ZeroGradientFlow(U, idx, idxh);
+                        ZeroGradient(U, idx, idxh);
                         break;
                     default:
                         break;
@@ -119,18 +119,18 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         case 2: /* outflow */
                         case 5: /* primary periodic pair */
                         case -5: /* auxiliary periodic pair */
-                            ZeroGradientFlow(U, idx, idxh);
+                            ZeroGradient(U, idx, idxh);
                             break;
                         default: /* linear interpolation will automatically apply the method of image */
                             idxhh = IndexMath(k + (ng-2) * normalZ, j + (ng-2) * normalY, i + (ng-2) * normalX, space) * DIMU;
-                            PrimitiveByConservative(Uoh, idxh, U, flow);
-                            PrimitiveByConservative(Uohh, idxhh, U, flow);
+                            PrimitiveByConservative(Uoh, idxh, U, model);
+                            PrimitiveByConservative(Uohh, idxhh, U, model);
                             U[idx] = Uoh[0];
                             U[idx+1] = U[idx] * (2.0 * Uoh[1] - Uohh[1]);
                             U[idx+2] = U[idx] * (2.0 * Uoh[2] - Uohh[2]);
                             U[idx+3] = U[idx] * (2.0 * Uoh[3] - Uohh[3]);
                             U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] + 
-                                Uoh[4] / (flow->gamma - 1.0);
+                                Uoh[4] / (model->gamma - 1.0);
                             break;
                     }
                 }
@@ -139,7 +139,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
     }
     return 0;
 }
-static int ZeroGradientFlow(Real *U, const int idx, const int idxh)
+static int ZeroGradient(Real *U, const int idx, const int idxh)
 {
     for (int dim = 0; dim < DIMU; ++dim) {
         U[idx+dim] = U[idxh+dim];

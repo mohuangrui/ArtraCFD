@@ -18,28 +18,28 @@
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int WriteComputedDataAtProbes(const int stepCount, const Real *U, 
-        const Space *space, const Partition *part, const Flow *flow)
+int WriteComputedDataAtProbes(const Real *U, const Space *space, 
+        const Time *time, const Model *model, const Partition *part)
 {
     FILE *filePointer = NULL;
     char fileName[25] = {'\0'};
     int idx = 0; /* linear array index math variable */
     Real Uo[DIMUo] = {0.0};
-    for (int n = 0; n < flow->tallyProbe; ++n) {
-        snprintf(fileName, sizeof(fileName), "%s%d.%05d", "probe", n + 1, stepCount);
+    for (int n = 0; n < time->tallyProbe; ++n) {
+        snprintf(fileName, sizeof(fileName), "%s%d.%05d", "probe", n + 1, time->stepCount);
         filePointer = fopen(fileName, "w");
         if (NULL == filePointer) {
             FatalError("failed to write data at probes...");
         }
         fprintf(filePointer, "# points      rho     u       v       w       p       T\n"); 
         /* compute and adjust index range into flow region */
-        int iA = FlowRegionI(ComputeI(flow->probe[n][0], space), part);
-        int jA = FlowRegionJ(ComputeJ(flow->probe[n][1], space), part);
-        int kA = FlowRegionK(ComputeK(flow->probe[n][2], space), part);
-        int iB = FlowRegionI(ComputeI(flow->probe[n][3], space), part);
-        int jB = FlowRegionJ(ComputeJ(flow->probe[n][4], space), part);
-        int kB = FlowRegionK(ComputeK(flow->probe[n][5], space), part);
-        int stepN = flow->probe[n][ENTRYPROBE-1] - 1;
+        int iA = ValidRegionI(ComputeI(time->probe[n][0], space), part);
+        int jA = ValidRegionJ(ComputeJ(time->probe[n][1], space), part);
+        int kA = ValidRegionK(ComputeK(time->probe[n][2], space), part);
+        int iB = ValidRegionI(ComputeI(time->probe[n][3], space), part);
+        int jB = ValidRegionJ(ComputeJ(time->probe[n][4], space), part);
+        int kB = ValidRegionK(ComputeK(time->probe[n][5], space), part);
+        int stepN = time->probe[n][ENTRYPROBE-1] - 1;
         if (1 > stepN) { /* set to lowest resolution if happens */
             stepN = 1;
         }
@@ -55,7 +55,7 @@ int WriteComputedDataAtProbes(const int stepCount, const Real *U,
             const int j = jA + (int)(m * yStep);
             const int i = iA + (int)(m * xStep);
             idx = IndexMath(k, j, i, space) * DIMU;
-            PrimitiveByConservative(Uo, idx, U, flow);
+            PrimitiveByConservative(Uo, idx, U, model);
             fprintf(filePointer, "%d     %.6g      %.6g     %.6g      %.6g      %.6g      %.6g\n",
                     m, Uo[0], Uo[1], Uo[2], Uo[3], Uo[4], Uo[5]); 
         }

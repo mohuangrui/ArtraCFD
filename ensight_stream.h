@@ -36,8 +36,8 @@
  *      These data are in sequential state 
  *      and can be accessed by linear index math.
  */
-extern int WriteComputedDataEnsight(const Real * U, const Space *, 
-        const Time *, const Partition *, const Flow *);
+extern int WriteComputedDataEnsight(const Real *U, const Space *, 
+        const Time *, const Model *, const Partition *);
 /*
  * Ensight format data loader
  *
@@ -46,7 +46,7 @@ extern int WriteComputedDataEnsight(const Real * U, const Space *,
  *      format.
  */
 extern int LoadComputedDataEnsight(Real *U, const Space *, Time *,
-        const Partition *, const Flow *);
+        const Model *, const Partition *);
 #endif
 /* a good practice: end file with a newline */
 

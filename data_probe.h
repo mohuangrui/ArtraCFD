@@ -29,8 +29,8 @@
  * Function
  *      Write field data of probes.
  */
-extern int WriteComputedDataAtProbes(const int stepCount, const Real *U, 
-        const Space *, const Partition *, const Flow *);
+extern int WriteComputedDataAtProbes(const Real *U, const Space *, const Time *,
+        const Model *, const Partition *);
 #endif
 /* a good practice: end file with a newline */
 

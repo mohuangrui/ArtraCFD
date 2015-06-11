@@ -20,40 +20,40 @@
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int WriteComputedData(const Real *U, const Space *space, const Time *time, 
-        const Partition *part, const Flow *flow)
+int WriteComputedData(const Real *U, const Space *space, const Time *time,
+        const Model *model, const Partition *part)
 {
     switch (time->dataStreamer) {
         case 0: /* ParaView */
-            WriteComputedDataParaview(U, space, time, part, flow);
+            WriteComputedDataParaview(U, space, time, model, part);
             break;
         case 1: /* Generic Ensight */
-            WriteComputedDataEnsight(U, space, time, part, flow);
+            WriteComputedDataEnsight(U, space, time, model, part);
             break;
         case 2: /* ParaView Ensight */
-            WriteComputedDataParasight(U, space, time, part, flow);
+            WriteComputedDataParasight(U, space, time, model, part);
             break;
         default: /* ParaView */
-            WriteComputedDataParaview(U, space, time, part, flow);
+            WriteComputedDataParaview(U, space, time, model, part);
             break;
     }
     return 0;
 }
 int LoadComputedData(Real *U, const Space *space, Time *time,
-        const Partition *part, const Flow *flow)
+        const Model *model, const Partition *part)
 {
     switch (time->dataStreamer) {
         case 0: /* ParaView */
-            LoadComputedDataParaview(U, space, time, part, flow);
+            LoadComputedDataParaview(U, space, time, model, part);
             break;
         case 1: /* Ensight */
-            LoadComputedDataEnsight(U, space, time, part, flow);
+            LoadComputedDataEnsight(U, space, time, model, part);
             break;
         case 2: /* Paraview Ensight */
-            LoadComputedDataParasight(U, space, time, part, flow);
+            LoadComputedDataParasight(U, space, time, model, part);
             break;
         default: /* ParaView */
-            LoadComputedDataParaview(U, space, time, part, flow);
+            LoadComputedDataParaview(U, space, time, model, part);
             break;
     }
     return 0;

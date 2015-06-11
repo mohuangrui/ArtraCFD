@@ -19,14 +19,14 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int LoadParaviewDataFile(ParaviewSet *, Time *);
-static int LoadParaviewVariableFile(Real *U, ParaviewSet *,
-        const Space *, const Partition *, const Flow *);
+static int LoadParaviewDataFile(Time *, ParaviewSet *);
+static int LoadParaviewVariableFile(Real *U, const Space *, const Model *,
+        const Partition *, ParaviewSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
 int LoadComputedDataParaview(Real *U, const Space *space, Time *time,
-        const Partition *part, const Flow *flow)
+        const Model *model, const Partition *part)
 {
     ParaviewSet paraSet = { /* initialize ParaviewSet environment */
         .baseName = "paraview", /* data file base name */
@@ -34,11 +34,11 @@ int LoadComputedDataParaview(Real *U, const Space *space, Time *time,
         .floatType = "Float32", /* paraview data type */
         .byteOrder = "LittleEndian" /* byte order of data */
     };
-    LoadParaviewDataFile(&paraSet, time);
-    LoadParaviewVariableFile(U, &paraSet, space, part, flow);
+    LoadParaviewDataFile(time, &paraSet);
+    LoadParaviewVariableFile(U, space, model, part, &paraSet);
     return 0;
 }
-static int LoadParaviewDataFile(ParaviewSet *paraSet, Time *time)
+static int LoadParaviewDataFile(Time *time, ParaviewSet *paraSet)
 {
     FILE *filePointer = NULL;
     filePointer = fopen("restart.pvd", "r");
@@ -66,7 +66,7 @@ static int LoadParaviewDataFile(ParaviewSet *paraSet, Time *time)
         strncpy(format, "%*s %*s %g", sizeof format); /* float type */
     }
     fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, format, &(time->currentTime)); 
+    sscanf(currentLine, format, &(time->now)); 
     /* get current step number */
     fgets(currentLine, sizeof currentLine, filePointer);
     sscanf(currentLine, "%*s %*s %d", &(time->stepCount)); 
@@ -78,8 +78,8 @@ static int LoadParaviewDataFile(ParaviewSet *paraSet, Time *time)
     snprintf(paraSet->baseName, sizeof(ParaviewString), "%s", paraSet->fileName); 
     return 0;
 }
-static int LoadParaviewVariableFile(Real *U, ParaviewSet *paraSet,
-        const Space *space, const Partition *part, const Flow *flow)
+static int LoadParaviewVariableFile(Real *U, const Space *space, const Model *model,
+        const Partition *part, ParaviewSet *paraSet)
 {
     FILE *filePointer = NULL;
     /* current filename */
@@ -124,7 +124,7 @@ static int LoadParaviewVariableFile(Real *U, ParaviewSet *paraSet,
                             U[idx+3] = U[idx] * data;
                             break;
                         case 4: /* p */
-                            U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] + data / (flow->gamma - 1.0);
+                            U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] + data / (model->gamma - 1.0);
                             break;
                         default:
                             break;

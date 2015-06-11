@@ -27,10 +27,10 @@
  * Boundary condition
  *
  * Function
- *      Apply boundary conditions and treatments for the flow field variable.
+ *      Apply boundary conditions and treatments for the field variable.
  */
-extern int BoundaryCondtionsAndTreatments(Real *U, const Space *, const Geometry *,
-        const Partition *, const Flow *);
+extern int BoundaryCondtionsAndTreatments(Real *U, const Space *, const Model *,
+        const Partition *, const Geometry *);
 #endif
 /* a good practice: end file with a newline */
 

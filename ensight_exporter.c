@@ -20,10 +20,10 @@
  * Static Function Declarations
  ****************************************************************************/
 static int InitializeEnsightTransientCaseFile(EnsightSet *);
-static int WriteEnsightCaseFile(EnsightSet *, const Time *);
-static int WriteEnsightGeometryFile(EnsightSet *, const Space *, const Partition *);
-static int WriteEnsightVariableFile(const Real *, EnsightSet *, const Space *,
-        const Partition *, const Flow *);
+static int WriteEnsightCaseFile(const Time *, EnsightSet *);
+static int WriteEnsightGeometryFile(const Space *, const Partition *, EnsightSet *);
+static int WriteEnsightVariableFile(const Real *, const Space *, const Model *,
+        const Partition *, EnsightSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -33,7 +33,7 @@ static int WriteEnsightVariableFile(const Real *, EnsightSet *, const Space *,
  * default base file name and export step tag. 
  */
 int WriteComputedDataEnsight(const Real *U, const Space *space, 
-        const Time *time, const Partition *part, const Flow *flow)
+        const Time *time, const Model *model, const Partition *part)
 {
     ShowInformation("  writing field data to file...");
     EnsightSet enSet = { /* initialize Ensight environment */
@@ -44,9 +44,9 @@ int WriteComputedDataEnsight(const Real *U, const Space *space,
     if (0 == time->stepCount) { /* this is the initialization step */
         InitializeEnsightTransientCaseFile(&enSet);
     }
-    WriteEnsightCaseFile(&enSet, time);
-    WriteEnsightGeometryFile(&enSet, space, part);
-    WriteEnsightVariableFile(U, &enSet, space, part, flow);
+    WriteEnsightCaseFile(time, &enSet);
+    WriteEnsightGeometryFile(space, part, &enSet);
+    WriteEnsightVariableFile(U, space, model, part, &enSet);
     return 0;
 }
 /*
@@ -87,7 +87,7 @@ int InitializeEnsightTransientCaseFile(EnsightSet *enSet)
 /*
  * Ensight case files
  */
-static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
+static int WriteEnsightCaseFile(const Time *time, EnsightSet *enSet)
 {
     /*
      * Write the steady case file of current step.
@@ -121,7 +121,7 @@ static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
     fprintf(filePointer, "\n"); 
     fprintf(filePointer, "VARIABLE\n"); 
     fprintf(filePointer, "constant per case:  Order %d\n", time->outputCount);
-    fprintf(filePointer, "constant per case:  Time  %.6g\n", time->currentTime);
+    fprintf(filePointer, "constant per case:  Time  %.6g\n", time->now);
     fprintf(filePointer, "constant per case:  Step  %d\n", time->stepCount);
     fprintf(filePointer, "scalar per node:    rho   %s.rho\n", enSet->baseName); 
     fprintf(filePointer, "scalar per node:    u     %s.u\n", enSet->baseName); 
@@ -154,14 +154,14 @@ static int WriteEnsightCaseFile(EnsightSet *enSet, const Time *time)
     if ((time->outputCount % 5) == 0) { /* print to a new line every x outputs */
         fprintf(filePointer, "\n"); 
     }
-    fprintf(filePointer, "%.6g ", time->currentTime); 
+    fprintf(filePointer, "%.6g ", time->now); 
     fclose(filePointer); /* close current opened file */
     return 0;
 }
 /*
  * Ensight geometry file
  */
-static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const Partition *part)
+static int WriteEnsightGeometryFile(const Space *space, const Partition *part, EnsightSet *enSet)
 {
     /*
      * Write the geometry file (Binary Form).
@@ -270,8 +270,8 @@ static int WriteEnsightGeometryFile(EnsightSet *enSet, const Space *space, const
  * the same IJK order as the coordinates. (The number of nodes in the
  * part are obtained from the corresponding EnSight Gold geometry file.)
  */
-static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
-        const Space *space, const Partition *part, const Flow *flow)
+static int WriteEnsightVariableFile(const Real *U, const Space *space, const Model *model, 
+        const Partition *part, EnsightSet *enSet)
 {
     FILE *filePointer = NULL;
     int idx = 0; /* linear array index math variable */
@@ -315,10 +315,10 @@ static int WriteEnsightVariableFile(const Real *U, EnsightSet *enSet,
                                 data = U[idx+3] / U[idx];
                                 break;
                             case 4: /* p */
-                                data = ComputePressure(idx, U, flow);
+                                data = ComputePressure(idx, U, model);
                                 break;
                             case 5: /* T */
-                                data = ComputeTemperature(idx, U, flow);
+                                data = ComputeTemperature(idx, U, model);
                                 break;
                             default:
                                 break;

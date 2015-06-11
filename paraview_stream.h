@@ -36,8 +36,8 @@
  *      These data are in sequential state 
  *      and can be accessed by linear index math.
  */
-extern int WriteComputedDataParaview(const Real * U, const Space *, 
-        const Time *, const Partition *, const Flow *);
+extern int WriteComputedDataParaview(const Real * U, const Space *, const Time *,
+        const Model *, const Partition *);
 /*
  * Paraview data loader
  *
@@ -45,8 +45,8 @@ extern int WriteComputedDataParaview(const Real * U, const Space *,
  *      Load computed data from output files which are written in Paraview
  *      format.
  */
-extern int LoadComputedDataParaview(Real *U, const Space *, Time *,
-        const Partition *, const Flow *);
+extern int LoadComputedDataParaview(Real *U, const Space *, Time *, const Model *,
+        const Partition *);
 #endif
 /* a good practice: end file with a newline */
 

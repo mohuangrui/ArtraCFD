@@ -20,14 +20,14 @@
  * Static Function Declarations
  ****************************************************************************/
 static int InitializeTransientParaviewDataFile(ParaviewSet *);
-static int WriteSteadyParaviewDataFile(ParaviewSet *, const Time *);
-static int WriteParaviewVariableFile(const Real *U, ParaviewSet *,
-        const Space *, const Partition *, const Flow *);
+static int WriteSteadyParaviewDataFile(const Time *, ParaviewSet *);
+static int WriteParaviewVariableFile(const Real *U, const Space *, const Model *,
+        const Partition *, ParaviewSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
 int WriteComputedDataParaview(const Real *U, const Space *space, 
-        const Time *time, const Partition *part, const Flow *flow)
+        const Time *time, const Model *model, const Partition *part)
 {
     ShowInformation("  writing field data to file...");
     ParaviewSet paraSet = { /* initialize ParaviewSet environment */
@@ -39,8 +39,8 @@ int WriteComputedDataParaview(const Real *U, const Space *space,
     if (0 == time->stepCount) { /* this is the initialization step */
         InitializeTransientParaviewDataFile(&paraSet);
     }
-    WriteSteadyParaviewDataFile(&paraSet, time);
-    WriteParaviewVariableFile(U, &paraSet, space, part, flow);
+    WriteSteadyParaviewDataFile(time, &paraSet);
+    WriteParaviewVariableFile(U, space, model, part, &paraSet);
     return 0;
 }
 static int InitializeTransientParaviewDataFile(ParaviewSet *paraSet)
@@ -59,7 +59,7 @@ static int InitializeTransientParaviewDataFile(ParaviewSet *paraSet)
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-static int WriteSteadyParaviewDataFile(ParaviewSet *paraSet, const Time *time)
+static int WriteSteadyParaviewDataFile(const Time *time, ParaviewSet *paraSet)
 {
     /* store updated basename in filename */
     snprintf(paraSet->fileName, sizeof(ParaviewString), "%s%05d", 
@@ -78,11 +78,11 @@ static int WriteSteadyParaviewDataFile(ParaviewSet *paraSet, const Time *time)
     fprintf(filePointer, "         byte_order=\"%s\">\n", paraSet->byteOrder);
     fprintf(filePointer, "  <Collection>\n");
     fprintf(filePointer, "    <DataSet timestep=\"%.6g\" group=\"\" part=\"0\"\n", 
-            time->currentTime);
+            time->now);
     fprintf(filePointer, "             file=\"%s.vts\"/>\n", paraSet->baseName);
     fprintf(filePointer, "  </Collection>\n");
     fprintf(filePointer, "  <!-- Order %d -->\n", time->outputCount);
-    fprintf(filePointer, "  <!-- Time %.6g -->\n", time->currentTime);
+    fprintf(filePointer, "  <!-- Time %.6g -->\n", time->now);
     fprintf(filePointer, "  <!-- Step %d -->\n", time->stepCount);
     fprintf(filePointer, "</VTKFile>\n");
     fclose(filePointer); /* close current opened file */
@@ -110,15 +110,15 @@ static int WriteSteadyParaviewDataFile(ParaviewSet *paraSet, const Time *time)
     }
     /* append informatiom */
     fprintf(filePointer, "    <DataSet timestep=\"%.6g\" group=\"\" part=\"0\"\n", 
-            time->currentTime);
+            time->now);
     fprintf(filePointer, "             file=\"%s.vts\"/>\n", paraSet->baseName);
     fprintf(filePointer, "  </Collection>\n");
     fprintf(filePointer, "</VTKFile>\n");
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
-        const Space *space, const Partition *part, const Flow *flow)
+static int WriteParaviewVariableFile(const Real *U, const Space *space, const Model *model,
+        const Partition *part, ParaviewSet *paraSet)
 {
     FILE *filePointer = NULL;
     snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.vts", paraSet->baseName); 
@@ -167,10 +167,10 @@ static int WriteParaviewVariableFile(const Real *U, ParaviewSet *paraSet,
                             data = U[idx+3] / U[idx];
                             break;
                         case 4: /* p */
-                            data = ComputePressure(idx, U, flow);
+                            data = ComputePressure(idx, U, model);
                             break;
                         case 5: /* T */
-                            data = ComputeTemperature(idx, U, flow);
+                            data = ComputeTemperature(idx, U, model);
                             break;
                         case 6: /* node flag */
                             idx = idx / DIMU;

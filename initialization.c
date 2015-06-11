@@ -21,30 +21,30 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int NonRestartInitializer(Real *U, const Space *, const Geometry *,
-        const Partition *, const Flow *);
+static int NonRestartInitializer(Real *U, const Space *, const Model *,
+        const Partition *, const Geometry *);
 static int ApplyRegionalInitializer(const int, Real *U, const Space *, 
-        const Partition *, const Flow *);
-static int RestartInitializer(Real *U, const Space *, const Geometry *, Time *, 
-        const Partition *, const Flow *);
+        const Model *, const Partition *);
+static int RestartInitializer(Real *U, const Space *, Time *, const Model *, 
+        const Partition *, const Geometry *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
 /*
- * This function initializes the entire flow field. Initialization will be 
+ * This function initializes the entire field. Initialization will be 
  * done differently determined by the restart status.
  */
-int InitializeFlowField(Real *U, const Space *space, const Geometry *geometry,
-        Time *time, const Partition *part, const Flow *flow)
+int InitializeField(Real *U, const Space *space, Time *time, const Model *model,
+        const Partition *part, const Geometry *geometry)
 {
-    ShowInformation("Initializing flow field...");
+    ShowInformation("Initializing...");
     if (0 == time->restart) { /* non restart */
-        NonRestartInitializer(U, space, geometry, part, flow);
+        NonRestartInitializer(U, space, model, part, geometry);
         /* if this is a first run, output initial data */
-        WriteComputedData(U, space, time, part, flow);
-        WriteGeometryData(geometry, time);
+        WriteComputedData(U, space, time, model, part);
+        WriteGeometryData(time, geometry);
     } else {
-        RestartInitializer(U, space, geometry, time, part, flow);
+        RestartInitializer(U, space, time, model, part, geometry);
     }
     ShowInformation("Session End");
     return 0;
@@ -52,8 +52,8 @@ int InitializeFlowField(Real *U, const Space *space, const Geometry *geometry,
 /*
  * The non-restart initialization will assign values to field variables.
  */
-static int NonRestartInitializer(Real *U, const Space *space, const Geometry *geometry, 
-        const Partition *part, const Flow *flow)
+static int NonRestartInitializer(Real *U, const Space *space, const Model *model, 
+        const Partition *part, const Geometry *geometry)
 {
     ShowInformation("  Non-restart run initializing...");
     /* extract initial values */
@@ -71,24 +71,24 @@ static int NonRestartInitializer(Real *U, const Space *space, const Geometry *ge
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = IndexMath(k, j, i, space) * DIMU;
-                ConservativeByPrimitive(U, idx, Uo, flow);
+                ConservativeByPrimitive(U, idx, Uo, model);
             }
         }
     }
     /*
-     * Regional initializer for specific flow regions
+     * Regional initializer for specific regions
      */
     for (int n = 0; n < part->tallyIC; ++n) {
-        ApplyRegionalInitializer(n, U, space, part, flow);
+        ApplyRegionalInitializer(n, U, space, model, part);
     }
     /*
-     * Boundary conditions and treatments to obtain an entire initialized flow field
+     * Boundary conditions and treatments to obtain an entire initialized field
      */
-    BoundaryCondtionsAndTreatments(U, space, geometry, part, flow);
+    BoundaryCondtionsAndTreatments(U, space, model, part, geometry);
     return 0;
 }
 /*
- * The handling of regional initialization for specific flow region is achieved
+ * The handling of regional initialization for specific region is achieved
  * through the cooperation of three data structures:
  * The tallyIC counts the number of initializers.
  * The typeIC array keeps a list of the types of regional initialization.
@@ -99,8 +99,8 @@ static int NonRestartInitializer(Real *U, const Space *space, const Geometry *ge
  * 3: box (xmin, ymin, zmin, xmax, ymax, zmax, rho, u, v, w, p)
  * 4: cylinder (x1, y1, z1, x2, y2, z2, r, rho, u, v, w, p)
  */
-static int ApplyRegionalInitializer(const int n, Real *U, const Space *space, 
-        const Partition *part, const Flow *flow)
+static int ApplyRegionalInitializer(const int n, Real *U, const Space *space, const Model *model,
+        const Partition *part)
 {
     /*
      * Acquire the specialized information data entries
@@ -208,7 +208,7 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
                 }
                 if (1 == flag) { /* current node meets the condition */
                     idx = IndexMath(k, j, i, space) * DIMU;
-                    ConservativeByPrimitive(U, idx, Uo, flow);
+                    ConservativeByPrimitive(U, idx, Uo, model);
                 }
             }
         }
@@ -216,21 +216,21 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space,
     return 0;
 }
 /*
- * If this is a restart run, then initialize flow field by reading field data
+ * If this is a restart run, then initialize field by reading field data
  * from restart files.
  */
-static int RestartInitializer(Real *U, const Space *space, const Geometry *geometry, 
-        Time *time, const Partition *part, const Flow *flow)
+static int RestartInitializer(Real *U, const Space *space, Time *time,
+        const Model *model, const Partition *part, const Geometry *geometry)
 {
     ShowInformation("  Restart run initializing...");
     /*
      * Load data from Ensight restart files.
      */
-    LoadComputedData(U, space, time, part, flow);
+    LoadComputedData(U, space, time, model, part);
     /*
-     * Boundary conditions and treatments to obtain an entire initialized flow field
+     * Boundary conditions and treatments to obtain an entire initialized field
      */
-    BoundaryCondtionsAndTreatments(U, space, geometry, part, flow);
+    BoundaryCondtionsAndTreatments(U, space, model, part, geometry);
     return 0;
 }
 /* a good practice: end file with a newline */
