@@ -27,10 +27,9 @@
  * Numerical solving
  *
  * Function
- *      Call a series of function to perform numerical computation of the flow
- *      case.
+ *      Call a series of function to perform numerical computation.
  */
-extern int Solve(Field *, Space *, Geometry *, Time *, const Partition *, const Flow *);
+extern int Solve(Field *, Space *, Time *, const Model *, const Partition *, Geometry *);
 #endif
 /* a good practice: end file with a newline */
 

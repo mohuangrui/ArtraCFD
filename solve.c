@@ -26,57 +26,54 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int SolutionEvolution(Field *, Space *, Geometry *, Time *, 
-        const Partition *, const Flow *);
-static Real ComputeTimeStep(const Real *U, const Space *, 
-        const Geometry *, const Time *, const Partition *, const Flow *);
+static int SolutionEvolution(Field *, Space *, Time *, const Model *,
+        const Partition *, Geometry *);
+static Real ComputeTimeStep(const Real *U, const Space *, const Time *, 
+        const Model *, const Partition *, const Geometry *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int Solve(Field *field, Space *space, Geometry *geometry, Time *time, 
-        const Partition *part, const Flow *flow)
+int Solve(Field *field, Space *space, Time *time, const Model *model,
+        const Partition *part, Geometry *geometry)
 {
-    InitializeFlowField(field->U, space, geometry, time, part, flow);
-    SolutionEvolution(field, space, geometry, time, part, flow);
+    InitializeField(field->U, space, time, model, part, geometry);
+    SolutionEvolution(field, space, time, model, part, geometry);
     return 0;
 }
-static int SolutionEvolution(Field *field, Space *space, Geometry *geometry,
-        Time *time, const Partition *part, const Flow *flow)
+static int SolutionEvolution(Field *field, Space *space, Time *time, 
+        const Model *model, const Partition *part, Geometry *geometry)
 {
     ShowInformation("Time marching...");
     /* check whether current time is equal to or larger than the total time */
-    if (0 >= (time->totalTime - time->currentTime)) {
+    if (0 >= (time->end - time->now)) {
         ShowInformation("  current time is equal to or larger than total time...");
         ShowInformation("Session End");
         return 1;
     }
     /* obtain the desired export time interval */
-    const Real exportTimeInterval = (time->totalTime - time->currentTime) / 
-        (Real)(MaxInt(time->totalOutputTimes - time->outputCount, 1));
-    const Real probeExportInterval = (time->totalTime - time->currentTime) / 
-        (Real)(flow->outputProbe);
-    Real accumulatedTime = 0.0; /* used for control when to export data */
-    Real probeAccumulatedTime = 0.0; /* used for control when to export probe data */
+    const Real interval = (time->end - time->now) / (Real)(MaxInt(time->outputN - time->outputCount, 1));
+    const Real probeInterval = (time->end - time->now) / (Real)(time->outputProbe);
+    Real record = 0.0; /* used for control when to export data */
+    Real probeRecord = 0.0; /* used for control when to export probe data */
     /* set some timers for monitoring time consuming of process */
     Timer operationTimer; /* timer for computing operations */
     Real operationTime = 0.0; /* record consuming time of operation */
-    for (time->stepCount += 1; (time->currentTime < time->totalTime) && 
-            (time->stepCount <= time->totalStep); ++(time->stepCount)) {
+    for (time->stepCount += 1; (time->now < time->end) && (time->stepCount <= time->stepN); ++(time->stepCount)) {
         /*
          * Calculate dt for current time step
          */
-        time->dt = ComputeTimeStep(field->U, space, geometry, time, part, flow);
+        time->dt = ComputeTimeStep(field->U, space, time, model, part, geometry);
         /*
          * Update current time stamp, if current time exceeds the total time, 
          * recompute the value of dt to make current time equal total time.
          */
-        time->currentTime = time->currentTime + time->dt;
-        if (time->currentTime > time->totalTime) { /* need to refine "dt" to reach totTime  */
-            time->dt = time->totalTime - (time->currentTime - time->dt);
-            time->currentTime = time->totalTime;
+        time->now = time->now + time->dt;
+        if (time->now > time->end) { /* need to refine "dt" to reach totTime  */
+            time->dt = time->end - (time->now - time->dt);
+            time->now = time->end;
         }
-        fprintf(stdout, "\nstep=%d; time=%.6g; remain=%.6g; dt=%.6g;\n", time->stepCount, 
-                time->currentTime, time->totalTime - time->currentTime, time->dt);
+        fprintf(stdout, "\nstep=%d; time=%.6g; remain=%.6g; dt=%.6g;\n", 
+                time->stepCount, time->now, time->end - time->now, time->dt);
         /*
          * Compute field data in current time step, treat the interaction of
          * fluid and solids as two physical processes, and split these two
@@ -84,44 +81,39 @@ static int SolutionEvolution(Field *field, Space *space, Geometry *geometry,
          * splitting method.
          */
         TickTime(&operationTimer);
-        SolidDynamics(field->U, 0.5 * time->dt, space, geometry, part, flow);
-        FluidDynamics(field, time->dt, space, geometry, part, flow);
-        SolidDynamics(field->U, 0.5 * time->dt, space, geometry, part, flow);
+        SolidDynamics(field->U, 0.5 * time->dt, space, model, part, geometry);
+        FluidDynamics(field, time->dt, space, model, part, geometry);
+        SolidDynamics(field->U, 0.5 * time->dt, space, model, part, geometry);
         operationTime = TockTime(&operationTimer);
         fprintf(stdout, "  elapsed: %.6gs\n", operationTime);
         /*
-         * Export computed data. Use accumulatedTime as a flag, if
-         * accumulatedTime increases to anticipated export interval,
-         * write data out. Because the accumulatedTime very likely
-         * can not increase to the exporting interval at the last
-         * phase, then add a extra condition that if current time
-         * is the total time, then also write data out.
+         * Export computed data. If accumulated time increases to anticipated 
+         * export interval, write data out. Because the accumulated time very 
+         * likely can not increase to the exporting interval at the last
+         * phase, then add a extra condition that if current time is the total
+         * time, then also write data out.
          */
-        accumulatedTime = accumulatedTime + time->dt;
-        probeAccumulatedTime = probeAccumulatedTime + time->dt;
-        if ((accumulatedTime >=  exportTimeInterval) || 
-                (0 == time->currentTime - time->totalTime) ||
-                (time->stepCount == time->totalStep)) {
+        record = record + time->dt;
+        probeRecord = probeRecord + time->dt;
+        if ((record >= interval) || (0 == time->now - time->end) || (time->stepCount == time->stepN)) {
             ++(time->outputCount); /* export count increase */
             TickTime(&operationTimer);
-            WriteComputedData(field->U, space, time, part, flow);
-            WriteGeometryData(geometry, time);
+            WriteComputedData(field->U, space, time, model, part);
+            WriteGeometryData(time, geometry);
             operationTime = TockTime(&operationTimer);
-            accumulatedTime = 0; /* reset accumulated time */
+            record = 0; /* reset accumulated time */
             fprintf(stdout, "  data export time consuming: %.6gs\n", operationTime);
         }
-        if ((probeAccumulatedTime >=  probeExportInterval) || 
-                (0 == time->currentTime - time->totalTime) ||
-                (time->stepCount == time->totalStep)) {
-            WriteComputedDataAtProbes(time->stepCount, field->U, space, part, flow);
-            probeAccumulatedTime = 0; /* reset probe accumulated time */
+        if ((probeRecord >= probeInterval) || (0 == time->now - time->end) || (time->stepCount == time->stepN)) {
+            WriteComputedDataAtProbes(time->stepCount, field->U, space, model, part);
+            probeRecord = 0; /* reset probe accumulated time */
         }
     }
     ShowInformation("Session End");
     return 0;
 }
-static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Geometry *geometry, 
-        const Time *time, const Partition *part, const Flow *flow)
+static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Time *time, 
+        const Model *model, const Partition *part, const Geometry *geometry)
 {
     Real velocity = 0.0;
     Real velocityMax = FLT_MIN;
@@ -148,8 +140,8 @@ static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Geomet
                 if (FLUID != space->nodeFlag[idx]) {
                     continue;
                 }
-                PrimitiveByConservative(Uo, idx * DIMU, U, flow);
-                velocity = MaxReal(fabs(Uo[3]), MaxReal(fabs(Uo[1]), fabs(Uo[2]))) + sqrt((Uo[4] / Uo[0]) * flow->gamma);
+                PrimitiveByConservative(Uo, idx * DIMU, U, model);
+                velocity = MaxReal(fabs(Uo[3]), MaxReal(fabs(Uo[1]), fabs(Uo[2]))) + sqrt((Uo[4] / Uo[0]) * model->gamma);
                 if (velocityMax < velocity) {
                     velocityMax = velocity;
                 }
