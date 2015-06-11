@@ -1,13 +1,17 @@
 /****************************************************************************
- * Boundary Condition                                                       *
- * Programmer: Huangrui Mo                                                  *
- * - Follow the Google's C/C++ style Guide.                                 *
- * - This file defines the boundary conditions and treatments of the flow.  *
+ *                              ArtraCFD                                    *
+ *                          <By Huangrui Mo>                                *
+ * Copyright (C) 2014-2018 Huangrui Mo <huangrui.mo@gmail.com>              *
+ * This file is part of ArtraCFD.                                           *
+ * ArtraCFD is free software: you can redistribute it and/or modify it      *
+ * under the terms of the GNU General Public License as published by        *
+ * the Free Software Foundation, either version 3 of the License, or        *
+ * (at your option) any later version.                                      *
  ****************************************************************************/
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "boundarycondition.h"
+#include "boundary_treatment.h"
 #include <stdio.h> /* standard library for input and output */
 #include "gcibm.h"
 #include "commons.h"
@@ -21,13 +25,13 @@ static int ZeroGradientFlow(Real *, const int, const int);
  * Function definitions
  ****************************************************************************/
 int BoundaryCondtionsAndTreatments(Real *U, const Space *space, 
-        const Particle *particle, const Partition *part, const Flow *flow)
+        const Geometry *geometry, const Partition *part, const Flow *flow)
 {
     for (int partID = 1; partID < 7; ++partID) {
         ApplyBoundaryConditions(partID, U, space, part, flow);
     }
     /* Boundary conditions and treatments for interior ghost cells */
-    BoundaryConditionGCIBM(U, space, particle, part, flow);
+    BoundaryConditionGCIBM(U, space, geometry, part, flow);
     return 0;
 }
 static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space, 

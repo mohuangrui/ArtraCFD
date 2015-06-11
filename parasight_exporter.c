@@ -1,13 +1,17 @@
 /****************************************************************************
- * Functions for Parasight Data Format                                      *
- * Programmer: Huangrui Mo                                                  *
- * - Follow the Google's C/C++ style Guide.                                 *
- * - This file defines operations for Parasight data format.                *
+ *                              ArtraCFD                                    *
+ *                          <By Huangrui Mo>                                *
+ * Copyright (C) 2014-2018 Huangrui Mo <huangrui.mo@gmail.com>              *
+ * This file is part of ArtraCFD.                                           *
+ * ArtraCFD is free software: you can redistribute it and/or modify it      *
+ * under the terms of the GNU General Public License as published by        *
+ * the Free Software Foundation, either version 3 of the License, or        *
+ * (at your option) any later version.                                      *
  ****************************************************************************/
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "parasightstream.h"
+#include "parasight_stream.h"
 #include <stdio.h> /* standard library for input and output */
 #include <string.h> /* manipulating strings */
 #include "ensight.h" 
