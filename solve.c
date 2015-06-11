@@ -17,30 +17,30 @@
 #include <float.h> /* size of floating point values */
 #include "initialization.h"
 #include "temporal_discretization.h"
-#include "particle_dynamics.h"
+#include "solid_dynamics.h"
 #include "data_stream.h"
 #include "geometry_stream.h"
 #include "timer.h"
-#include "probe.h"
+#include "data_probe.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int SolutionEvolution(Field *, Space *, Particle *, Time *, 
+static int SolutionEvolution(Field *, Space *, Geometry *, Time *, 
         const Partition *, const Flow *);
 static Real ComputeTimeStep(const Real *U, const Space *, 
-        const Particle *, const Time *, const Partition *, const Flow *);
+        const Geometry *, const Time *, const Partition *, const Flow *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int Solve(Field *field, Space *space, Particle *particle, Time *time, 
+int Solve(Field *field, Space *space, Geometry *geometry, Time *time, 
         const Partition *part, const Flow *flow)
 {
-    InitializeFlowField(field->U, space, particle, time, part, flow);
-    SolutionEvolution(field, space, particle, time, part, flow);
+    InitializeFlowField(field->U, space, geometry, time, part, flow);
+    SolutionEvolution(field, space, geometry, time, part, flow);
     return 0;
 }
-static int SolutionEvolution(Field *field, Space *space, Particle *particle,
+static int SolutionEvolution(Field *field, Space *space, Geometry *geometry,
         Time *time, const Partition *part, const Flow *flow)
 {
     ShowInformation("Time marching...");
@@ -65,7 +65,7 @@ static int SolutionEvolution(Field *field, Space *space, Particle *particle,
         /*
          * Calculate dt for current time step
          */
-        time->dt = ComputeTimeStep(field->U, space, particle, time, part, flow);
+        time->dt = ComputeTimeStep(field->U, space, geometry, time, part, flow);
         /*
          * Update current time stamp, if current time exceeds the total time, 
          * recompute the value of dt to make current time equal total time.
@@ -79,14 +79,14 @@ static int SolutionEvolution(Field *field, Space *space, Particle *particle,
                 time->currentTime, time->totalTime - time->currentTime, time->dt);
         /*
          * Compute field data in current time step, treat the interaction of
-         * fluid and particles as two physical processes, and split these two
+         * fluid and solids as two physical processes, and split these two
          * processes in time space use a technique similar to Strang's
          * splitting method.
          */
         TickTime(&operationTimer);
-        ParticleDynamics(field->U, 0.5 * time->dt, space, particle, part, flow);
-        FluidDynamics(field, time->dt, space, particle, part, flow);
-        ParticleDynamics(field->U, 0.5 * time->dt, space, particle, part, flow);
+        SolidDynamics(field->U, 0.5 * time->dt, space, geometry, part, flow);
+        FluidDynamics(field, time->dt, space, geometry, part, flow);
+        SolidDynamics(field->U, 0.5 * time->dt, space, geometry, part, flow);
         operationTime = TockTime(&operationTimer);
         fprintf(stdout, "  elapsed: %.6gs\n", operationTime);
         /*
@@ -105,7 +105,7 @@ static int SolutionEvolution(Field *field, Space *space, Particle *particle,
             ++(time->outputCount); /* export count increase */
             TickTime(&operationTimer);
             WriteComputedData(field->U, space, time, part, flow);
-            WriteGeometryData(particle, time);
+            WriteGeometryData(geometry, time);
             operationTime = TockTime(&operationTimer);
             accumulatedTime = 0; /* reset accumulated time */
             fprintf(stdout, "  data export time consuming: %.6gs\n", operationTime);
@@ -120,18 +120,18 @@ static int SolutionEvolution(Field *field, Space *space, Particle *particle,
     ShowInformation("Session End");
     return 0;
 }
-static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Particle *particle, 
+static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Geometry *geometry, 
         const Time *time, const Partition *part, const Flow *flow)
 {
     Real velocity = 0.0;
     Real velocityMax = FLT_MIN;
     /*
-     * Incorporate particle dynamics into CFL condition.
+     * Incorporate solid dynamics into CFL condition.
      */
-    Real *ptk = NULL;
-    for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        ptk = IndexGeometry(geoCount, particle);
-        velocity = MaxReal(fabs(ptk[7]), MaxReal(fabs(ptk[5]), fabs(ptk[6])));
+    Real *geo = NULL;
+    for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
+        geo = IndexGeometry(geoCount, geometry);
+        velocity = MaxReal(fabs(geo[7]), MaxReal(fabs(geo[5]), fabs(geo[6])));
         if (velocityMax < velocity) {
             velocityMax = velocity;
         }

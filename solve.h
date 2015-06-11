@@ -30,7 +30,7 @@
  *      Call a series of function to perform numerical computation of the flow
  *      case.
  */
-extern int Solve(Field *, Space *, Particle *, Time *, const Partition *, const Flow *);
+extern int Solve(Field *, Space *, Geometry *, Time *, const Partition *, const Flow *);
 #endif
 /* a good practice: end file with a newline */
 
