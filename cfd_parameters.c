@@ -20,15 +20,15 @@
  * Static Function Declarations
  ****************************************************************************/
 static int NodeBasedMeshNumberRefine(Space *);
-static int InitializeCFDParameters(Space *, Time *, Flow *);
+static int InitializeCFDParameters(Space *, Time *, Model *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int ComputeCFDParameters(Space *space, Time *time, Flow *flow)
+int ComputeCFDParameters(Space *space, Time *time, Model *model)
 {
     ShowInformation("Computing parameters...");
     NodeBasedMeshNumberRefine(space);
-    InitializeCFDParameters(space, time, flow);
+    InitializeCFDParameters(space, time, model);
     ShowInformation("Session End");
     return 0;
 }
@@ -87,42 +87,42 @@ static int NodeBasedMeshNumberRefine(Space *space)
  * the numerical simulation environment. These parameters will be normalized
  * by reference values.
  */
-static int InitializeCFDParameters(Space *space, Time *time, Flow *flow)
+static int InitializeCFDParameters(Space *space, Time *time, Model *model)
 {
     /* space */
-    space->dz = ((space->zMax - space->zMin) / (Real)(space->nz - 1)) / flow->refLength;
-    space->dy = ((space->yMax - space->yMin) / (Real)(space->ny - 1)) / flow->refLength;
-    space->dx = ((space->xMax - space->xMin) / (Real)(space->nx - 1)) / flow->refLength;
-    space->zMax = space->zMax / flow->refLength;
-    space->yMax = space->yMax / flow->refLength;
-    space->xMax = space->xMax / flow->refLength;
-    space->zMin = space->zMin / flow->refLength;
-    space->yMin = space->yMin / flow->refLength;
-    space->xMin = space->xMin / flow->refLength;
+    space->dz = ((space->zMax - space->zMin) / (Real)(space->nz - 1)) / model->refLength;
+    space->dy = ((space->yMax - space->yMin) / (Real)(space->ny - 1)) / model->refLength;
+    space->dx = ((space->xMax - space->xMin) / (Real)(space->nx - 1)) / model->refLength;
+    space->zMax = space->zMax / model->refLength;
+    space->yMax = space->yMax / model->refLength;
+    space->xMax = space->xMax / model->refLength;
+    space->zMin = space->zMin / model->refLength;
+    space->yMin = space->yMin / model->refLength;
+    space->xMin = space->xMin / model->refLength;
     space->ddz = 1.0 / space->dz;
     space->ddy = 1.0 / space->dy;
     space->ddx = 1.0 / space->dx;
     space->tinyL = 1.0e-6 * MinReal(space->dx, MinReal(space->dz, space->dy));
     /* time */
-    time->totalTime = time->totalTime * flow->refVelocity / flow->refLength;
-    if ((0 > time->totalStep)) {
-        time->totalStep = INT_MAX;
+    time->end = time->end * model->refVelocity / model->refLength;
+    if ((0 > time->stepN)) {
+        time->stepN = INT_MAX;
     }
     /* fluid and flow */
-    flow->gamma = 1.4;
-    flow->gasR = 8.314462175;
-    flow->pi = acos(-1);
+    model->gamma = 1.4;
+    model->gasR = 8.314462175;
+    model->pi = acos(-1);
     /* reference Mach number */
-    flow->refMa = flow->refVelocity / sqrt(flow->gamma * flow->gasR * flow->refTemperature);
+    model->refMa = model->refVelocity / sqrt(model->gamma * model->gasR * model->refTemperature);
     /* reference dynamic viscosity for viscosity normalization and modify Sutherland's law */
-    flow->refMu = flow->refMu / (flow->refDensity * flow->refVelocity * flow->refLength);
+    model->refMu = model->refMu / (model->refDensity * model->refVelocity * model->refLength);
     /*
      * Now replace some parameters by general forms that are valid
      * for both dimensional and nondimensional N-S equations, since
      * dimensional forms can be seen as normalized by reference 1.
      */
-    flow->gasR = 1.0 / (flow->gamma * flow->refMa * flow->refMa);
-    flow->cv = flow->gasR / (flow->gamma - 1.0);
+    model->gasR = 1.0 / (model->gamma * model->refMa * model->refMa);
+    model->cv = model->gasR / (model->gamma - 1.0);
     return 0;
 }
 /* a good practice: end file with a newline */

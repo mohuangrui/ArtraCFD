@@ -31,7 +31,7 @@
  * Domain [West],[East],[South],[North],[Front],[Back] Boundary
  * [West],[East],[South],[North],[Front],[Back] Exterior Ghost
  */
-int DomainPartition(Partition *part, const Space *space)
+int DomainPartition(const Space *space, Partition *part)
 {
     ShowInformation("Domain partitioning...");
     /*

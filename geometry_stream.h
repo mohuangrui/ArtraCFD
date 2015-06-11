@@ -31,14 +31,14 @@
  *      -- non restart run, load from file artracfd.geo
  *      -- restart run, load from the restart geometry file.
  */
-extern int LoadGeometryData(Geometry *, const Space *, const Time *, const Flow *);
+extern int LoadGeometryData(const Space *, const Time *, const Model *, Geometry *);
 /*
  * Geometry data writer
  *
  * Function
  *      Write geometry data.
  */
-extern int WriteGeometryData(const Geometry *, const Time *);
+extern int WriteGeometryData(const Time *, const Geometry *);
 #endif
 /* a good practice: end file with a newline */
 

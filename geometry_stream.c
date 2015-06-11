@@ -23,10 +23,10 @@ static int NonrestartGeometryLoader(Geometry *);
 static int RestartGeometryLoader(Geometry *);
 static int LoadGeometryDataParaview(Geometry *);
 static int AllocateMemoryForGeometryData(Geometry *);
-static int ComputeGeometryParameters(Geometry *, const Space *, const Flow *);
-static int WriteGeometryDataParaview(const Geometry *, const Time *);
+static int ComputeGeometryParameters(const Space *, const Model *, Geometry *);
+static int WriteGeometryDataParaview(const Time *, const Geometry *);
 static int InitializeTransientParaviewDataFile(ParaviewSet *);
-static int WriteSteadyParaviewDataFile(ParaviewSet *, const Time *);
+static int WriteSteadyParaviewDataFile(const Time *, ParaviewSet *);
 static int WriteParaviewVariableFile(const Geometry *, ParaviewSet *);
 /****************************************************************************
  * Function definitions
@@ -34,15 +34,15 @@ static int WriteParaviewVariableFile(const Geometry *, ParaviewSet *);
 /*
  * This function load geometry data from the geometry file.
  */
-int LoadGeometryData(Geometry *geometry, const Space *space, const Time *time,
-        const Flow *flow)
+int LoadGeometryData(const Space *space, const Time *time, const Model *model,
+        Geometry *geometry)
 {
     if (0 == time->restart) { /* if non-restart, read input file */
         NonrestartGeometryLoader(geometry);
     } else { /* if restart, read the geometry file */
         RestartGeometryLoader(geometry);
     }
-    ComputeGeometryParameters(geometry, space, flow);
+    ComputeGeometryParameters(space, model, geometry);
     return 0;
 }
 static int NonrestartGeometryLoader(Geometry *geometry)
@@ -153,7 +153,7 @@ static int LoadGeometryDataParaview(Geometry *geometry)
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-static int ComputeGeometryParameters(Geometry *geometry, const Space *space, const Flow *flow)
+static int ComputeGeometryParameters(const Space *space, const Model *model, Geometry *geometry)
 {
     Real *geo = NULL;
     for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
@@ -164,11 +164,11 @@ static int ComputeGeometryParameters(Geometry *geometry, const Space *space, con
         geo[10] = 0;
         geo[11] = 0;
         if (1 == space->collapsed) { /* space dimension collapsed */
-            geo[12] = 2.0 * geo[3] * flow->pi; /* circle perimeter */
-            geo[13] = geo[4] * geo[3] * geo[3] * flow->pi; /* circle mass */
+            geo[12] = 2.0 * geo[3] * model->pi; /* circle perimeter */
+            geo[13] = geo[4] * geo[3] * geo[3] * model->pi; /* circle mass */
         } else {
-            geo[12] = 4.0 * geo[3] * geo[3] * flow->pi; /* sphere surface */
-            geo[13] = geo[4] * (4.0 / 3.0) * geo[3] * geo[3] * geo[3] * flow->pi; /* sphere mass */
+            geo[12] = 4.0 * geo[3] * geo[3] * model->pi; /* sphere surface */
+            geo[13] = geo[4] * (4.0 / 3.0) * geo[3] * geo[3] * geo[3] * model->pi; /* sphere mass */
         }
         /* get the mass reciprocal */
         geo[13] = 1 / geo[13];
@@ -178,12 +178,12 @@ static int ComputeGeometryParameters(Geometry *geometry, const Space *space, con
 /*
  * Write geometry information of geometrys.
  */
-int WriteGeometryData(const Geometry *geometry, const Time *time)
+int WriteGeometryData(const Time *time, const Geometry *geometry)
 {
-    WriteGeometryDataParaview(geometry, time);
+    WriteGeometryDataParaview(time, geometry);
     return 0;
 }
-static int WriteGeometryDataParaview(const Geometry *geometry, const Time *time)
+static int WriteGeometryDataParaview(const Time *time, const Geometry *geometry)
 {
     ParaviewSet paraSet = { /* initialize ParaviewSet environment */
         .baseName = "geometry", /* data file base name */
@@ -194,7 +194,7 @@ static int WriteGeometryDataParaview(const Geometry *geometry, const Time *time)
     if (0 == time->stepCount) { /* this is the initialization step */
         InitializeTransientParaviewDataFile(&paraSet);
     }
-    WriteSteadyParaviewDataFile(&paraSet, time);
+    WriteSteadyParaviewDataFile(time, &paraSet);
     WriteParaviewVariableFile(geometry, &paraSet);
     return 0;
 }
@@ -214,7 +214,7 @@ static int InitializeTransientParaviewDataFile(ParaviewSet *paraSet)
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-static int WriteSteadyParaviewDataFile(ParaviewSet *paraSet, const Time *time)
+static int WriteSteadyParaviewDataFile(const Time *time, ParaviewSet *paraSet)
 {
     /* store updated basename in filename */
     snprintf(paraSet->fileName, sizeof(ParaviewString), "%s%05d", 
@@ -232,12 +232,11 @@ static int WriteSteadyParaviewDataFile(ParaviewSet *paraSet, const Time *time)
     fprintf(filePointer, "<VTKFile type=\"Collection\" version=\"1.0\"\n");
     fprintf(filePointer, "         byte_order=\"%s\">\n", paraSet->byteOrder);
     fprintf(filePointer, "  <Collection>\n");
-    fprintf(filePointer, "    <DataSet timestep=\"%.6g\" group=\"\" part=\"0\"\n", 
-            time->currentTime);
+    fprintf(filePointer, "    <DataSet timestep=\"%.6g\" group=\"\" part=\"0\"\n", time->now);
     fprintf(filePointer, "             file=\"%s.vts\"/>\n", paraSet->baseName);
     fprintf(filePointer, "  </Collection>\n");
     fprintf(filePointer, "  <!-- Order %d -->\n", time->outputCount);
-    fprintf(filePointer, "  <!-- Time %.6g -->\n", time->currentTime);
+    fprintf(filePointer, "  <!-- Time %.6g -->\n", time->now);
     fprintf(filePointer, "  <!-- Step %d -->\n", time->stepCount);
     fprintf(filePointer, "</VTKFile>\n");
     fclose(filePointer); /* close current opened file */
@@ -264,16 +263,14 @@ static int WriteSteadyParaviewDataFile(ParaviewSet *paraSet, const Time *time)
         fgets(currentLine, sizeof currentLine, filePointer);
     }
     /* append informatiom */
-    fprintf(filePointer, "    <DataSet timestep=\"%.6g\" group=\"\" part=\"0\"\n", 
-            time->currentTime);
+    fprintf(filePointer, "    <DataSet timestep=\"%.6g\" group=\"\" part=\"0\"\n", time->now);
     fprintf(filePointer, "             file=\"%s.vts\"/>\n", paraSet->baseName);
     fprintf(filePointer, "  </Collection>\n");
     fprintf(filePointer, "</VTKFile>\n");
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-static int WriteParaviewVariableFile(const Geometry *geometry, 
-        ParaviewSet *paraSet)
+static int WriteParaviewVariableFile(const Geometry *geometry, ParaviewSet *paraSet)
 {
     FILE *filePointer = NULL;
     snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.vts", paraSet->baseName); 

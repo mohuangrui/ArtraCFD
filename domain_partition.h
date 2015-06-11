@@ -30,7 +30,7 @@
  *      Decomposite the computational domain, and provide the index range
  *      for each partitions, as well as partition names.
  */
-extern int DomainPartition(Partition *, const Space *);
+extern int DomainPartition(const Space *, Partition *);
 #endif
 /* a good practice: end file with a newline */
 
