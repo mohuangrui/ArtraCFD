@@ -30,15 +30,15 @@ static int ProgramMemoryAllocate(Field *, Space *);
 /*
  * This is the overall preprocessing function
  */
-int Preprocess(Field *field, Space *space, Geometry *geometry, Time *time, 
-        Partition *part, Flow *flow)
+int Preprocess(Field *field, Space *space, Time *time, Model *model,
+        Partition *part, Geometry *geometry)
 {
-    LoadCaseSettingData(space, time, flow, part);
-    ComputeCFDParameters(space, time, flow);
-    DomainPartition(part, space);
+    LoadCaseSettingData(space, time, model, part);
+    ComputeCFDParameters(space, time, model);
+    DomainPartition(space, part);
     ProgramMemoryAllocate(field, space);
-    LoadGeometryData(geometry, space, time, flow);
-    ComputeDomainGeometryGCIBM(space, geometry, part);
+    LoadGeometryData(space, time, model, geometry);
+    ComputeDomainGeometryGCIBM(space, part, geometry);
     return 0;
 }
 /*
@@ -50,7 +50,7 @@ static int ProgramMemoryAllocate(Field *field, Space *space)
 {
     ShowInformation("Allocating memory...");
     /*
-     * Conservative flow variables.
+     * Conservative variables.
      * Tips: the storage space of U is best between Un and Uswap.
      */
     int idxMax = space->nMax * DIMU;

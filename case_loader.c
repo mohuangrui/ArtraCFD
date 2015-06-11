@@ -18,25 +18,25 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ReadCaseSettingData(Space *, Time *, Flow *, Partition *);
+static int ReadCaseSettingData(Space *, Time *, Model *, Partition *);
 static int ReadBoundaryData(FILE **, Partition *, const int);
-static int ReadConsecutiveRealData(FILE **, Real *address, const int entryN);
+static int ReadConsecutiveRealData(FILE **, Real *, const int);
 static int WriteBoundaryData(FILE **, const Partition *, const int);
 static int WriteRegionalInitializerData(FILE **, const Partition *, const int);
-static int WriteVerifyData(const Space *, const Time *, const Flow *, const Partition *);
-static int CheckCaseSettingData(const Space *, const Time *, const Flow *, const Partition *);
+static int WriteVerifyData(const Space *, const Time *, const Model *, const Partition *);
+static int CheckCaseSettingData(const Space *, const Time *, const Model *, const Partition *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
 /*
  * This function load the case settings from the case file.
  */
-int LoadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *part)
+int LoadCaseSettingData(Space *space, Time *time, Model *model, Partition *part)
 {
     ShowInformation("Loading case setting data ...");
-    ReadCaseSettingData(space, time, flow, part);
-    WriteVerifyData(space, time, flow, part);
-    CheckCaseSettingData(space, time, flow, part);
+    ReadCaseSettingData(space, time, model, part);
+    WriteVerifyData(space, time, model, part);
+    CheckCaseSettingData(space, time, model, part);
     ShowInformation("Session End");
     return 0;
 }
@@ -64,7 +64,7 @@ int LoadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *part)
  * you use for fprintf because the fprintf library function treats them as
  * synonymous, but it's crucial to get it right for sscanf. 
  */
-static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *part)
+static int ReadCaseSettingData(Space *space, Time *time, Model *model, Partition *part)
 {
     FILE *filePointer = fopen("artracfd.case", "r");
     if (NULL == filePointer) {
@@ -104,13 +104,13 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d", &(time->restart)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(time->totalTime)); 
+            sscanf(currentLine, formatI, &(time->end)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%d", &(time->totalStep)); 
+            sscanf(currentLine, "%d", &(time->stepN)); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatI, &(time->numCFL)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%d", &(time->totalOutputTimes)); 
+            sscanf(currentLine, "%d", &(time->outputN)); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d", &(time->dataStreamer)); 
             continue;
@@ -118,23 +118,23 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
         if (0 == strncmp(currentLine, "fluid begin", sizeof currentLine)) {
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(flow->refPr)); 
+            sscanf(currentLine, formatI, &(model->refPr)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(flow->refMu)); 
+            sscanf(currentLine, formatI, &(model->refMu)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(flow->delta)); 
+            sscanf(currentLine, formatI, &(model->delta)); 
             continue;
         }
         if (0 == strncmp(currentLine, "reference begin", sizeof currentLine)) {
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(flow->refLength)); 
+            sscanf(currentLine, formatI, &(model->refLength)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(flow->refDensity)); 
+            sscanf(currentLine, formatI, &(model->refDensity)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(flow->refVelocity)); 
+            sscanf(currentLine, formatI, &(model->refVelocity)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(flow->refTemperature)); 
+            sscanf(currentLine, formatI, &(model->refTemperature)); 
             continue;
         }
         if (0 == strncmp(currentLine, "initialization begin", sizeof currentLine)) {
@@ -236,20 +236,20 @@ static int ReadCaseSettingData(Space *space, Time *time, Flow *flow, Partition *
             /* optional entry do not increase entry count */
             fgets(currentLine, sizeof currentLine, filePointer);
             /* output time control of probes */
-            sscanf(currentLine, "%d", &(flow->outputProbe)); 
+            sscanf(currentLine, "%d", &(time->outputProbe)); 
             continue;
         }
         if (0 == strncmp(currentLine, "probe begin", sizeof currentLine)) {
             /* optional entry do not increase entry count */
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatIII, flow->probe[flow->tallyProbe] + 0, 
-                    flow->probe[flow->tallyProbe] + 1, flow->probe[flow->tallyProbe] + 2); 
+            sscanf(currentLine, formatIII, time->probe[time->tallyProbe] + 0, 
+                    time->probe[time->tallyProbe] + 1, time->probe[time->tallyProbe] + 2); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatIII, flow->probe[flow->tallyProbe] + 3, 
-                    flow->probe[flow->tallyProbe] + 4, flow->probe[flow->tallyProbe] + 5); 
+            sscanf(currentLine, formatIII, time->probe[time->tallyProbe] + 3, 
+                    time->probe[time->tallyProbe] + 4, time->probe[time->tallyProbe] + 5); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, flow->probe[flow->tallyProbe] + 6);  /* resolution */
-            ++flow->tallyProbe; /* probe count and pointer */
+            sscanf(currentLine, formatI, time->probe[time->tallyProbe] + 6);  /* resolution */
+            ++time->tallyProbe; /* probe count and pointer */
             continue;
         }
     }
@@ -420,7 +420,7 @@ static int WriteRegionalInitializerData(FILE **filePointerPointer, const Partiti
 /*
  * This function outputs the case setting data to a file for verification.
  */
-static int WriteVerifyData(const Space *space, const Time *time, const Flow *flow, const Partition *part)
+static int WriteVerifyData(const Space *space, const Time *time, const Model *model, const Partition *part)
 {
     ShowInformation("  Data outputted into artracfd.verify...");
     FILE *filePointer = fopen("artracfd.verify", "w");
@@ -448,28 +448,28 @@ static int WriteVerifyData(const Space *space, const Time *time, const Flow *flo
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "restart flag: %d\n", time->restart); 
-    fprintf(filePointer, "total evolution time: %.6g\n", time->totalTime); 
-    fprintf(filePointer, "maximum number of steps: %d\n", time->totalStep); 
+    fprintf(filePointer, "total evolution time: %.6g\n", time->end); 
+    fprintf(filePointer, "maximum number of steps: %d\n", time->stepN); 
     fprintf(filePointer, "CFL condition number: %.6g\n", time->numCFL); 
-    fprintf(filePointer, "exporting data times: %d\n", time->totalOutputTimes); 
+    fprintf(filePointer, "exporting data times: %d\n", time->outputN); 
     fprintf(filePointer, "data streamer id: %d\n", time->dataStreamer); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                    >> Fluid and Flow Properties <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "Prandtl number: %.6g\n", flow->refPr); 
-    fprintf(filePointer, "modify coefficient of dynamic viscosity: %.6g\n", flow->refMu); 
-    fprintf(filePointer, "Harten's numerical dissipation coefficient: %.6g\n", flow->delta); 
+    fprintf(filePointer, "Prandtl number: %.6g\n", model->refPr); 
+    fprintf(filePointer, "modify coefficient of dynamic viscosity: %.6g\n", model->refMu); 
+    fprintf(filePointer, "Harten's numerical dissipation coefficient: %.6g\n", model->delta); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                        >> Reference Values  <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "length: %.6g\n", flow->refLength); 
-    fprintf(filePointer, "density: %.6g\n", flow->refDensity); 
-    fprintf(filePointer, "velocity: %.6g\n", flow->refVelocity); 
-    fprintf(filePointer, "temperature: %.6g\n", flow->refTemperature); 
+    fprintf(filePointer, "length: %.6g\n", model->refLength); 
+    fprintf(filePointer, "density: %.6g\n", model->refDensity); 
+    fprintf(filePointer, "velocity: %.6g\n", model->refVelocity); 
+    fprintf(filePointer, "temperature: %.6g\n", model->refTemperature); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                            >> NOTE <<\n");
@@ -524,17 +524,17 @@ static int WriteVerifyData(const Space *space, const Time *time, const Flow *flo
     fprintf(filePointer, "#                    >> Field Data Probes <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    for (int n = 0; n < flow->tallyProbe; ++n) {
+    for (int n = 0; n < time->tallyProbe; ++n) {
         if (0 == n) {
-            fprintf(filePointer, "total number of times of exporting probe data: %d\n", flow->outputProbe);
+            fprintf(filePointer, "total number of times of exporting probe data: %d\n", time->outputProbe);
         }
         fprintf(filePointer, "#\n");
         fprintf(filePointer, "probe %d\n", (n + 1));
         fprintf(filePointer, "x, y, z of the first end point: %.6g, %.6g, %.6g\n", 
-                flow->probe[n][0], flow->probe[n][1], flow->probe[n][2]);
+                time->probe[n][0], time->probe[n][1], time->probe[n][2]);
         fprintf(filePointer, "x, y, z of the second end point: %.6g, %.6g, %.6g\n", 
-                flow->probe[n][3], flow->probe[n][4], flow->probe[n][5]);
-        fprintf(filePointer, "number of points on line: %.6g\n", flow->probe[n][6]);
+                time->probe[n][3], time->probe[n][4], time->probe[n][5]);
+        fprintf(filePointer, "number of points on line: %.6g\n", time->probe[n][6]);
     }
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
@@ -544,7 +544,7 @@ static int WriteVerifyData(const Space *space, const Time *time, const Flow *flo
 /*
  * This function do some parameter checking
  */
-static int CheckCaseSettingData(const Space *space, const Time *time, const Flow *flow, const Partition *part)
+static int CheckCaseSettingData(const Space *space, const Time *time, const Model *model, const Partition *part)
 {
     ShowInformation("  Preliminary case data checking ...");
     /* space */
@@ -557,17 +557,17 @@ static int CheckCaseSettingData(const Space *space, const Time *time, const Flow
         FatalError("too small mesh values in case settings");
     }
     /* time */
-    if ((0 > time->restart) || (1 < time->restart)|| (0 >= time->totalTime )
-            || (0 >= time->numCFL ) || (1 > time->totalOutputTimes)) {
+    if ((0 > time->restart) || (1 < time->restart)|| (0 >= time->end)
+            || (0 >= time->numCFL ) || (1 > time->outputN)) {
         FatalError("wrong values in time section of case settings");
     }
     /* fluid and flow */
-    if ((0 >= flow->refPr) || (0 > flow->refMu) || (0 > flow->delta)) {
+    if ((0 >= model->refPr) || (0 > model->refMu) || (0 > model->delta)) {
         FatalError("wrong values in fluid and flow section of case settings");
     }
     /* reference */
-    if ((0 >= flow->refLength) || (0 >= flow->refDensity) || 
-            (0 >= flow->refVelocity) || (0 >= flow->refTemperature)) {
+    if ((0 >= model->refLength) || (0 >= model->refDensity) || 
+            (0 >= model->refVelocity) || (0 >= model->refTemperature)) {
         FatalError("wrong values in reference section of case settings");
     }
     /* initialization */

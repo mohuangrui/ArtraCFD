@@ -94,14 +94,14 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "reference end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#                            >> NOTE <<\n");
+    fprintf(filePointer, "#                             >> NOTE <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "# Values in following parts are relative to reference values. Hence, they need\n");
     fprintf(filePointer, "# to be normalized by the given reference values. Like pressure should be\n");
     fprintf(filePointer, "# normalized by reference density times reference velocity square.\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#                     >> Flow Initialization <<\n");
+    fprintf(filePointer, "#                         >> Initialization <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "initialization begin\n");
@@ -113,7 +113,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "initialization end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#                     >> Boundary Condition <<\n");
+    fprintf(filePointer, "#                        >> Boundary Condition <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "# Available types: [inflow], [outflow], [slip wall], [noslip wall], [periodic]\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
