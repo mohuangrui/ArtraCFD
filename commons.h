@@ -1,9 +1,12 @@
 /****************************************************************************
- * Header File                                                              *
- * Programmer: Huangrui Mo                                                  *
- * - Follow the Google's C/C++ style Guide                                  *
- * - Current file only includes structure type declarations and function    *
- *   prototypes that are shared and accessed by most modular files.         *
+ *                              ArtraCFD                                    *
+ *                          <By Huangrui Mo>                                *
+ * Copyright (C) 2014-2018 Huangrui Mo <huangrui.mo@gmail.com>              *
+ * This file is part of ArtraCFD.                                           *
+ * ArtraCFD is free software: you can redistribute it and/or modify it      *
+ * under the terms of the GNU General Public License as published by        *
+ * the Free Software Foundation, either version 3 of the License, or        *
+ * (at your option) any later version.                                      *
  ****************************************************************************/
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
@@ -460,15 +463,15 @@ typedef enum {
      * <= -offset:          interior solid node,
      * <= -offset - totalN: interior solid node required for numerical boundary,
      * otherwise:           fluid node and boundary or exterior ghost node.
-     * totalN is the total number of particles.
+     * totalN is the total number of interior geometries.
      */
     OFFSET = 10, 
     /* identifier of fluid nodes */
     FLUID = 0,
     /* identifier of boundary and exterior ghost nodes */
     EXTERIOR = -1,
-    /* entry number of particle information */
-    ENTRYPTK = 14, /* x, y, z, r, rho, u, v, w, fx, fy, fz, tally, area, 1/mass */
+    /* entry number of geometry information */
+    ENTRYGEO = 14, /* x, y, z, r, rho, u, v, w, fx, fy, fz, tally, area, 1/mass */
     /* entry number of calculated geometry information */
     INFOGEO = 8, /* x, y, z, distance to center, to surface, normalX, normalY, normalZ */
     /* maximum number of probes to support */
@@ -558,12 +561,12 @@ typedef struct {
     int *nodeFlag; /* node type integer flag: normal, ghost, solid, etc. */
 } Space;
 /*
- * Particle Entities
+ * Geometry Entities
  */
 typedef struct {
-    int totalN; /* total number of particles */
+    int totalN; /* total number of geometries */
     Real *headAddress; /* record the head address that stores information */
-} Particle;
+} Geometry;
 /*
  * Time domain parameters
  */
@@ -713,7 +716,7 @@ extern int IndexMath(const int k, const int j, const int i, const Space *);
  * Function
  *      Compute the address pointed to current geometry information.
  */
-extern Real *IndexGeometry(const int geoID, const Particle *particle);
+extern Real *IndexGeometry(const int geoID, const Geometry *geometry);
 /*
  * Coordinates transformation
  *

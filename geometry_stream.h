@@ -1,13 +1,18 @@
 /****************************************************************************
- * Header File                                                              *
- * Programmer: Huangrui Mo                                                  *
- * - Follow the Google's C/C++ style Guide                                  *
+ *                              ArtraCFD                                    *
+ *                          <By Huangrui Mo>                                *
+ * Copyright (C) 2014-2018 Huangrui Mo <huangrui.mo@gmail.com>              *
+ * This file is part of ArtraCFD.                                           *
+ * ArtraCFD is free software: you can redistribute it and/or modify it      *
+ * under the terms of the GNU General Public License as published by        *
+ * the Free Software Foundation, either version 3 of the License, or        *
+ * (at your option) any later version.                                      *
  ****************************************************************************/
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_GEOMETRYSTREAM_H_ /* if this is the first definition */
-#define ARTRACFD_GEOMETRYSTREAM_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_GEOMETRY_STREAM_H_ /* if this is the first definition */
+#define ARTRACFD_GEOMETRY_STREAM_H_ /* a unique marker for this header file */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -24,16 +29,16 @@
  * Function
  *      Load geometry data to program.
  *      -- non restart run, load from file artracfd.geo
- *      -- restart run, load from the restart particle file.
+ *      -- restart run, load from the restart geometry file.
  */
-extern int LoadGeometryData(Particle *, const Space *, const Time *, const Flow *);
+extern int LoadGeometryData(Geometry *, const Space *, const Time *, const Flow *);
 /*
  * Geometry data writer
  *
  * Function
  *      Write geometry data.
  */
-extern int WriteGeometryData(const Particle *, const Time *);
+extern int WriteGeometryData(const Geometry *, const Time *);
 #endif
 /* a good practice: end file with a newline */
 

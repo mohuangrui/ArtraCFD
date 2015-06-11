@@ -1,13 +1,17 @@
 /****************************************************************************
- * Generate and Initialize Case Setting Files of ArtraCFD                   *
- * Programmer: Huangrui Mo                                                  *
- * - Follow the Google's C/C++ style Guide.                                 *
- * - Generates the input files of artracfd: artracfd.case and artracfd.geo  *
+ *                              ArtraCFD                                    *
+ *                          <By Huangrui Mo>                                *
+ * Copyright (C) 2014-2018 Huangrui Mo <huangrui.mo@gmail.com>              *
+ * This file is part of ArtraCFD.                                           *
+ * ArtraCFD is free software: you can redistribute it and/or modify it      *
+ * under the terms of the GNU General Public License as published by        *
+ * the Free Software Foundation, either version 3 of the License, or        *
+ * (at your option) any later version.                                      *
  ****************************************************************************/
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "casefilegenerator.h"
+#include "case_generator.h"
 #include <stdio.h> /* standard library for input and output */
 #include "commons.h"
 /****************************************************************************
@@ -18,7 +22,7 @@ static int CaseGeometryFileGenerator(void);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int GenerateCaseSettingFiles(void)
+int GenerateCaseFiles(void)
 {
     CaseSettingFileGenerator();
     CaseGeometryFileGenerator();
@@ -230,7 +234,7 @@ static int CaseGeometryFileGenerator(void)
     }
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#                                                                             -\n");
-    fprintf(filePointer, "#                   Internal Geometry Configuration                           -\n");
+    fprintf(filePointer, "#                   Interior Geometry Configuration                           -\n");
     fprintf(filePointer, "#                                                                             -\n");
     fprintf(filePointer, "# - Coordinate system: Right-handed Cartesian system. X-Y plane is the screen -\n");
     fprintf(filePointer, "#   plane; X is horizontal from west to east; Y is vertical from south to     -\n");
@@ -246,9 +250,9 @@ static int CaseGeometryFileGenerator(void)
     fprintf(filePointer, "#                   >> Total Number of Objects <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "sphere count begin\n");
+    fprintf(filePointer, "count begin\n");
     fprintf(filePointer, "1            # total number of objects (integer)\n");
-    fprintf(filePointer, "sphere count end\n");
+    fprintf(filePointer, "count end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                    >> Geometry Information <<\n");

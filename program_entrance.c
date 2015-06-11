@@ -1,18 +1,22 @@
 /****************************************************************************
- * Program Entrance                                                         *
- * Programmer: Huangrui Mo                                                  *
- * - Follow the Google's C/C++ style Guide.                                 *
- * - This file define functions handle the entering of the program          *
+ *                              ArtraCFD                                    *
+ *                          <By Huangrui Mo>                                *
+ * Copyright (C) 2014-2018 Huangrui Mo <huangrui.mo@gmail.com>              *
+ * This file is part of ArtraCFD.                                           *
+ * ArtraCFD is free software: you can redistribute it and/or modify it      *
+ * under the terms of the GNU General Public License as published by        *
+ * the Free Software Foundation, either version 3 of the License, or        *
+ * (at your option) any later version.                                      *
  ****************************************************************************/
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "entrance.h"
+#include "program_entrance.h"
 #include <stdio.h> /* standard library for input and output */
 #include <stdlib.h> /* dynamic memory allocation and exit */
 #include <string.h> /* manipulating strings */
 #include "calculator.h"
-#include "casefilegenerator.h"
+#include "case_generator.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
@@ -125,7 +129,7 @@ static int Preamble(void)
 {
     fprintf(stdout, "**********************************************************\n");
     fprintf(stdout, "*                        ArtraCFD                        *\n");
-    fprintf(stdout, "*                     By Huangrui Mo                     *\n");
+    fprintf(stdout, "*                    <By Huangrui Mo>                    *\n");
     fprintf(stdout, "**********************************************************\n\n");
     fprintf(stdout, "Enter 'help' for more information\n");
     fprintf(stdout, "**********************************************************\n\n");
@@ -138,7 +142,7 @@ static int Preamble(void)
         if (0 == strncmp(currentLine, "help", sizeof currentLine)) {
             fprintf(stdout, "Options under interactive environment:\n\n");
             fprintf(stdout, "[help]    show this information\n");
-            fprintf(stdout, "[init]    generate the initial case input files\n");
+            fprintf(stdout, "[init]    generate input files of a sample case\n");
             fprintf(stdout, "[solve]   solve current case in serial mode\n");
             fprintf(stdout, "[calc]    access expression calculator\n");
             fprintf(stdout, "[manual]  show a brief user manual of ArtraCFD\n");

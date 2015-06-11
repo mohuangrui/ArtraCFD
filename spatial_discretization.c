@@ -9,27 +9,16 @@
  * (at your option) any later version.                                      *
  ****************************************************************************/
 /****************************************************************************
- * Header File Guards to Avoid Interdependence
- ****************************************************************************/
-#ifndef ARTRACFD_CALCULATOR_H_ /* if this is the first definition */
-#define ARTRACFD_CALCULATOR_H_ /* a unique marker for this header file */
-/****************************************************************************
  * Required Header Files
  ****************************************************************************/
+#include "spatial_discretization.h"
+#include <stdio.h> /* standard library for input and output */
+#include "commons.h"
 /****************************************************************************
- * Data Structure Declarations
+ * Static Function Declarations
  ****************************************************************************/
 /****************************************************************************
- * Public Functions Declaration
+ * Function definitions
  ****************************************************************************/
-/*
- * Expression calculator
- *
- * Function
- *      Provide a expression calculator that can calculate complex mathematical
- *      expressions.
- */
-extern int ExpressionCalculator(void);
-#endif
 /* a good practice: end file with a newline */
 

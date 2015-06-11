@@ -1,8 +1,12 @@
 /****************************************************************************
- * Preprocess                                                               *
- * Programmer: Huangrui Mo                                                  *
- * - Follow the Google's C/C++ style Guide.                                 *
- * - This file defines a functions as a preprocessor                        *
+ *                              ArtraCFD                                    *
+ *                          <By Huangrui Mo>                                *
+ * Copyright (C) 2014-2018 Huangrui Mo <huangrui.mo@gmail.com>              *
+ * This file is part of ArtraCFD.                                           *
+ * ArtraCFD is free software: you can redistribute it and/or modify it      *
+ * under the terms of the GNU General Public License as published by        *
+ * the Free Software Foundation, either version 3 of the License, or        *
+ * (at your option) any later version.                                      *
  ****************************************************************************/
 /****************************************************************************
  * Required Header Files
@@ -10,10 +14,10 @@
 #include "preprocess.h"
 #include <stdio.h> /* standard library for input and output */
 #include <stdlib.h> /* dynamic memory allocation and exit */
-#include "casedataloader.h"
-#include "cfdparameters.h"
-#include "domainpartition.h"
-#include "geometrystream.h"
+#include "case_loader.h"
+#include "cfd_parameters.h"
+#include "domain_partition.h"
+#include "geometry_stream.h"
 #include "gcibm.h"
 #include "commons.h"
 /****************************************************************************
@@ -26,15 +30,15 @@ static int ProgramMemoryAllocate(Field *, Space *);
 /*
  * This is the overall preprocessing function
  */
-int Preprocess(Field *field, Space *space, Particle *particle, Time *time, 
+int Preprocess(Field *field, Space *space, Geometry *geometry, Time *time, 
         Partition *part, Flow *flow)
 {
     LoadCaseSettingData(space, time, flow, part);
     ComputeCFDParameters(space, time, flow);
     DomainPartition(part, space);
     ProgramMemoryAllocate(field, space);
-    LoadGeometryData(particle, space, time, flow);
-    ComputeDomainGeometryGCIBM(space, particle, part);
+    LoadGeometryData(geometry, space, time, flow);
+    ComputeDomainGeometryGCIBM(space, geometry, part);
     return 0;
 }
 /*
