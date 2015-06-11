@@ -150,7 +150,7 @@ static int Preamble(void)
             continue;
         }
         if (0 == strncmp(currentLine, "init", sizeof currentLine)) {
-            GenerateCaseSettingFiles();
+            GenerateCaseFiles();
             fprintf(stdout, "case files generated successfully\n");
             continue;
         }
