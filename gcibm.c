@@ -20,10 +20,9 @@
  * Static Function Declarations
  ****************************************************************************/
 static int InitializeDomainGeometry(Space *, const Partition *);
-static int LocateSolidGeometry(Space *, const Geometry *, const Partition *);
+static int LocateSolidGeometry(Space *, const Partition *, const Geometry *);
 static int IdentifyGhostNodes(Space *, const Partition *);
-static int IdentifySolidNodesAtNumericalBoundary(Space *, const Geometry *, 
-        const Partition *);
+static int IdentifySolidNodesAtNumericalBoundary(Space *, const Partition *, const Geometry *);
 static int SearchFluidNodes(const int, const int, const int, const int, const Space *);
 static int ApplyWeighting(Real [], Real, const Real [], const Real);
 /****************************************************************************
@@ -57,12 +56,12 @@ static int ApplyWeighting(Real [], Real, const Real [], const Real);
  * The rational is that don't store every information for each ghost node, but
  * only store necessary information. When need it, access and calculate it.
  */
-int ComputeDomainGeometryGCIBM(Space *space, Geometry *geometry, const Partition *part)
+int ComputeDomainGeometryGCIBM(Space *space, const Partition *part, Geometry *geometry)
 {
     InitializeDomainGeometry(space, part);
-    LocateSolidGeometry(space, geometry, part);
+    LocateSolidGeometry(space, part, geometry);
     IdentifyGhostNodes(space, part);
-    IdentifySolidNodesAtNumericalBoundary(space, geometry, part);
+    IdentifySolidNodesAtNumericalBoundary(space, part, geometry);
     return 0;
 }
 static int InitializeDomainGeometry(Space *space, const Partition *part)
@@ -95,11 +94,11 @@ static int InitializeDomainGeometry(Space *space, const Partition *part)
  * The second method is adopted here for performance reason, although it's much
  * more complicated than the first one.
  * Be cautious with the validity of any calculated index. It's extremely
- * necessary to adjust the index into the valid flow region or check the
+ * necessary to adjust the index into the valid region or check the
  * validity of the index to avoid index exceed array bound limits and 
  * mysterious bugs.
  */
-static int LocateSolidGeometry(Space *space, const Geometry *geometry, const Partition *part)
+static int LocateSolidGeometry(Space *space, const Partition *part, const Geometry *geometry)
 {
     int idx = 0; /* linear array index math variable */
     for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
@@ -111,13 +110,13 @@ static int LocateSolidGeometry(Space *space, const Geometry *geometry, const Par
         const int rangeK = (int)(safetyCoe * geo[3] * space->ddz);
         const int rangeJ = (int)(safetyCoe * geo[3] * space->ddy);
         const int rangeI = (int)(safetyCoe * geo[3] * space->ddx);
-        /* determine search range according to valid flow region */
-        const int kSub = FlowRegionK(centerK - rangeK, part);
-        const int kSup = FlowRegionK(centerK + rangeK, part) + 1;
-        const int jSub = FlowRegionJ(centerJ - rangeJ, part);
-        const int jSup = FlowRegionJ(centerJ + rangeJ, part) + 1;
-        const int iSub = FlowRegionI(centerI - rangeI, part);
-        const int iSup = FlowRegionI(centerI + rangeI, part) + 1;
+        /* determine search range according to valid region */
+        const int kSub = ValidRegionK(centerK - rangeK, part);
+        const int kSup = ValidRegionK(centerK + rangeK, part) + 1;
+        const int jSub = ValidRegionJ(centerJ - rangeJ, part);
+        const int jSup = ValidRegionJ(centerJ + rangeJ, part) + 1;
+        const int iSub = ValidRegionI(centerI - rangeI, part);
+        const int iSup = ValidRegionI(centerI + rangeI, part) + 1;
         for (int k = kSub; k < kSup; ++k) {
             for (int j = jSub; j < jSup; ++j) {
                 for (int i = iSub; i < iSup; ++i) {
@@ -150,8 +149,7 @@ static int IdentifyGhostNodes(Space *space, const Partition *part)
     }
     return 0;
 }
-static int IdentifySolidNodesAtNumericalBoundary(Space *space, 
-        const Geometry *geometry, const Partition *part)
+static int IdentifySolidNodesAtNumericalBoundary(Space *space, const Partition *part, const Geometry *geometry)
 {
     int idx = 0; /* linear array index math variable */
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
@@ -192,8 +190,8 @@ static int SearchFluidNodes(const int k, const int j, const int i,
 /*
  * Boundary condition for interior ghost and solid nodes at numerical boundary.
  */
-int BoundaryConditionGCIBM(Real *U, const Space *space, const Geometry *geometry, 
-        const Partition *part, const Flow *flow)
+int BoundaryConditionGCIBM(Real *U, const Space *space, const Model *model,
+        const Partition *part, const Geometry *geometry)
 {
     int idx = 0; /* linear array index math variable */
     Real Uo[DIMUo] = {0.0}; /* save reconstructed primitives */
@@ -222,7 +220,7 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Geometry *geometry
                 const Real wallZ = info[2] + info[4] * info[7];
                 InverseDistanceWeighting(Uow, wallZ, wallY, wallX, 
                         ComputeK(wallZ, space), ComputeJ(wallY, space), ComputeI(wallX, space), 
-                        2, U, space, flow);
+                        2, U, space, model);
                 NormalizeReconstructedValues(Uow);
                 /* enforce boundary condition at boundary point */
                 Uow[1] = geo[5];
@@ -234,7 +232,7 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Geometry *geometry
                 const Real imageZ = info[2] + 2 * info[4] * info[7];
                 InverseDistanceWeighting(Uo, imageZ, imageY, imageX, 
                         ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space), 
-                        2, U, space, flow);
+                        2, U, space, model);
                 /* add the boundary point as a stencil */
                 ApplyWeighting(Uo, info[4] * info[4], Uow, space->tinyL);
                 /* Normalize the weighted values of the image point */
@@ -246,7 +244,7 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Geometry *geometry
                 Uo[1] = 2 * Uow[1] - Uo[1];
                 Uo[2] = 2 * Uow[2] - Uo[2];
                 Uo[3] = 2 * Uow[3] - Uo[3];
-                ConservativeByPrimitive(U, idx * DIMU, Uo, flow);
+                ConservativeByPrimitive(U, idx * DIMU, Uo, model);
             }
         }
     }
@@ -254,7 +252,7 @@ int BoundaryConditionGCIBM(Real *U, const Space *space, const Geometry *geometry
 }
 int InverseDistanceWeighting(Real Uo[], const Real z, const Real y, const Real x,
         const int k, const int j, const int i, const int h, const Real *U,
-        const Space *space, const Flow *flow)
+        const Space *space, const Model *model)
 {
     int idxh = 0; /* linear array index math variable */
     int tally = 0; /* stencil count and zero stencil detector */
@@ -283,7 +281,7 @@ int InverseDistanceWeighting(Real Uo[], const Real z, const Real y, const Real x
                 const Real distX = ComputeX(i + ih, space) - x;
                 /* use distance square to avoid expensive sqrt */
                 distance = distX * distX + distY * distY + distZ * distZ;
-                PrimitiveByConservative(Uoh, idxh * DIMU, U, flow);
+                PrimitiveByConservative(Uoh, idxh * DIMU, U, model);
                 if (!((0 < Uoh[0]) && (FLT_MAX > Uoh[0]))) {
                     fprintf(stderr, "k=%d, j=%d, i=%d, rho=%.6g\n", k + kh, j + jh, i + ih, Uoh[0]);
                     FatalError("illegal density encountered, solution diverges...");

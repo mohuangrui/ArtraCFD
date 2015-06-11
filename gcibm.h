@@ -30,15 +30,15 @@
  *      Employ GCIBM approach to handle complex geometry that locates in
  *      the computational domain.
  */
-extern int ComputeDomainGeometryGCIBM(Space *, Geometry *, const Partition *);
+extern int ComputeDomainGeometryGCIBM(Space *, const Partition *, Geometry *);
 /*
  * Boundary condition for interior ghost cells
  *
  * Function
  *      Apply boundary conditions to the interior ghost cells.
  */
-extern int BoundaryConditionGCIBM(Real *U, const Space *, const Geometry *, 
-        const Partition *, const Flow *);
+extern int BoundaryConditionGCIBM(Real *U, const Space *, const Model *,
+        const Partition *, const Geometry *);
 /*
  * Inverse Distance Weighting
  *
@@ -53,7 +53,7 @@ extern int BoundaryConditionGCIBM(Real *U, const Space *, const Geometry *,
  */
 extern int InverseDistanceWeighting(Real Uo[], const Real z, const Real y, const Real x,
         const int k, const int j, const int i, const int h, const Real *U, 
-        const Space *, const Flow *);
+        const Space *, const Model *);
 extern int NormalizeReconstructedValues(Real Uo[]);
 /*
  * In geometry criteria
@@ -67,7 +67,7 @@ extern int NormalizeReconstructedValues(Real Uo[]);
  *      zero     -- on current geometry
  *      positive -- out of current geometry
  */
-extern Real InGeometry(const int k, const int j, const int i, const Real *ptk, const Space *);
+extern Real InGeometry(const int k, const int j, const int i, const Real *geo, const Space *);
 /*
  * Calculate geometry information
  *
@@ -76,7 +76,7 @@ extern Real InGeometry(const int k, const int j, const int i, const Real *ptk, c
  *      Calculate geometry information of current node.
  */
 extern int CalculateGeometryInformation(Real info[], const int k, const int j, 
-        const int i, const Real *ptk, const Space *);
+        const int i, const Real *geo, const Space *);
 #endif
 /* a good practice: end file with a newline */
 
