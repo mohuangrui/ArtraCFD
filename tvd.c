@@ -1,8 +1,12 @@
 /****************************************************************************
- * Numeric Scheme for Space Domain                                          *
- * Programmer: Huangrui Mo                                                  *
- * - Follow the Google's C/C++ style Guide.                                 *
- * - This file defines the numeric schemes of space domain.                 *
+ *                              ArtraCFD                                    *
+ *                          <By Huangrui Mo>                                *
+ * Copyright (C) 2014-2018 Huangrui Mo <huangrui.mo@gmail.com>              *
+ * This file is part of ArtraCFD.                                           *
+ * ArtraCFD is free software: you can redistribute it and/or modify it      *
+ * under the terms of the GNU General Public License as published by        *
+ * the Free Software Foundation, either version 3 of the License, or        *
+ * (at your option) any later version.                                      *
  ****************************************************************************/
 /****************************************************************************
  * Required Header Files
@@ -10,7 +14,7 @@
 #include "tvd.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
-#include "boundarycondition.h"
+#include "boundary_treatment.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
@@ -140,7 +144,7 @@ static int ComputeViscousFluxX(
  * Function definitions
  ****************************************************************************/
 int SpatialDiscretizationAndComputation(Real *U, const Real dt, Real *Uswap, 
-        const Space *space, const Particle *particle, 
+        const Space *space, const Geometry *geometry, 
         const Partition *part, const Flow *flow)
 {
     Real *exchanger = U;
@@ -151,37 +155,37 @@ int SpatialDiscretizationAndComputation(Real *U, const Real dt, Real *Uswap,
      * their pointer point to rather than values of data entries.
      */
     Lz(Uswap, U, space, part, flow, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(Uswap, space, particle, part, flow);
+    BoundaryCondtionsAndTreatments(Uswap, space, geometry, part, flow);
     exchanger = U; /* preserve the address of U */
     U = Uswap; /* update flow field */
     Uswap = exchanger; /* regain the used space as new space */
 
     Ly(Uswap, U, space, part, flow, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(Uswap, space, particle, part, flow);
+    BoundaryCondtionsAndTreatments(Uswap, space, geometry, part, flow);
     exchanger = U; /* preserve the address of U */
     U = Uswap; /* update flow field */
     Uswap = exchanger; /* regain the used space as new space */
 
     Lx(Uswap, U, space, part, flow, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(Uswap, space, particle, part, flow);
+    BoundaryCondtionsAndTreatments(Uswap, space, geometry, part, flow);
     exchanger = U; /* preserve the address of U */
     U = Uswap; /* update flow field */
     Uswap = exchanger; /* regain the used space as new space */
 
     Lx(Uswap, U, space, part, flow, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(Uswap, space, particle, part, flow);
+    BoundaryCondtionsAndTreatments(Uswap, space, geometry, part, flow);
     exchanger = U; /* preserve the address of U */
     U = Uswap; /* update flow field */
     Uswap = exchanger; /* regain the used space as new space */
 
     Ly(Uswap, U, space, part, flow, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(Uswap, space, particle, part, flow);
+    BoundaryCondtionsAndTreatments(Uswap, space, geometry, part, flow);
     exchanger = U; /* preserve the address of U */
     U = Uswap; /* update flow field */
     Uswap = exchanger; /* regain the used space as new space */
 
     Lz(Uswap, U, space, part, flow, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(Uswap, space, particle, part, flow);
+    BoundaryCondtionsAndTreatments(Uswap, space, geometry, part, flow);
     exchanger = U; /* preserve the address of U */
     U = Uswap; /* update flow field */
     Uswap = exchanger; /* regain the used space as new space */

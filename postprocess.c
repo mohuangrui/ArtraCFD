@@ -1,8 +1,12 @@
 /****************************************************************************
- * Preprocess                                                               *
- * Programmer: Huangrui Mo                                                  *
- * - Follow the Google's C/C++ style Guide.                                 *
- * - This file functions as a postprocessor                                 *
+ *                              ArtraCFD                                    *
+ *                          <By Huangrui Mo>                                *
+ * Copyright (C) 2014-2018 Huangrui Mo <huangrui.mo@gmail.com>              *
+ * This file is part of ArtraCFD.                                           *
+ * ArtraCFD is free software: you can redistribute it and/or modify it      *
+ * under the terms of the GNU General Public License as published by        *
+ * the Free Software Foundation, either version 3 of the License, or        *
+ * (at your option) any later version.                                      *
  ****************************************************************************/
 /****************************************************************************
  * Required Header Files
@@ -14,7 +18,7 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ProgramMemoryRelease(Field *, Space *, Particle *);
+static int ProgramMemoryRelease(Field *, Space *, Geometry *);
 static int FinalInformation(void);
 /****************************************************************************
  * Function Definitions
@@ -22,9 +26,9 @@ static int FinalInformation(void);
 /*
  * This is the overall postprocessing function
  */
-int Postprocess(Field *field, Space *space, Particle *particle)
+int Postprocess(Field *field, Space *space, Geometry *geometry)
 {
-    ProgramMemoryRelease(field, space, particle);
+    ProgramMemoryRelease(field, space, geometry);
     FinalInformation();
     return 0;
 }
@@ -32,7 +36,7 @@ int Postprocess(Field *field, Space *space, Particle *particle)
  * This function together with some subfuctions realize the dynamic
  * memory release for each global pointer
  */
-static int ProgramMemoryRelease(Field *field, Space *space, Particle *particle)
+static int ProgramMemoryRelease(Field *field, Space *space, Geometry *geometry)
 {
     ShowInformation("Releasing memory back to system...");
     /* field variable related */
@@ -41,8 +45,8 @@ static int ProgramMemoryRelease(Field *field, Space *space, Particle *particle)
     RetrieveStorage(field->Uswap);
     /* space related */
     RetrieveStorage(space->nodeFlag);
-    /* particle related */
-    RetrieveStorage(particle->headAddress);
+    /* geometry related */
+    RetrieveStorage(geometry->headAddress);
     ShowInformation("Session End");
     return 0;
 }

@@ -1,16 +1,21 @@
 /****************************************************************************
- * Export and Load Computed Data                                            *
- * Programmer: Huangrui Mo                                                  *
- * - Follow the Google's C/C++ style Guide.                                 *
+ *                              ArtraCFD                                    *
+ *                          <By Huangrui Mo>                                *
+ * Copyright (C) 2014-2018 Huangrui Mo <huangrui.mo@gmail.com>              *
+ * This file is part of ArtraCFD.                                           *
+ * ArtraCFD is free software: you can redistribute it and/or modify it      *
+ * under the terms of the GNU General Public License as published by        *
+ * the Free Software Foundation, either version 3 of the License, or        *
+ * (at your option) any later version.                                      *
  ****************************************************************************/
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "datastream.h"
+#include "data_stream.h"
 #include <stdio.h> /* standard library for input and output */
-#include "paraviewstream.h"
-#include "parasightstream.h"
-#include "ensightstream.h"
+#include "paraview_stream.h"
+#include "parasight_stream.h"
+#include "ensight_stream.h"
 #include "commons.h"
 /****************************************************************************
  * Function definitions

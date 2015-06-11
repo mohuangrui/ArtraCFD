@@ -16,7 +16,7 @@
 #include <math.h> /* common mathematical functions */
 #include <float.h> /* size of floating point values */
 #include "initialization.h"
-#include "temporal_discretization.h"
+#include "fluid_dynamics.h"
 #include "solid_dynamics.h"
 #include "data_stream.h"
 #include "geometry_stream.h"

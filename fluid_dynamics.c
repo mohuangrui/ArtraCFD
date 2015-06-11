@@ -1,13 +1,17 @@
 /****************************************************************************
- * Numeric Scheme in Time Doamin                                            *
- * Programmer: Huangrui Mo                                                  *
- * - Follow the Google's C/C++ style Guide.                                 *
- * - This file defines the numeric schemes of time domain.                  *
+ *                              ArtraCFD                                    *
+ *                          <By Huangrui Mo>                                *
+ * Copyright (C) 2014-2018 Huangrui Mo <huangrui.mo@gmail.com>              *
+ * This file is part of ArtraCFD.                                           *
+ * ArtraCFD is free software: you can redistribute it and/or modify it      *
+ * under the terms of the GNU General Public License as published by        *
+ * the Free Software Foundation, either version 3 of the License, or        *
+ * (at your option) any later version.                                      *
  ****************************************************************************/
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "rungekutta.h"
+#include "fluid_dynamics.h"
 #include <stdio.h> /* standard library for input and output */
 #include "tvd.h"
 #include "commons.h"
@@ -17,7 +21,7 @@
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int RungeKutta(Field *field, const Real dt, Space *space, Particle *particle,
+int RungeKutta(Field *field, const Real dt, Space *space, Geometry *geometry,
         const Partition *part, const Flow *flow)
 {
     /*
@@ -33,11 +37,11 @@ int RungeKutta(Field *field, const Real dt, Space *space, Particle *particle,
      * Then solve the flow field for a time step, updated data will be stored
      * in the same storage space of inputed data.
      */
-    SpatialDiscretizationAndComputation(field->U, dt, field->Uswap, space, particle, part, flow);
+    SpatialDiscretizationAndComputation(field->U, dt, field->Uswap, space, geometry, part, flow);
     /*
      * Now solve the updated field data for another time step.
      */
-    SpatialDiscretizationAndComputation(field->U, dt, field->Uswap, space, particle, part, flow);
+    SpatialDiscretizationAndComputation(field->U, dt, field->Uswap, space, geometry, part, flow);
     /*
      * Calculate the intermediate stage based on the newest updated data and
      * the original field data which is stored at first. No new storage space
@@ -52,7 +56,7 @@ int RungeKutta(Field *field, const Real dt, Space *space, Particle *particle,
     /*
      * Now solve the updated field data based on the intermediate field.
      */
-    SpatialDiscretizationAndComputation(field->U, dt, field->Uswap, space, particle, part, flow);
+    SpatialDiscretizationAndComputation(field->U, dt, field->Uswap, space, geometry, part, flow);
     /*
      * Calculate field data at n+1
      */
