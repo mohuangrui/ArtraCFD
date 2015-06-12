@@ -26,7 +26,7 @@ void TickTime(Timer *timer) {
  * This function returns the time in seconds from now to time described by
  * the input argument
  */
-double TockTime(Timer *timer) {
+double TockTime(const Timer *timer) {
     Timer now; /* store current time at now */
     gettimeofday(&now, NULL);
     return (double)(now.tv_sec - timer->tv_sec) + 

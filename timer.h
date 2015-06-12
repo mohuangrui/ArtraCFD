@@ -46,7 +46,7 @@ extern void TickTime(Timer *timer);
  *      moment at "now" (the calling time of this function) in the form of
  *      seconds. In short, tock the timer.
  */
-extern double TockTime(Timer *timer);
+extern double TockTime(const Timer *timer);
 #endif
 /* a good practice: end file with a newline */
 

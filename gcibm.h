@@ -30,7 +30,7 @@
  *      Employ GCIBM approach to handle complex geometry that locates in
  *      the computational domain.
  */
-extern int ComputeDomainGeometryGCIBM(Space *, const Partition *, Geometry *);
+extern int ComputeDomainGeometryGCIBM(Space *, const Partition *, const Geometry *);
 /*
  * Boundary condition for interior ghost cells
  *

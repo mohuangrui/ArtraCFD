@@ -56,7 +56,7 @@ static int ApplyWeighting(Real [], Real, const Real [], const Real);
  * The rational is that don't store every information for each ghost node, but
  * only store necessary information. When need it, access and calculate it.
  */
-int ComputeDomainGeometryGCIBM(Space *space, const Partition *part, Geometry *geometry)
+int ComputeDomainGeometryGCIBM(Space *space, const Partition *part, const Geometry *geometry)
 {
     InitializeDomainGeometry(space, part);
     LocateSolidGeometry(space, part, geometry);
