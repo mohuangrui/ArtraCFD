@@ -18,11 +18,18 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
+static int RungeKutta(Field *, Space *, const Model *, const Partition *,
+        Geometry *, const Real dt);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int RungeKutta(Field *field, const Real dt, Space *space, Geometry *geometry,
-        const Partition *part, const Flow *flow)
+int FluidDynamics(Field *field, Space *space, const Model *model, 
+        const Partition *part, Geometry *geometry, const Real dt)
+{
+    RungeKutta(field, space, model, part, geometry, dt);
+}
+static int RungeKutta(Field *field, Space *space, const Model *model,
+        const Partition *part,  Geometry *geometry,const Real dt)
 {
     /*
      * First, save the full value of current field, since this value is required
@@ -34,7 +41,7 @@ int RungeKutta(Field *field, const Real dt, Space *space, Geometry *geometry,
         field->Un[idx] = field->U[idx];
     }
     /*
-     * Then solve the flow field for a time step, updated data will be stored
+     * Then solve (I + dt*L)U, updated data will be stored
      * in the same storage space of inputed data.
      */
     SpatialDiscretizationAndComputation(field->U, dt, field->Uswap, space, geometry, part, flow);

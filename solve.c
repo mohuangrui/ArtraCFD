@@ -81,9 +81,9 @@ static int SolutionEvolution(Field *field, Space *space, Time *time,
          * splitting method.
          */
         TickTime(&operationTimer);
-        SolidDynamics(field->U, 0.5 * time->dt, space, model, part, geometry);
-        FluidDynamics(field, time->dt, space, model, part, geometry);
-        SolidDynamics(field->U, 0.5 * time->dt, space, model, part, geometry);
+        SolidDynamics(field->U, space, model, part, geometry, 0.5 * time->dt);
+        FluidDynamics(field, space, model, part, geometry, time->dt);
+        SolidDynamics(field->U, space, model, part, geometry, 0.5 * time->dt);
         operationTime = TockTime(&operationTimer);
         fprintf(stdout, "  elapsed: %.6gs\n", operationTime);
         /*

@@ -24,13 +24,13 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Time marching scheme
+ * Fluid Dynamics
  *
  * Function
- *      Apply runge-kutta method for explicit time marching solution
+ *      Evolve fluid dynamics.
  */
-extern int RungeKutta(Field *, const Real dt, Space *, Geometry *, 
-        const Partition *, const Flow *);
+extern int FluidDynamics(Field *, Space *, const Model *, const Partition *,
+        Geometry *, const Real dt);
 #endif
 /* a good practice: end file with a newline */
 
