@@ -30,23 +30,23 @@ static int LLy(Real *, const Real *, const Space *, const Model *,
         const Partition *, const Real);
 static int LLx(Real *, const Real *, const Space *, const Model *,
         const Partition *, const Real);
-static int ComputeReconstructedFluxZ(Real [], const int, const int, const int, 
-        const Real *, const Space *, const Model *, const Real);
-static int ComputeReconstructedFluxY(Real [], const int, const int, const int, 
-        const Real *, const Space *, const Model *, const Real);
-static int ComputeReconstructedFluxX(Real [], const int, const int, const int, 
-        const Real *, const Space *, const Model *, const Real);
-static int ComputeViscousFluxGradientZ(Real [], const int, const int, const int, 
+static int ComputeReconstructedConvectiveFluxZ(Real [], const int, const int,
+        const int, const Real *, const Space *, const Model *, const Real);
+static int ComputeReconstructedConvectiveFluxY(Real [], const int, const int,
+        const int, const Real *, const Space *, const Model *, const Real);
+static int ComputeReconstructedConvectiveFluxX(Real [], const int, const int,
+        const int, const Real *, const Space *, const Model *, const Real);
+static int ComputeDiffusiveFluxGradientZ(Real [], const int, const int, const int, 
         const Real *, const Space *, const Model *);
-static int ComputeViscousFluxGradientY(Real [], const int, const int, const int, 
+static int ComputeDiffusiveFluxGradientY(Real [], const int, const int, const int, 
         const Real *, const Space *, const Model *);
-static int ComputeViscousFluxGradientX(Real [], const int, const int, const int, 
+static int ComputeDiffusiveFluxGradientX(Real [], const int, const int, const int, 
         const Real *, const Space *, const Model *);
-static int ComputeViscousFluxZ(Real [], const int, const int, const int, 
+static int ComputeDiffusiveFluxZ(Real [], const int, const int, const int, 
         const Real *, const Space *, const Model *);
-static int ComputeViscousFluxY(Real [], const int, const int, const int, 
+static int ComputeDiffusiveFluxY(Real [], const int, const int, const int, 
         const Real *, const Space *, const Model *);
-static int ComputeViscousFluxX(Real [], const int, const int, const int, 
+static int ComputeDiffusiveFluxX(Real [], const int, const int, const int, 
         const Real *, const Space *, const Model *);
 /****************************************************************************
  * Function definitions
@@ -58,7 +58,7 @@ static int ComputeViscousFluxX(Real [], const int, const int, const int,
  *       - spatial discretization (convective fluxes + diffusive fluxes)
  *   b)  - temporal discretization
  *       - algebraic operator splitting
- *       - spactial discretization (convective fluxes + diffusive fluxes)
+ *       - spatial discretization (convective fluxes + diffusive fluxes)
  */
 int FluidDynamics(Field *field, const Space *space, const Model *model, 
         const Partition *part, const Geometry *geometry, const Real dt)
@@ -162,9 +162,9 @@ static int AlgebraicOperatorSplitting(Field *field, const Space *space, const Mo
 static int LLz(Real *U, const Real *Un, const Space *space, const Model *model,
         const Partition *part, const Real dt)
 {
-    Real Fhat[DIMU] = {0.0}; /* reconstructed flux vector */
-    Real Fhath[DIMU] = {0.0}; /* reconstructed flux vector at neighbour */
-    Real gradG[DIMU] = {0.0}; /* spatial gradient of viscous flux vector */
+    Real Fhat[DIMU] = {0.0}; /* reconstructed convective flux vector */
+    Real Fhath[DIMU] = {0.0}; /* reconstructed convective flux vector at neighbour */
+    Real gradG[DIMU] = {0.0}; /* spatial gradient of diffusive flux vector */
     int idx = 0; /* linear array index math variable */
     const Real r = dt * space->ddz;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
@@ -174,9 +174,9 @@ static int LLz(Real *U, const Real *Un, const Space *space, const Model *model,
                 if (FLUID != space->nodeFlag[idx]) { /* it's not a fluid */
                     continue;
                 }
-                ComputeReconstructedFluxZ(Fhat, k, j, i, Un, space, model, dt);
-                ComputeReconstructedFluxZ(Fhath, k - 1, j, i, Un, space, model, dt);
-                ComputeViscousFluxGradientZ(gradG, k, j, i, Un, space, model);
+                ComputeReconstructedConvectiveFluxZ(Fhat, k, j, i, Un, space, model, dt);
+                ComputeReconstructedConvectiveFluxZ(Fhath, k - 1, j, i, Un, space, model, dt);
+                ComputeDiffusiveFluxGradientZ(gradG, k, j, i, Un, space, model);
                 idx = idx * DIMU; /* change idx to field variable */
                 for (int dim = 0; dim < DIMU; ++dim) {
                     U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
@@ -189,9 +189,9 @@ static int LLz(Real *U, const Real *Un, const Space *space, const Model *model,
 static int LLy(Real *U, const Real *Un, const Space *space, const Model *model,
         const Partition *part, const Real dt)
 {
-    Real Fhat[DIMU] = {0.0}; /* reconstructed flux vector */
-    Real Fhath[DIMU] = {0.0}; /* reconstructed flux vector at neighbour */
-    Real gradG[DIMU] = {0.0}; /* spatial gradient of viscous flux vector */
+    Real Fhat[DIMU] = {0.0}; /* reconstructed convective flux vector */
+    Real Fhath[DIMU] = {0.0}; /* reconstructed convective flux vector at neighbour */
+    Real gradG[DIMU] = {0.0}; /* spatial gradient of diffusive flux vector */
     int idx = 0; /* linear array index math variable */
     const Real r = dt * space->ddy;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
@@ -201,9 +201,9 @@ static int LLy(Real *U, const Real *Un, const Space *space, const Model *model,
                 if (FLUID != space->nodeFlag[idx]) { /* it's not a fluid */
                     continue;
                 }
-                ComputeReconstructedFluxY(Fhat, k, j, i, Un, space, model, dt);
-                ComputeReconstructedFluxY(Fhath, k, j - 1, i, Un, space, model, dt);
-                ComputeViscousFluxGradientY(gradG, k, j, i, Un, space, model);
+                ComputeReconstructedConvectiveFluxY(Fhat, k, j, i, Un, space, model, dt);
+                ComputeReconstructedConvectiveFluxY(Fhath, k, j - 1, i, Un, space, model, dt);
+                ComputeDiffusiveFluxGradientY(gradG, k, j, i, Un, space, model);
                 idx = idx * DIMU; /* change idx to field variable */
                 for (int dim = 0; dim < DIMU; ++dim) {
                     U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
@@ -216,9 +216,9 @@ static int LLy(Real *U, const Real *Un, const Space *space, const Model *model,
 static int LLx(Real *U, const Real *Un, const Space *space, const Model *model,
         const Partition *part, const Real dt)
 {
-    Real Fhat[DIMU] = {0.0}; /* reconstructed flux vector */
-    Real Fhath[DIMU] = {0.0}; /* reconstructed flux vector at neighbour */
-    Real gradG[DIMU] = {0.0}; /* spatial gradient of viscous flux vector */
+    Real Fhat[DIMU] = {0.0}; /* reconstructed convective flux vector */
+    Real Fhath[DIMU] = {0.0}; /* reconstructed convective flux vector at neighbour */
+    Real gradG[DIMU] = {0.0}; /* spatial gradient of diffusive flux vector */
     int idx = 0; /* linear array index math variable */
     const Real r = dt * space->ddx;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
@@ -228,9 +228,9 @@ static int LLx(Real *U, const Real *Un, const Space *space, const Model *model,
                 if (FLUID != space->nodeFlag[idx]) { /* it's not a fluid */
                     continue;
                 }
-                ComputeReconstructedFluxX(Fhat, k, j, i, Un, space, model, dt);
-                ComputeReconstructedFluxX(Fhath, k, j, i - 1, Un, space, model, dt);
-                ComputeViscousFluxGradientX(gradG, k, j, i, Un, space, model);
+                ComputeReconstructedConvectiveFluxX(Fhat, k, j, i, Un, space, model, dt);
+                ComputeReconstructedConvectiveFluxX(Fhath, k, j, i - 1, Un, space, model, dt);
+                ComputeDiffusiveFluxGradientX(gradG, k, j, i, Un, space, model);
                 idx = idx * DIMU; /* change idx to field variable */
                 for (int dim = 0; dim < DIMU; ++dim) {
                     U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
@@ -240,41 +240,41 @@ static int LLx(Real *U, const Real *Un, const Space *space, const Model *model,
     }
     return 0;
 }
-static int ComputeReconstructedFluxZ(Real Fhat[], const int k, const int j, const int i, 
+static int ComputeReconstructedConvectiveFluxZ(Real Fhat[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model, const Real dt)
 {
     TVDFluxZ(Fhat, k, j, i, U, space, model, dt);
     return 0;
 }
-static int ComputeReconstructedFluxY(Real Fhat[], const int k, const int j, const int i, 
+static int ComputeReconstructedConvectiveFluxY(Real Fhat[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model, const Real dt)
 {
     TVDFluxY(Fhat, k, j, i, U, space, model, dt);
     return 0;
 }
-static int ComputeReconstructedFluxX(Real Fhat[], const int k, const int j, const int i, 
+static int ComputeReconstructedConvectiveFluxX(Real Fhat[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model, const Real dt)
 {
     TVDFluxX(Fhat, k, j, i, U, space, model, dt);
     return 0;
 }
 /*
- * Generally the viscous terms will only be discretized by central
+ * Generally the diffusive terms will only be discretized by central
  * difference scheme. However, for outermost layer of interior nodes, the
- * central scheme of them require the viscous flux vector at boundaries, 
+ * central scheme of them require the diffusive flux vector at boundaries, 
  * because the corners of current computational domain haven't set with any
- * values, the viscous flux vector at boundaries can not be interpolated
+ * values, the diffusive flux vector at boundaries can not be interpolated
  * with central scheme, therefore, need to change to forward or backward. 
  * This situation is the same to interior ghost nodes the central
  * difference scheme can't be applied because of lacking stencil. Thus,
  * they also need to be identified and modified.
  */
-static int ComputeViscousFluxGradientZ(
+static int ComputeDiffusiveFluxGradientZ(
         Real gradG[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
 {
-    Real hG[DIMU] = {0.0}; /* viscous flux vector */
-    Real Gh[DIMU] = {0.0}; /* viscous flux vector */
+    Real hG[DIMU] = {0.0}; /* diffusive flux vector */
+    Real Gh[DIMU] = {0.0}; /* diffusive flux vector */
     Real h = 0; /* reciprocal of differencing distance */
     /* default is central scheme */
     int hl = k - 1;
@@ -296,20 +296,20 @@ static int ComputeViscousFluxGradientZ(
     }
     if (0 != (hr - hl)) { /* only do calculation when needed */
         h = space->ddz / (hr - hl);
-        ComputeViscousFluxZ(hG, hl, j, i, U, space, model);
-        ComputeViscousFluxZ(Gh, hr, j, i, U, space, model);
+        ComputeDiffusiveFluxZ(hG, hl, j, i, U, space, model);
+        ComputeDiffusiveFluxZ(Gh, hr, j, i, U, space, model);
     }
     for (int row = 0; row < DIMU; ++row) {
         gradG[row] = h * (Gh[row] - hG[row]);
     }
     return 0;
 }
-static int ComputeViscousFluxGradientY(
+static int ComputeDiffusiveFluxGradientY(
         Real gradG[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
 {
-    Real hG[DIMU] = {0.0}; /* viscous flux vector */
-    Real Gh[DIMU] = {0.0}; /* viscous flux vector */
+    Real hG[DIMU] = {0.0}; /* diffusive flux vector */
+    Real Gh[DIMU] = {0.0}; /* diffusive flux vector */
     Real h = 0; /* reciprocal of differencing distance */
     /* default is central scheme */
     int hl = j - 1;
@@ -331,20 +331,20 @@ static int ComputeViscousFluxGradientY(
     }
     if (0 != (hr - hl)) { /* only do calculation when needed */
         h = space->ddy / (hr - hl);
-        ComputeViscousFluxY(hG, k, hl, i, U, space, model);
-        ComputeViscousFluxY(Gh, k, hr, i, U, space, model);
+        ComputeDiffusiveFluxY(hG, k, hl, i, U, space, model);
+        ComputeDiffusiveFluxY(Gh, k, hr, i, U, space, model);
     }
     for (int row = 0; row < DIMU; ++row) {
         gradG[row] = h * (Gh[row] - hG[row]);
     }
     return 0;
 }
-static int ComputeViscousFluxGradientX(
+static int ComputeDiffusiveFluxGradientX(
         Real gradG[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
 {
-    Real hG[DIMU] = {0.0}; /* viscous flux vector */
-    Real Gh[DIMU] = {0.0}; /* viscous flux vector */
+    Real hG[DIMU] = {0.0}; /* diffusive flux vector */
+    Real Gh[DIMU] = {0.0}; /* diffusive flux vector */
     Real h = 0; /* reciprocal of differencing distance */
     /* default is central scheme */
     int hl = i - 1;
@@ -366,15 +366,15 @@ static int ComputeViscousFluxGradientX(
     }
     if (0 != (hr - hl)) { /* only do calculation when needed */
         h = space->ddx / (hr - hl);
-        ComputeViscousFluxX(hG, k, j, hl, U, space, model);
-        ComputeViscousFluxX(Gh, k, j, hr, U, space, model);
+        ComputeDiffusiveFluxX(hG, k, j, hl, U, space, model);
+        ComputeDiffusiveFluxX(Gh, k, j, hr, U, space, model);
     }
     for (int row = 0; row < DIMU; ++row) {
         gradG[row] = h * (Gh[row] - hG[row]);
     }
     return 0;
 }
-static int ComputeViscousFluxZ(
+static int ComputeDiffusiveFluxZ(
         Real G[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
 {
@@ -442,7 +442,7 @@ static int ComputeViscousFluxZ(
     G[4] = heatK * dT_dz + u * G[1] + v * G[2] + w * G[3];
     return 0;
 }
-static int ComputeViscousFluxY(
+static int ComputeDiffusiveFluxY(
         Real G[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
 {
@@ -510,7 +510,7 @@ static int ComputeViscousFluxY(
     G[4] = heatK * dT_dy + u * G[1] + v * G[2] + w * G[3];
     return 0;
 }
-static int ComputeViscousFluxX(
+static int ComputeDiffusiveFluxX(
         Real G[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
 {

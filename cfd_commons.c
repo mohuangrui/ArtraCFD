@@ -256,7 +256,7 @@ static int CalculateRoeAverageUo(
     Uo[5] = sqrt((gamma - 1.0) * (Uo[4] - 0.5 * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]))); /* the speed of sound */
     return 0;
 }
-int ComputeNonViscousFluxZ(
+int ComputeConvectiveFluxZ(
         Real F[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
 {
@@ -274,7 +274,7 @@ int ComputeNonViscousFluxZ(
     F[4] = (rho * eT + p) * w;
     return 0;
 }
-int ComputeNonViscousFluxY(
+int ComputeConvectiveFluxY(
         Real F[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
 {
@@ -292,7 +292,7 @@ int ComputeNonViscousFluxY(
     F[4] = (rho * eT + p) * v;
     return 0;
 }
-int ComputeNonViscousFluxX(
+int ComputeConvectiveFluxX(
         Real F[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
 {

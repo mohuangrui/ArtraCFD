@@ -77,13 +77,13 @@ extern int ComputeRoeAverageX(
  * Function
  *      Compute convective fluxes.
  */
-extern int ComputeNonViscousFluxZ(
+extern int ComputeConvectiveFluxZ(
         Real F[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model);
-extern int ComputeNonViscousFluxY(
+extern int ComputeConvectiveFluxY(
         Real F[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model);
-extern int ComputeNonViscousFluxX(
+extern int ComputeConvectiveFluxX(
         Real F[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model);
 extern int sign(const Real x);
