@@ -13,6 +13,7 @@
  ****************************************************************************/
 #include "fluid_dynamics.h"
 #include <stdio.h> /* standard library for input and output */
+#include <math.h> /* common mathematical functions */
 #include "tvd.h"
 #include "boundary_treatment.h"
 #include "commons.h"
@@ -35,6 +36,24 @@ static int ComputeReconstructedFluxY(Real [], const int, const int, const int,
         const Real *, const Space *, const Model *, const Real);
 static int ComputeReconstructedFluxX(Real [], const int, const int, const int, 
         const Real *, const Space *, const Model *, const Real);
+static int ComputeViscousFluxGradientZ(
+        Real gradG[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+static int ComputeViscousFluxGradientY(
+        Real gradG[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+static int ComputeViscousFluxGradientX(
+        Real gradG[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+static int ComputeViscousFluxZ(
+        Real G[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+static int ComputeViscousFluxY(
+        Real G[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+static int ComputeViscousFluxX(
+        Real G[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -240,6 +259,326 @@ static int ComputeReconstructedFluxX(Real Fhat[], const int k, const int j, cons
         const Real *U, const Space *space, const Model *model, const Real dt)
 {
     TVDFluxX(Fhat, k, j, i, U, space, model, dt);
+}
+/*
+ * Generally the viscous terms will only be discretized by central
+ * difference scheme. However, for outermost layer of interior nodes, the
+ * central scheme of them require the viscous flux vector at boundaries, 
+ * because the corners of current computational domain haven't set with any
+ * values, the viscous flux vector at boundaries can not be interpolated
+ * with central scheme, therefore, need to change to forward or backward. 
+ * This situation is the same to interior ghost nodes the central
+ * difference scheme can't be applied because of lacking stencil. Thus,
+ * they also need to be identified and modified.
+ */
+static int ComputeViscousFluxGradientZ(
+        Real gradG[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model)
+{
+    Real hG[DIMU] = {0.0}; /* viscous flux vector */
+    Real Gh[DIMU] = {0.0}; /* viscous flux vector */
+    Real h = 0; /* reciprocal of differencing distance */
+    /* default is central scheme */
+    int hl = k - 1;
+    int hr = k + 1;
+    if (space->ng == hl) { /* if left at boundary */
+        ++hl;
+    }
+    if ((space->nz + space->ng - 1) == hr) { /* if right at boundary */
+        --hr;
+    }
+    /* check ghost */
+    const int idxl = IndexMath(hl, j, i, space);
+    const int idxr = IndexMath(hr, j, i, space);
+    if (OFFSET <= space->nodeFlag[idxl]) {
+        ++hl;
+    }
+    if (OFFSET <= space->nodeFlag[idxr]) {
+        --hr;
+    }
+    if (0 != (hr - hl)) { /* only do calculation when needed */
+        h = space->ddz / (hr - hl);
+        ComputeViscousFluxZ(hG, hl, j, i, U, space, model);
+        ComputeViscousFluxZ(Gh, hr, j, i, U, space, model);
+    }
+    for (int row = 0; row < DIMU; ++row) {
+        gradG[row] = h * (Gh[row] - hG[row]);
+    }
+    return 0;
+}
+static int ComputeViscousFluxGradientY(
+        Real gradG[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model)
+{
+    Real hG[DIMU] = {0.0}; /* viscous flux vector */
+    Real Gh[DIMU] = {0.0}; /* viscous flux vector */
+    Real h = 0; /* reciprocal of differencing distance */
+    /* default is central scheme */
+    int hl = j - 1;
+    int hr = j + 1;
+    if (space->ng == hl) { /* if left at boundary */
+        ++hl;
+    }
+    if ((space->ny + space->ng - 1) == hr) { /* if right at boundary */
+        --hr;
+    }
+    /* check ghost */
+    const int idxl = IndexMath(k, hl, i, space);
+    const int idxr = IndexMath(k, hr, i, space);
+    if (OFFSET <= space->nodeFlag[idxl]) {
+        ++hl;
+    }
+    if (OFFSET <= space->nodeFlag[idxr]) {
+        --hr;
+    }
+    if (0 != (hr - hl)) { /* only do calculation when needed */
+        h = space->ddy / (hr - hl);
+        ComputeViscousFluxY(hG, k, hl, i, U, space, model);
+        ComputeViscousFluxY(Gh, k, hr, i, U, space, model);
+    }
+    for (int row = 0; row < DIMU; ++row) {
+        gradG[row] = h * (Gh[row] - hG[row]);
+    }
+    return 0;
+}
+static int ComputeViscousFluxGradientX(
+        Real gradG[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model)
+{
+    Real hG[DIMU] = {0.0}; /* viscous flux vector */
+    Real Gh[DIMU] = {0.0}; /* viscous flux vector */
+    Real h = 0; /* reciprocal of differencing distance */
+    /* default is central scheme */
+    int hl = i - 1;
+    int hr = i + 1;
+    if (space->ng == hl) { /* if left at boundary */
+        ++hl;
+    }
+    if ((space->nx + space->ng - 1) == hr) { /* if right at boundary */
+        --hr;
+    }
+    /* check ghost */
+    const int idxl = IndexMath(k, j, hl, space);
+    const int idxr = IndexMath(k, j, hr, space);
+    if (OFFSET <= space->nodeFlag[idxl]) {
+        ++hl;
+    }
+    if (OFFSET <= space->nodeFlag[idxr]) {
+        --hr;
+    }
+    if (0 != (hr - hl)) { /* only do calculation when needed */
+        h = space->ddx / (hr - hl);
+        ComputeViscousFluxX(hG, k, j, hl, U, space, model);
+        ComputeViscousFluxX(Gh, k, j, hr, U, space, model);
+    }
+    for (int row = 0; row < DIMU; ++row) {
+        gradG[row] = h * (Gh[row] - hG[row]);
+    }
+    return 0;
+}
+static int ComputeViscousFluxZ(
+        Real G[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model)
+{
+    const int idx = IndexMath(k, j, i, space) * DIMU;
+    const int idxW = IndexMath(k, j, i - 1, space) * DIMU;
+    const int idxE = IndexMath(k, j, i + 1, space) * DIMU;
+    const int idxS = IndexMath(k, j - 1, i, space) * DIMU;
+    const int idxN = IndexMath(k, j + 1, i, space) * DIMU;
+    const int idxF = IndexMath(k - 1, j, i, space) * DIMU;
+    const int idxB = IndexMath(k + 1, j, i, space) * DIMU;
+
+    /* calculate derivatives in z direction */
+    const Real rhoB = U[idxB];
+    const Real uB = U[idxB+1] / rhoB;
+    const Real vB = U[idxB+2] / rhoB;
+    const Real wB = U[idxB+3] / rhoB;
+    const Real eTB = U[idxB+4] / rhoB;
+    const Real TB = (eTB - 0.5 * (uB * uB + vB * vB + wB * wB)) / model->cv;
+
+    const Real rhoF = U[idxF];
+    const Real uF = U[idxF+1] / rhoF;
+    const Real vF = U[idxF+2] / rhoF;
+    const Real wF = U[idxF+3] / rhoF;
+    const Real eTF = U[idxF+4] / rhoF;
+    const Real TF = (eTF - 0.5 * (uF * uF + vF * vF + wF * wF)) / model->cv;
+
+    const Real du_dz = (uB - uF) * (0.5 * space->ddz);
+    const Real dv_dz = (vB - vF) * (0.5 * space->ddz);
+    const Real dw_dz = (wB - wF) * (0.5 * space->ddz);
+    const Real dT_dz = (TB - TF) * (0.5 * space->ddz);
+
+    /* calculate derivatives in y direction */
+    const Real vN = U[idxN+2] / U[idxN];
+    const Real wN = U[idxN+3] / U[idxN];
+    const Real vS = U[idxS+2] / U[idxS];
+    const Real wS = U[idxS+3] / U[idxS];
+    const Real dv_dy = (vN - vS) * (0.5 * space->ddy);
+    const Real dw_dy = (wN - wS) * (0.5 * space->ddy);
+
+    /* calculate derivatives in x direction */
+    const Real uE = U[idxE+1] / U[idxE];
+    const Real wE = U[idxE+3] / U[idxE];
+    const Real uW = U[idxW+1] / U[idxW];
+    const Real wW = U[idxW+3] / U[idxW];
+    const Real du_dx = (uE - uW) * (0.5 * space->ddx);
+    const Real dw_dx = (wE - wW) * (0.5 * space->ddx);
+
+    /* the primitive variables in current point */
+    const Real rho = U[idx];
+    const Real u = U[idx+1] / rho;
+    const Real v = U[idx+2] / rho;
+    const Real w = U[idx+3] / rho;
+    const Real eT = U[idx+4] / rho;
+    const Real T = (eT - 0.5 * (u * u + v * v + w * w)) / model->cv;
+
+    /* Calculate dynamic viscosity and heat conductivity */
+    const Real mu = model->refMu * 1.45e-6 * (pow(T * model->refTemperature, 1.5) / (T * model->refTemperature + 110));
+    const Real heatK = model->gamma * model->cv * mu / model->refPr;
+    const Real divV = du_dx + dv_dy + dw_dz;
+
+    G[0] = 0;
+    G[1] = mu * (dw_dx + du_dz);
+    G[2] = mu * (dw_dy + dv_dz);
+    G[3] = mu * (2.0 * dw_dz - (2.0/3.0) * divV);
+    G[4] = heatK * dT_dz + u * G[1] + v * G[2] + w * G[3];
+    return 0;
+}
+static int ComputeViscousFluxY(
+        Real G[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model)
+{
+    const int idx = IndexMath(k, j, i, space) * DIMU;
+    const int idxW = IndexMath(k, j, i - 1, space) * DIMU;
+    const int idxE = IndexMath(k, j, i + 1, space) * DIMU;
+    const int idxS = IndexMath(k, j - 1, i, space) * DIMU;
+    const int idxN = IndexMath(k, j + 1, i, space) * DIMU;
+    const int idxF = IndexMath(k - 1, j, i, space) * DIMU;
+    const int idxB = IndexMath(k + 1, j, i, space) * DIMU;
+
+    /* calculate derivatives in z direction */
+    const Real vB = U[idxB+2] / U[idxB];
+    const Real wB = U[idxB+3] / U[idxB];
+    const Real vF = U[idxF+2] / U[idxF];
+    const Real wF = U[idxF+3] / U[idxF];
+    const Real dv_dz = (vB - vF) * (0.5 * space->ddz);
+    const Real dw_dz = (wB - wF) * (0.5 * space->ddz);
+
+    /* calculate derivatives in y direction */
+    const Real rhoN = U[idxN];
+    const Real uN = U[idxN+1] / rhoN;
+    const Real vN = U[idxN+2] / rhoN;
+    const Real wN = U[idxN+3] / rhoN;
+    const Real eTN = U[idxN+4] / rhoN;
+    const Real TN = (eTN - 0.5 * (uN * uN + vN * vN + wN * wN)) / model->cv;
+
+    const Real rhoS = U[idxS];
+    const Real uS = U[idxS+1] / rhoS;
+    const Real vS = U[idxS+2] / rhoS;
+    const Real wS = U[idxS+3] / rhoS;
+    const Real eTS = U[idxS+4] / rhoS;
+    const Real TS = (eTS - 0.5 * (uS * uS + vS * vS + wS * wS)) / model->cv;
+
+    const Real du_dy = (uN - uS) * (0.5 * space->ddy);
+    const Real dv_dy = (vN - vS) * (0.5 * space->ddy);
+    const Real dw_dy = (wN - wS) * (0.5 * space->ddy);
+    const Real dT_dy = (TN - TS) * (0.5 * space->ddy);
+
+    /* calculate derivatives in x direction */
+    const Real uE = U[idxE+1] / U[idxE];
+    const Real vE = U[idxE+2] / U[idxE];
+    const Real uW = U[idxW+1] / U[idxW];
+    const Real vW = U[idxW+2] / U[idxW];
+    const Real du_dx = (uE - uW) * (0.5 * space->ddx);
+    const Real dv_dx = (vE - vW) * (0.5 * space->ddx);
+
+    /* the primitive variables in current point */
+    const Real rho = U[idx];
+    const Real u = U[idx+1] / rho;
+    const Real v = U[idx+2] / rho;
+    const Real w = U[idx+3] / rho;
+    const Real eT = U[idx+4] / rho;
+    const Real T = (eT - 0.5 * (u * u + v * v + w * w)) / model->cv;
+
+    /* Calculate dynamic viscosity and heat conductivity */
+    const Real mu = model->refMu * 1.45e-6 * (pow(T * model->refTemperature, 1.5) / (T * model->refTemperature + 110));
+    const Real heatK = model->gamma * model->cv * mu / model->refPr;
+    const Real divV = du_dx + dv_dy + dw_dz;
+
+    G[0] = 0;
+    G[1] = mu * (dv_dx + du_dy);
+    G[2] = mu * (2.0 * dv_dy - (2.0/3.0) * divV);
+    G[3] = mu * (dv_dz + dw_dy);
+    G[4] = heatK * dT_dy + u * G[1] + v * G[2] + w * G[3];
+    return 0;
+}
+static int ComputeViscousFluxX(
+        Real G[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model)
+{
+    const int idx = IndexMath(k, j, i, space) * DIMU;
+    const int idxW = IndexMath(k, j, i - 1, space) * DIMU;
+    const int idxE = IndexMath(k, j, i + 1, space) * DIMU;
+    const int idxS = IndexMath(k, j - 1, i, space) * DIMU;
+    const int idxN = IndexMath(k, j + 1, i, space) * DIMU;
+    const int idxF = IndexMath(k - 1, j, i, space) * DIMU;
+    const int idxB = IndexMath(k + 1, j, i, space) * DIMU;
+
+    /* calculate derivatives in z direction */
+    const Real uB = U[idxB+1] / U[idxB];
+    const Real uF = U[idxF+1] / U[idxF];
+    const Real wB = U[idxB+3] / U[idxB];
+    const Real wF = U[idxF+3] / U[idxF];
+    const Real du_dz = (uB - uF) * (0.5 * space->ddz);
+    const Real dw_dz = (wB - wF) * (0.5 * space->ddz);
+
+    /* calculate derivatives in y direction */
+    const Real uN = U[idxN+1] / U[idxN];
+    const Real uS = U[idxS+1] / U[idxS];
+    const Real vN = U[idxN+2] / U[idxN];
+    const Real vS = U[idxS+2] / U[idxS];
+    const Real du_dy = (uN - uS) * (0.5 * space->ddy);
+    const Real dv_dy = (vN - vS) * (0.5 * space->ddy);
+
+    /* calculate derivatives in x direction */
+    const Real rhoE = U[idxE];
+    const Real uE = U[idxE+1] / rhoE;
+    const Real vE = U[idxE+2] / rhoE;
+    const Real wE = U[idxE+3] / rhoE;
+    const Real eTE = U[idxE+4] / rhoE;
+    const Real TE = (eTE - 0.5 * (uE * uE + vE * vE + wE * wE)) / model->cv;
+
+    const Real rhoW = U[idxW];
+    const Real uW = U[idxW+1] / rhoW;
+    const Real vW = U[idxW+2] / rhoW;
+    const Real wW = U[idxW+3] / rhoW;
+    const Real eTW = U[idxW+4] / rhoW;
+    const Real TW = (eTW - 0.5 * (uW * uW + vW * vW + wW * wW)) / model->cv;
+
+    const Real du_dx = (uE - uW) * (0.5 * space->ddx);
+    const Real dv_dx = (vE - vW) * (0.5 * space->ddx);
+    const Real dw_dx = (wE - wW) * (0.5 * space->ddx);
+    const Real dT_dx = (TE - TW) * (0.5 * space->ddx);
+
+    /* the primitive variables in current point */
+    const Real rho = U[idx];
+    const Real u = U[idx+1] / rho;
+    const Real v = U[idx+2] / rho;
+    const Real w = U[idx+3] / rho;
+    const Real eT = U[idx+4] / rho;
+    const Real T = (eT - 0.5 * (u * u + v * v + w * w)) / model->cv;
+
+    /* Calculate dynamic viscosity and heat conductivity */
+    const Real mu = model->refMu * 1.45e-6 * (pow(T * model->refTemperature, 1.5) / (T * model->refTemperature + 110));
+    const Real heatK = model->gamma * model->cv * mu / model->refPr;
+    const Real divV = du_dx + dv_dy + dw_dz;
+
+    G[0] = 0;
+    G[1] = mu * (2.0 * du_dx - (2.0/3.0) * divV);
+    G[2] = mu * (du_dy + dv_dx);
+    G[3] = mu * (du_dz + dw_dx);
+    G[4] = heatK * dT_dx + u * G[1] + v * G[2] + w * G[3];
+    return 0;
 }
 /* a good practice: end file with a newline */
 
