@@ -19,8 +19,15 @@
  * Static Function Declarations
  ****************************************************************************/
 static int CalculateAlpha(Real [], Real [][DIMU], const Real []);
-static int CalculateRoeAverageUo(Real [], const int, const int,
-        const Real *, const Model *);
+static int ComputeEigenvaluesAndEigenvectorSpaceLZ(
+        Real [], Real [][DIMU], const int, const int, const int, 
+        const Real *, const Space *, const Model *);
+static int ComputeEigenvaluesAndEigenvectorSpaceLY(
+        Real [], Real [][DIMU], const int, const int, const int, 
+        const Real *, const Space *, const Model *);
+static int ComputeEigenvaluesAndEigenvectorSpaceLX(
+        Real [], Real [][DIMU], const int, const int, const int, 
+        const Real *, const Space *, const Model *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -85,12 +92,12 @@ static int CalculateAlpha(Real alpha[], Real L[][DIMU], const Real deltaU[])
     }
     return 0;
 }
-int ComputeEigenvaluesAndEigenvectorSpaceLZ(
+static int ComputeEigenvaluesAndEigenvectorSpaceLZ(
         Real lambda[], Real L[][DIMU], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
 {
     Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
-    ComputeRoeAverageZ(Uo, k, j, i, U, space, model);
+    ComputeRoeAverage(Uo, IndexMath(k, j, i, space) * DIMU, IndexMath(k + 1, j, i, space) * DIMU, U, model);
     const Real u = Uo[1];
     const Real v = Uo[2];
     const Real w = Uo[3];
@@ -106,12 +113,12 @@ int ComputeEigenvaluesAndEigenvectorSpaceLZ(
     L[4][0] = b * q - d * w;   L[4][1] = -b * u;             L[4][2] = -b * v;             L[4][3] = -b * w + d;     L[4][4] = b;
     return 0;
 }
-int ComputeEigenvaluesAndEigenvectorSpaceLY(
+static int ComputeEigenvaluesAndEigenvectorSpaceLY(
         Real lambda[], Real L[][DIMU], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
 {
     Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
-    ComputeRoeAverageY(Uo, k, j, i, U, space, model);
+    ComputeRoeAverage(Uo, IndexMath(k, j, i, space) * DIMU, IndexMath(k, j + 1, i, space) * DIMU, U, model);
     const Real u = Uo[1];
     const Real v = Uo[2];
     const Real w = Uo[3];
@@ -127,12 +134,12 @@ int ComputeEigenvaluesAndEigenvectorSpaceLY(
     L[4][0] = b * q - d * v;    L[4][1] = -b * u;             L[4][2] = -b * v + d;     L[4][3] = -b * w;             L[4][4] = b;
     return 0;
 }
-int ComputeEigenvaluesAndEigenvectorSpaceLX(
+static int ComputeEigenvaluesAndEigenvectorSpaceLX(
         Real lambda[], Real L[][DIMU], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
 {
     Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
-    ComputeRoeAverageX(Uo, k, j, i, U, space, model);
+    ComputeRoeAverage(Uo, IndexMath(k, j, i, space) * DIMU, IndexMath(k, j, i + 1, space) * DIMU, U, model);
     const Real u = Uo[1];
     const Real v = Uo[2];
     const Real w = Uo[3];
@@ -153,7 +160,7 @@ int ComputeEigenvectorSpaceRZ(
         const Real *U, const Space *space, const Model *model)
 {
     Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
-    ComputeRoeAverageZ(Uo, k, j, i, U, space, model);
+    ComputeRoeAverage(Uo, IndexMath(k, j, i, space) * DIMU, IndexMath(k + 1, j, i, space) * DIMU, U, model);
     const Real u = Uo[1];
     const Real v = Uo[2];
     const Real w = Uo[3];
@@ -172,7 +179,7 @@ int ComputeEigenvectorSpaceRY(
         const Real *U, const Space *space, const Model *model)
 {
     Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
-    ComputeRoeAverageY(Uo, k, j, i, U, space, model);
+    ComputeRoeAverage(Uo, IndexMath(k, j, i, space) * DIMU, IndexMath(k, j + 1, i, space) * DIMU, U, model);
     const Real u = Uo[1];
     const Real v = Uo[2];
     const Real w = Uo[3];
@@ -191,7 +198,7 @@ int ComputeEigenvectorSpaceRX(
         const Real *U, const Space *space, const Model *model)
 {
     Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
-    ComputeRoeAverageX(Uo, k, j, i, U, space, model);
+    ComputeRoeAverage(Uo, IndexMath(k, j, i, space) * DIMU, IndexMath(k, j, i + 1, space) * DIMU, U, model);
     const Real u = Uo[1];
     const Real v = Uo[2];
     const Real w = Uo[3];
@@ -205,36 +212,7 @@ int ComputeEigenvectorSpaceRX(
     R[4][0] = hT - u * c;  R[4][1] = u * u - q;  R[4][2] = v;  R[4][3] = w;  R[4][4] = hT + u * c;
     return 0;
 }
-int ComputeRoeAverageZ(
-        Real Uo[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
-{
-    const int idx = IndexMath(k, j, i, space) * DIMU;
-    const int idxh = IndexMath(k + 1, j, i, space) * DIMU;;
-    CalculateRoeAverageUo(Uo, idx, idxh, U, model);
-    return 0;
-}
-int ComputeRoeAverageY(
-        Real Uo[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
-{
-    const int idx = IndexMath(k, j, i, space) * DIMU;
-    const int idxh = IndexMath(k, j + 1, i, space) * DIMU;;
-    CalculateRoeAverageUo(Uo, idx, idxh, U, model);
-    return 0;
-}
-int ComputeRoeAverageX(
-        Real Uo[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
-{
-    const int idx = IndexMath(k, j, i, space) * DIMU;
-    const int idxh = IndexMath(k, j, i + 1, space) * DIMU;;
-    CalculateRoeAverageUo(Uo, idx, idxh, U, model);
-    return 0;
-}
-static int CalculateRoeAverageUo(
-        Real Uo[], const int idx, const int idxh, 
-        const Real *U, const Model *model)
+int ComputeRoeAverage(Real Uo[], const int idx, const int idxh, const Real *U, const Model *model)
 {
     const Real gamma = model->gamma;
     const Real rho = U[idx];

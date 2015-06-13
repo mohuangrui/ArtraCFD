@@ -32,11 +32,11 @@
  *      Fhat -- reconstructed convective fluxes.
  */
 int TVDFluxZ(Real Fhat[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model, const Real dt);
+        const Real *U, const Space *, const Model *, const Real dt);
 int TVDFluxY(Real Fhat[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model, const Real dt);
+        const Real *U, const Space *, const Model *, const Real dt);
 int TVDFluxX(Real Fhat[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model, const Real dt);
+        const Real *U, const Space *, const Model *, const Real dt);
 #endif
 /* a good practice: end file with a newline */
 

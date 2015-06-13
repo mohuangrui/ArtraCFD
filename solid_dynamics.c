@@ -38,11 +38,11 @@ int SolidDynamics(Real *U, Space *space, const Model *model, const Partition *pa
     Real *geo = NULL;
     for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
         geo = IndexGeometry(geoCount, geometry);
-        /* velocity: v(t) = v(t0) + f/m * dt */
+        /* velocity: v(t) = v(t0) + f * (1/m) * dt */
         geo[5] = geo[5] + geo[8] * geo[13] * dt;
         geo[6] = geo[6] + geo[9] * geo[13] * dt;
         geo[7] = geo[7] + geo[10] * geo[13] * dt;
-        /* spatial position: x(t) = x(t0) + v(t) * dt - 1/2 * f/m * dt^2 */
+        /* spatial position: x(t) = x(t0) + v(t) * dt - 1/2 * f * (1/m) * dt^2 */
         geo[0] = geo[0] + geo[5] * dt - 0.5 * geo[8] * geo[13] * dt * dt;
         geo[1] = geo[1] + geo[6] * dt - 0.5 * geo[9] * geo[13] * dt * dt;
         geo[2] = geo[2] + geo[7] * dt - 0.5 * geo[10] * geo[13] * dt * dt;

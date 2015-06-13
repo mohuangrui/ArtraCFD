@@ -31,46 +31,30 @@
  */
 extern int ComputeEigenvaluesAndDecompositionCoefficientAlphaZ(
         Real lambda[], Real alpha[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
+        const Real *U, const Space *, const Model *);
 extern int ComputeEigenvaluesAndDecompositionCoefficientAlphaY(
         Real lambda[], Real alpha[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
+        const Real *U, const Space *, const Model *);
 extern int ComputeEigenvaluesAndDecompositionCoefficientAlphaX(
         Real lambda[], Real alpha[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
-extern int ComputeEigenvaluesAndEigenvectorSpaceLZ(
-        Real lambda[], Real L[][DIMU], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
-extern int ComputeEigenvaluesAndEigenvectorSpaceLY(
-        Real lambda[], Real L[][DIMU], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
-extern int ComputeEigenvaluesAndEigenvectorSpaceLX(
-        Real lambda[], Real L[][DIMU], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
+        const Real *U, const Space *, const Model *);
 extern int ComputeEigenvectorSpaceRZ(
         Real R[][DIMU], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
+        const Real *U, const Space *, const Model *);
 extern int ComputeEigenvectorSpaceRY(
         Real R[][DIMU], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
+        const Real *U, const Space *, const Model *);
 extern int ComputeEigenvectorSpaceRX(
         Real R[][DIMU], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
+        const Real *U, const Space *, const Model *);
 /*
  * Roe average
  *
  * Function
  *      Compute Roe averages.
  */
-extern int ComputeRoeAverageZ(
-        Real Uo[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
-extern int ComputeRoeAverageY(
-        Real Uo[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
-extern int ComputeRoeAverageX(
-        Real Uo[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
+int ComputeRoeAverage(Real Uo[], const int idx, const int idxh,
+        const Real *U, const Model *);
 /*
  * Convective fluxes
  *
@@ -79,13 +63,13 @@ extern int ComputeRoeAverageX(
  */
 extern int ComputeConvectiveFluxZ(
         Real F[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
+        const Real *U, const Space *, const Model *);
 extern int ComputeConvectiveFluxY(
         Real F[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
+        const Real *U, const Space *, const Model *);
 extern int ComputeConvectiveFluxX(
         Real F[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
+        const Real *U, const Space *, const Model *);
 /*
  * Compute the values of primitive variable vector
  *

@@ -20,40 +20,40 @@
  * Static Function Declarations
  ****************************************************************************/
 static int CalculateReconstructedFlux(
-        Real Fhat[], const Real F[], const Real Fh[], Real R[][DIMU], const Real Phi[]);
+        Real [], const Real [], const Real [], Real [][DIMU], const Real []);
 static int ComputeFluxDecompositionCoefficientPhiZ(
-        Real Phi[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model, const Real dt);
+        Real [], const int, const int, const int, 
+        const Real *, const Space *, const Model *, const Real);
 static int ComputeFluxDecompositionCoefficientPhiY(
-        Real Phi[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model, const Real dt);
+        Real [], const int, const int, const int, 
+        const Real *, const Space *, const Model *, const Real);
 static int ComputeFluxDecompositionCoefficientPhiX(
-        Real Phi[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model, const Real dt);
+        Real [], const int, const int, const int, 
+        const Real *, const Space *, const Model *, const Real);
 static int ComputeFunctionGZ(
-        Real g[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model, const Real dt);
+        Real [], const int, const int, const int, 
+        const Real *, const Space *, const Model *, const Real);
 static int ComputeFunctionGY(
-        Real g[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model, const Real dt);
+        Real [], const int, const int, const int, 
+        const Real *, const Space *, const Model *, const Real);
 static int ComputeFunctionGX(
-        Real g[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model, const Real dt);
+        Real [], const int, const int, const int, 
+        const Real *, const Space *, const Model *, const Real);
 static int CalculateGamma(
-        Real gamma[], const Real g[], const Real gh[], const Real alpha[]);
+        Real [], const Real [], const Real [], const Real []);
 static int CalculateSigma(
-        Real sigma[], const Real lambda[], const Real delta[], const Real r);
+        Real [], const Real [], const Real [], const Real);
 static int ComputeNumericalDissipationDeltaZ(
-        Real delta[], const int k, const int j, const int i,
-        const Real *U, const Space *space, const Model *model);
+        Real [], const int, const int, const int,
+        const Real *, const Space *, const Model *);
 static int ComputeNumericalDissipationDeltaY(
-        Real delta[], const int k, const int j, const int i,
-        const Real *U, const Space *space, const Model *model);
+        Real [], const int, const int, const int,
+        const Real *, const Space *, const Model *);
 static int ComputeNumericalDissipationDeltaX(
-        Real delta[], const int k, const int j, const int i,
-        const Real *U, const Space *space, const Model *model);
-static Real Q(const Real z, const Real delta);
-static Real minmod(const Real x, const Real y);
+        Real [], const int, const int, const int,
+        const Real *, const Space *, const Model *);
+static Real Q(const Real, const Real);
+static Real minmod(const Real, const Real);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -273,7 +273,7 @@ static int ComputeNumericalDissipationDeltaZ(
 {
     Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
     /* numerical dissipation in [0.05, 0.25], 0.125 is recommended */
-    ComputeRoeAverageZ(Uo, k, j, i, U, space, model);
+    ComputeRoeAverage(Uo, IndexMath(k, j, i, space) * DIMU, IndexMath(k + 1, j, i, space) * DIMU, U, model);
     const Real u = Uo[1];
     const Real v = Uo[2];
     const Real w = Uo[3];
@@ -289,7 +289,7 @@ static int ComputeNumericalDissipationDeltaY(
 {
     Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
     /* numerical dissipation in [0.05, 0.25], 0.125 is recommended */
-    ComputeRoeAverageY(Uo, k, j, i, U, space, model);
+    ComputeRoeAverage(Uo, IndexMath(k, j, i, space) * DIMU, IndexMath(k, j + 1, i, space) * DIMU, U, model);
     const Real u = Uo[1];
     const Real v = Uo[2];
     const Real w = Uo[3];
@@ -305,7 +305,7 @@ static int ComputeNumericalDissipationDeltaX(
 {
     Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
     /* numerical dissipation in [0.05, 0.25], 0.125 is recommended */
-    ComputeRoeAverageX(Uo, k, j, i, U, space, model);
+    ComputeRoeAverage(Uo, IndexMath(k, j, i, space) * DIMU, IndexMath(k, j, i + 1, space) * DIMU, U, model);
     const Real u = Uo[1];
     const Real v = Uo[2];
     const Real w = Uo[3];
