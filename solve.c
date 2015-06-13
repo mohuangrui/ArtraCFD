@@ -112,7 +112,7 @@ static int SolutionEvolution(Field *field, Space *space, Time *time,
     ShowInformation("Session End");
     return 0;
 }
-static Real ComputeTimeStepByCFL(const Real *U, const Space *space, const Time *time, 
+static Real ComputeTimeStep(const Real *U, const Space *space, const Time *time, 
         const Model *model, const Partition *part, const Geometry *geometry)
 {
     Real velocity = 0.0;

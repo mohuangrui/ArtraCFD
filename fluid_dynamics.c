@@ -64,6 +64,7 @@ int FluidDynamics(Field *field, const Space *space, const Model *model,
         const Partition *part, const Geometry *geometry, const Real dt)
 {
     RungeKutta(field, space, model, part, geometry, dt);
+    return 0;
 }
 static int RungeKutta(Field *field, const Space *space, const Model *model,
         const Partition *part, const Geometry *geometry, const Real dt)
@@ -243,16 +244,19 @@ static int ComputeReconstructedFluxZ(Real Fhat[], const int k, const int j, cons
         const Real *U, const Space *space, const Model *model, const Real dt)
 {
     TVDFluxZ(Fhat, k, j, i, U, space, model, dt);
+    return 0;
 }
 static int ComputeReconstructedFluxY(Real Fhat[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model, const Real dt)
 {
     TVDFluxY(Fhat, k, j, i, U, space, model, dt);
+    return 0;
 }
 static int ComputeReconstructedFluxX(Real Fhat[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model, const Real dt)
 {
     TVDFluxX(Fhat, k, j, i, U, space, model, dt);
+    return 0;
 }
 /*
  * Generally the viscous terms will only be discretized by central
