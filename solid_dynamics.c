@@ -19,32 +19,32 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int SurfaceForceIntegration(const Real *U, const Space *space,
-        Particle *particle, const Partition *part, const Flow *flow);
+static int SurfaceForceIntegration(const Real *, const Space *,
+        const Model *, const Partition *, Geometry *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int ParticleSpatialEvolution(Real *U, const Real dt, Space *space, 
-        Particle *particle, const Partition *part, const Flow *flow)
+int SolidDynamics(Real *U, Space *space, const Model *model, const Partition *part,
+        Geometry *geometry, const Real dt)
 {
     /*
      * Compute the forces acting on particles.
      */
-    SurfaceForceIntegration(U, space, particle, part, flow);
+    SurfaceForceIntegration(U, space, model, part, geometry);
     /*
      * Update particle velocity and position
      */
-    Real *ptk = NULL;
-    for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        ptk = IndexGeometry(geoCount, particle);
+    Real *geo = NULL;
+    for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
+        geo = IndexGeometry(geoCount, geometry);
         /* velocity: v(t) = v(t0) + f/m * dt */
-        ptk[5] = ptk[5] + ptk[8] * ptk[13] * dt;
-        ptk[6] = ptk[6] + ptk[9] * ptk[13] * dt;
-        ptk[7] = ptk[7] + ptk[10] * ptk[13] * dt;
+        geo[5] = geo[5] + geo[8] * geo[13] * dt;
+        geo[6] = geo[6] + geo[9] * geo[13] * dt;
+        geo[7] = geo[7] + geo[10] * geo[13] * dt;
         /* spatial position: x(t) = x(t0) + v(t) * dt - 1/2 * f/m * dt^2 */
-        ptk[0] = ptk[0] + ptk[5] * dt - 0.5 * ptk[8] * ptk[13] * dt * dt;
-        ptk[1] = ptk[1] + ptk[6] * dt - 0.5 * ptk[9] * ptk[13] * dt * dt;
-        ptk[2] = ptk[2] + ptk[7] * dt - 0.5 * ptk[10] * ptk[13] * dt * dt;
+        geo[0] = geo[0] + geo[5] * dt - 0.5 * geo[8] * geo[13] * dt * dt;
+        geo[1] = geo[1] + geo[6] * dt - 0.5 * geo[9] * geo[13] * dt * dt;
+        geo[2] = geo[2] + geo[7] * dt - 0.5 * geo[10] * geo[13] * dt * dt;
     }
     /*
      * After the spatial positions of particles updated, some inner nodes fall
@@ -65,24 +65,24 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space,
                     continue;
                 }
                 geoID = space->nodeFlag[idx] - OFFSET; /* extract geometry information */
-                ptk = IndexGeometry(geoID, particle);
-                if (0 > InGeometry(k, j, i, ptk, space)) { /* still in the solid geometry */
+                geo = IndexGeometry(geoID, geometry);
+                if (0 > InGeometry(k, j, i, geo, space)) { /* still in the solid geometry */
                     continue;
                 }
                 /* reconstruction of flow values */
                 InverseDistanceWeighting(Uo, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
-                        k, j, i, 2, U, space, flow);
+                        k, j, i, 2, U, space, model);
                 /* Normalize the weighted values as reconstructed values. */
                 NormalizeReconstructedValues(Uo);
-                ConservativeByPrimitive(U, idx * DIMU, Uo, flow);
+                ConservativeByPrimitive(U, idx * DIMU, Uo, model);
             }
         }
     }
     /*
      * Recompute the changed geometry and apply boundary condition.
      */
-    ComputeDomainGeometryGCIBM(space, particle, part);
-    BoundaryConditionGCIBM(U, space, particle, part, flow);
+    ComputeDomainGeometryGCIBM(space, part, geometry);
+    BoundaryConditionGCIBM(U, space, model, part, geometry);
     return 0;
 }
 /*
@@ -95,21 +95,21 @@ int ParticleSpatialEvolution(Real *U, const Real dt, Space *space,
  * particle surface will increase correspondingly with the increase of mesh 
  * resolution while saving remarkable computation effort.
  */
-static int SurfaceForceIntegration(const Real *U, const Space *space, 
-        Particle *particle, const Partition *part, const Flow *flow)
+static int SurfaceForceIntegration(const Real *U, const Space *space,
+        const Model *model, const Partition *part, Geometry *geometry)
 {
     int idx = 0; /* linear array index math variable */
     int geoID = 0; /* geometry id */
-    Real *ptk = NULL;
+    Real *geo = NULL;
     Real info[INFOGEO] = {0.0}; /* store calculated geometry information */
     Real p = 0.0;
     /* reset some non accumulative information of particles to zero */
-    for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        ptk = IndexGeometry(geoCount, particle);
-        ptk[8] = 0; /* fx */
-        ptk[9] = 0; /* fy */
-        ptk[10] = 0; /* fz */
-        ptk[11] = 0; /* tally */
+    for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
+        geo = IndexGeometry(geoCount, geometry);
+        geo[8] = 0; /* fx */
+        geo[9] = 0; /* fy */
+        geo[10] = 0; /* fz */
+        geo[11] = 0; /* tally */
     }
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
@@ -119,22 +119,22 @@ static int SurfaceForceIntegration(const Real *U, const Space *space,
                     continue;
                 }
                 geoID = space->nodeFlag[idx] - OFFSET; /* extract geometry information */
-                ptk = IndexGeometry(geoID, particle);
-                CalculateGeometryInformation(info, k, j, i, ptk, space);
-                p = ComputePressure(idx * DIMU, U, flow);
-                ptk[8] = ptk[8] - p * info[5]; /* integrate fx */
-                ptk[9] = ptk[9] - p * info[6]; /* integrate fy */
-                ptk[10] = ptk[10] - p * info[7]; /* integrate fz */
-                ptk[11] = ptk[11] + 1; /* count number of ghosts */
+                geo = IndexGeometry(geoID, geometry);
+                CalculateGeometryInformation(info, k, j, i, geo, space);
+                p = ComputePressure(idx * DIMU, U, model);
+                geo[8] = geo[8] - p * info[5]; /* integrate fx */
+                geo[9] = geo[9] - p * info[6]; /* integrate fy */
+                geo[10] = geo[10] - p * info[7]; /* integrate fz */
+                geo[11] = geo[11] + 1; /* count number of ghosts */
             }
         }
     }
     /* calibrate the sum of discrete forces into integration */
-    for (int geoCount = 0; geoCount < particle->totalN; ++geoCount) {
-        ptk = IndexGeometry(geoCount, particle);
-        ptk[8] = ptk[8] * ptk[12] / ptk[11];
-        ptk[9] = ptk[9] * ptk[12] / ptk[11];
-        ptk[10] = ptk[10] * ptk[12] / ptk[11];
+    for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
+        geo = IndexGeometry(geoCount, geometry);
+        geo[8] = geo[8] * geo[12] / geo[11];
+        geo[9] = geo[9] * geo[12] / geo[11];
+        geo[10] = geo[10] * geo[12] / geo[11];
     }
     return 0;
 }

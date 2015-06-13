@@ -24,13 +24,13 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Collision Model
+ * Solid Dynamics
  *
  * Function
- *      
+ *      Evolve solid dynamics.
  */
-extern int GeometrySpatialEvolution(Real *U, const Real dt, Space *, Geometry *, 
-        const Partition *, const Flow *);
+extern int SolidDynamics(Real *U, Space *, const Model *, const Partition *,
+        Geometry *, const Real dt);
 #endif
 /* a good practice: end file with a newline */
 
