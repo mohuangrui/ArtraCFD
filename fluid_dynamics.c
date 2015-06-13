@@ -14,29 +14,27 @@
 #include "fluid_dynamics.h"
 #include <stdio.h> /* standard library for input and output */
 #include "tvd.h"
+#include "boundary_treatment.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
 static int RungeKutta(Field *, const Space *, const Model *, const Partition *,
-        Geometry *, const Real);
+        const Geometry *, const Real);
 static int AlgebraicOperatorSplitting(Field *, const Space *, const Model *, 
         const Partition *, const Geometry *, const Real);
-static int Lz(Real *U, const Real *Un, const Space *space, 
-        const Partition *part, const Flow *flow, const Real dt);
-static int Ly(Real *U, const Real *Un, const Space *space, 
-        const Partition *part, const Flow *flow, const Real dt);
-static int Lx(Real *U, const Real *Un, const Space *space, 
-        const Partition *part, const Flow *flow, const Real dt);
-static int ComputeReconstructedFluxZ(
-        Real Fhat[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Flow *flow, const Real dt);
-static int ComputeReconstructedFluxY(
-        Real Fhat[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Flow *flow, const Real dt);
-static int ComputeReconstructedFluxX(
-        Real Fhat[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Flow *flow, const Real dt);
+static int LLz(Real *, const Real *, const Space *, const Model *,
+        const Partition *, const Real);
+static int LLy(Real *, const Real *, const Space *, const Model *,
+        const Partition *, const Real);
+static int LLx(Real *, const Real *, const Space *, const Model *,
+        const Partition *, const Real);
+static int ComputeReconstructedFluxZ(Real [], const int, const int, const int, 
+        const Real *, const Space *, const Model *, const Real);
+static int ComputeReconstructedFluxY(Real [], const int, const int, const int, 
+        const Real *, const Space *, const Model *, const Real);
+static int ComputeReconstructedFluxX(Real [], const int, const int, const int, 
+        const Real *, const Space *, const Model *, const Real);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -50,12 +48,12 @@ static int ComputeReconstructedFluxX(
  *       - spactial discretization (convective fluxes + diffusive fluxes)
  */
 int FluidDynamics(Field *field, const Space *space, const Model *model, 
-        const Partition *part, Geometry *geometry, const Real dt)
+        const Partition *part, const Geometry *geometry, const Real dt)
 {
     RungeKutta(field, space, model, part, geometry, dt);
 }
 static int RungeKutta(Field *field, const Space *space, const Model *model,
-        const Partition *part, Geometry *geometry, const Real dt)
+        const Partition *part, const Geometry *geometry, const Real dt)
 {
     /*
      * First, save the full value of current field, since this value is required
@@ -70,11 +68,11 @@ static int RungeKutta(Field *field, const Space *space, const Model *model,
      * Then solve LLU = (I + dt*L)U by algebraic operator splitting, updated data 
      * will be stored in the same storage space of inputed data.
      */
-    AlgebraicOperatorSplitting(field->U, field->Uswap, space, model, part, geometry, dt);
+    AlgebraicOperatorSplitting(field, space, model, part, geometry, dt);
     /*
      * Now solve the LLU = (I + dt*L)U based on updated field for another time step.
      */
-    AlgebraicOperatorSplitting(field->U, field->Uswap, space, model, part, geometry, dt);
+    AlgebraicOperatorSplitting(field, space, model, part, geometry, dt);
     /*
      * Calculate the intermediate stage based on the newest updated data and
      * the original field data which is stored at first. No new storage space
@@ -100,59 +98,55 @@ static int RungeKutta(Field *field, const Space *space, const Model *model,
     }
     return 0;
 }
-static int AlgebraicOperatorSplitting(Field *field, const Space *space,
-        const Model *model, const Partition *part, const Geometry *geometry, const Real dt)
+static int AlgebraicOperatorSplitting(Field *field, const Space *space, const Model *model,
+        const Partition *part, const Geometry *geometry, const Real dt)
 {
-    Real *exchanger = U;
+    Real *exchanger = field->U;
     /*
      * When exchange a large bunch of data between two storage space, such as
      * arrays, if there is no new data generation but just data exchange and 
      * update, then the rational way is to exchange the address value that
      * their pointer point to rather than values of data entries.
      */
-    LLz(Uswap, U, space, model, part, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(Uswap, space, geometry, part, flow);
-    exchanger = U; /* preserve the address of U */
-    U = Uswap; /* update flow field */
-    Uswap = exchanger; /* regain the used space as new space */
+    LLz(field->Uswap, field->U, space, model, part, 0.5 * dt);
+    BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
+    exchanger = field->U; /* preserve the address of U */
+    field->U = field->Uswap; /* update flow field */
+    field->Uswap = exchanger; /* regain the used space as new space */
 
-    Ly(Uswap, U, space, part, flow, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(Uswap, space, geometry, part, flow);
-    exchanger = U; /* preserve the address of U */
-    U = Uswap; /* update flow field */
-    Uswap = exchanger; /* regain the used space as new space */
+    LLy(field->Uswap, field->U, space, model, part, 0.5 * dt);
+    BoundaryCondtionsAndTreatments(field->Uswap, space, model, part,geometry);
+    exchanger = field->U; /* preserve the address of U */
+    field->U = field->Uswap; /* update flow field */
+    field->Uswap = exchanger; /* regain the used space as new space */
 
-    Lx(Uswap, U, space, part, flow, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(Uswap, space, geometry, part, flow);
-    exchanger = U; /* preserve the address of U */
-    U = Uswap; /* update flow field */
-    Uswap = exchanger; /* regain the used space as new space */
+    LLx(field->Uswap, field->U, space, model, part, 0.5 * dt);
+    BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
+    exchanger = field->U; /* preserve the address of U */
+    field->U = field->Uswap; /* update flow field */
+    field->Uswap = exchanger; /* regain the used space as new space */
 
-    Lx(Uswap, U, space, part, flow, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(Uswap, space, geometry, part, flow);
-    exchanger = U; /* preserve the address of U */
-    U = Uswap; /* update flow field */
-    Uswap = exchanger; /* regain the used space as new space */
+    LLx(field->Uswap, field->U, space, model, part, 0.5 * dt);
+    BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
+    exchanger = field->U; /* preserve the address of U */
+    field->U = field->Uswap; /* update flow field */
+    field->Uswap = exchanger; /* regain the used space as new space */
 
-    Ly(Uswap, U, space, part, flow, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(Uswap, space, geometry, part, flow);
-    exchanger = U; /* preserve the address of U */
-    U = Uswap; /* update flow field */
-    Uswap = exchanger; /* regain the used space as new space */
+    LLy(field->Uswap, field->U, space, model, part, 0.5 * dt);
+    BoundaryCondtionsAndTreatments(field->Uswap, space, model, part,geometry);
+    exchanger = field->U; /* preserve the address of U */
+    field->U = field->Uswap; /* update flow field */
+    field->Uswap = exchanger; /* regain the used space as new space */
 
-    Lz(Uswap, U, space, part, flow, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(Uswap, space, geometry, part, flow);
-    exchanger = U; /* preserve the address of U */
-    U = Uswap; /* update flow field */
-    Uswap = exchanger; /* regain the used space as new space */
-    /*
-     * NOTICE: the exchange operations must be even times, otherwise, the
-     * storage space that U originally pointed to will not store the newest
-     * updated field data after computation.
-     */
+    LLz(field->Uswap, field->U, space, model, part, 0.5 * dt);
+    BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
+    exchanger = field->U; /* preserve the address of U */
+    field->U = field->Uswap; /* update flow field */
+    field->Uswap = exchanger; /* regain the used space as new space */
     return 0;
 }
-static int Lz(Real *U, const Real *Un, const Space *space, const Partition *part, const Flow *flow, const Real dt)
+static int LLz(Real *U, const Real *Un, const Space *space, const Model *model,
+        const Partition *part, const Real dt)
 {
     Real Fhat[DIMU] = {0.0}; /* reconstructed flux vector */
     Real Fhath[DIMU] = {0.0}; /* reconstructed flux vector at neighbour */
@@ -166,9 +160,9 @@ static int Lz(Real *U, const Real *Un, const Space *space, const Partition *part
                 if (FLUID != space->nodeFlag[idx]) { /* it's not a fluid */
                     continue;
                 }
-                ComputeReconstructedFluxZ(Fhat, k, j, i, Un, space, flow, dt);
-                ComputeReconstructedFluxZ(Fhath, k - 1, j, i, Un, space, flow, dt);
-                ComputeViscousFluxGradientZ(gradG, k, j, i, Un, space, flow);
+                ComputeReconstructedFluxZ(Fhat, k, j, i, Un, space, model, dt);
+                ComputeReconstructedFluxZ(Fhath, k - 1, j, i, Un, space, model, dt);
+                ComputeViscousFluxGradientZ(gradG, k, j, i, Un, space, model);
                 idx = idx * DIMU; /* change idx to field variable */
                 for (int dim = 0; dim < DIMU; ++dim) {
                     U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
@@ -178,7 +172,8 @@ static int Lz(Real *U, const Real *Un, const Space *space, const Partition *part
     }
     return 0;
 }
-static int Ly(Real *U, const Real *Un, const Space *space, const Partition *part, const Flow *flow, const Real dt)
+static int LLy(Real *U, const Real *Un, const Space *space, const Model *model,
+        const Partition *part, const Real dt)
 {
     Real Fhat[DIMU] = {0.0}; /* reconstructed flux vector */
     Real Fhath[DIMU] = {0.0}; /* reconstructed flux vector at neighbour */
@@ -192,9 +187,9 @@ static int Ly(Real *U, const Real *Un, const Space *space, const Partition *part
                 if (FLUID != space->nodeFlag[idx]) { /* it's not a fluid */
                     continue;
                 }
-                ComputeReconstructedFluxY(Fhat, k, j, i, Un, space, flow, dt);
-                ComputeReconstructedFluxY(Fhath, k, j - 1, i, Un, space, flow, dt);
-                ComputeViscousFluxGradientY(gradG, k, j, i, Un, space, flow);
+                ComputeReconstructedFluxY(Fhat, k, j, i, Un, space, model, dt);
+                ComputeReconstructedFluxY(Fhath, k, j - 1, i, Un, space, model, dt);
+                ComputeViscousFluxGradientY(gradG, k, j, i, Un, space, model);
                 idx = idx * DIMU; /* change idx to field variable */
                 for (int dim = 0; dim < DIMU; ++dim) {
                     U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
@@ -204,7 +199,8 @@ static int Ly(Real *U, const Real *Un, const Space *space, const Partition *part
     }
     return 0;
 }
-static int Lx(Real *U, const Real *Un, const Space *space, const Partition *part, const Flow *flow, const Real dt)
+static int LLx(Real *U, const Real *Un, const Space *space, const Model *model,
+        const Partition *part, const Real dt)
 {
     Real Fhat[DIMU] = {0.0}; /* reconstructed flux vector */
     Real Fhath[DIMU] = {0.0}; /* reconstructed flux vector at neighbour */
@@ -218,9 +214,9 @@ static int Lx(Real *U, const Real *Un, const Space *space, const Partition *part
                 if (FLUID != space->nodeFlag[idx]) { /* it's not a fluid */
                     continue;
                 }
-                ComputeReconstructedFluxX(Fhat, k, j, i, Un, space, flow, dt);
-                ComputeReconstructedFluxX(Fhath, k, j, i - 1, Un, space, flow, dt);
-                ComputeViscousFluxGradientX(gradG, k, j, i, Un, space, flow);
+                ComputeReconstructedFluxX(Fhat, k, j, i, Un, space, model, dt);
+                ComputeReconstructedFluxX(Fhath, k, j, i - 1, Un, space, model, dt);
+                ComputeViscousFluxGradientX(gradG, k, j, i, Un, space, model);
                 idx = idx * DIMU; /* change idx to field variable */
                 for (int dim = 0; dim < DIMU; ++dim) {
                     U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
@@ -230,5 +226,9 @@ static int Lx(Real *U, const Real *Un, const Space *space, const Partition *part
     }
     return 0;
 }
+static int ComputeReconstructedFluxY(Real Fhat[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model, const Real dt)
+{}
+
 /* a good practice: end file with a newline */
 

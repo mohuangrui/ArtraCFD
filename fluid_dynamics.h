@@ -29,8 +29,8 @@
  * Function
  *      Evolve fluid dynamics.
  */
-extern int FluidDynamics(Field *, Space *, const Model *, const Partition *,
-        Geometry *, const Real dt);
+extern int FluidDynamics(Field *, const Space *, const Model *, const Partition *,
+        const Geometry *, const Real dt);
 #endif
 /* a good practice: end file with a newline */
 
