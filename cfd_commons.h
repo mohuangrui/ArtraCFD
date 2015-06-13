@@ -23,6 +23,72 @@
 /****************************************************************************
  * Public Functions Declaration
  ****************************************************************************/
+/*
+ * Jacobian matrices, eigenvalues, and eigenvectors
+ *
+ * Function
+ *      Compute eigenvalues and eigenvectors.
+ */
+extern int ComputeEigenvaluesAndDecompositionCoefficientAlphaZ(
+        Real lambda[], Real alpha[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+extern int ComputeEigenvaluesAndDecompositionCoefficientAlphaY(
+        Real lambda[], Real alpha[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+extern int ComputeEigenvaluesAndDecompositionCoefficientAlphaX(
+        Real lambda[], Real alpha[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+extern int ComputeEigenvaluesAndEigenvectorSpaceLZ(
+        Real lambda[], Real L[][DIMU], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+extern int ComputeEigenvaluesAndEigenvectorSpaceLY(
+        Real lambda[], Real L[][DIMU], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+extern int ComputeEigenvaluesAndEigenvectorSpaceLX(
+        Real lambda[], Real L[][DIMU], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+extern int ComputeEigenvectorSpaceRZ(
+        Real R[][DIMU], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+extern int ComputeEigenvectorSpaceRY(
+        Real R[][DIMU], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+extern int ComputeEigenvectorSpaceRX(
+        Real R[][DIMU], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+/*
+ * Roe average
+ *
+ * Function
+ *      Compute Roe averages.
+ */
+extern int ComputeRoeAverageZ(
+        Real Uo[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+extern int ComputeRoeAverageY(
+        Real Uo[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+extern int ComputeRoeAverageX(
+        Real Uo[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+/*
+ * Convective fluxes
+ *
+ * Function
+ *      Compute convective fluxes.
+ */
+extern int ComputeNonViscousFluxZ(
+        Real F[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+extern int ComputeNonViscousFluxY(
+        Real F[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+extern int ComputeNonViscousFluxX(
+        Real F[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model);
+extern int sign(const Real x);
+extern Real min(const Real x, const Real y);
+extern Real max(const Real x, const Real y);
 #endif
 /* a good practice: end file with a newline */
 
