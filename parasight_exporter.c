@@ -357,4 +357,3 @@ static int WriteParasightVariableFile(const Real *U, const Space *space,
 }
 /* a good practice: end file with a newline */
 
- 

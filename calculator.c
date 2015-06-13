@@ -822,4 +822,3 @@ static void HelpCalculator(void)
 }
 /* a good practice: end file with a newline */
 
- 

@@ -33,4 +33,3 @@ extern int Solve(Field *, Space *, Time *, const Model *, const Partition *, Geo
 #endif
 /* a good practice: end file with a newline */
 
- 

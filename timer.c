@@ -34,4 +34,3 @@ double TockTime(const Timer *timer) {
 }
 /* a good practice: end file with a newline */
 
- 

@@ -360,4 +360,3 @@ static int WriteParaviewVariableFile(const Geometry *geometry, ParaviewSet *para
 }
 /* a good practice: end file with a newline */
 
- 

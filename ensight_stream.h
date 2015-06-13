@@ -50,4 +50,3 @@ extern int LoadComputedDataEnsight(Real *U, const Space *, Time *,
 #endif
 /* a good practice: end file with a newline */
 
- 

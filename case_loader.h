@@ -37,4 +37,3 @@ extern int LoadCaseSettingData(Space *, Time *, Model *, Partition *);
 #endif
 /* a good practice: end file with a newline */
 
- 

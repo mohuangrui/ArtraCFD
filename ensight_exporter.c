@@ -382,4 +382,3 @@ static int WriteEnsightVariableFile(const Real *U, const Space *space, const Mod
 }
 /* a good practice: end file with a newline */
 
- 

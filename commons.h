@@ -704,4 +704,3 @@ extern int RetrieveStorage(void *pointer);
 #endif
 /* a good practice: end file with a newline */
 
- 

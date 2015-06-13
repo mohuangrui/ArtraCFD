@@ -42,4 +42,3 @@ extern int WriteGeometryData(const Time *, const Geometry *);
 #endif
 /* a good practice: end file with a newline */
 
- 

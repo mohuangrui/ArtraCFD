@@ -227,4 +227,3 @@ static int WriteParaviewVariableFile(const Real *U, const Space *space, const Mo
 }
 /* a good practice: end file with a newline */
 
- 

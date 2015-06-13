@@ -134,4 +134,3 @@ int DomainPartition(const Space *space, Partition *part)
 }
 /* a good practice: end file with a newline */
 
- 

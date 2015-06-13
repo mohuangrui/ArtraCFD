@@ -34,4 +34,3 @@ extern int DomainPartition(const Space *, Partition *);
 #endif
 /* a good practice: end file with a newline */
 
- 

@@ -60,4 +60,3 @@ int LoadComputedData(Real *U, const Space *space, Time *time,
 }
 /* a good practice: end file with a newline */
 
- 

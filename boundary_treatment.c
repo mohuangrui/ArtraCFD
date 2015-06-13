@@ -149,4 +149,3 @@ static int ZeroGradient(Real *U, const int idx, const int idxh)
 }
 /* a good practice: end file with a newline */
 
- 

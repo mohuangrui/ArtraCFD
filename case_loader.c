@@ -578,4 +578,3 @@ static int CheckCaseSettingData(const Space *space, const Time *time, const Mode
 }
 /* a good practice: end file with a newline */
 
- 

@@ -40,4 +40,3 @@ int TVDFluxX(Real Fhat[], const int k, const int j, const int i,
 #endif
 /* a good practice: end file with a newline */
 
- 

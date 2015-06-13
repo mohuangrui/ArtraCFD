@@ -581,4 +581,3 @@ static int ComputeDiffusiveFluxX(
 }
 /* a good practice: end file with a newline */
 
- 

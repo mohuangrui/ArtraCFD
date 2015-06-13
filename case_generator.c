@@ -270,4 +270,3 @@ static int CaseGeometryFileGenerator(void)
 }
 /* a good practice: end file with a newline */
 
- 

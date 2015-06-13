@@ -34,4 +34,3 @@ extern int WriteComputedDataAtProbes(const Real *U, const Space *, const Time *,
 #endif
 /* a good practice: end file with a newline */
 
- 
