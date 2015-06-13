@@ -15,6 +15,7 @@
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
 #include <limits.h> /* sizes of integral types */
+#include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
