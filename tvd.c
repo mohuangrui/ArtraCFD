@@ -127,7 +127,7 @@ static int ComputeViscousFluxX(
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-static int TVDFluxZ(Real Fhat[], const int k, const int j, const int i, 
+int TVDFluxZ(Real Fhat[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model, const Real dt)
 {
     Real F[DIMU] = {0.0}; /* flux at current node */
@@ -141,8 +141,7 @@ static int TVDFluxZ(Real Fhat[], const int k, const int j, const int i,
     CalculateReconstructedFlux(Fhat, F, Fh, R, Phi);
     return 0;
 }
-static int ComputeReconstructedFluxY(
-        Real Fhat[], const int k, const int j, const int i, 
+int TVDFluxY(Real Fhat[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model, const Real dt)
 {
     Real F[DIMU] = {0.0}; /* flux at current node */
@@ -156,8 +155,7 @@ static int ComputeReconstructedFluxY(
     CalculateReconstructedFlux(Fhat, F, Fh, R, Phi);
     return 0;
 }
-static int ComputeReconstructedFluxX(
-        Real Fhat[], const int k, const int j, const int i, 
+int TVDFluxX(Real Fhat[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model, const Real dt)
 {
     Real F[DIMU] = {0.0}; /* flux at current node */

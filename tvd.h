@@ -24,17 +24,19 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Spatial discretization and computation
+ * TVD
  *
  * Function
- *      Compute field data to next time step based on the inputed data.
+ *      Compute reconstructed convective fluxes by TVD scheme.
  * Parameters
- *      U -- current data, and store updated field data after computation.
- *      dt -- time step size
- *      Uswap -- a auxiliary storage space of the same size of U.
+ *      Fhat -- reconstructed convective fluxes.
  */
-extern int SpatialDiscretizationAndComputation(Real *U, const Real dt, Real *Uswap, 
-        const Space *, const Geometry *, const Partition *, const Flow *);
+int TVDFluxZ(Real Fhat[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model, const Real dt);
+int TVDFluxY(Real Fhat[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model, const Real dt);
+int TVDFluxX(Real Fhat[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model, const Real dt);
 #endif
 /* a good practice: end file with a newline */
 

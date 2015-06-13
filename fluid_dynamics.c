@@ -226,9 +226,20 @@ static int LLx(Real *U, const Real *Un, const Space *space, const Model *model,
     }
     return 0;
 }
+static int ComputeReconstructedFluxZ(Real Fhat[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model, const Real dt)
+{
+    TVDFluxZ(Fhat, k, j, i, U, space, model, dt);
+}
 static int ComputeReconstructedFluxY(Real Fhat[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model, const Real dt)
-{}
-
+{
+    TVDFluxY(Fhat, k, j, i, U, space, model, dt);
+}
+static int ComputeReconstructedFluxX(Real Fhat[], const int k, const int j, const int i, 
+        const Real *U, const Space *space, const Model *model, const Real dt)
+{
+    TVDFluxX(Fhat, k, j, i, U, space, model, dt);
+}
 /* a good practice: end file with a newline */
 
