@@ -36,24 +36,18 @@ static int ComputeReconstructedFluxY(Real [], const int, const int, const int,
         const Real *, const Space *, const Model *, const Real);
 static int ComputeReconstructedFluxX(Real [], const int, const int, const int, 
         const Real *, const Space *, const Model *, const Real);
-static int ComputeViscousFluxGradientZ(
-        Real gradG[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
-static int ComputeViscousFluxGradientY(
-        Real gradG[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
-static int ComputeViscousFluxGradientX(
-        Real gradG[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
-static int ComputeViscousFluxZ(
-        Real G[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
-static int ComputeViscousFluxY(
-        Real G[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
-static int ComputeViscousFluxX(
-        Real G[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model);
+static int ComputeViscousFluxGradientZ(Real [], const int, const int, const int, 
+        const Real *, const Space *, const Model *);
+static int ComputeViscousFluxGradientY(Real [], const int, const int, const int, 
+        const Real *, const Space *, const Model *);
+static int ComputeViscousFluxGradientX(Real [], const int, const int, const int, 
+        const Real *, const Space *, const Model *);
+static int ComputeViscousFluxZ(Real [], const int, const int, const int, 
+        const Real *, const Space *, const Model *);
+static int ComputeViscousFluxY(Real [], const int, const int, const int, 
+        const Real *, const Space *, const Model *);
+static int ComputeViscousFluxX(Real [], const int, const int, const int, 
+        const Real *, const Space *, const Model *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
