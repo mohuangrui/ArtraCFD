@@ -347,3 +347,4 @@ int CalculateGeometryInformation(Real info[], const int k, const int j, const in
 }
 /* a good practice: end file with a newline */
 
+ 

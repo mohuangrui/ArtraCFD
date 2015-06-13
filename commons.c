@@ -162,3 +162,4 @@ int RetrieveStorage(void *pointer)
 }
 /* a good practice: end file with a newline */
 
+ 
