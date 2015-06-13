@@ -43,15 +43,8 @@ static int CalculateGamma(
         Real [], const Real [], const Real [], const Real []);
 static int CalculateSigma(
         Real [], const Real [], const Real [], const Real);
-static int ComputeNumericalDissipationDeltaZ(
-        Real [], const int, const int, const int,
-        const Real *, const Space *, const Model *);
-static int ComputeNumericalDissipationDeltaY(
-        Real [], const int, const int, const int,
-        const Real *, const Space *, const Model *);
-static int ComputeNumericalDissipationDeltaX(
-        Real [], const int, const int, const int,
-        const Real *, const Space *, const Model *);
+static int ComputeNumericalDissipationDelta(
+        Real [], const int, const int, const Real *, const Model *);
 static Real Q(const Real, const Real);
 static Real minmod(const Real, const Real);
 /****************************************************************************
@@ -127,7 +120,7 @@ static int ComputeFluxDecompositionCoefficientPhiZ(
     ComputeEigenvaluesAndDecompositionCoefficientAlphaZ(lambda, alpha, k, j, i, U, space, model);
     ComputeFunctionGZ(g, k, j, i, U, space, model, dt);
     ComputeFunctionGZ(gh, k + 1, j, i, U, space, model, dt);
-    ComputeNumericalDissipationDeltaZ(delta, k, j, i, U, space, model);
+    ComputeNumericalDissipationDelta(delta, IndexMath(k, j, i, space) * DIMU, IndexMath(k + 1, j, i, space) * DIMU, U, model);
     CalculateGamma(gamma, g, gh, alpha);
     for (int row = 0; row < DIMU; ++row) {
         Phi[row] = g[row] + gh[row] - Q(lambda[row] + gamma[row], delta[row]) * alpha[row];
@@ -147,7 +140,7 @@ static int ComputeFluxDecompositionCoefficientPhiY(
     ComputeEigenvaluesAndDecompositionCoefficientAlphaY(lambda, alpha, k, j, i, U, space, model);
     ComputeFunctionGY(g, k, j, i, U, space, model, dt);
     ComputeFunctionGY(gh, k, j + 1, i, U, space, model, dt);
-    ComputeNumericalDissipationDeltaY(delta, k, j, i, U, space, model);
+    ComputeNumericalDissipationDelta(delta, IndexMath(k, j, i, space) * DIMU, IndexMath(k, j + 1, i, space) * DIMU, U, model);
     CalculateGamma(gamma, g, gh, alpha);
     for (int row = 0; row < DIMU; ++row) {
         Phi[row] = g[row] + gh[row] - Q(lambda[row] + gamma[row], delta[row]) * alpha[row];
@@ -167,7 +160,7 @@ static int ComputeFluxDecompositionCoefficientPhiX(
     ComputeEigenvaluesAndDecompositionCoefficientAlphaX(lambda, alpha, k, j, i, U, space, model);
     ComputeFunctionGX(g, k, j, i, U, space, model, dt);
     ComputeFunctionGX(gh, k, j, i + 1, U, space, model, dt);
-    ComputeNumericalDissipationDeltaX(delta, k, j, i, U, space, model);
+    ComputeNumericalDissipationDelta(delta, IndexMath(k, j, i, space) * DIMU, IndexMath(k, j, i + 1, space) * DIMU, U, model);
     CalculateGamma(gamma, g, gh, alpha);
     for (int row = 0; row < DIMU; ++row) {
         Phi[row] = g[row] + gh[row] - Q(lambda[row] + gamma[row], delta[row]) * alpha[row];
@@ -188,10 +181,10 @@ static int ComputeFunctionGZ(
     Real sigmah[DIMU] = {0.0}; /* TVD function sigma at neighbour */
     const Real r = dt * space->ddz;
     ComputeEigenvaluesAndDecompositionCoefficientAlphaZ(lambda, alpha, k, j, i, U, space, model);
-    ComputeNumericalDissipationDeltaZ(delta, k, j, i, U, space, model);
+    ComputeNumericalDissipationDelta(delta, IndexMath(k, j, i, space) * DIMU, IndexMath(k + 1, j, i, space) * DIMU, U, model);
     CalculateSigma(sigma, lambda, delta, r);
     ComputeEigenvaluesAndDecompositionCoefficientAlphaZ(lambdah, alphah, k - 1, j, i, U, space, model);
-    ComputeNumericalDissipationDeltaZ(deltah, k - 1, j, i, U, space, model);
+    ComputeNumericalDissipationDelta(delta, IndexMath(k - 1, j, i, space) * DIMU, IndexMath(k, j, i, space) * DIMU, U, model);
     CalculateSigma(sigmah, lambdah, deltah, r);
     for (int row = 0; row < DIMU; ++row) {
         g[row] = minmod(sigma[row] * alpha[row], sigmah[row] * alphah[row]);
@@ -212,10 +205,10 @@ static int ComputeFunctionGY(
     Real sigmah[DIMU] = {0.0}; /* TVD function sigma at neighbour */
     const Real r = dt * space->ddy;
     ComputeEigenvaluesAndDecompositionCoefficientAlphaY(lambda, alpha, k, j, i, U, space, model);
-    ComputeNumericalDissipationDeltaY(delta, k, j, i, U, space, model);
+    ComputeNumericalDissipationDelta(delta, IndexMath(k, j, i, space) * DIMU, IndexMath(k, j + 1, i, space) * DIMU, U, model);
     CalculateSigma(sigma, lambda, delta, r);
     ComputeEigenvaluesAndDecompositionCoefficientAlphaY(lambdah, alphah, k, j - 1, i, U, space, model);
-    ComputeNumericalDissipationDeltaY(deltah, k, j - 1, i, U, space, model);
+    ComputeNumericalDissipationDelta(delta, IndexMath(k, j - 1, i, space) * DIMU, IndexMath(k, j, i, space) * DIMU, U, model);
     CalculateSigma(sigmah, lambdah, deltah, r);
     for (int row = 0; row < DIMU; ++row) {
         g[row] = minmod(sigma[row] * alpha[row], sigmah[row] * alphah[row]);
@@ -236,10 +229,10 @@ static int ComputeFunctionGX(
     Real sigmah[DIMU] = {0.0}; /* TVD function sigma at neighbour */
     const Real r = dt * space->ddx;
     ComputeEigenvaluesAndDecompositionCoefficientAlphaX(lambda, alpha, k, j, i, U, space, model);
-    ComputeNumericalDissipationDeltaX(delta, k, j, i, U, space, model);
+    ComputeNumericalDissipationDelta(delta, IndexMath(k, j, i, space) * DIMU, IndexMath(k, j, i + 1, space) * DIMU, U, model);
     CalculateSigma(sigma, lambda, delta, r);
     ComputeEigenvaluesAndDecompositionCoefficientAlphaX(lambdah, alphah, k, j, i - 1, U, space, model);
-    ComputeNumericalDissipationDeltaX(deltah, k, j, i - 1, U, space, model);
+    ComputeNumericalDissipationDelta(delta, IndexMath(k, j, i - 1, space) * DIMU, IndexMath(k, j, i, space) * DIMU, U, model);
     CalculateSigma(sigmah, lambdah, deltah, r);
     for (int row = 0; row < DIMU; ++row) {
         g[row] = minmod(sigma[row] * alpha[row], sigmah[row] * alphah[row]);
@@ -267,45 +260,13 @@ static int CalculateSigma(
     }
     return 0;
 }
-static int ComputeNumericalDissipationDeltaZ(
-        Real delta[], const int k, const int j, const int i,
-        const Real *U, const Space *space, const Model *model)
+static int ComputeNumericalDissipationDelta(
+        Real delta[], const int idx, const int idxh,
+        const Real *U, const Model *model)
 {
     Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
     /* numerical dissipation in [0.05, 0.25], 0.125 is recommended */
-    ComputeRoeAverage(Uo, IndexMath(k, j, i, space) * DIMU, IndexMath(k + 1, j, i, space) * DIMU, U, model);
-    const Real u = Uo[1];
-    const Real v = Uo[2];
-    const Real w = Uo[3];
-    const Real c = Uo[5];
-    for (int row = 0; row < DIMU; ++row) {
-        delta[row] = (fabs(u) + fabs(v) + fabs(w) + c) * model->delta; 
-    }
-    return 0;
-}
-static int ComputeNumericalDissipationDeltaY(
-        Real delta[], const int k, const int j, const int i,
-        const Real *U, const Space *space, const Model *model)
-{
-    Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
-    /* numerical dissipation in [0.05, 0.25], 0.125 is recommended */
-    ComputeRoeAverage(Uo, IndexMath(k, j, i, space) * DIMU, IndexMath(k, j + 1, i, space) * DIMU, U, model);
-    const Real u = Uo[1];
-    const Real v = Uo[2];
-    const Real w = Uo[3];
-    const Real c = Uo[5];
-    for (int row = 0; row < DIMU; ++row) {
-        delta[row] = (fabs(u) + fabs(v) + fabs(w) + c) * model->delta; 
-    }
-    return 0;
-}
-static int ComputeNumericalDissipationDeltaX(
-        Real delta[], const int k, const int j, const int i,
-        const Real *U, const Space *space, const Model *model)
-{
-    Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
-    /* numerical dissipation in [0.05, 0.25], 0.125 is recommended */
-    ComputeRoeAverage(Uo, IndexMath(k, j, i, space) * DIMU, IndexMath(k, j, i + 1, space) * DIMU, U, model);
+    ComputeRoeAverage(Uo, idx, idxh, U, model);
     const Real u = Uo[1];
     const Real v = Uo[2];
     const Real w = Uo[3];
