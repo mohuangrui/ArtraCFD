@@ -14,6 +14,7 @@
 #include "boundary_treatment.h"
 #include <stdio.h> /* standard library for input and output */
 #include "gcibm.h"
+#include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations

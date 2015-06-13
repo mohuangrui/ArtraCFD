@@ -22,6 +22,7 @@
 #include "geometry_stream.h"
 #include "timer.h"
 #include "data_probe.h"
+#include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations

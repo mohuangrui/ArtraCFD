@@ -14,6 +14,7 @@
 #include "data_probe.h"
 #include <stdio.h> /* standard library for input and output */
 #include <stdlib.h> /* support for abs operation */
+#include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
  * Function definitions

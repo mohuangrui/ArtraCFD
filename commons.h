@@ -701,68 +701,6 @@ extern void *AssignStorage(const int idxMax, const char *dataType);
  *      0 -- successful
  */
 extern int RetrieveStorage(void *pointer);
-/*
- * Index math
- *
- * Function
- *      calculate the index of current node.
- * Returns
- *      int -- the calculated index value
- */
-extern int IndexMath(const int k, const int j, const int i, const Space *);
-/*
- * Index geometry
- *
- * Function
- *      Compute the address pointed to current geometry information.
- */
-extern Real *IndexGeometry(const int geoID, const Geometry *geometry);
-/*
- * Coordinates transformation
- *
- * Function
- *      transform coordinates between node coordinates and general coordinates.
- * Notice
- *      Be cautious with the validity of any calculated index. It's extremely
- *      necessary to adjust the index into the valid interior region or check
- *      validity of the index to avoid index exceed array bound limits and 
- *      mysterious bugs.
- */
-extern int ComputeK(const Real z, const Space *);
-extern int ComputeJ(const Real y, const Space *);
-extern int ComputeI(const Real x, const Space *);
-extern int ValidRegionK(const int k, const Partition *);
-extern int ValidRegionJ(const int j, const Partition *);
-extern int ValidRegionI(const int i, const Partition *);
-extern Real ComputeZ(const int k, const Space *);
-extern Real ComputeY(const int j, const Space *);
-extern Real ComputeX(const int i, const Space *);
-/*
- * Common math functions
- */
-extern Real MinReal(const Real x, const Real y);
-extern Real MaxReal(const Real x, const Real y);
-extern int MinInt(const int x, const int y);
-extern int MaxInt(const int x, const int y);
-/*
- * Compute the values of primitive variable vector
- *
- * Parameter
- *      Uo[] -- a array stores the returned values of primitives.
- *      idx  -- the index of current node.
- * Notice
- *      calculated values are [rho, u, v, w, p]
- */
-extern int PrimitiveByConservative(Real Uo[], const int idx, const Real *U, const Model *);
-extern Real ComputePressure(const int idx, const Real *U, const Model *);
-extern Real ComputeTemperature(const int idx, const Real *U, const Model *);
-/*
- * Compute and update conservative variable vector
- *
- * Function
- *      Compute and update conservative variable vector according to primitive values.
- */
-extern int ConservativeByPrimitive(Real *U, const int idx, const Real Uo[], const Model *);
 #endif
 /* a good practice: end file with a newline */
 

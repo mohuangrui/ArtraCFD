@@ -17,6 +17,7 @@
 #include "boundary_treatment.h"
 #include "data_stream.h"
 #include "geometry_stream.h"
+#include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations

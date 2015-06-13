@@ -310,7 +310,122 @@ int ComputeConvectiveFluxX(
     F[4] = (rho * eT + p) * u;
     return 0;
 }
-int sign(const Real x)
+/*
+ * Get value of primitive variable vector.
+ */
+int PrimitiveByConservative(Real Uo[], const int idx, const Real *U, const Model *model)
+{
+    Uo[0] = U[idx];
+    Uo[1] = U[idx+1] / U[idx];
+    Uo[2] = U[idx+2] / U[idx];
+    Uo[3] = U[idx+3] / U[idx];
+    Uo[4] = (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) * (model->gamma - 1.0);
+    Uo[5] = Uo[4] / (Uo[0] * model->gasR);
+    return 0;
+}
+/*
+ * Compute conservative variable vector according to primitives.
+ */
+int ConservativeByPrimitive(Real *U, const int idx, const Real Uo[], const Model *model)
+{
+    U[idx] = Uo[0];
+    U[idx+1] = Uo[0] * Uo[1];
+    U[idx+2] = Uo[0] * Uo[2];
+    U[idx+3] = Uo[0] * Uo[3];
+    U[idx+4] = 0.5 * Uo[0] * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]) + Uo[4] / (model->gamma - 1.0); 
+    return 0;
+}
+Real ComputePressure(const int idx, const Real *U, const Model *model)
+{
+    return (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) * (model->gamma - 1.0);
+}
+Real ComputeTemperature(const int idx, const Real *U, const Model *model)
+{
+    return (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) / (U[idx] * model->cv);
+}
+/*
+ * Index math.
+ */
+int IndexMath(const int k, const int j, const int i, const Space *space)
+{
+    return ((k * space->jMax + j) * space->iMax + i);
+}
+Real *IndexGeometry(const int geoID, const Geometry *geometry)
+{
+    return geometry->headAddress + geoID * ENTRYGEO;
+}
+/*
+ * Coordinates transformations.
+ * When transform from spatial coordinates to node coordinates, a half
+ * grid distance shift is necessary to ensure obtaining a closest node
+ * coordinates considering the downward truncation of (int). 
+ * Note: current rounding conversion only works for positive float.
+ */
+int ComputeK(const Real z, const Space *space)
+{
+    return (int)((z - space->zMin) * space->ddz + 0.5) + space->ng;
+}
+int ComputeJ(const Real y, const Space *space)
+{
+    return (int)((y - space->yMin) * space->ddy + 0.5) + space->ng;
+}
+int ComputeI(const Real x, const Space *space)
+{
+    return (int)((x - space->xMin) * space->ddx + 0.5) + space->ng;
+}
+int ValidRegionK(const int k, const Partition *part)
+{
+    return MinInt(part->kSup[0] - 1, MaxInt(part->kSub[0], k));
+}
+int ValidRegionJ(const int j, const Partition *part)
+{
+    return MinInt(part->jSup[0] - 1, MaxInt(part->jSub[0], j));
+}
+int ValidRegionI(const int i, const Partition *part)
+{
+    return MinInt(part->iSup[0] - 1, MaxInt(part->iSub[0], i));
+}
+Real ComputeZ(const int k, const Space *space)
+{
+    return (space->zMin + (k - space->ng) * space->dz);
+}
+Real ComputeY(const int j, const Space *space)
+{
+    return (space->yMin + (j - space->ng) * space->dy);
+}
+Real ComputeX(const int i, const Space *space)
+{
+    return (space->xMin + (i - space->ng) * space->dx);
+}
+Real MinReal(const Real x, const Real y)
+{
+    if (x < y) {
+        return x;
+    }
+    return y;
+}
+Real MaxReal(const Real x, const Real y)
+{
+    if (x > y) {
+        return x;
+    }
+    return y;
+}
+int MinInt(const int x, const int y)
+{
+    if (x < y) {
+        return x;
+    }
+    return y;
+}
+int MaxInt(const int x, const int y)
+{
+    if (x > y) {
+        return x;
+    }
+    return y;
+}
+int Sign(const Real x)
 {
     if (0 < x) {
         return 1;

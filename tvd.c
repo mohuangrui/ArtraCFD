@@ -14,8 +14,8 @@
 #include "tvd.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
-#include "commons.h"
 #include "cfd_commons.h"
+#include "commons.h"
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
@@ -324,7 +324,7 @@ static Real Q(const Real z, const Real delta)
 }
 static Real minmod(const Real x, const Real y)
 {
-    return (sign(x) * max(0, min(fabs(x), y * sign(x))));
+    return (Sign(x) * MaxReal(0, MinReal(fabs(x), y * Sign(x))));
 }
 /* a good practice: end file with a newline */
 

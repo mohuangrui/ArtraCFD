@@ -16,6 +16,7 @@
 #include <math.h> /* common mathematical functions */
 #include "tvd.h"
 #include "boundary_treatment.h"
+#include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations

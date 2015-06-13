@@ -15,6 +15,7 @@
 #include <stdio.h> /* standard library for input and output */
 #include <string.h> /* manipulating strings */
 #include "ensight.h" 
+#include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations

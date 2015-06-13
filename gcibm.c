@@ -15,6 +15,7 @@
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
 #include <float.h> /* size of floating point values */
+#include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
