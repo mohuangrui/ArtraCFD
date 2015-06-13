@@ -11,6 +11,7 @@
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
+#include "data_stream.h"
 #include <stdio.h> /* standard library for input and output */
 #include "paraview_stream.h"
 #include "parasight_stream.h"
