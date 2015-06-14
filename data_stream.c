@@ -18,44 +18,41 @@
 #include "ensight_stream.h"
 #include "commons.h"
 /****************************************************************************
+ * Function pointers
+ ****************************************************************************/
+/*
+ * Function pointers are useful for implementing a form of polymorphism.
+ * They are mainly used to reduce or avoid switch statement. Pointers to
+ * functions can get rather messy. Declaring a typedel to a function pointer
+ * generally clarifies the code.
+ */
+typedef int (*DataWriter)(const Real *, const Space *, const Time *,
+        const Model *, const Partition *);
+typedef int (*DataReader)(Real *, const Space *, Time *,
+        const Model *, const Partition *);
+/****************************************************************************
  * Function definitions
  ****************************************************************************/
 int WriteComputedData(const Real *U, const Space *space, const Time *time,
         const Model *model, const Partition *part)
 {
-    switch (time->dataStreamer) {
-        case 0: /* ParaView */
-            WriteComputedDataParaview(U, space, time, model, part);
-            break;
-        case 1: /* Generic Ensight */
-            WriteComputedDataEnsight(U, space, time, model, part);
-            break;
-        case 2: /* ParaView Ensight */
-            WriteComputedDataParasight(U, space, time, model, part);
-            break;
-        default: /* ParaView */
-            WriteComputedDataParaview(U, space, time, model, part);
-            break;
-    }
+    DataWriter WriteData[3] = {
+        WriteComputedDataParaview,
+        WriteComputedDataEnsight,
+        WriteComputedDataParasight
+    };
+    WriteData[time->dataStreamer](U, space, time, model, part);
     return 0;
 }
 int LoadComputedData(Real *U, const Space *space, Time *time,
         const Model *model, const Partition *part)
 {
-    switch (time->dataStreamer) {
-        case 0: /* ParaView */
-            LoadComputedDataParaview(U, space, time, model, part);
-            break;
-        case 1: /* Ensight */
-            LoadComputedDataEnsight(U, space, time, model, part);
-            break;
-        case 2: /* Paraview Ensight */
-            LoadComputedDataParasight(U, space, time, model, part);
-            break;
-        default: /* ParaView */
-            LoadComputedDataParaview(U, space, time, model, part);
-            break;
-    }
+    DataReader ReadData[3] = {
+        ReadComputedDataParaview,
+        ReadComputedDataEnsight,
+        ReadComputedDataParasight
+    };
+    ReadData[time->dataStreamer](U, space, time, model, part);
     return 0;
 }
 /* a good practice: end file with a newline */
