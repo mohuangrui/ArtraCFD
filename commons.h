@@ -453,6 +453,11 @@ typedef double Real;
  * enum statement is used instead of macros for handling these magic numbers.
  */
 typedef enum {
+    /* dimension of space */
+    DIMS = 3, /* X, Y, Z */
+    X = 0,
+    Y = 1,
+    Z = 2,
     /* dimension of conservative vector, maximum independent primitives */
     DIMU = 5, /* rho, rho_u, rho_v, rho_w, rho_eT */
     /* dimension of primitive vector, contents depend on specific situations */

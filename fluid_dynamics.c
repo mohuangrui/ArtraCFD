@@ -29,6 +29,8 @@
  */
 typedef int (*ConvectiveFluxReconstructor)(const int, Real [], const Real, const int,
         const int, const int, const Real *, const Space *, const Model *);
+typedef int (*DiffusiveFluxComputer)(Real [], const int, const int, const int, 
+        const Real *, const Space *, const Model *);
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
@@ -121,37 +123,37 @@ static int AlgebraicOperatorSplitting(Field *field, const Space *space, const Mo
      * update, then the rational way is to exchange the address value that
      * their pointer point to rather than values of data entries.
      */
-    LL(2, field->Uswap, field->U, space, model, part, 0.5 * dt);
+    LL(Z, field->Uswap, field->U, space, model, part, 0.5 * dt);
     BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
     exchanger = field->U; /* preserve the address of U */
     field->U = field->Uswap; /* update flow field */
     field->Uswap = exchanger; /* regain the used space as new space */
 
-    LL(1, field->Uswap, field->U, space, model, part, 0.5 * dt);
+    LL(Y, field->Uswap, field->U, space, model, part, 0.5 * dt);
     BoundaryCondtionsAndTreatments(field->Uswap, space, model, part,geometry);
     exchanger = field->U; /* preserve the address of U */
     field->U = field->Uswap; /* update flow field */
     field->Uswap = exchanger; /* regain the used space as new space */
 
-    LL(0, field->Uswap, field->U, space, model, part, 0.5 * dt);
+    LL(X, field->Uswap, field->U, space, model, part, 0.5 * dt);
     BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
     exchanger = field->U; /* preserve the address of U */
     field->U = field->Uswap; /* update flow field */
     field->Uswap = exchanger; /* regain the used space as new space */
 
-    LL(0, field->Uswap, field->U, space, model, part, 0.5 * dt);
+    LL(X, field->Uswap, field->U, space, model, part, 0.5 * dt);
     BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
     exchanger = field->U; /* preserve the address of U */
     field->U = field->Uswap; /* update flow field */
     field->Uswap = exchanger; /* regain the used space as new space */
 
-    LL(1, field->Uswap, field->U, space, model, part, 0.5 * dt);
+    LL(Y, field->Uswap, field->U, space, model, part, 0.5 * dt);
     BoundaryCondtionsAndTreatments(field->Uswap, space, model, part,geometry);
     exchanger = field->U; /* preserve the address of U */
     field->U = field->Uswap; /* update flow field */
     field->Uswap = exchanger; /* regain the used space as new space */
 
-    LL(2, field->Uswap, field->U, space, model, part, 0.5 * dt);
+    LL(Z, field->Uswap, field->U, space, model, part, 0.5 * dt);
     BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
     exchanger = field->U; /* preserve the address of U */
     field->U = field->Uswap; /* update flow field */
@@ -161,16 +163,21 @@ static int AlgebraicOperatorSplitting(Field *field, const Space *space, const Mo
 /*
  * Spatial operator computation.
  * LLU = (I + dt*L)U; LL = {LLs}; s = 0, 1, 2 for x, y, z, respectively.
+ * Strategy for general coding: use s as spatial identifier, use general
+ * algorithms and function pointers to unify the function and code for each
+ * value of s, that is, for each spatial dimension. If a function is too
+ * difficult to do a general code, then code functions for each spatial 
+ * dimension individually.
  */
-static int LL(const int s, Real *U, const Real *Un, const Space *space, const Model *model,
-        const Partition *part, const Real dt)
+static int LL(const int s, Real *U, const Real *Un, const Space *space,
+        const Model *model, const Partition *part, const Real dt)
 {
     Real Fhat[DIMU] = {0.0}; /* reconstructed convective flux vector */
     Real Fhath[DIMU] = {0.0}; /* reconstructed convective flux vector at neighbour */
     Real gradG[DIMU] = {0.0}; /* spatial gradient of diffusive flux vector */
+    const int h[DIMS][DIMS] = {{-1, 0, 0}, {0, -1, 0}, {0, 0, -1}}; /* neighbour index offset */
+    const Real r[DIMS] = {dt * space->ddx, dt * space->ddy, dt * space->ddz};
     int idx = 0; /* linear array index math variable */
-    const Real r[3] = {dt * space->ddx, dt * space->ddy, dt * space->ddz};
-    const int h[3][3] = {{-1, 0, 0}, {0, -1, 0}, {0, 0, -1}}; /* neighbour index offset */
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
@@ -179,7 +186,7 @@ static int LL(const int s, Real *U, const Real *Un, const Space *space, const Mo
                     continue;
                 }
                 ReconstructedConvectiveFlux(s, Fhat, r[s], k, j, i, Un, space, model);
-                ReconstructedConvectiveFlux(s, Fhath, r[s], k + h[s][2], j + h[s][1], i + h[s][0], Un, space, model);
+                ReconstructedConvectiveFlux(s, Fhath, r[s], k + h[s][Z], j + h[s][Y], i + h[s][X], Un, space, model);
                 DiffusiveFluxGradient(s, gradG, k, j, i, Un, space, model);
                 idx = idx * DIMU; /* change idx to field variable */
                 for (int dim = 0; dim < DIMU; ++dim) {
@@ -194,11 +201,11 @@ static int ReconstructedConvectiveFlux(const int s, Real Fhat[], const Real r,
         const int k, const int j, const int i,
         const Real *U, const Space *space, const Model *model)
 {
-    ConvectiveFluxReconstructor ReconstructFlux[2] = {
+    ConvectiveFluxReconstructor ReconstructConvectiveFlux[2] = {
         TVD,
         TVD
     };
-    ReconstructFlux[0](s, Fhat, r, k, j, i, U, space, model);
+    ReconstructConvectiveFlux[0](s, Fhat, r, k, j, i, U, space, model);
     return 0;
 }
 /*
@@ -218,102 +225,49 @@ static int DiffusiveFluxGradient(const int s, Real gradG[],
 {
     Real Gl[DIMU] = {0.0}; /* diffusive flux vector at left */
     Real Gr[DIMU] = {0.0}; /* diffusive flux vector at right */
-    Real d = 0; /* reciprocal of differencing distance */
+    DiffusiveFluxComputer ComputeDiffusiveFlux[DIMS] = {
+        ComputeDiffusiveFluxX,
+        ComputeDiffusiveFluxY,
+        ComputeDiffusiveFluxZ
+    };
+    Real dL[DIMS] = {space->ddx, space->ddy, space->ddz}; /* reciprocal of differencing distance */
+    Real dCoe = 0;
     /* default is central scheme */
-    int hl[3][3] = {{-1, 0, 0}, {0, -1, 0}, {0, 0, -1}};
-    int hr[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
-    if (space->ng == hl) { /* if left at boundary */
-        ++hl;
+    int hl[DIMS][DIMS] = {{-1, 0, 0}, {0, -1, 0}, {0, 0, -1}}; /* left offset */
+    int hr[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* right offset */
+    if (0 == (k + hl[s][Z] - space->ng) * (j + hl[s][Y] - space->ng) * 
+            (i + hl[s][X] - space->ng)) { /* if left at boundary, no offset */
+        hl[s][Z] = 0;
+        hl[s][Y] = 0;
+        hl[s][X] = 0;
     }
-    if ((space->nz + space->ng - 1) == hr) { /* if right at boundary */
-        --hr;
+    if (0 == (k + hr[s][Z] - space->ng - space->nz + 1) * (j + hr[s][Y] - space->ng - space->ny + 1) * 
+            (i + hr[s][X] - space->ng - space->nx + 1)) { /* if right at boundary, no offset */
+        hr[s][Z] = 0;
+        hr[s][Y] = 0;
+        hr[s][X] = 0;
     }
     /* check ghost */
-    const int idxl = IndexMath(hl, j, i, space);
-    const int idxr = IndexMath(hr, j, i, space);
-    if (OFFSET <= space->nodeFlag[idxl]) {
-        ++hl;
+    const int idxl = IndexMath(k + hl[s][Z], j + hl[s][Y], i + hl[s][X], space);
+    const int idxr = IndexMath(k + hr[s][Z], j + hr[s][Y], i + hr[s][X], space);
+    if (OFFSET <= space->nodeFlag[idxl]) { /* if left is ghost, no offset */
+        hl[s][Z] = 0;
+        hl[s][Y] = 0;
+        hl[s][X] = 0;
     }
-    if (OFFSET <= space->nodeFlag[idxr]) {
-        --hr;
+    if (OFFSET <= space->nodeFlag[idxr]) { /* if right is ghost, no offset */
+        hr[s][Z] = 0;
+        hr[s][Y] = 0;
+        hr[s][X] = 0;
     }
-    if (0 != (hr - hl)) { /* only do calculation when needed */
-        h = space->ddz / (hr - hl);
-        ComputeDiffusiveFluxZ(hG, hl, j, i, U, space, model);
-        ComputeDiffusiveFluxZ(Gh, hr, j, i, U, space, model);
-    }
-    for (int row = 0; row < DIMU; ++row) {
-        gradG[row] = h * (Gh[row] - hG[row]);
-    }
-    return 0;
-}
-static int ComputeDiffusiveFluxGradientY(
-        Real gradG[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
-{
-    Real hG[DIMU] = {0.0}; /* diffusive flux vector */
-    Real Gh[DIMU] = {0.0}; /* diffusive flux vector */
-    Real h = 0; /* reciprocal of differencing distance */
-    /* default is central scheme */
-    int hl = j - 1;
-    int hr = j + 1;
-    if (space->ng == hl) { /* if left at boundary */
-        ++hl;
-    }
-    if ((space->ny + space->ng - 1) == hr) { /* if right at boundary */
-        --hr;
-    }
-    /* check ghost */
-    const int idxl = IndexMath(k, hl, i, space);
-    const int idxr = IndexMath(k, hr, i, space);
-    if (OFFSET <= space->nodeFlag[idxl]) {
-        ++hl;
-    }
-    if (OFFSET <= space->nodeFlag[idxr]) {
-        --hr;
-    }
-    if (0 != (hr - hl)) { /* only do calculation when needed */
-        h = space->ddy / (hr - hl);
-        ComputeDiffusiveFluxY(hG, k, hl, i, U, space, model);
-        ComputeDiffusiveFluxY(Gh, k, hr, i, U, space, model);
+    dCoe = hr[s][Z] - hl[s][Z] + hr[s][Y] - hl[s][Y] + hr[s][X] - hr[s][X];
+    if (0 != dCoe) { /* only do calculation when offset exists */
+        dL[s] = dL[s] / dCoe;
+        ComputeDiffusiveFlux[s](Gl, k + hl[s][Z], j + hl[s][Y], i + hl[s][X], U, space, model);
+        ComputeDiffusiveFlux[s](Gr, k + hr[s][Z], j + hr[s][Y], i + hr[s][X], U, space, model);
     }
     for (int row = 0; row < DIMU; ++row) {
-        gradG[row] = h * (Gh[row] - hG[row]);
-    }
-    return 0;
-}
-static int ComputeDiffusiveFluxGradientX(
-        Real gradG[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
-{
-    Real hG[DIMU] = {0.0}; /* diffusive flux vector */
-    Real Gh[DIMU] = {0.0}; /* diffusive flux vector */
-    Real h = 0; /* reciprocal of differencing distance */
-    /* default is central scheme */
-    int hl = i - 1;
-    int hr = i + 1;
-    if (space->ng == hl) { /* if left at boundary */
-        ++hl;
-    }
-    if ((space->nx + space->ng - 1) == hr) { /* if right at boundary */
-        --hr;
-    }
-    /* check ghost */
-    const int idxl = IndexMath(k, j, hl, space);
-    const int idxr = IndexMath(k, j, hr, space);
-    if (OFFSET <= space->nodeFlag[idxl]) {
-        ++hl;
-    }
-    if (OFFSET <= space->nodeFlag[idxr]) {
-        --hr;
-    }
-    if (0 != (hr - hl)) { /* only do calculation when needed */
-        h = space->ddx / (hr - hl);
-        ComputeDiffusiveFluxX(hG, k, j, hl, U, space, model);
-        ComputeDiffusiveFluxX(Gh, k, j, hr, U, space, model);
-    }
-    for (int row = 0; row < DIMU; ++row) {
-        gradG[row] = h * (Gh[row] - hG[row]);
+        gradG[row] = dL[s] * (Gr[row] - Gl[row]);
     }
     return 0;
 }
