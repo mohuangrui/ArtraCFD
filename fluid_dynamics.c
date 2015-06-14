@@ -19,30 +19,29 @@
 #include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
+ * Function pointers
+ ****************************************************************************/
+/*
+ * Function pointers are useful for implementing a form of polymorphism.
+ * They are mainly used to reduce or avoid switch statement. Pointers to
+ * functions can get rather messy. Declaring a typedel to a function pointer
+ * generally clarifies the code.
+ */
+typedef int (*ConvectiveFluxReconstructor)(const int, Real [], const Real, const int,
+        const int, const int, const Real *, const Space *, const Model *);
+/****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
 static int RungeKutta(Field *, const Space *, const Model *, const Partition *,
         const Geometry *, const Real);
 static int AlgebraicOperatorSplitting(Field *, const Space *, const Model *, 
         const Partition *, const Geometry *, const Real);
-static int LLz(Real *, const Real *, const Space *, const Model *,
+static int LL(const int, Real *, const Real *, const Space *, const Model *,
         const Partition *, const Real);
-static int LLy(Real *, const Real *, const Space *, const Model *,
-        const Partition *, const Real);
-static int LLx(Real *, const Real *, const Space *, const Model *,
-        const Partition *, const Real);
-static int ComputeReconstructedConvectiveFluxZ(Real [], const int, const int,
-        const int, const Real *, const Space *, const Model *, const Real);
-static int ComputeReconstructedConvectiveFluxY(Real [], const int, const int,
-        const int, const Real *, const Space *, const Model *, const Real);
-static int ComputeReconstructedConvectiveFluxX(Real [], const int, const int,
-        const int, const Real *, const Space *, const Model *, const Real);
-static int ComputeDiffusiveFluxGradientZ(Real [], const int, const int, const int, 
-        const Real *, const Space *, const Model *);
-static int ComputeDiffusiveFluxGradientY(Real [], const int, const int, const int, 
-        const Real *, const Space *, const Model *);
-static int ComputeDiffusiveFluxGradientX(Real [], const int, const int, const int, 
-        const Real *, const Space *, const Model *);
+static int ReconstructedConvectiveFlux(const int, Real [], const Real, const int,
+        const int, const int, const Real *, const Space *, const Model *);
+static int DiffusiveFluxGradient(const int, Real [], const int, const int,
+        const int, const Real *, const Space *, const Model *);
 static int ComputeDiffusiveFluxZ(Real [], const int, const int, const int, 
         const Real *, const Space *, const Model *);
 static int ComputeDiffusiveFluxY(Real [], const int, const int, const int, 
@@ -80,8 +79,7 @@ static int RungeKutta(Field *field, const Space *space, const Model *model,
         field->Un[idx] = field->U[idx];
     }
     /*
-     * Then solve LLU = (I + dt*L)U by algebraic operator splitting, updated data 
-     * will be stored in the same storage space of inputed data.
+     * Then solve LLU = (I + dt*L)U.
      */
     AlgebraicOperatorSplitting(field, space, model, part, geometry, dt);
     /*
@@ -123,51 +121,56 @@ static int AlgebraicOperatorSplitting(Field *field, const Space *space, const Mo
      * update, then the rational way is to exchange the address value that
      * their pointer point to rather than values of data entries.
      */
-    LLz(field->Uswap, field->U, space, model, part, 0.5 * dt);
+    LL(2, field->Uswap, field->U, space, model, part, 0.5 * dt);
     BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
     exchanger = field->U; /* preserve the address of U */
     field->U = field->Uswap; /* update flow field */
     field->Uswap = exchanger; /* regain the used space as new space */
 
-    LLy(field->Uswap, field->U, space, model, part, 0.5 * dt);
+    LL(1, field->Uswap, field->U, space, model, part, 0.5 * dt);
     BoundaryCondtionsAndTreatments(field->Uswap, space, model, part,geometry);
     exchanger = field->U; /* preserve the address of U */
     field->U = field->Uswap; /* update flow field */
     field->Uswap = exchanger; /* regain the used space as new space */
 
-    LLx(field->Uswap, field->U, space, model, part, 0.5 * dt);
+    LL(0, field->Uswap, field->U, space, model, part, 0.5 * dt);
     BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
     exchanger = field->U; /* preserve the address of U */
     field->U = field->Uswap; /* update flow field */
     field->Uswap = exchanger; /* regain the used space as new space */
 
-    LLx(field->Uswap, field->U, space, model, part, 0.5 * dt);
+    LL(0, field->Uswap, field->U, space, model, part, 0.5 * dt);
     BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
     exchanger = field->U; /* preserve the address of U */
     field->U = field->Uswap; /* update flow field */
     field->Uswap = exchanger; /* regain the used space as new space */
 
-    LLy(field->Uswap, field->U, space, model, part, 0.5 * dt);
+    LL(1, field->Uswap, field->U, space, model, part, 0.5 * dt);
     BoundaryCondtionsAndTreatments(field->Uswap, space, model, part,geometry);
     exchanger = field->U; /* preserve the address of U */
     field->U = field->Uswap; /* update flow field */
     field->Uswap = exchanger; /* regain the used space as new space */
 
-    LLz(field->Uswap, field->U, space, model, part, 0.5 * dt);
+    LL(2, field->Uswap, field->U, space, model, part, 0.5 * dt);
     BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
     exchanger = field->U; /* preserve the address of U */
     field->U = field->Uswap; /* update flow field */
     field->Uswap = exchanger; /* regain the used space as new space */
     return 0;
 }
-static int LLz(Real *U, const Real *Un, const Space *space, const Model *model,
+/*
+ * Spatial operator computation.
+ * LLU = (I + dt*L)U; LL = {LLs}; s = 0, 1, 2 for x, y, z, respectively.
+ */
+static int LL(const int s, Real *U, const Real *Un, const Space *space, const Model *model,
         const Partition *part, const Real dt)
 {
     Real Fhat[DIMU] = {0.0}; /* reconstructed convective flux vector */
     Real Fhath[DIMU] = {0.0}; /* reconstructed convective flux vector at neighbour */
     Real gradG[DIMU] = {0.0}; /* spatial gradient of diffusive flux vector */
     int idx = 0; /* linear array index math variable */
-    const Real r = dt * space->ddz;
+    const Real r[3] = {dt * space->ddx, dt * space->ddy, dt * space->ddz};
+    const int h[3][3] = {{-1, 0, 0}, {0, -1, 0}, {0, 0, -1}}; /* neighbour index offset */
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
@@ -175,88 +178,27 @@ static int LLz(Real *U, const Real *Un, const Space *space, const Model *model,
                 if (FLUID != space->nodeFlag[idx]) { /* it's not a fluid */
                     continue;
                 }
-                ComputeReconstructedConvectiveFluxZ(Fhat, k, j, i, Un, space, model, dt);
-                ComputeReconstructedConvectiveFluxZ(Fhath, k - 1, j, i, Un, space, model, dt);
-                ComputeDiffusiveFluxGradientZ(gradG, k, j, i, Un, space, model);
+                ReconstructedConvectiveFlux(s, Fhat, r[s], k, j, i, Un, space, model);
+                ReconstructedConvectiveFlux(s, Fhath, r[s], k + h[s][2], j + h[s][1], i + h[s][0], Un, space, model);
+                DiffusiveFluxGradient(s, gradG, k, j, i, Un, space, model);
                 idx = idx * DIMU; /* change idx to field variable */
                 for (int dim = 0; dim < DIMU; ++dim) {
-                    U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
+                    U[idx+dim] = Un[idx+dim] - r[s] * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
                 }
             }
         }
     }
     return 0;
 }
-static int LLy(Real *U, const Real *Un, const Space *space, const Model *model,
-        const Partition *part, const Real dt)
+static int ReconstructedConvectiveFlux(const int s, Real Fhat[], const Real r,
+        const int k, const int j, const int i,
+        const Real *U, const Space *space, const Model *model)
 {
-    Real Fhat[DIMU] = {0.0}; /* reconstructed convective flux vector */
-    Real Fhath[DIMU] = {0.0}; /* reconstructed convective flux vector at neighbour */
-    Real gradG[DIMU] = {0.0}; /* spatial gradient of diffusive flux vector */
-    int idx = 0; /* linear array index math variable */
-    const Real r = dt * space->ddy;
-    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = IndexMath(k, j, i, space);
-                if (FLUID != space->nodeFlag[idx]) { /* it's not a fluid */
-                    continue;
-                }
-                ComputeReconstructedConvectiveFluxY(Fhat, k, j, i, Un, space, model, dt);
-                ComputeReconstructedConvectiveFluxY(Fhath, k, j - 1, i, Un, space, model, dt);
-                ComputeDiffusiveFluxGradientY(gradG, k, j, i, Un, space, model);
-                idx = idx * DIMU; /* change idx to field variable */
-                for (int dim = 0; dim < DIMU; ++dim) {
-                    U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
-                }
-            }
-        }
-    }
-    return 0;
-}
-static int LLx(Real *U, const Real *Un, const Space *space, const Model *model,
-        const Partition *part, const Real dt)
-{
-    Real Fhat[DIMU] = {0.0}; /* reconstructed convective flux vector */
-    Real Fhath[DIMU] = {0.0}; /* reconstructed convective flux vector at neighbour */
-    Real gradG[DIMU] = {0.0}; /* spatial gradient of diffusive flux vector */
-    int idx = 0; /* linear array index math variable */
-    const Real r = dt * space->ddx;
-    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = IndexMath(k, j, i, space);
-                if (FLUID != space->nodeFlag[idx]) { /* it's not a fluid */
-                    continue;
-                }
-                ComputeReconstructedConvectiveFluxX(Fhat, k, j, i, Un, space, model, dt);
-                ComputeReconstructedConvectiveFluxX(Fhath, k, j, i - 1, Un, space, model, dt);
-                ComputeDiffusiveFluxGradientX(gradG, k, j, i, Un, space, model);
-                idx = idx * DIMU; /* change idx to field variable */
-                for (int dim = 0; dim < DIMU; ++dim) {
-                    U[idx+dim] = Un[idx+dim] - r * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
-                }
-            }
-        }
-    }
-    return 0;
-}
-static int ComputeReconstructedConvectiveFluxZ(Real Fhat[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model, const Real dt)
-{
-    TVDFluxZ(Fhat, k, j, i, U, space, model, dt);
-    return 0;
-}
-static int ComputeReconstructedConvectiveFluxY(Real Fhat[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model, const Real dt)
-{
-    TVDFluxY(Fhat, k, j, i, U, space, model, dt);
-    return 0;
-}
-static int ComputeReconstructedConvectiveFluxX(Real Fhat[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model, const Real dt)
-{
-    TVDFluxX(Fhat, k, j, i, U, space, model, dt);
+    ConvectiveFluxReconstructor ReconstructFlux[2] = {
+        TVD,
+        TVD
+    };
+    ReconstructFlux[0](s, Fhat, r, k, j, i, U, space, model);
     return 0;
 }
 /*
@@ -270,16 +212,16 @@ static int ComputeReconstructedConvectiveFluxX(Real Fhat[], const int k, const i
  * difference scheme can't be applied because of lacking stencil. Thus,
  * they also need to be identified and modified.
  */
-static int ComputeDiffusiveFluxGradientZ(
-        Real gradG[], const int k, const int j, const int i, 
+static int DiffusiveFluxGradient(const int s, Real gradG[],
+        const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
 {
-    Real hG[DIMU] = {0.0}; /* diffusive flux vector */
-    Real Gh[DIMU] = {0.0}; /* diffusive flux vector */
-    Real h = 0; /* reciprocal of differencing distance */
+    Real Gl[DIMU] = {0.0}; /* diffusive flux vector at left */
+    Real Gr[DIMU] = {0.0}; /* diffusive flux vector at right */
+    Real d = 0; /* reciprocal of differencing distance */
     /* default is central scheme */
-    int hl = k - 1;
-    int hr = k + 1;
+    int hl[3][3] = {{-1, 0, 0}, {0, -1, 0}, {0, 0, -1}};
+    int hr[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
     if (space->ng == hl) { /* if left at boundary */
         ++hl;
     }
