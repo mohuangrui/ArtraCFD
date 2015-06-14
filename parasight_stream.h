@@ -55,7 +55,7 @@ extern int WriteComputedDataParasight(const Real * U, const Space *,
  *      Load computed data from output files which are written in Parasight
  *      format.
  */
-extern int LoadComputedDataParasight(Real *U, const Space *, Time *, const Model *,
+extern int ReadComputedDataParasight(Real *U, const Space *, Time *, const Model *,
         const Partition *);
 #endif
 /* a good practice: end file with a newline */

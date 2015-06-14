@@ -45,7 +45,7 @@ extern int WriteComputedData(const Real * U, const Space *, const Time *,
  *      Load computed data from output files which are written in specific
  *      format.
  */
-extern int LoadComputedData(Real *U, const Space *, Time *, const Model *,
+extern int ReadComputedData(Real *U, const Space *, Time *, const Model *,
         const Partition *);
 #endif
 /* a good practice: end file with a newline */

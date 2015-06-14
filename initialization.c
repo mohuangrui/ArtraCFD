@@ -225,9 +225,9 @@ static int RestartInitializer(Real *U, const Space *space, Time *time,
 {
     ShowInformation("  Restart run initializing...");
     /*
-     * Load data from Ensight restart files.
+     * Load data from restart files.
      */
-    LoadComputedData(U, space, time, model, part);
+    ReadComputedData(U, space, time, model, part);
     /*
      * Boundary conditions and treatments to obtain an entire initialized field
      */

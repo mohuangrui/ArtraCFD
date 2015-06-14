@@ -20,16 +20,16 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int LoadParasightCaseFile(Time *, EnsightSet *);
-static int LoadParasightVariableFile(Real *U, const Space *, const Model *,
+static int ReadParasightCaseFile(Time *, EnsightSet *);
+static int ReadParasightVariableFile(Real *U, const Space *, const Model *,
         const Partition *, EnsightSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
 /*
- * Load necessary flow information from computed data
+ * Read necessary flow information from computed data
  */
-int LoadComputedDataParasight(Real *U, const Space *space, Time *time,
+int ReadComputedDataParasight(Real *U, const Space *space, Time *time,
         const Model *model, const Partition *part)
 {
     EnsightSet enSet = { /* initialize Parasight environment */
@@ -37,11 +37,11 @@ int LoadComputedDataParasight(Real *U, const Space *space, Time *time,
         .fileName = {'\0'}, /* data file name */
         .stringData = {'\0'}, /* string data recorder */
     };
-    LoadParasightCaseFile(time, &enSet);
-    LoadParasightVariableFile(U, space, model, part, &enSet);
+    ReadParasightCaseFile(time, &enSet);
+    ReadParasightVariableFile(U, space, model, part, &enSet);
     return 0;
 }
-static int LoadParasightCaseFile(Time *time, EnsightSet *enSet)
+static int ReadParasightCaseFile(Time *time, EnsightSet *enSet)
 {
     FILE *filePointer = NULL;
     filePointer = fopen("restart.case", "r");
@@ -80,7 +80,7 @@ static int LoadParasightCaseFile(Time *time, EnsightSet *enSet)
     snprintf(enSet->baseName, sizeof(EnsightString), "%s", enSet->fileName); 
     return 0;
 }
-static int LoadParasightVariableFile(Real *U, const Space *space, const Model *model,
+static int ReadParasightVariableFile(Real *U, const Space *space, const Model *model,
         const Partition *part, EnsightSet *enSet)
 {
     FILE *filePointer = NULL;

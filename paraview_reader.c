@@ -20,13 +20,13 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int LoadParaviewDataFile(Time *, ParaviewSet *);
-static int LoadParaviewVariableFile(Real *U, const Space *, const Model *,
+static int ReadParaviewDataFile(Time *, ParaviewSet *);
+static int ReadParaviewVariableFile(Real *U, const Space *, const Model *,
         const Partition *, ParaviewSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int LoadComputedDataParaview(Real *U, const Space *space, Time *time,
+int ReadComputedDataParaview(Real *U, const Space *space, Time *time,
         const Model *model, const Partition *part)
 {
     ParaviewSet paraSet = { /* initialize ParaviewSet environment */
@@ -35,11 +35,11 @@ int LoadComputedDataParaview(Real *U, const Space *space, Time *time,
         .floatType = "Float32", /* paraview data type */
         .byteOrder = "LittleEndian" /* byte order of data */
     };
-    LoadParaviewDataFile(time, &paraSet);
-    LoadParaviewVariableFile(U, space, model, part, &paraSet);
+    ReadParaviewDataFile(time, &paraSet);
+    ReadParaviewVariableFile(U, space, model, part, &paraSet);
     return 0;
 }
-static int LoadParaviewDataFile(Time *time, ParaviewSet *paraSet)
+static int ReadParaviewDataFile(Time *time, ParaviewSet *paraSet)
 {
     FILE *filePointer = NULL;
     filePointer = fopen("restart.pvd", "r");
@@ -79,7 +79,7 @@ static int LoadParaviewDataFile(Time *time, ParaviewSet *paraSet)
     snprintf(paraSet->baseName, sizeof(ParaviewString), "%s", paraSet->fileName); 
     return 0;
 }
-static int LoadParaviewVariableFile(Real *U, const Space *space, const Model *model,
+static int ReadParaviewVariableFile(Real *U, const Space *space, const Model *model,
         const Partition *part, ParaviewSet *paraSet)
 {
     FILE *filePointer = NULL;

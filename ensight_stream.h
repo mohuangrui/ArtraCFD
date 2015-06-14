@@ -45,7 +45,7 @@ extern int WriteComputedDataEnsight(const Real *U, const Space *,
  *      Load computed data from output files which are written in Ensight
  *      format.
  */
-extern int LoadComputedDataEnsight(Real *U, const Space *, Time *,
+extern int ReadComputedDataEnsight(Real *U, const Space *, Time *,
         const Model *, const Partition *);
 #endif
 /* a good practice: end file with a newline */

@@ -44,7 +44,7 @@ int WriteComputedData(const Real *U, const Space *space, const Time *time,
     WriteData[time->dataStreamer](U, space, time, model, part);
     return 0;
 }
-int LoadComputedData(Real *U, const Space *space, Time *time,
+int ReadComputedData(Real *U, const Space *space, Time *time,
         const Model *model, const Partition *part)
 {
     DataReader ReadData[3] = {
