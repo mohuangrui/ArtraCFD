@@ -34,9 +34,9 @@ typedef int (*DiffusiveFluxComputer)(Real [], const int, const int, const int,
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int RungeKutta(Field *, const Space *, const Model *, const Partition *,
-        const Geometry *, const Real);
-static int AlgebraicOperatorSplitting(Field *, const Space *, const Model *, 
+static int DifferentialOperatorSplitting(Field *, const Space *, const Model *,
+        const Partition *, const Geometry *, const Real);
+static int RungeKuttaLL(const int, Field *, const Space *, const Model *,
         const Partition *, const Geometry *, const Real);
 static int LL(const int, Real *, const Real *, const Space *, const Model *,
         const Partition *, const Real);
@@ -66,12 +66,24 @@ static int DiffusiveFluxX(Real [], const int, const int, const int,
 int FluidDynamics(Field *field, const Space *space, const Model *model, 
         const Partition *part, const Geometry *geometry, const Real dt)
 {
-    RungeKutta(field, space, model, part, geometry, dt);
+    DifferentialOperatorSplitting(field, space, model, part, geometry, dt);
     return 0;
 }
-static int RungeKutta(Field *field, const Space *space, const Model *model,
+static int DifferentialOperatorSplitting(Field *field, const Space *space, const Model *model,
         const Partition *part, const Geometry *geometry, const Real dt)
 {
+    RungeKuttaLL(Z, field, space, model, part, geometry, 0.5 * dt);
+    RungeKuttaLL(Y, field, space, model, part, geometry, 0.5 * dt);
+    RungeKuttaLL(X, field, space, model, part, geometry, 0.5 * dt);
+    RungeKuttaLL(X, field, space, model, part, geometry, 0.5 * dt);
+    RungeKuttaLL(Y, field, space, model, part, geometry, 0.5 * dt);
+    RungeKuttaLL(Z, field, space, model, part, geometry, 0.5 * dt);
+    return 0;
+}
+static int RungeKuttaLL(const int s, Field *field, const Space *space, const Model *model,
+        const Partition *part, const Geometry *geometry, const Real dt)
+{
+    Real *exchanger = field->U;
     /*
      * First, save the full value of current field, since this value is required
      * for the calculation of field data at intermediate stage as well as n+1.
@@ -84,11 +96,25 @@ static int RungeKutta(Field *field, const Space *space, const Model *model,
     /*
      * Then solve LLU = (I + dt*L)U.
      */
-    AlgebraicOperatorSplitting(field, space, model, part, geometry, dt);
+    /*
+     * When exchange a large bunch of data between two storage space, such as
+     * arrays, if there is no new data generation but just data exchange and 
+     * update, then the rational way is to exchange the address value that
+     * their pointer point to rather than values of data entries.
+     */
+    LL(s, field->Uswap, field->U, space, model, part, dt);
+    BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
+    exchanger = field->U; /* preserve the address of U */
+    field->U = field->Uswap; /* update flow field */
+    field->Uswap = exchanger; /* regain the used space as new space */
     /*
      * Now solve the LLU = (I + dt*L)U based on updated field for another time step.
      */
-    AlgebraicOperatorSplitting(field, space, model, part, geometry, dt);
+    LL(s, field->Uswap, field->U, space, model, part, dt);
+    BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
+    exchanger = field->U; /* preserve the address of U */
+    field->U = field->Uswap; /* update flow field */
+    field->Uswap = exchanger; /* regain the used space as new space */
     /*
      * Calculate the intermediate stage based on the newest updated data and
      * the original field data which is stored at first. No new storage space
@@ -103,7 +129,11 @@ static int RungeKutta(Field *field, const Space *space, const Model *model,
     /*
      * Now solve LLU = (I + dt*L)U based on the intermediate field.
      */
-    AlgebraicOperatorSplitting(field, space, model, part, geometry, dt);
+    LL(s, field->Uswap, field->U, space, model, part, dt);
+    BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
+    exchanger = field->U; /* preserve the address of U */
+    field->U = field->Uswap; /* update flow field */
+    field->Uswap = exchanger; /* regain the used space as new space */
     /*
      * Calculate field data at n+1
      */
@@ -112,53 +142,6 @@ static int RungeKutta(Field *field, const Space *space, const Model *model,
     for (int idx = 0; idx < (space->nMax * DIMU); ++idx) {
         field->U[idx] = coeAA * field->Un[idx] + coeBB * field->U[idx];
     }
-    return 0;
-}
-static int AlgebraicOperatorSplitting(Field *field, const Space *space, const Model *model,
-        const Partition *part, const Geometry *geometry, const Real dt)
-{
-    Real *exchanger = field->U;
-    /*
-     * When exchange a large bunch of data between two storage space, such as
-     * arrays, if there is no new data generation but just data exchange and 
-     * update, then the rational way is to exchange the address value that
-     * their pointer point to rather than values of data entries.
-     */
-    LL(Z, field->Uswap, field->U, space, model, part, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
-    exchanger = field->U; /* preserve the address of U */
-    field->U = field->Uswap; /* update flow field */
-    field->Uswap = exchanger; /* regain the used space as new space */
-
-    LL(Y, field->Uswap, field->U, space, model, part, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(field->Uswap, space, model, part,geometry);
-    exchanger = field->U; /* preserve the address of U */
-    field->U = field->Uswap; /* update flow field */
-    field->Uswap = exchanger; /* regain the used space as new space */
-
-    LL(X, field->Uswap, field->U, space, model, part, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
-    exchanger = field->U; /* preserve the address of U */
-    field->U = field->Uswap; /* update flow field */
-    field->Uswap = exchanger; /* regain the used space as new space */
-
-    LL(X, field->Uswap, field->U, space, model, part, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
-    exchanger = field->U; /* preserve the address of U */
-    field->U = field->Uswap; /* update flow field */
-    field->Uswap = exchanger; /* regain the used space as new space */
-
-    LL(Y, field->Uswap, field->U, space, model, part, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(field->Uswap, space, model, part,geometry);
-    exchanger = field->U; /* preserve the address of U */
-    field->U = field->Uswap; /* update flow field */
-    field->Uswap = exchanger; /* regain the used space as new space */
-
-    LL(Z, field->Uswap, field->U, space, model, part, 0.5 * dt);
-    BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
-    exchanger = field->U; /* preserve the address of U */
-    field->U = field->Uswap; /* update flow field */
-    field->Uswap = exchanger; /* regain the used space as new space */
     return 0;
 }
 /*
