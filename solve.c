@@ -37,7 +37,7 @@ static Real ComputeTimeStep(const Real *U, const Space *, const Time *,
 int Solve(Field *field, Space *space, Time *time, const Model *model,
         const Partition *part, Geometry *geometry)
 {
-    InitializeField(field->U, space, time, model, part, geometry);
+    InitializeField(field, space, time, model, part, geometry);
     SolutionEvolution(field, space, time, model, part, geometry);
     return 0;
 }

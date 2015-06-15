@@ -31,7 +31,7 @@
  *      non restart -- initialize by specified data.
  *      restart -- initialize by restart data.
  */
-extern int InitializeField(Real *U, const Space *, Time *, const Model *model,
+extern int InitializeField(Field *, const Space *, Time *, const Model *model,
         const Partition *, const Geometry *);
 #endif
 /* a good practice: end file with a newline */

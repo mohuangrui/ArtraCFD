@@ -35,17 +35,21 @@ static int RestartInitializer(Real *U, const Space *, Time *, const Model *,
  * This function initializes the entire field. Initialization will be 
  * done differently determined by the restart status.
  */
-int InitializeField(Real *U, const Space *space, Time *time, const Model *model,
+int InitializeField(Field *field, const Space *space, Time *time, const Model *model,
         const Partition *part, const Geometry *geometry)
 {
     ShowInformation("Initializing...");
     if (0 == time->restart) { /* non restart */
-        NonRestartInitializer(U, space, model, part, geometry);
+        NonRestartInitializer(field->U, space, model, part, geometry);
         /* if this is a first run, output initial data */
-        WriteComputedData(U, space, time, model, part);
+        WriteComputedData(field->U, space, time, model, part);
         WriteGeometryData(time, geometry);
     } else {
-        RestartInitializer(U, space, time, model, part, geometry);
+        RestartInitializer(field->U, space, time, model, part, geometry);
+    }
+    /* initialize auxiliary swap field, no need for Un since it's a mirror of U */
+    for (int idx = 0; idx < (space->nMax * DIMU); ++idx) {
+        field->Uswap[idx] = 0;
     }
     ShowInformation("Session End");
     return 0;
