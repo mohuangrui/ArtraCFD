@@ -53,15 +53,13 @@ int EigenvaluesAndDecompositionCoefficientAlpha(const int s,
     EigenvaluesAndEigenvectorSpaceLComputer ComputeEigenvaluesAndEigenvectorSpaceL[DIMS] = {
         EigenvaluesAndEigenvectorSpaceLX,
         EigenvaluesAndEigenvectorSpaceLY,
-        EigenvaluesAndEigenvectorSpaceLZ
-    };
+        EigenvaluesAndEigenvectorSpaceLZ};
     const Real deltaU[DIMU] = {
         U[idxh] - U[idx],
         U[idxh+1] - U[idx+1],
         U[idxh+2] - U[idx+2],
         U[idxh+3] - U[idx+3],
-        U[idxh+4] - U[idx+4]
-    };
+        U[idxh+4] - U[idx+4]};
     ComputeEigenvaluesAndEigenvectorSpaceL[s](lambda, L, k, j, i, U, space, model);
     CalculateAlpha(alpha, L, deltaU);
     return 0;

@@ -61,6 +61,7 @@ static int DiffusiveFluxX(Real [], const int, const int, const int,
  *   b)  - temporal discretization
  *       - algebraic operator splitting
  *       - spatial discretization (convective fluxes + diffusive fluxes)
+ *   a) shows more accurate results according to tests on Riemann problems.
  */
 int FluidDynamics(Field *field, const Space *space, const Model *model, 
         const Partition *part, const Geometry *geometry, const Real dt)
@@ -228,8 +229,7 @@ static int DiffusiveFluxGradient(const int s, Real gradG[],
     DiffusiveFluxComputer ComputeDiffusiveFlux[DIMS] = {
         DiffusiveFluxX,
         DiffusiveFluxY,
-        DiffusiveFluxZ
-    };
+        DiffusiveFluxZ};
     Real dL[DIMS] = {space->ddx, space->ddy, space->ddz}; /* reciprocal of differencing distance */
     Real dCoe = 0;
     /* default is central scheme */

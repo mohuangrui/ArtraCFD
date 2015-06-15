@@ -39,8 +39,7 @@ int WriteComputedData(const Real *U, const Space *space, const Time *time,
     DataWriter WriteData[3] = {
         WriteComputedDataParaview,
         WriteComputedDataEnsight,
-        WriteComputedDataParasight
-    };
+        WriteComputedDataParasight};
     WriteData[time->dataStreamer](U, space, time, model, part);
     return 0;
 }
@@ -50,8 +49,7 @@ int ReadComputedData(Real *U, const Space *space, Time *time,
     DataReader ReadData[3] = {
         ReadComputedDataParaview,
         ReadComputedDataEnsight,
-        ReadComputedDataParasight
-    };
+        ReadComputedDataParasight};
     ReadData[time->dataStreamer](U, space, time, model, part);
     return 0;
 }

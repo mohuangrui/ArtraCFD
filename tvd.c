@@ -62,13 +62,11 @@ int TVD(const int s, Real Fhat[], const Real r, const int k, const int j,
     ConvectiveFluxComputer ComputeConvectiveFlux[DIMS] = {
         ConvectiveFluxX,
         ConvectiveFluxY,
-        ConvectiveFluxZ
-    };
+        ConvectiveFluxZ};
     EigenvectorSpaceRComputer ComputeEigenvectorSpaceR[DIMS] = {
         EigenvectorSpaceRX,
         EigenvectorSpaceRY,
-        EigenvectorSpaceRZ
-    };
+        EigenvectorSpaceRZ};
     ComputeConvectiveFlux[s](F, k, j, i, U, space, model);
     ComputeConvectiveFlux[s](Fh, k + h[s][Z], j + h[s][Y], i + h[s][X], U, space, model);
     ComputeEigenvectorSpaceR[s](R, k, j, i, U, space, model);
