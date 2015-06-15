@@ -50,8 +50,8 @@ static Real minmod(const Real, const Real);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int TVDFluxZ(Real Fhat[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model, const Real dt)
+int TVD(const int s, Real Fhat[], const Real r, const int k, const int j,
+        const int i, const Real *U, const Space *space, const Model *model)
 {
     Real F[DIMU] = {0.0}; /* flux at current node */
     Real Fh[DIMU] = {0.0}; /* flux at neighbour */
@@ -260,9 +260,7 @@ static int CalculateSigma(
     }
     return 0;
 }
-static int ComputeNumericalDissipationDelta(
-        Real delta[], const int idx, const int idxh,
-        const Real *U, const Model *model)
+static int ComputeNumericalDissipationDelta(Real delta[], const int idx, const int idxh, const Real *U, const Model *model)
 {
     Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
     /* numerical dissipation in [0.05, 0.25], 0.125 is recommended */

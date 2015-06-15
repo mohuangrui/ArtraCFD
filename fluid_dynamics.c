@@ -19,7 +19,7 @@
 #include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
- * Function pointers
+ * Function Pointers
  ****************************************************************************/
 /*
  * Function pointers are useful for implementing a form of polymorphism.
@@ -44,11 +44,11 @@ static int ReconstructedConvectiveFlux(const int, Real [], const Real, const int
         const int, const int, const Real *, const Space *, const Model *);
 static int DiffusiveFluxGradient(const int, Real [], const int, const int,
         const int, const Real *, const Space *, const Model *);
-static int ComputeDiffusiveFluxZ(Real [], const int, const int, const int, 
+static int DiffusiveFluxZ(Real [], const int, const int, const int, 
         const Real *, const Space *, const Model *);
-static int ComputeDiffusiveFluxY(Real [], const int, const int, const int, 
+static int DiffusiveFluxY(Real [], const int, const int, const int, 
         const Real *, const Space *, const Model *);
-static int ComputeDiffusiveFluxX(Real [], const int, const int, const int, 
+static int DiffusiveFluxX(Real [], const int, const int, const int, 
         const Real *, const Space *, const Model *);
 /****************************************************************************
  * Function definitions
@@ -226,9 +226,9 @@ static int DiffusiveFluxGradient(const int s, Real gradG[],
     Real Gl[DIMU] = {0.0}; /* diffusive flux vector at left */
     Real Gr[DIMU] = {0.0}; /* diffusive flux vector at right */
     DiffusiveFluxComputer ComputeDiffusiveFlux[DIMS] = {
-        ComputeDiffusiveFluxX,
-        ComputeDiffusiveFluxY,
-        ComputeDiffusiveFluxZ
+        DiffusiveFluxX,
+        DiffusiveFluxY,
+        DiffusiveFluxZ
     };
     Real dL[DIMS] = {space->ddx, space->ddy, space->ddz}; /* reciprocal of differencing distance */
     Real dCoe = 0;
@@ -271,8 +271,7 @@ static int DiffusiveFluxGradient(const int s, Real gradG[],
     }
     return 0;
 }
-static int ComputeDiffusiveFluxZ(
-        Real G[], const int k, const int j, const int i, 
+static int DiffusiveFluxZ(Real G[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
 {
     const int idx = IndexMath(k, j, i, space) * DIMU;
@@ -339,8 +338,7 @@ static int ComputeDiffusiveFluxZ(
     G[4] = heatK * dT_dz + u * G[1] + v * G[2] + w * G[3];
     return 0;
 }
-static int ComputeDiffusiveFluxY(
-        Real G[], const int k, const int j, const int i, 
+static int DiffusiveFluxY(Real G[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
 {
     const int idx = IndexMath(k, j, i, space) * DIMU;
@@ -407,8 +405,7 @@ static int ComputeDiffusiveFluxY(
     G[4] = heatK * dT_dy + u * G[1] + v * G[2] + w * G[3];
     return 0;
 }
-static int ComputeDiffusiveFluxX(
-        Real G[], const int k, const int j, const int i, 
+static int DiffusiveFluxX(Real G[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
 {
     const int idx = IndexMath(k, j, i, space) * DIMU;

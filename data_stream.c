@@ -18,7 +18,7 @@
 #include "ensight_stream.h"
 #include "commons.h"
 /****************************************************************************
- * Function pointers
+ * Function Pointers
  ****************************************************************************/
 /*
  * Function pointers are useful for implementing a form of polymorphism.
