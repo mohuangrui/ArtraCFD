@@ -27,7 +27,7 @@
  * functions can get rather messy. Declaring a typedel to a function pointer
  * generally clarifies the code.
  */
-typedef int (*ConvectiveFluxReconstructor)(const int, Real [], const Real, const int,
+typedef int (*NumericalFluxReconstructor)(const int, Real [], const Real, const int,
         const int, const int, const Real *, const Space *, const Model *);
 typedef int (*DiffusiveFluxComputer)(Real [], const int, const int, const int, 
         const Real *, const Space *, const Model *);
@@ -40,7 +40,7 @@ static int RungeKutta(const int, Field *, const Space *, const Model *,
         const Partition *, const Geometry *, const Real);
 static int LL(const int, Real *, const Real *, const Space *, const Model *,
         const Partition *, const Real);
-static int ReconstructedConvectiveFlux(const int, Real [], const Real, const int,
+static int NumericalConvectiveFlux(const int, Real [], const Real, const int,
         const int, const int, const Real *, const Space *, const Model *);
 static int DiffusiveFluxGradient(const int, Real [], const int, const int,
         const int, const Real *, const Space *, const Model *);
@@ -156,8 +156,8 @@ static int RungeKutta(const int s, Field *field, const Space *space, const Model
 static int LL(const int s, Real *U, const Real *Un, const Space *space,
         const Model *model, const Partition *part, const Real dt)
 {
-    Real Fhat[DIMU] = {0.0}; /* reconstructed convective flux vector */
-    Real Fhath[DIMU] = {0.0}; /* reconstructed convective flux vector at neighbour */
+    Real Fhat[DIMU] = {0.0}; /* reconstructed numerical convective flux vector */
+    Real Fhath[DIMU] = {0.0}; /* reconstructed numerical convective flux vector at neighbour */
     Real gradG[DIMU] = {0.0}; /* spatial gradient of diffusive flux vector */
     const int h[DIMS][DIMS] = {{-1, 0, 0}, {0, -1, 0}, {0, 0, -1}}; /* neighbour index offset */
     const Real r[DIMS] = {dt * space->ddx, dt * space->ddy, dt * space->ddz};
@@ -169,11 +169,12 @@ static int LL(const int s, Real *U, const Real *Un, const Space *space,
                 if (FLUID != space->nodeFlag[idx]) { /* it's not a fluid */
                     continue;
                 }
-                ReconstructedConvectiveFlux(s, Fhat, r[s], k, j, i, Un, space, model);
-                ReconstructedConvectiveFlux(s, Fhath, r[s], k + h[s][Z], j + h[s][Y], i + h[s][X], Un, space, model);
+                NumericalConvectiveFlux(s, Fhat, r[s], k, j, i, Un, space, model);
+                NumericalConvectiveFlux(s, Fhath, r[s], k + h[s][Z], j + h[s][Y], i + h[s][X], Un, space, model);
                 DiffusiveFluxGradient(s, gradG, k, j, i, Un, space, model);
                 idx = idx * DIMU; /* change idx to field variable */
-                for (int dim = 0; dim < DIMU; ++dim) {
+                for (int dim = 0; dim < DIMU; ++dim) { 
+                    /* conservative discretization for convective flux */
                     U[idx+dim] = Un[idx+dim] - r[s] * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
                 }
             }
@@ -181,15 +182,15 @@ static int LL(const int s, Real *U, const Real *Un, const Space *space,
     }
     return 0;
 }
-static int ReconstructedConvectiveFlux(const int s, Real Fhat[], const Real r,
+static int NumericalConvectiveFlux(const int s, Real Fhat[], const Real r,
         const int k, const int j, const int i,
         const Real *U, const Space *space, const Model *model)
 {
-    ConvectiveFluxReconstructor ReconstructConvectiveFlux[2] = {
+    NumericalFluxReconstructor ReconstructNumericalFlux[2] = {
         TVD,
         TVD
     };
-    ReconstructConvectiveFlux[0](s, Fhat, r, k, j, i, U, space, model);
+    ReconstructNumericalFlux[0](s, Fhat, r, k, j, i, U, space, model);
     return 0;
 }
 /*
