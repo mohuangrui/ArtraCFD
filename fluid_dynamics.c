@@ -173,7 +173,7 @@ static int LL(const int s, Real *U, const Real *Un, const Space *space,
                 NumericalConvectiveFlux(s, Fhath, r[s], k + h[s][Z], j + h[s][Y], i + h[s][X], Un, space, model);
                 DiffusiveFluxGradient(s, gradG, k, j, i, Un, space, model);
                 idx = idx * DIMU; /* change idx to field variable */
-                for (int dim = 0; dim < DIMU; ++dim) { 
+                for (int dim = 0; dim < DIMU; ++dim) {
                     /* conservative discretization for convective flux */
                     U[idx+dim] = Un[idx+dim] - r[s] * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
                 }
