@@ -36,7 +36,7 @@ typedef int (*DiffusiveFluxComputer)(Real [], const int, const int, const int,
  ****************************************************************************/
 static int DifferentialOperatorSplitting(Field *, const Space *, const Model *,
         const Partition *, const Geometry *, const Real);
-static int RungeKuttaLL(const int, Field *, const Space *, const Model *,
+static int RungeKutta(const int, Field *, const Space *, const Model *,
         const Partition *, const Geometry *, const Real);
 static int LL(const int, Real *, const Real *, const Space *, const Model *,
         const Partition *, const Real);
@@ -72,15 +72,15 @@ int FluidDynamics(Field *field, const Space *space, const Model *model,
 static int DifferentialOperatorSplitting(Field *field, const Space *space, const Model *model,
         const Partition *part, const Geometry *geometry, const Real dt)
 {
-    RungeKuttaLL(Z, field, space, model, part, geometry, 0.5 * dt);
-    RungeKuttaLL(Y, field, space, model, part, geometry, 0.5 * dt);
-    RungeKuttaLL(X, field, space, model, part, geometry, 0.5 * dt);
-    RungeKuttaLL(X, field, space, model, part, geometry, 0.5 * dt);
-    RungeKuttaLL(Y, field, space, model, part, geometry, 0.5 * dt);
-    RungeKuttaLL(Z, field, space, model, part, geometry, 0.5 * dt);
+    RungeKutta(Z, field, space, model, part, geometry, 0.5 * dt);
+    RungeKutta(Y, field, space, model, part, geometry, 0.5 * dt);
+    RungeKutta(X, field, space, model, part, geometry, 0.5 * dt);
+    RungeKutta(X, field, space, model, part, geometry, 0.5 * dt);
+    RungeKutta(Y, field, space, model, part, geometry, 0.5 * dt);
+    RungeKutta(Z, field, space, model, part, geometry, 0.5 * dt);
     return 0;
 }
-static int RungeKuttaLL(const int s, Field *field, const Space *space, const Model *model,
+static int RungeKutta(const int s, Field *field, const Space *space, const Model *model,
         const Partition *part, const Geometry *geometry, const Real dt)
 {
     Real *exchanger = field->U;
