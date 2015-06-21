@@ -42,6 +42,10 @@ static int EigenvaluesAndEigenvectorSpaceLX(
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
+static int AssembleDecomposedFluxZ(Real F[], const Real lambda[], const Real Uo[], const Real gamma)
+{
+    F[0] = (Uo[0] / (2 * gamma)) * (lambda[0] + 2 * (gamma - 1) * lambda[1] + lambda[4]);
+}
 int EigenvaluesAndDecompositionCoefficientAlpha(const int s,
         Real lambda[], Real alpha[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
