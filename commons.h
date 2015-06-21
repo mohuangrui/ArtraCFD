@@ -461,7 +461,7 @@ typedef enum {
     /* dimension of conservative vector, maximum independent primitives */
     DIMU = 5, /* rho, rho_u, rho_v, rho_w, rho_eT */
     /* dimension of primitive vector, contents depend on specific situations */
-    DIMUo = 6,  /* rho, u, v, w, [p, hT], [T, c, others] */
+    DIMUo = 6,  /* rho, u, v, w, [p, hT, h], [T, c, others] */
     /* 
      * offset of node flag range
      * >= offset:           interior ghost node, 

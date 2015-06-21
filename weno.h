@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_TVD_H_ /* if this is the first definition */
-#define ARTRACFD_TVD_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_WENO_H_ /* if this is the first definition */
+#define ARTRACFD_WENO_H_ /* a unique marker for this header file */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -24,14 +24,14 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * TVD
+ * WENO
  *
  * Function
- *      Compute reconstructed convective fluxes by TVD scheme.
+ *      Compute reconstructed convective fluxes by WENO scheme.
  * Parameters
  *      Fhat -- reconstructed convective fluxes.
  */
-int TVD(const int s, Real Fhat[], const Real r, const int k, const int j,
+int WENO(const int s, Real Fhat[], const Real r, const int k, const int j,
         const int i, const Real *U, const Space *, const Model *);
 #endif
 /* a good practice: end file with a newline */

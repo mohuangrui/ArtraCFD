@@ -42,9 +42,32 @@ static int EigenvaluesAndEigenvectorSpaceLX(
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-static int AssembleDecomposedFluxZ(Real F[], const Real lambda[], const Real Uo[], const Real gamma)
+static int AssembledFluxZ(Real F[], const Real lambda[], const Real Uo[], const Real gamma)
 {
-    F[0] = (Uo[0] / (2 * gamma)) * (lambda[0] + 2 * (gamma - 1) * lambda[1] + lambda[4]);
+    F[0] = Uo[0] * (lambda[0] + 2 * (gamma - 1) * lambda[3] + lambda[4]);
+    F[1] = F[0] * Uo[1];
+    F[2] = F[0] * Uo[2];
+    F[3] = F[0] * Uo[3] + Uo[0] * Uo[5] * (lambda[4] - lambda[0]);
+    F[4] = F[0] * 0.5 * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]) +
+        Uo[0] * (Uo[4] * (lambda[0] + lambda[4]) + Uo[3] * Uo[5] * (lambda[4] - lambda[0]));
+}
+static int AssembledFluxY(Real F[], const Real lambda[], const Real Uo[], const Real gamma)
+{
+    F[0] = Uo[0] * (lambda[0] + 2 * (gamma - 1) * lambda[2] + lambda[4]);
+    F[1] = F[0] * Uo[1];
+    F[2] = F[0] * Uo[2] + Uo[0] * Uo[5] * (lambda[4] - lambda[0]);
+    F[3] = F[0] * Uo[3];
+    F[4] = F[0] * 0.5 * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]) +
+        Uo[0] * (Uo[4] * (lambda[0] + lambda[4]) + Uo[2] * Uo[5] * (lambda[4] - lambda[0]));
+}
+static int AssembledFluxX(Real F[], const Real lambda[], const Real Uo[], const Real gamma)
+{
+    F[0] = Uo[0] * (lambda[0] + 2 * (gamma - 1) * lambda[1] + lambda[4]);
+    F[1] = F[0] * Uo[1] + Uo[0] * Uo[5] * (lambda[4] - lambda[0]);
+    F[2] = F[0] * Uo[2];
+    F[3] = F[0] * Uo[3];
+    F[4] = F[0] * 0.5 * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]) +
+        Uo[0] * (Uo[4] * (lambda[0] + lambda[4]) + Uo[1] * Uo[5] * (lambda[4] - lambda[0]));
 }
 int EigenvaluesAndDecompositionCoefficientAlpha(const int s,
         Real lambda[], Real alpha[], const int k, const int j, const int i, 
