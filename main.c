@@ -73,6 +73,7 @@ int main(int argc, char *argv[])
         .probe = {{0.0}}
     };
     Model theModel = {
+        .scheme = 0,
         .refMa = 0.0,
         .refMu = 0.0,
         .refPr = 0.0,

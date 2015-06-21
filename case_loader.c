@@ -115,14 +115,22 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model, Partition
             sscanf(currentLine, "%d", &(time->dataStreamer)); 
             continue;
         }
+        if (0 == strncmp(currentLine, "numerical begin", sizeof currentLine)) {
+            ++entryCount;
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, "%d", &(model->scheme)); 
+            if (0 == model->scheme) { /* if TVD */
+                fgets(currentLine, sizeof currentLine, filePointer);
+                sscanf(currentLine, formatI, &(model->delta)); 
+            }
+            continue;
+        }
         if (0 == strncmp(currentLine, "fluid begin", sizeof currentLine)) {
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatI, &(model->refPr)); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatI, &(model->refMu)); 
-            fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(model->delta)); 
             continue;
         }
         if (0 == strncmp(currentLine, "reference begin", sizeof currentLine)) {
@@ -257,7 +265,7 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model, Partition
     /*
      * Check missing information section in configuration
      */
-    if (11 != entryCount) {
+    if (12 != entryCount) {
         FatalError("missing or repeated necessary information section");
     }
     return 0;
@@ -455,12 +463,20 @@ static int WriteVerifyData(const Space *space, const Time *time, const Model *mo
     fprintf(filePointer, "data streamer id: %d\n", time->dataStreamer); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#                        >> Numerical Method <<\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "spatial scheme: %.6g\n", model->scheme);
+    if (0 == model->scheme) {
+        fprintf(filePointer, "Harten's numerical dissipation coefficient: %.6g\n", model->delta); 
+    }
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                    >> Fluid and Flow Properties <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "Prandtl number: %.6g\n", model->refPr); 
     fprintf(filePointer, "modify coefficient of dynamic viscosity: %.6g\n", model->refMu); 
-    fprintf(filePointer, "Harten's numerical dissipation coefficient: %.6g\n", model->delta); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                        >> Reference Values  <<\n");
@@ -561,8 +577,12 @@ static int CheckCaseSettingData(const Space *space, const Time *time, const Mode
             || (0 >= time->numCFL ) || (1 > time->outputN)) {
         FatalError("wrong values in time section of case settings");
     }
+    /* numerical method */
+    if ((0 > model->scheme) || (1 < model->scheme) || (0 > model->delta)) {
+        FatalError("wrong values in numerical method of case settings");
+    }
     /* fluid and flow */
-    if ((0 >= model->refPr) || (0 > model->refMu) || (0 > model->delta)) {
+    if ((0 >= model->refPr) || (0 > model->refMu)) {
         FatalError("wrong values in fluid and flow section of case settings");
     }
     /* reference */

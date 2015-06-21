@@ -191,7 +191,7 @@ static int NumericalConvectiveFlux(const int s, Real Fhat[], const Real r,
         TVD,
         WENO
     };
-    ReconstructNumericalFlux[0](s, Fhat, r, k, j, i, U, space, model);
+    ReconstructNumericalFlux[model->scheme](s, Fhat, r, k, j, i, U, space, model);
     return 0;
 }
 /*
