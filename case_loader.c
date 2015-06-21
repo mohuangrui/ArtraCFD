@@ -466,7 +466,7 @@ static int WriteVerifyData(const Space *space, const Time *time, const Model *mo
     fprintf(filePointer, "#                        >> Numerical Method <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "spatial scheme: %.6g\n", model->scheme);
+    fprintf(filePointer, "spatial scheme: %d\n", model->scheme);
     if (0 == model->scheme) {
         fprintf(filePointer, "Harten's numerical dissipation coefficient: %.6g\n", model->delta); 
     }
