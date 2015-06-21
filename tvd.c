@@ -22,7 +22,7 @@
 /*
  * Function pointers are useful for implementing a form of polymorphism.
  * They are mainly used to reduce or avoid switch statement. Pointers to
- * functions can get rather messy. Declaring a typedel to a function pointer
+ * functions can get rather messy. Declaring a typedef to a function pointer
  * generally clarifies the code.
  */
 typedef int (*ConvectiveFluxComputer)(Real [], const int, const int, const int, 
@@ -58,7 +58,7 @@ int TVD(const int s, Real Fhat[], const Real r, const int k, const int j,
     Real Fh[DIMU] = {0.0}; /* flux at neighbour */
     Real R[DIMU][DIMU] = {{0.0}}; /* vector space {Rn} */
     Real Phi[DIMU] = {0.0}; /* flux projection or decomposition coefficients on vector space {Rn} */
-    const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* neighbour index offset */
+    const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
     ConvectiveFluxComputer ComputeConvectiveFlux[DIMS] = {
         ConvectiveFluxX,
         ConvectiveFluxY,
@@ -99,7 +99,7 @@ static int FluxDecompositionCoefficientPhi(
     Real lambda[DIMU] = {0.0}; /* eigenvalues */
     Real alpha[DIMU] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
     Real delta[DIMU] = {0.0}; /* numerical dissipation */
-    const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* neighbour index offset */
+    const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
     EigenvaluesAndDecompositionCoefficientAlpha(s, lambda, alpha, k, j, i, U, space, model);
     FunctionG(s, g, r, k, j, i, U, space, model);
     FunctionG(s, gh, r, k + h[s][Z], j + h[s][Y], i + h[s][X], U, space, model);
@@ -121,7 +121,7 @@ static int FunctionG(const int s, Real g[], const Real r, const int k, const int
     Real deltah[DIMU] = {0.0}; /* numerical dissipation */
     Real sigma[DIMU] = {0.0}; /* TVD function sigma */
     Real sigmah[DIMU] = {0.0}; /* TVD function sigma at neighbour */
-    const int h[DIMS][DIMS] = {{-1, 0, 0}, {0, -1, 0}, {0, 0, -1}}; /* neighbour index offset */
+    const int h[DIMS][DIMS] = {{-1, 0, 0}, {0, -1, 0}, {0, 0, -1}}; /* direction indicator */
     EigenvaluesAndDecompositionCoefficientAlpha(s, lambda, alpha, k, j, i, U, space, model);
     NumericalDissipationDelta(s, delta, k, j, i, U, space, model);
     CalculateSigma(sigma, lambda, delta, r);
@@ -159,7 +159,7 @@ static int NumericalDissipationDelta(const int s, Real delta[], const int k,
 {
     Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
     const int idx = IndexMath(k, j, i, space) * DIMU;
-    const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* neighbour index offset */
+    const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
     const int idxh = IndexMath(k + h[s][Z], j + h[s][Y], i + h[s][X], space) * DIMU;;
     /* numerical dissipation in [0.05, 0.25], 0.125 is recommended */
     ComputeRoeAverage(Uo, idx, idxh, U, model);

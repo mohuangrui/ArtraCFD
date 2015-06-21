@@ -25,7 +25,7 @@
 /*
  * Function pointers are useful for implementing a form of polymorphism.
  * They are mainly used to reduce or avoid switch statement. Pointers to
- * functions can get rather messy. Declaring a typedel to a function pointer
+ * functions can get rather messy. Declaring a typedef to a function pointer
  * generally clarifies the code.
  */
 typedef int (*NumericalFluxReconstructor)(const int, Real [], const Real, const int,
@@ -160,7 +160,7 @@ static int LL(const int s, Real *U, const Real *Un, const Space *space,
     Real Fhat[DIMU] = {0.0}; /* reconstructed numerical convective flux vector */
     Real Fhath[DIMU] = {0.0}; /* reconstructed numerical convective flux vector at neighbour */
     Real gradG[DIMU] = {0.0}; /* spatial gradient of diffusive flux vector */
-    const int h[DIMS][DIMS] = {{-1, 0, 0}, {0, -1, 0}, {0, 0, -1}}; /* neighbour index offset */
+    const int h[DIMS][DIMS] = {{-1, 0, 0}, {0, -1, 0}, {0, 0, -1}}; /* direction indicator */
     const Real r[DIMS] = {dt * space->ddx, dt * space->ddy, dt * space->ddz};
     int idx = 0; /* linear array index math variable */
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
@@ -189,7 +189,7 @@ static int NumericalConvectiveFlux(const int s, Real Fhat[], const Real r,
 {
     NumericalFluxReconstructor ReconstructNumericalFlux[2] = {
         TVD,
-        TVD
+        WENO
     };
     ReconstructNumericalFlux[0](s, Fhat, r, k, j, i, U, space, model);
     return 0;

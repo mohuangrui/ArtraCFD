@@ -23,7 +23,7 @@
 /*
  * Function pointers are useful for implementing a form of polymorphism.
  * They are mainly used to reduce or avoid switch statement. Pointers to
- * functions can get rather messy. Declaring a typedel to a function pointer
+ * functions can get rather messy. Declaring a typedef to a function pointer
  * generally clarifies the code.
  */
 typedef int (*DataWriter)(const Real *, const Space *, const Time *,

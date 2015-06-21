@@ -21,14 +21,18 @@
 /*
  * Function pointers are useful for implementing a form of polymorphism.
  * They are mainly used to reduce or avoid switch statement. Pointers to
- * functions can get rather messy. Declaring a typedel to a function pointer
+ * functions can get rather messy. Declaring a typedef to a function pointer
  * generally clarifies the code.
  */
 typedef int (*EigenvaluesAndEigenvectorSpaceLComputer)(Real [], Real [][DIMU],
         const int, const int, const int, const Real *, const Space *, const Model *);
+typedef int (*ConvectiveFluxAssembler)(Real [], const Real [], const Real [], const Real);
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
+static int AssembledFluxZ(Real [], const Real [], const Real [], const Real);
+static int AssembledFluxY(Real [], const Real [], const Real [], const Real);
+static int AssembledFluxX(Real [], const Real [], const Real [], const Real);
 static int CalculateAlpha(Real [], Real [][DIMU], const Real []);
 static int EigenvaluesAndEigenvectorSpaceLZ(
         Real [], Real [][DIMU], const int, const int, const int, 
@@ -42,6 +46,34 @@ static int EigenvaluesAndEigenvectorSpaceLX(
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
+int FluxVectorSplitting(const int s, Real Fplus[], Real Fminus[], const int k, 
+        const int j, const int i, const Real *U, const Space *space, const Model *model)
+{
+    Real Uo[DIMUo] = {0.0}; /* store primitive variables rho/2gamma, u, v, w, h, c */
+    PrimitiveByConservative(Uo, IndexMath(k, j, i, space) * DIMU, U, model);
+    Uo[5] = sqrt(model->gamma * Uo[4] / Uo[0]); /* the speed of sound */
+    Uo[4] = Uo[5] * Uo[5] / (model->gamma - 1.0); /* h */
+    Uo[0] = Uo[0] / (2 * model->gamma); /* rho/2gamma */
+    const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
+    Real lambda[DIMU] = {0.0}; /* eigenvalues */
+    Real lambdaPlus[DIMU] = {0.0}; /* positive part of eigenvalues */
+    Real lambdaMinus[DIMU] = {0.0}; /* negative part of  eigenvalues */
+    lambda[1] = h[s][Z] * Uo[3] + h[s][Y] * Uo[2] + h[s][X] * Uo[1];
+    lambda[2] = lambda[1];
+    lambda[3] = lambda[1];
+    lambda[0] = lambda[1] - Uo[5];
+    lambda[4] = lambda[1] + Uo[5];
+    for (int row = 0; row < DIMU; ++row) {
+        lambdaPlus[row] = 0.5 * (lambda[row] + fabs(lambda[row]));
+        lambdaMinus[row] = 0.5 * (lambda[row] - fabs(lambda[row]));
+    }
+    ConvectiveFluxAssembler AssembleConvectiveFlux[DIMS] = {
+        AssembledFluxX,
+        AssembledFluxY,
+        AssembledFluxZ};
+    AssembleConvectiveFlux[s](Fplus, lambdaPlus, Uo, model->gamma);
+    AssembleConvectiveFlux[s](Fminus, lambdaMinus, Uo, model->gamma);
+}
 static int AssembledFluxZ(Real F[], const Real lambda[], const Real Uo[], const Real gamma)
 {
     F[0] = Uo[0] * (lambda[0] + 2 * (gamma - 1) * lambda[3] + lambda[4]);
@@ -74,7 +106,7 @@ int EigenvaluesAndDecompositionCoefficientAlpha(const int s,
         const Real *U, const Space *space, const Model *model)
 {
     const int idx = IndexMath(k, j, i, space) * DIMU;
-    const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* neighbour index offset */
+    const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
     const int idxh = IndexMath(k + h[s][Z], j + h[s][Y], i + h[s][X], space) * DIMU;;
     Real L[DIMU][DIMU] = {{0.0}}; /* store left eigenvectors */
     EigenvaluesAndEigenvectorSpaceLComputer ComputeEigenvaluesAndEigenvectorSpaceL[DIMS] = {

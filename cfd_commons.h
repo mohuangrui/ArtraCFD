@@ -24,6 +24,11 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
+ * Flux vector splitting
+ */
+int FluxVectorSplitting(const int s, Real Fplus[], Real Fminus[], const int k, 
+        const int j, const int i, const Real *U, const Space *, const Model *);
+/*
  * Jacobian matrices, eigenvalues, and eigenvectors
  *
  * Function
