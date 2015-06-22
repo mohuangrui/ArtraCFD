@@ -163,6 +163,7 @@ static int IdentifySolidNodesAtNumericalBoundary(Space *space, const Partition *
                 for (int order = 2; order < space->ng + 2; ++order) { /* max search range should be ng + 1 */
                     if (0 == SearchFluidNodes(k, j, i, order, space)) {
                         space->nodeFlag[idx] = space->nodeFlag[idx] - geometry->totalN;
+                        break; /* exit search loop once identified successfully */
                     }
                 }
             }
