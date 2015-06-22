@@ -20,7 +20,7 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int NodeBasedMeshNumberRefine(Space *);
+static int NodeBasedMeshNumberRefine(Space *, const Model *);
 static int InitializeCFDParameters(Space *, Time *, Model *);
 /****************************************************************************
  * Function definitions
@@ -28,7 +28,7 @@ static int InitializeCFDParameters(Space *, Time *, Model *);
 int ComputeCFDParameters(Space *space, Time *time, Model *model)
 {
     ShowInformation("Computing parameters...");
-    NodeBasedMeshNumberRefine(space);
+    NodeBasedMeshNumberRefine(space, model);
     InitializeCFDParameters(space, time, model);
     ShowInformation("Session End");
     return 0;
@@ -67,8 +67,14 @@ int ComputeCFDParameters(Space *space, Time *time, Model *model)
  * That is, dimension collapse should be achieved by single cell 
  * with periodic boundary conditions;
  */
-static int NodeBasedMeshNumberRefine(Space *space)
+static int NodeBasedMeshNumberRefine(Space *space, const Model *model)
 {
+    /* set ghost layers according to numerical scheme */
+    if (0 == model->scheme) { /* TVD */
+        space->ng = 1;
+    } else { /* WENO */
+        space->ng = 2;
+    }
     /* check whether space collapsed */
     if (0 == (space->nz - 1) * (space->ny - 1) * (space->nx - 1)) {
         space->collapsed = 1;

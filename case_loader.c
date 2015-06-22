@@ -95,8 +95,6 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model, Partition
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d, %d, %d", 
                     &(space->nx), &(space->ny), &(space->nz)); 
-            fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%d", &(space->ng)); 
             continue;
         }
         if (0 == strncmp(currentLine, "time begin", sizeof currentLine)) {
@@ -449,7 +447,6 @@ static int WriteVerifyData(const Space *space, const Time *time, const Model *mo
     fprintf(filePointer, "domain xmin, ymin, zmin: %.6g, %.6g, %.6g\n", space->xMin, space->yMin, space->zMin); 
     fprintf(filePointer, "domain xmax, ymax, zmax: %.6g, %.6g, %.6g\n", space->xMax, space->yMax, space->zMax); 
     fprintf(filePointer, "x, y, z mesh number: %d, %d, %d\n", space->nx, space->ny, space->nz); 
-    fprintf(filePointer, "exterior ghost cell layers: %d\n", space->ng); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                          >> Time Domain <<\n");
@@ -568,8 +565,7 @@ static int CheckCaseSettingData(const Space *space, const Time *time, const Mode
             (0 >= (space->zMax - space->zMin))) {
         FatalError("wrong domian region values in case settings");
     }
-    if ((1 > space->nz) || (1 > space->ny) || (1 > space->nx)
-            || (1 > space->ng)) {
+    if ((1 > space->nz) || (1 > space->ny) || (1 > space->nx)) {
         FatalError("too small mesh values in case settings");
     }
     /* time */

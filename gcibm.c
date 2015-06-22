@@ -160,7 +160,7 @@ static int IdentifySolidNodesAtNumericalBoundary(Space *space, const Partition *
                 if (-OFFSET < space->nodeFlag[idx]) { /* it's not solid node */
                     continue;
                 }
-                for (int order = 2; order <= 2; ++order) { /* total ghost layers required */
+                for (int order = 2; order < space->ng + 2; ++order) { /* max search range should be ng + 1 */
                     if (0 == SearchFluidNodes(k, j, i, order, space)) {
                         space->nodeFlag[idx] = space->nodeFlag[idx] - geometry->totalN;
                     }
@@ -183,7 +183,6 @@ static int SearchFluidNodes(const int k, const int j, const int i,
     const int idxN = IndexMath(k, j + h, i, space);
     const int idxF = IndexMath(k - h, j, i, space);
     const int idxB = IndexMath(k + h, j, i, space);
-    /* caution: enough ghost layers are quired to avoid illegal index */
     return (space->nodeFlag[idxW] * space->nodeFlag[idxE] * 
             space->nodeFlag[idxS] * space->nodeFlag[idxN] * 
             space->nodeFlag[idxF] * space->nodeFlag[idxB]);
