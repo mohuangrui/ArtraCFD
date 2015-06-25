@@ -35,9 +35,9 @@ extern int EigenvalueLambda(const int s, Real lambda[], const Real Uo[]);
 extern int EigenvectorSpaceLZ(Real L[][DIMU], const Real Uo[], const Real gamma);
 extern int EigenvectorSpaceLY(Real L[][DIMU], const Real Uo[], const Real gamma);
 extern int EigenvectorSpaceLX(Real L[][DIMU], const Real Uo[], const Real gamma);
-extern int EigenvectorSpaceRZ(Real R[][DIMU], const Real Uo[], const Real gamma);
-extern int EigenvectorSpaceRY(Real R[][DIMU], const Real Uo[], const Real gamma);
-extern int EigenvectorSpaceRX(Real R[][DIMU], const Real Uo[], const Real gamma);
+extern int EigenvectorSpaceRZ(Real R[][DIMU], const Real Uo[]);
+extern int EigenvectorSpaceRY(Real R[][DIMU], const Real Uo[]);
+extern int EigenvectorSpaceRX(Real R[][DIMU], const Real Uo[]);
 /*
  * Roe average
  *

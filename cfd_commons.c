@@ -52,6 +52,7 @@ int EigenvalueLambda(const int s, Real lambda[], const Real Uo[])
     lambda[2] = Uo[s+1];
     lambda[3] = Uo[s+1];
     lambda[4] = Uo[s+1] + Uo[5];
+    return 0;
 }
 int EigenvectorSpaceLZ(Real L[][DIMU], const Real Uo[], const Real gamma)
 {
@@ -101,7 +102,7 @@ int EigenvectorSpaceLX(Real L[][DIMU], const Real Uo[], const Real gamma)
     L[4][0] = b * q - d * u;   L[4][1] = -b * u + d;     L[4][2] = -b * v;             L[4][3] = -b * w;             L[4][4] = b;
     return 0;
 }
-int EigenvectorSpaceRZ(Real R[][DIMU], const Real Uo[], const Real gamma)
+int EigenvectorSpaceRZ(Real R[][DIMU], const Real Uo[])
 {
     const Real u = Uo[1];
     const Real v = Uo[2];
@@ -116,7 +117,7 @@ int EigenvectorSpaceRZ(Real R[][DIMU], const Real Uo[], const Real gamma)
     R[4][0] = hT - w * c;  R[4][1] = u;  R[4][2] = v;  R[4][3] = w * w - q;  R[4][4] = hT + w * c;
     return 0;
 }
-int EigenvectorSpaceRY(Real R[][DIMU], const Real Uo[], const Real gamma)
+int EigenvectorSpaceRY(Real R[][DIMU], const Real Uo[])
 {
     const Real u = Uo[1];
     const Real v = Uo[2];
@@ -131,7 +132,7 @@ int EigenvectorSpaceRY(Real R[][DIMU], const Real Uo[], const Real gamma)
     R[4][0] = hT - v * c;  R[4][1] = u;  R[4][2] = v * v - q;  R[4][3] = w;  R[4][4] = hT + v * c;
     return 0;
 }
-int EigenvectorSpaceRX(Real R[][DIMU], const Real Uo[], const Real gamma)
+int EigenvectorSpaceRX(Real R[][DIMU], const Real Uo[])
 {
     const Real u = Uo[1];
     const Real v = Uo[2];

@@ -26,7 +26,7 @@
  * generally clarifies the code.
  */
 typedef int (*ConvectiveFluxComputer)(Real [], const int, const Real *, const Real);
-typedef int (*EigenvectorSpaceRComputer)(Real [][DIMU], const Real [], const Real);
+typedef int (*EigenvectorSpaceRComputer)(Real [][DIMU], const Real []);
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
@@ -68,7 +68,7 @@ int TVD(const int s, Real Fhat[], const Real r, const int k, const int j,
     ComputeConvectiveFlux[s](F, idx, U, model->gamma);
     ComputeConvectiveFlux[s](Fh, idxh, U, model->gamma);
     ComputeRoeAverage(Uo, idx, idxh, U, model->gamma);
-    ComputeEigenvectorSpaceR[s](R, Uo, model->gamma);
+    ComputeEigenvectorSpaceR[s](R, Uo);
     FluxDecompositionCoefficientPhi(s, Phi, r, k, j, i, U, space, model);
     CalculateReconstructedFlux(Fhat, F, Fh, R, Phi);
     return 0;
