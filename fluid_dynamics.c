@@ -30,8 +30,6 @@
  */
 typedef int (*NumericalFluxReconstructor)(const int, Real [], const Real, const int,
         const int, const int, const Real *, const Space *, const Model *);
-typedef int (*DiffusiveFluxComputer)(Real [], const int, const int, const int, 
-        const Real *, const Space *, const Model *);
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
@@ -45,12 +43,6 @@ static int NumericalConvectiveFlux(const int, Real [], const Real, const int,
         const int, const int, const Real *, const Space *, const Model *);
 static int DiffusiveFluxGradient(const int, Real [], const int, const int,
         const int, const Real *, const Space *, const Model *);
-static int DiffusiveFluxZ(Real [], const int, const int, const int, 
-        const Real *, const Space *, const Model *);
-static int DiffusiveFluxY(Real [], const int, const int, const int, 
-        const Real *, const Space *, const Model *);
-static int DiffusiveFluxX(Real [], const int, const int, const int, 
-        const Real *, const Space *, const Model *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -211,10 +203,6 @@ static int DiffusiveFluxGradient(const int s, Real gradG[],
 {
     Real Gl[DIMU] = {0.0}; /* diffusive flux vector at left */
     Real Gr[DIMU] = {0.0}; /* diffusive flux vector at right */
-    DiffusiveFluxComputer ComputeDiffusiveFlux[DIMS] = {
-        DiffusiveFluxX,
-        DiffusiveFluxY,
-        DiffusiveFluxZ};
     Real dL[DIMS] = {space->ddx, space->ddy, space->ddz}; /* reciprocal of differencing distance */
     Real dCoe = 0;
     /* default is central scheme */
@@ -248,213 +236,12 @@ static int DiffusiveFluxGradient(const int s, Real gradG[],
     dCoe = hr[s][Z] - hl[s][Z] + hr[s][Y] - hl[s][Y] + hr[s][X] - hr[s][X];
     if (0 != dCoe) { /* only do calculation when offset exists */
         dL[s] = dL[s] / dCoe;
-        ComputeDiffusiveFlux[s](Gl, k + hl[s][Z], j + hl[s][Y], i + hl[s][X], U, space, model);
-        ComputeDiffusiveFlux[s](Gr, k + hr[s][Z], j + hr[s][Y], i + hr[s][X], U, space, model);
+        DiffusiveFlux(s, Gl, k + hl[s][Z], j + hl[s][Y], i + hl[s][X], U, space, model);
+        DiffusiveFlux(s, Gr, k + hr[s][Z], j + hr[s][Y], i + hr[s][X], U, space, model);
     }
     for (int row = 0; row < DIMU; ++row) {
         gradG[row] = dL[s] * (Gr[row] - Gl[row]);
     }
-    return 0;
-}
-static int DiffusiveFluxZ(Real G[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
-{
-    const int idx = IndexMath(k, j, i, space) * DIMU;
-    const int idxW = IndexMath(k, j, i - 1, space) * DIMU;
-    const int idxE = IndexMath(k, j, i + 1, space) * DIMU;
-    const int idxS = IndexMath(k, j - 1, i, space) * DIMU;
-    const int idxN = IndexMath(k, j + 1, i, space) * DIMU;
-    const int idxF = IndexMath(k - 1, j, i, space) * DIMU;
-    const int idxB = IndexMath(k + 1, j, i, space) * DIMU;
-
-    /* calculate derivatives in z direction */
-    const Real rhoB = U[idxB];
-    const Real uB = U[idxB+1] / rhoB;
-    const Real vB = U[idxB+2] / rhoB;
-    const Real wB = U[idxB+3] / rhoB;
-    const Real eTB = U[idxB+4] / rhoB;
-    const Real TB = (eTB - 0.5 * (uB * uB + vB * vB + wB * wB)) / model->cv;
-
-    const Real rhoF = U[idxF];
-    const Real uF = U[idxF+1] / rhoF;
-    const Real vF = U[idxF+2] / rhoF;
-    const Real wF = U[idxF+3] / rhoF;
-    const Real eTF = U[idxF+4] / rhoF;
-    const Real TF = (eTF - 0.5 * (uF * uF + vF * vF + wF * wF)) / model->cv;
-
-    const Real du_dz = (uB - uF) * (0.5 * space->ddz);
-    const Real dv_dz = (vB - vF) * (0.5 * space->ddz);
-    const Real dw_dz = (wB - wF) * (0.5 * space->ddz);
-    const Real dT_dz = (TB - TF) * (0.5 * space->ddz);
-
-    /* calculate derivatives in y direction */
-    const Real vN = U[idxN+2] / U[idxN];
-    const Real wN = U[idxN+3] / U[idxN];
-    const Real vS = U[idxS+2] / U[idxS];
-    const Real wS = U[idxS+3] / U[idxS];
-    const Real dv_dy = (vN - vS) * (0.5 * space->ddy);
-    const Real dw_dy = (wN - wS) * (0.5 * space->ddy);
-
-    /* calculate derivatives in x direction */
-    const Real uE = U[idxE+1] / U[idxE];
-    const Real wE = U[idxE+3] / U[idxE];
-    const Real uW = U[idxW+1] / U[idxW];
-    const Real wW = U[idxW+3] / U[idxW];
-    const Real du_dx = (uE - uW) * (0.5 * space->ddx);
-    const Real dw_dx = (wE - wW) * (0.5 * space->ddx);
-
-    /* the primitive variables in current point */
-    const Real rho = U[idx];
-    const Real u = U[idx+1] / rho;
-    const Real v = U[idx+2] / rho;
-    const Real w = U[idx+3] / rho;
-    const Real eT = U[idx+4] / rho;
-    const Real T = (eT - 0.5 * (u * u + v * v + w * w)) / model->cv;
-
-    /* Calculate dynamic viscosity and heat conductivity */
-    const Real mu = model->refMu * 1.45e-6 * (pow(T * model->refTemperature, 1.5) / (T * model->refTemperature + 110));
-    const Real heatK = model->gamma * model->cv * mu / model->refPr;
-    const Real divV = du_dx + dv_dy + dw_dz;
-
-    G[0] = 0;
-    G[1] = mu * (dw_dx + du_dz);
-    G[2] = mu * (dw_dy + dv_dz);
-    G[3] = mu * (2.0 * dw_dz - (2.0/3.0) * divV);
-    G[4] = heatK * dT_dz + u * G[1] + v * G[2] + w * G[3];
-    return 0;
-}
-static int DiffusiveFluxY(Real G[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
-{
-    const int idx = IndexMath(k, j, i, space) * DIMU;
-    const int idxW = IndexMath(k, j, i - 1, space) * DIMU;
-    const int idxE = IndexMath(k, j, i + 1, space) * DIMU;
-    const int idxS = IndexMath(k, j - 1, i, space) * DIMU;
-    const int idxN = IndexMath(k, j + 1, i, space) * DIMU;
-    const int idxF = IndexMath(k - 1, j, i, space) * DIMU;
-    const int idxB = IndexMath(k + 1, j, i, space) * DIMU;
-
-    /* calculate derivatives in z direction */
-    const Real vB = U[idxB+2] / U[idxB];
-    const Real wB = U[idxB+3] / U[idxB];
-    const Real vF = U[idxF+2] / U[idxF];
-    const Real wF = U[idxF+3] / U[idxF];
-    const Real dv_dz = (vB - vF) * (0.5 * space->ddz);
-    const Real dw_dz = (wB - wF) * (0.5 * space->ddz);
-
-    /* calculate derivatives in y direction */
-    const Real rhoN = U[idxN];
-    const Real uN = U[idxN+1] / rhoN;
-    const Real vN = U[idxN+2] / rhoN;
-    const Real wN = U[idxN+3] / rhoN;
-    const Real eTN = U[idxN+4] / rhoN;
-    const Real TN = (eTN - 0.5 * (uN * uN + vN * vN + wN * wN)) / model->cv;
-
-    const Real rhoS = U[idxS];
-    const Real uS = U[idxS+1] / rhoS;
-    const Real vS = U[idxS+2] / rhoS;
-    const Real wS = U[idxS+3] / rhoS;
-    const Real eTS = U[idxS+4] / rhoS;
-    const Real TS = (eTS - 0.5 * (uS * uS + vS * vS + wS * wS)) / model->cv;
-
-    const Real du_dy = (uN - uS) * (0.5 * space->ddy);
-    const Real dv_dy = (vN - vS) * (0.5 * space->ddy);
-    const Real dw_dy = (wN - wS) * (0.5 * space->ddy);
-    const Real dT_dy = (TN - TS) * (0.5 * space->ddy);
-
-    /* calculate derivatives in x direction */
-    const Real uE = U[idxE+1] / U[idxE];
-    const Real vE = U[idxE+2] / U[idxE];
-    const Real uW = U[idxW+1] / U[idxW];
-    const Real vW = U[idxW+2] / U[idxW];
-    const Real du_dx = (uE - uW) * (0.5 * space->ddx);
-    const Real dv_dx = (vE - vW) * (0.5 * space->ddx);
-
-    /* the primitive variables in current point */
-    const Real rho = U[idx];
-    const Real u = U[idx+1] / rho;
-    const Real v = U[idx+2] / rho;
-    const Real w = U[idx+3] / rho;
-    const Real eT = U[idx+4] / rho;
-    const Real T = (eT - 0.5 * (u * u + v * v + w * w)) / model->cv;
-
-    /* Calculate dynamic viscosity and heat conductivity */
-    const Real mu = model->refMu * 1.45e-6 * (pow(T * model->refTemperature, 1.5) / (T * model->refTemperature + 110));
-    const Real heatK = model->gamma * model->cv * mu / model->refPr;
-    const Real divV = du_dx + dv_dy + dw_dz;
-
-    G[0] = 0;
-    G[1] = mu * (dv_dx + du_dy);
-    G[2] = mu * (2.0 * dv_dy - (2.0/3.0) * divV);
-    G[3] = mu * (dv_dz + dw_dy);
-    G[4] = heatK * dT_dy + u * G[1] + v * G[2] + w * G[3];
-    return 0;
-}
-static int DiffusiveFluxX(Real G[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
-{
-    const int idx = IndexMath(k, j, i, space) * DIMU;
-    const int idxW = IndexMath(k, j, i - 1, space) * DIMU;
-    const int idxE = IndexMath(k, j, i + 1, space) * DIMU;
-    const int idxS = IndexMath(k, j - 1, i, space) * DIMU;
-    const int idxN = IndexMath(k, j + 1, i, space) * DIMU;
-    const int idxF = IndexMath(k - 1, j, i, space) * DIMU;
-    const int idxB = IndexMath(k + 1, j, i, space) * DIMU;
-
-    /* calculate derivatives in z direction */
-    const Real uB = U[idxB+1] / U[idxB];
-    const Real uF = U[idxF+1] / U[idxF];
-    const Real wB = U[idxB+3] / U[idxB];
-    const Real wF = U[idxF+3] / U[idxF];
-    const Real du_dz = (uB - uF) * (0.5 * space->ddz);
-    const Real dw_dz = (wB - wF) * (0.5 * space->ddz);
-
-    /* calculate derivatives in y direction */
-    const Real uN = U[idxN+1] / U[idxN];
-    const Real uS = U[idxS+1] / U[idxS];
-    const Real vN = U[idxN+2] / U[idxN];
-    const Real vS = U[idxS+2] / U[idxS];
-    const Real du_dy = (uN - uS) * (0.5 * space->ddy);
-    const Real dv_dy = (vN - vS) * (0.5 * space->ddy);
-
-    /* calculate derivatives in x direction */
-    const Real rhoE = U[idxE];
-    const Real uE = U[idxE+1] / rhoE;
-    const Real vE = U[idxE+2] / rhoE;
-    const Real wE = U[idxE+3] / rhoE;
-    const Real eTE = U[idxE+4] / rhoE;
-    const Real TE = (eTE - 0.5 * (uE * uE + vE * vE + wE * wE)) / model->cv;
-
-    const Real rhoW = U[idxW];
-    const Real uW = U[idxW+1] / rhoW;
-    const Real vW = U[idxW+2] / rhoW;
-    const Real wW = U[idxW+3] / rhoW;
-    const Real eTW = U[idxW+4] / rhoW;
-    const Real TW = (eTW - 0.5 * (uW * uW + vW * vW + wW * wW)) / model->cv;
-
-    const Real du_dx = (uE - uW) * (0.5 * space->ddx);
-    const Real dv_dx = (vE - vW) * (0.5 * space->ddx);
-    const Real dw_dx = (wE - wW) * (0.5 * space->ddx);
-    const Real dT_dx = (TE - TW) * (0.5 * space->ddx);
-
-    /* the primitive variables in current point */
-    const Real rho = U[idx];
-    const Real u = U[idx+1] / rho;
-    const Real v = U[idx+2] / rho;
-    const Real w = U[idx+3] / rho;
-    const Real eT = U[idx+4] / rho;
-    const Real T = (eT - 0.5 * (u * u + v * v + w * w)) / model->cv;
-
-    /* Calculate dynamic viscosity and heat conductivity */
-    const Real mu = model->refMu * 1.45e-6 * (pow(T * model->refTemperature, 1.5) / (T * model->refTemperature + 110));
-    const Real heatK = model->gamma * model->cv * mu / model->refPr;
-    const Real divV = du_dx + dv_dy + dw_dz;
-
-    G[0] = 0;
-    G[1] = mu * (2.0 * du_dx - (2.0/3.0) * divV);
-    G[2] = mu * (du_dy + dv_dx);
-    G[3] = mu * (du_dz + dw_dx);
-    G[4] = heatK * dT_dx + u * G[1] + v * G[2] + w * G[3];
     return 0;
 }
 /* a good practice: end file with a newline */

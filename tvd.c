@@ -25,8 +25,6 @@
  * functions can get rather messy. Declaring a typedef to a function pointer
  * generally clarifies the code.
  */
-typedef int (*ConvectiveFluxComputer)(Real [], const int, const Real *, const Real);
-typedef int (*EigenvectorSpaceRComputer)(Real [][DIMU], const Real []);
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
@@ -54,14 +52,6 @@ int TVD(const int s, Real Fhat[], const Real r, const int k, const int j,
     Real R[DIMU][DIMU] = {{0.0}}; /* vector space {Rn} */
     Real Phi[DIMU] = {0.0}; /* flux projection or decomposition coefficients on {Rn} */
     Real Uo[DIMUo] = {0.0}; /* Roe averaged rho, u, v, w, hT, c */
-    ConvectiveFluxComputer ComputeConvectiveFlux[DIMS] = {
-        ConvectiveFluxX,
-        ConvectiveFluxY,
-        ConvectiveFluxZ};
-    EigenvectorSpaceRComputer ComputeEigenvectorSpaceR[DIMS] = {
-        EigenvectorSpaceRX,
-        EigenvectorSpaceRY,
-        EigenvectorSpaceRZ};
     const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
     const int idx = IndexMath(k, j, i, space) * DIMU;
     const int idxh = IndexMath(k + h[s][Z], j + h[s][Y], i + h[s][X], space) * DIMU;
@@ -101,12 +91,6 @@ static int FluxDecompositionCoefficientPhi(const int s, Real Phi[], const Real r
     const int idx = IndexMath(k, j, i, space) * DIMU;
     const int idxh = IndexMath(k + h[s][Z], j + h[s][Y], i + h[s][X], space) * DIMU;
     ComputeRoeAverage(Uo, idx, idxh, U, model->gamma);
-    const Real deltaU[DIMU] = { /* U variation */
-        U[idxh] - U[idx],
-        U[idxh+1] - U[idx+1],
-        U[idxh+2] - U[idx+2],
-        U[idxh+3] - U[idx+3],
-        U[idxh+4] - U[idx+4]};
     EigenvalueLambda(s, lambda, Uo);
     DecompositionCoefficientAlpha(s, alpha, deltaU, Uo, model->gamma);
     FunctionG(s, g, r, k, j, i, U, space, model);

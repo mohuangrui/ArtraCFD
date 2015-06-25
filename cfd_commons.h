@@ -29,22 +29,18 @@
  * Function
  *      Compute eigenvalues and eigenvectors.
  */
-extern int DecompositionCoefficientAlpha(const int s, Real alpha[],
-        const Real deltaU[], const Real Uo[], const Real gamma);
+extern int DecompositionCoefficientAlpha(Real alpha[], Real L[][DIMU],
+        const int idx, const int idxh, const Real *U);
 extern int EigenvalueLambda(const int s, Real lambda[], const Real Uo[]);
-extern int EigenvectorSpaceLZ(Real L[][DIMU], const Real Uo[], const Real gamma);
-extern int EigenvectorSpaceLY(Real L[][DIMU], const Real Uo[], const Real gamma);
-extern int EigenvectorSpaceLX(Real L[][DIMU], const Real Uo[], const Real gamma);
-extern int EigenvectorSpaceRZ(Real R[][DIMU], const Real Uo[]);
-extern int EigenvectorSpaceRY(Real R[][DIMU], const Real Uo[]);
-extern int EigenvectorSpaceRX(Real R[][DIMU], const Real Uo[]);
+extern int EigenvectorSpaceL(const int s, Real L[][DIMU], const Real Uo[], const Real gamma);
+extern int EigenvectorSpaceR(const int s, Real R[][DIMU], const Real Uo[]);
 /*
  * Roe average
  *
  * Function
  *      Compute Roe averages.
  */
-int ComputeRoeAverage(Real Uo[], const int idx, const int idxh,
+extern int ComputeRoeAverage(Real Uo[], const int idx, const int idxh,
         const Real *U, const Real gamma);
 /*
  * Convective fluxes
@@ -52,9 +48,15 @@ int ComputeRoeAverage(Real Uo[], const int idx, const int idxh,
  * Function
  *      Compute convective fluxes.
  */
-extern int ConvectiveFluxZ(Real F[], const int idx, const Real *U, const Real gamma);
-extern int ConvectiveFluxY(Real F[], const int idx, const Real *U, const Real gamma);
-extern int ConvectiveFluxX(Real F[], const int idx, const Real *U, const Real gamma);
+extern int ConvectiveFlux(const int s, Real F[], const int idx, const Real *U, const Real gamma);
+/*
+ * Diffusive fluxes
+ *
+ * Function
+ *      Compute Diffusive fluxes.
+ */
+extern int DiffusiveFlux(const int s, Real G[], const int k, const int j, const int i, 
+        const Real *U, const Space *, const Model *);
 /*
  * Compute the values of primitive variable vector
  *
