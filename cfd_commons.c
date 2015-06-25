@@ -184,7 +184,7 @@ static int EigenvectorSpaceRX(Real R[][DIMU], const Real Uo[])
     R[4][0] = hT - u * c;  R[4][1] = u * u - q;  R[4][2] = v;  R[4][3] = w;  R[4][4] = hT + u * c;
     return 0;
 }
-int ComputeRoeAverage(Real Uo[], const int idx, const int idxh, const Real *U, const Real gamma)
+int RoeAverage(Real Uo[], const int idx, const int idxh, const Real *U, const Real gamma)
 {
     const Real rho = U[idx];
     const Real u = U[idx+1] / rho;

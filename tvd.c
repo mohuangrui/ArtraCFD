@@ -17,15 +17,6 @@
 #include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
- * Function Pointers
- ****************************************************************************/
-/*
- * Function pointers are useful for implementing a form of polymorphism.
- * They are mainly used to reduce or avoid switch statement. Pointers to
- * functions can get rather messy. Declaring a typedef to a function pointer
- * generally clarifies the code.
- */
-/****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
 static int CalculateReconstructedFlux(
@@ -55,10 +46,10 @@ int TVD(const int s, Real Fhat[], const Real r, const int k, const int j,
     const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
     const int idx = IndexMath(k, j, i, space) * DIMU;
     const int idxh = IndexMath(k + h[s][Z], j + h[s][Y], i + h[s][X], space) * DIMU;
-    ComputeConvectiveFlux[s](F, idx, U, model->gamma);
-    ComputeConvectiveFlux[s](Fh, idxh, U, model->gamma);
-    ComputeRoeAverage(Uo, idx, idxh, U, model->gamma);
-    ComputeEigenvectorSpaceR[s](R, Uo);
+    ConvectiveFlux(s, F, idx, U, model->gamma);
+    ConvectiveFlux(s, Fh, idxh, U, model->gamma);
+    RoeAverage(Uo, idx, idxh, U, model->gamma);
+    EigenvectorSpaceR(s, R, Uo);
     FluxDecompositionCoefficientPhi(s, Phi, r, k, j, i, U, space, model);
     CalculateReconstructedFlux(Fhat, F, Fh, R, Phi);
     return 0;
@@ -85,14 +76,16 @@ static int FluxDecompositionCoefficientPhi(const int s, Real Phi[], const Real r
     Real gh[DIMU] = {0.0}; /* TVD function g at neighbour */
     Real gamma[DIMU] = {0.0}; /* TVD function gamma */
     Real lambda[DIMU] = {0.0}; /* eigenvalues */
+    Real L[DIMU][DIMU] = {{0.0}}; /* vector space {Ln} */
     Real alpha[DIMU] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
     Real Uo[DIMUo] = {0.0}; /* Roe averaged rho, u, v, w, hT, c */
     const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
     const int idx = IndexMath(k, j, i, space) * DIMU;
     const int idxh = IndexMath(k + h[s][Z], j + h[s][Y], i + h[s][X], space) * DIMU;
-    ComputeRoeAverage(Uo, idx, idxh, U, model->gamma);
+    RoeAverage(Uo, idx, idxh, U, model->gamma);
     EigenvalueLambda(s, lambda, Uo);
-    DecompositionCoefficientAlpha(s, alpha, deltaU, Uo, model->gamma);
+    EigenvectorSpaceL(s, L, Uo, model->gamma);
+    DecompositionCoefficientAlpha(alpha, L, idx, idxh, U);
     FunctionG(s, g, r, k, j, i, U, space, model);
     FunctionG(s, gh, r, k + h[s][Z], j + h[s][Y], i + h[s][X], U, space, model);
     const Real delta = NumericalDissipationDelta(Uo, model->delta); /* numerical dissipation */
@@ -107,6 +100,8 @@ static int FunctionG(const int s, Real g[], const Real r, const int k, const int
 {
     Real lambda[DIMU] = {0.0}; /* eigenvalues */
     Real lambdah[DIMU] = {0.0}; /* eigenvalues at neighbour */
+    Real L[DIMU][DIMU] = {{0.0}}; /* vector space {Ln} */
+    Real Lh[DIMU][DIMU] = {{0.0}}; /* vector space {Ln} */
     Real alpha[DIMU] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
     Real alphah[DIMU] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
     Real sigma[DIMU] = {0.0}; /* TVD function sigma */
@@ -117,24 +112,14 @@ static int FunctionG(const int s, Real g[], const Real r, const int k, const int
     const int idxl = IndexMath(k - h[s][Z], j - h[s][Y], i - h[s][X], space) * DIMU;
     const int idx = IndexMath(k, j, i, space) * DIMU;
     const int idxr = IndexMath(k + h[s][Z], j + h[s][Y], i + h[s][X], space) * DIMU;
-    ComputeRoeAverage(Uo, idx, idxr, U, model->gamma);
-    ComputeRoeAverage(Uoh, idxl, idx, U, model->gamma);
-    const Real deltaU[DIMU] = { /* U variation */
-        U[idxr] - U[idx],
-        U[idxr+1] - U[idx+1],
-        U[idxr+2] - U[idx+2],
-        U[idxr+3] - U[idx+3],
-        U[idxr+4] - U[idx+4]};
-    const Real deltaUh[DIMU] = { /* U variation */
-        U[idx] - U[idxl],
-        U[idx+1] - U[idxl+1],
-        U[idx+2] - U[idxl+2],
-        U[idx+3] - U[idxl+3],
-        U[idx+4] - U[idxl+4]};
+    RoeAverage(Uo, idx, idxr, U, model->gamma);
+    RoeAverage(Uoh, idxl, idx, U, model->gamma);
     EigenvalueLambda(s, lambda, Uo);
     EigenvalueLambda(s, lambdah, Uoh);
-    DecompositionCoefficientAlpha(s, alpha, deltaU, Uo, model->gamma);
-    DecompositionCoefficientAlpha(s, alphah, deltaUh, Uoh, model->gamma);
+    EigenvectorSpaceL(s, L, Uo, model->gamma);
+    EigenvectorSpaceL(s, Lh, Uoh, model->gamma);
+    DecompositionCoefficientAlpha(alpha, L, idx, idxr, U);
+    DecompositionCoefficientAlpha(alphah, Lh, idxl, idx, U);
     const Real delta = NumericalDissipationDelta(Uo, model->delta); /* numerical dissipation */
     const Real deltah = NumericalDissipationDelta(Uoh, model->delta); /* numerical dissipation */
     CalculateSigma(sigma, lambda, r, delta);

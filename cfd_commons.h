@@ -40,7 +40,7 @@ extern int EigenvectorSpaceR(const int s, Real R[][DIMU], const Real Uo[]);
  * Function
  *      Compute Roe averages.
  */
-extern int ComputeRoeAverage(Real Uo[], const int idx, const int idxh,
+extern int RoeAverage(Real Uo[], const int idx, const int idxh,
         const Real *U, const Real gamma);
 /*
  * Convective fluxes
