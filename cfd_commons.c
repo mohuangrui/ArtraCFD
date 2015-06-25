@@ -24,48 +24,19 @@
  * functions can get rather messy. Declaring a typedef to a function pointer
  * generally clarifies the code.
  */
-typedef int (*EigenvaluesAndEigenvectorSpaceLComputer)(Real [], Real [][DIMU],
-        const int, const int, const int, const Real *, const Space *, const Model *);
-/****************************************************************************
- * Static Function Declarations
- ****************************************************************************/
-static int CalculateAlpha(Real [], Real [][DIMU], const Real []);
-static int EigenvaluesAndEigenvectorSpaceLZ(
-        Real [], Real [][DIMU], const int, const int, const int, 
-        const Real *, const Space *, const Model *);
-static int EigenvaluesAndEigenvectorSpaceLY(
-        Real [], Real [][DIMU], const int, const int, const int, 
-        const Real *, const Space *, const Model *);
-static int EigenvaluesAndEigenvectorSpaceLX(
-        Real [], Real [][DIMU], const int, const int, const int, 
-        const Real *, const Space *, const Model *);
+typedef int (*EigenvectorSpaceLComputer)(Real [][DIMU], const Real [], const Real);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int EigenvaluesAndDecompositionCoefficientAlpha(const int s,
-        Real lambda[], Real alpha[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
+int DecompositionCoefficientAlpha(const int s, Real alpha[], const Real deltaU[], 
+        const Real Uo[], const Real gamma)
 {
-    const int idx = IndexMath(k, j, i, space) * DIMU;
-    const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
-    const int idxh = IndexMath(k + h[s][Z], j + h[s][Y], i + h[s][X], space) * DIMU;;
     Real L[DIMU][DIMU] = {{0.0}}; /* store left eigenvectors */
-    EigenvaluesAndEigenvectorSpaceLComputer ComputeEigenvaluesAndEigenvectorSpaceL[DIMS] = {
-        EigenvaluesAndEigenvectorSpaceLX,
-        EigenvaluesAndEigenvectorSpaceLY,
-        EigenvaluesAndEigenvectorSpaceLZ};
-    const Real deltaU[DIMU] = {
-        U[idxh] - U[idx],
-        U[idxh+1] - U[idx+1],
-        U[idxh+2] - U[idx+2],
-        U[idxh+3] - U[idx+3],
-        U[idxh+4] - U[idx+4]};
-    ComputeEigenvaluesAndEigenvectorSpaceL[s](lambda, L, k, j, i, U, space, model);
-    CalculateAlpha(alpha, L, deltaU);
-    return 0;
-}
-static int CalculateAlpha(Real alpha[], Real L[][DIMU], const Real deltaU[])
-{
+    EigenvectorSpaceLComputer ComputeEigenvectorSpaceL[DIMS] = {
+        EigenvectorSpaceLX,
+        EigenvectorSpaceLY,
+        EigenvectorSpaceLZ};
+    ComputeEigenvectorSpaceL[s](L, Uo, gamma);
     for (int row = 0; row < DIMU; ++row) {
         alpha[row] = 0;
         for (int dummy = 0; dummy < DIMU; ++dummy) {
@@ -74,20 +45,15 @@ static int CalculateAlpha(Real alpha[], Real L[][DIMU], const Real deltaU[])
     }
     return 0;
 }
-static int EigenvaluesAndEigenvectorSpaceLZ(
-        Real lambda[], Real L[][DIMU], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
+int EigenvectorSpaceLZ(Real L[][DIMU], const Real Uo[], const Real gamma)
 {
-    Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
-    ComputeRoeAverage(Uo, IndexMath(k, j, i, space) * DIMU, IndexMath(k + 1, j, i, space) * DIMU, U, model);
     const Real u = Uo[1];
     const Real v = Uo[2];
     const Real w = Uo[3];
     const Real c = Uo[5];
     const Real q = 0.5 * (u * u + v * v + w * w);
-    const Real b = (model->gamma - 1.0) / (2.0 * c * c);
+    const Real b = (gamma - 1.0) / (2.0 * c * c);
     const Real d = (1.0 / (2.0 * c)); 
-    lambda[0] = w - c; lambda[1] = w; lambda[2] = w; lambda[3] = w; lambda[4] = w + c;
     L[0][0] = b * q + d * w;   L[0][1] = -b * u;             L[0][2] = -b * v;             L[0][3] = -b * w - d;     L[0][4] = b;
     L[1][0] = -2 * b * q * u;  L[1][1] = 2 * b * u * u + 1;  L[1][2] = 2 * b * v * u;      L[1][3] = 2 * b * w * u;  L[1][4] = -2 * b * u;
     L[2][0] = -2 * b * q * v;  L[2][1] = 2 * b * v * u;      L[2][2] = 2 * b * v * v + 1;  L[2][3] = 2 * b * w * v;  L[2][4] = -2 * b * v;
@@ -95,20 +61,15 @@ static int EigenvaluesAndEigenvectorSpaceLZ(
     L[4][0] = b * q - d * w;   L[4][1] = -b * u;             L[4][2] = -b * v;             L[4][3] = -b * w + d;     L[4][4] = b;
     return 0;
 }
-static int EigenvaluesAndEigenvectorSpaceLY(
-        Real lambda[], Real L[][DIMU], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
+int EigenvectorSpaceLY(Real L[][DIMU], const Real Uo[], const Real gamma)
 {
-    Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
-    ComputeRoeAverage(Uo, IndexMath(k, j, i, space) * DIMU, IndexMath(k, j + 1, i, space) * DIMU, U, model);
     const Real u = Uo[1];
     const Real v = Uo[2];
     const Real w = Uo[3];
     const Real c = Uo[5];
     const Real q = 0.5 * (u * u + v * v + w * w);
-    const Real b = (model->gamma - 1.0) / (2.0 * c * c);
+    const Real b = (gamma - 1.0) / (2.0 * c * c);
     const Real d = (1.0 / (2.0 * c)); 
-    lambda[0] = v - c; lambda[1] = v; lambda[2] = v; lambda[3] = v; lambda[4] = v + c;
     L[0][0] = b * q + d * v;    L[0][1] = -b * u;             L[0][2] = -b * v - d;     L[0][3] = -b * w;             L[0][4] = b;
     L[1][0] = -2 * b * q * u;   L[1][1] = 2 * b * u * u + 1;  L[1][2] = 2 * b * v * u;  L[1][3] = 2 * b * w * u;      L[1][4] = -2 * b * u;
     L[2][0] = -2 * b * q + 1;   L[2][1] = 2 * b * u;          L[2][2] = 2 * b * v;      L[2][3] = 2 * b * w;          L[2][4] = -2 * b;
@@ -116,20 +77,15 @@ static int EigenvaluesAndEigenvectorSpaceLY(
     L[4][0] = b * q - d * v;    L[4][1] = -b * u;             L[4][2] = -b * v + d;     L[4][3] = -b * w;             L[4][4] = b;
     return 0;
 }
-static int EigenvaluesAndEigenvectorSpaceLX(
-        Real lambda[], Real L[][DIMU], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
+int EigenvectorSpaceLX(Real L[][DIMU], const Real Uo[], const Real gamma)
 {
-    Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
-    ComputeRoeAverage(Uo, IndexMath(k, j, i, space) * DIMU, IndexMath(k, j, i + 1, space) * DIMU, U, model);
     const Real u = Uo[1];
     const Real v = Uo[2];
     const Real w = Uo[3];
     const Real c = Uo[5];
     const Real q = 0.5 * (u * u + v * v + w * w);
-    const Real b = (model->gamma - 1.0) / (2.0 * c * c);
+    const Real b = (gamma - 1.0) / (2.0 * c * c);
     const Real d = (1.0 / (2.0 * c)); 
-    lambda[0] = u - c; lambda[1] = u; lambda[2] = u; lambda[3] = u; lambda[4] = u + c;
     L[0][0] = b * q + d * u;   L[0][1] = -b * u - d;     L[0][2] = -b * v;             L[0][3] = -b * w;             L[0][4] = b;
     L[1][0] = -2 * b * q + 1;  L[1][1] = 2 * b * u;      L[1][2] = 2 * b * v;          L[1][3] = 2 * b * w;          L[1][4] = -2 * b;
     L[2][0] = -2 * b * q * v;  L[2][1] = 2 * b * v * u;  L[2][2] = 2 * b * v * v + 1;  L[2][3] = 2 * b * w * v;      L[2][4] = -2 * b * v;
@@ -137,11 +93,8 @@ static int EigenvaluesAndEigenvectorSpaceLX(
     L[4][0] = b * q - d * u;   L[4][1] = -b * u + d;     L[4][2] = -b * v;             L[4][3] = -b * w;             L[4][4] = b;
     return 0;
 }
-int EigenvectorSpaceRZ(Real R[][DIMU], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
+int EigenvectorSpaceRZ(Real R[][DIMU], const Real Uo[], const Real gamma)
 {
-    Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
-    ComputeRoeAverage(Uo, IndexMath(k, j, i, space) * DIMU, IndexMath(k + 1, j, i, space) * DIMU, U, model);
     const Real u = Uo[1];
     const Real v = Uo[2];
     const Real w = Uo[3];
@@ -155,11 +108,8 @@ int EigenvectorSpaceRZ(Real R[][DIMU], const int k, const int j, const int i,
     R[4][0] = hT - w * c;  R[4][1] = u;  R[4][2] = v;  R[4][3] = w * w - q;  R[4][4] = hT + w * c;
     return 0;
 }
-int EigenvectorSpaceRY(Real R[][DIMU], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
+int EigenvectorSpaceRY(Real R[][DIMU], const Real Uo[], const Real gamma)
 {
-    Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
-    ComputeRoeAverage(Uo, IndexMath(k, j, i, space) * DIMU, IndexMath(k, j + 1, i, space) * DIMU, U, model);
     const Real u = Uo[1];
     const Real v = Uo[2];
     const Real w = Uo[3];
@@ -173,11 +123,8 @@ int EigenvectorSpaceRY(Real R[][DIMU], const int k, const int j, const int i,
     R[4][0] = hT - v * c;  R[4][1] = u;  R[4][2] = v * v - q;  R[4][3] = w;  R[4][4] = hT + v * c;
     return 0;
 }
-int EigenvectorSpaceRX(Real R[][DIMU], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
+int EigenvectorSpaceRX(Real R[][DIMU], const Real Uo[], const Real gamma)
 {
-    Real Uo[DIMUo] = {0.0}; /* store averaged primitive variables rho, u, v, w, hT, c */
-    ComputeRoeAverage(Uo, IndexMath(k, j, i, space) * DIMU, IndexMath(k, j, i + 1, space) * DIMU, U, model);
     const Real u = Uo[1];
     const Real v = Uo[2];
     const Real w = Uo[3];
@@ -191,9 +138,8 @@ int EigenvectorSpaceRX(Real R[][DIMU], const int k, const int j, const int i,
     R[4][0] = hT - u * c;  R[4][1] = u * u - q;  R[4][2] = v;  R[4][3] = w;  R[4][4] = hT + u * c;
     return 0;
 }
-int ComputeRoeAverage(Real Uo[], const int idx, const int idxh, const Real *U, const Model *model)
+int ComputeRoeAverage(Real Uo[], const int idx, const int idxh, const Real *U, const Real gamma)
 {
-    const Real gamma = model->gamma;
     const Real rho = U[idx];
     const Real u = U[idx+1] / rho;
     const Real v = U[idx+2] / rho;
@@ -214,7 +160,7 @@ int ComputeRoeAverage(Real Uo[], const int idx, const int idxh, const Real *U, c
     return 0;
 }
 int ConvectiveFluxZ(Real F[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
+        const Real *U, const Space *space, const Real gamma)
 {
     const int idx = IndexMath(k, j, i, space) * DIMU;
     const Real rho = U[idx];
@@ -222,7 +168,7 @@ int ConvectiveFluxZ(Real F[], const int k, const int j, const int i,
     const Real v = U[idx+2] / rho;
     const Real w = U[idx+3] / rho;
     const Real eT = U[idx+4] / rho;
-    const Real p = rho * (eT - 0.5 * (u * u + v * v + w * w)) * (model->gamma - 1.0);
+    const Real p = rho * (eT - 0.5 * (u * u + v * v + w * w)) * (gamma - 1.0);
     F[0] = rho * w;
     F[1] = rho * w * u;
     F[2] = rho * w * v;
@@ -231,7 +177,7 @@ int ConvectiveFluxZ(Real F[], const int k, const int j, const int i,
     return 0;
 }
 int ConvectiveFluxY(Real F[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
+        const Real *U, const Space *space, const Real gamma)
 {
     const int idx = IndexMath(k, j, i, space) * DIMU;
     const Real rho = U[idx];
@@ -239,7 +185,7 @@ int ConvectiveFluxY(Real F[], const int k, const int j, const int i,
     const Real v = U[idx+2] / rho;
     const Real w = U[idx+3] / rho;
     const Real eT = U[idx+4] / rho;
-    const Real p = rho * (eT - 0.5 * (u * u + v * v + w * w)) * (model->gamma - 1.0);
+    const Real p = rho * (eT - 0.5 * (u * u + v * v + w * w)) * (gamma - 1.0);
     F[0] = rho * v;
     F[1] = rho * v * u;
     F[2] = rho * v * v + p;
@@ -248,7 +194,7 @@ int ConvectiveFluxY(Real F[], const int k, const int j, const int i,
     return 0;
 }
 int ConvectiveFluxX(Real F[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
+        const Real *U, const Space *space, const Real gamma)
 {
     const int idx = IndexMath(k, j, i, space) * DIMU;
     const Real rho = U[idx];
@@ -256,7 +202,7 @@ int ConvectiveFluxX(Real F[], const int k, const int j, const int i,
     const Real v = U[idx+2] / rho;
     const Real w = U[idx+3] / rho;
     const Real eT = U[idx+4] / rho;
-    const Real p = rho * (eT - 0.5 * (u * u + v * v + w * w)) * (model->gamma - 1.0);
+    const Real p = rho * (eT - 0.5 * (u * u + v * v + w * w)) * (gamma - 1.0);
     F[0] = rho * u;
     F[1] = rho * u * u + p;
     F[2] = rho * u * v;

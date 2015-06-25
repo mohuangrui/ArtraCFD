@@ -29,15 +29,14 @@
  * Function
  *      Compute eigenvalues and eigenvectors.
  */
-extern int EigenvaluesAndDecompositionCoefficientAlpha(const int s,
-        Real lambda[], Real alpha[], const int k, const int j, const int i, 
-        const Real *U, const Space *, const Model *);
-extern int EigenvectorSpaceRZ(Real R[][DIMU], const int k, const int j, const int i, 
-        const Real *U, const Space *, const Model *);
-extern int EigenvectorSpaceRY(Real R[][DIMU], const int k, const int j, const int i, 
-        const Real *U, const Space *, const Model *);
-extern int EigenvectorSpaceRX(Real R[][DIMU], const int k, const int j, const int i, 
-        const Real *U, const Space *, const Model *);
+extern int DecompositionCoefficientAlpha(const int s, Real alpha[],
+        const Real deltaU[], const Real Uo[], const Real gamma);
+extern int EigenvectorSpaceLZ(Real L[][DIMU], const Real Uo[], const Real gamma);
+extern int EigenvectorSpaceLY(Real L[][DIMU], const Real Uo[], const Real gamma);
+extern int EigenvectorSpaceLX(Real L[][DIMU], const Real Uo[], const Real gamma);
+extern int EigenvectorSpaceRZ(Real R[][DIMU], const Real Uo[], const Real gamma);
+extern int EigenvectorSpaceRY(Real R[][DIMU], const Real Uo[], const Real gamma);
+extern int EigenvectorSpaceRX(Real R[][DIMU], const Real Uo[], const Real gamma);
 /*
  * Roe average
  *
@@ -45,7 +44,7 @@ extern int EigenvectorSpaceRX(Real R[][DIMU], const int k, const int j, const in
  *      Compute Roe averages.
  */
 int ComputeRoeAverage(Real Uo[], const int idx, const int idxh,
-        const Real *U, const Model *);
+        const Real *U, const Real gamma);
 /*
  * Convective fluxes
  *
@@ -53,11 +52,11 @@ int ComputeRoeAverage(Real Uo[], const int idx, const int idxh,
  *      Compute convective fluxes.
  */
 extern int ConvectiveFluxZ(Real F[], const int k, const int j, const int i, 
-        const Real *U, const Space *, const Model *);
+        const Real *U, const Space *, const Real gamma);
 extern int ConvectiveFluxY(Real F[], const int k, const int j, const int i, 
-        const Real *U, const Space *, const Model *);
+        const Real *U, const Space *, const Real gamma);
 extern int ConvectiveFluxX(Real F[], const int k, const int j, const int i, 
-        const Real *U, const Space *, const Model *);
+        const Real *U, const Space *, const Real gamma);
 /*
  * Compute the values of primitive variable vector
  *
