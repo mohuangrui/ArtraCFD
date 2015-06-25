@@ -81,6 +81,7 @@ int EigenvectorSpaceL(const int s, Real L[][DIMU], const Real Uo[], const Real g
         EigenvectorSpaceLX,
         EigenvectorSpaceLY,
         EigenvectorSpaceLZ};
+    ComputeEigenvectorSpaceL[s](L, Uo, gamma);
     return 0;
 }
 static int EigenvectorSpaceLZ(Real L[][DIMU], const Real Uo[], const Real gamma)
@@ -137,6 +138,7 @@ int EigenvectorSpaceR(const int s, Real R[][DIMU], const Real Uo[])
         EigenvectorSpaceRX,
         EigenvectorSpaceRY,
         EigenvectorSpaceRZ};
+    ComputeEigenvectorSpaceR[s](R, Uo);
     return 0;
 }
 static int EigenvectorSpaceRZ(Real R[][DIMU], const Real Uo[])
@@ -211,6 +213,7 @@ int ConvectiveFlux(const int s, Real F[], const int idx, const Real *U, const Re
         ConvectiveFluxX,
         ConvectiveFluxY,
         ConvectiveFluxZ};
+    ComputeConvectiveFlux[s](F, idx, U, gamma);
     return 0;
 }
 static int ConvectiveFluxZ(Real F[], const int idx, const Real *U, const Real gamma)
@@ -265,6 +268,7 @@ int DiffusiveFlux(const int s, Real G[], const int k, const int j, const int i,
         DiffusiveFluxX,
         DiffusiveFluxY,
         DiffusiveFluxZ};
+    ComputeDiffusiveFlux[s](G, k, j, i, U, space, model);
     return 0;
 }
 static int DiffusiveFluxZ(Real G[], const int k, const int j, const int i, 
