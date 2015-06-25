@@ -45,6 +45,14 @@ int DecompositionCoefficientAlpha(const int s, Real alpha[], const Real deltaU[]
     }
     return 0;
 }
+int EigenvalueLambda(const int s, Real lambda[], const Real Uo[])
+{
+    lambda[0] = Uo[s+1] - Uo[5];
+    lambda[1] = Uo[s+1];
+    lambda[2] = Uo[s+1];
+    lambda[3] = Uo[s+1];
+    lambda[4] = Uo[s+1] + Uo[5];
+}
 int EigenvectorSpaceLZ(Real L[][DIMU], const Real Uo[], const Real gamma)
 {
     const Real u = Uo[1];
@@ -159,10 +167,8 @@ int ComputeRoeAverage(Real Uo[], const int idx, const int idxh, const Real *U, c
     Uo[5] = sqrt((gamma - 1.0) * (Uo[4] - 0.5 * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]))); /* the speed of sound */
     return 0;
 }
-int ConvectiveFluxZ(Real F[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Real gamma)
+int ConvectiveFluxZ(Real F[], const int idx, const Real *U, const Real gamma)
 {
-    const int idx = IndexMath(k, j, i, space) * DIMU;
     const Real rho = U[idx];
     const Real u = U[idx+1] / rho;
     const Real v = U[idx+2] / rho;
@@ -176,10 +182,8 @@ int ConvectiveFluxZ(Real F[], const int k, const int j, const int i,
     F[4] = (rho * eT + p) * w;
     return 0;
 }
-int ConvectiveFluxY(Real F[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Real gamma)
+int ConvectiveFluxY(Real F[], const int idx, const Real *U, const Real gamma)
 {
-    const int idx = IndexMath(k, j, i, space) * DIMU;
     const Real rho = U[idx];
     const Real u = U[idx+1] / rho;
     const Real v = U[idx+2] / rho;
@@ -193,10 +197,8 @@ int ConvectiveFluxY(Real F[], const int k, const int j, const int i,
     F[4] = (rho * eT + p) * v;
     return 0;
 }
-int ConvectiveFluxX(Real F[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Real gamma)
+int ConvectiveFluxX(Real F[], const int idx, const Real *U, const Real gamma)
 {
-    const int idx = IndexMath(k, j, i, space) * DIMU;
     const Real rho = U[idx];
     const Real u = U[idx+1] / rho;
     const Real v = U[idx+2] / rho;

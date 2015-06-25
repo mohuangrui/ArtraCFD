@@ -31,6 +31,7 @@
  */
 extern int DecompositionCoefficientAlpha(const int s, Real alpha[],
         const Real deltaU[], const Real Uo[], const Real gamma);
+extern int EigenvalueLambda(const int s, Real lambda[], const Real Uo[]);
 extern int EigenvectorSpaceLZ(Real L[][DIMU], const Real Uo[], const Real gamma);
 extern int EigenvectorSpaceLY(Real L[][DIMU], const Real Uo[], const Real gamma);
 extern int EigenvectorSpaceLX(Real L[][DIMU], const Real Uo[], const Real gamma);
@@ -51,12 +52,9 @@ int ComputeRoeAverage(Real Uo[], const int idx, const int idxh,
  * Function
  *      Compute convective fluxes.
  */
-extern int ConvectiveFluxZ(Real F[], const int k, const int j, const int i, 
-        const Real *U, const Space *, const Real gamma);
-extern int ConvectiveFluxY(Real F[], const int k, const int j, const int i, 
-        const Real *U, const Space *, const Real gamma);
-extern int ConvectiveFluxX(Real F[], const int k, const int j, const int i, 
-        const Real *U, const Space *, const Real gamma);
+extern int ConvectiveFluxZ(Real F[], const int idx, const Real *U, const Real gamma);
+extern int ConvectiveFluxY(Real F[], const int idx, const Real *U, const Real gamma);
+extern int ConvectiveFluxX(Real F[], const int idx, const Real *U, const Real gamma);
 /*
  * Compute the values of primitive variable vector
  *
