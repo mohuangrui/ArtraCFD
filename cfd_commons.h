@@ -36,6 +36,7 @@ extern int EigenvectorSpaceL(const int s, Real L[][DIMU], const Real Uo[], const
 extern int EigenvectorSpaceR(const int s, Real R[][DIMU], const Real Uo[]);
 /*
  * Flux splitting
+ *
  * Function
  *      Splitting eigenvalues by flux splitting methods.
  */
