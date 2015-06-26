@@ -46,8 +46,8 @@ int WENO(const int s, Real Fhat[], const Real r, const int k, const int j,
     Real R[DIMU][DIMU] = {{0.0}}; /* vector space {Rn} */
     Real HhatPlus[DIMU] = {0.0}; /* forward numerical flux of characteristic fields */
     Real HhatMinus[DIMU] = {0.0}; /* backward numerical flux of characteristic fields */
-    Real HPlus[NSTENCIL][DIMU] = {0.0}; /* forward characteristic fields stencil */
-    Real HMinus[NSTENCIL][DIMU] = {0.0}; /* backward characteristic fields stencil */
+    Real HPlus[NSTENCIL][DIMU] = {{0.0}}; /* forward characteristic fields stencil */
+    Real HMinus[NSTENCIL][DIMU] = {{0.0}}; /* backward characteristic fields stencil */
     Real lambdaPlus[DIMU] = {0.0}; /* eigenvalues */
     Real lambdaMinus[DIMU] = {0.0}; /* eigenvalues */
     const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
