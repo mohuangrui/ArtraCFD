@@ -35,6 +35,12 @@ extern int EigenvalueLambda(const int s, Real lambda[], const Real Uo[]);
 extern int EigenvectorSpaceL(const int s, Real L[][DIMU], const Real Uo[], const Real gamma);
 extern int EigenvectorSpaceR(const int s, Real R[][DIMU], const Real Uo[]);
 /*
+ * Flux splitting
+ * Function
+ *      Splitting eigenvalues by flux splitting methods.
+ */
+extern int FluxSplitting(Real lambdaPlus[], Real lambdaMinus[], const Real lambda[]);
+/*
  * Roe average
  *
  * Function

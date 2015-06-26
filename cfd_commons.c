@@ -29,9 +29,12 @@ typedef int (*EigenvectorSpaceRComputer)(Real [][DIMU], const Real []);
 typedef int (*ConvectiveFluxComputer)(Real [], const int, const Real *, const Real);
 typedef int (*DiffusiveFluxComputer)(Real [], const int, const int, const int, 
         const Real *, const Space *, const Model *);
+typedef int (*FluxSplitter)(Real [], Real [], const Real[]);
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
+static int LaxFriedrichs(Real [], Real [], const Real []);
+static int StegerWarming(Real [], Real [], const Real []);
 static int EigenvectorSpaceLZ(Real [][DIMU], const Real [], const Real);
 static int EigenvectorSpaceLY(Real [][DIMU], const Real [], const Real);
 static int EigenvectorSpaceLX(Real [][DIMU], const Real [], const Real);
@@ -73,6 +76,32 @@ int EigenvalueLambda(const int s, Real lambda[], const Real Uo[])
     lambda[2] = Uo[s+1];
     lambda[3] = Uo[s+1];
     lambda[4] = Uo[s+1] + Uo[5];
+    return 0;
+}
+int FluxSplitting(Real lambdaPlus[], Real lambdaMinus[], const Real lambda[])
+{
+    FluxSplitter SplitFlux[2] = {
+        LaxFriedrichs,
+        StegerWarming};
+    SplitFlux[0](lambdaPlus, lambdaMinus, lambda);
+    return 0;
+}
+static int LaxFriedrichs(Real lambdaPlus[], Real lambdaMinus[], const Real lambda[])
+{
+    /* set local maximum as |u| + c */
+    const Real lambdaStar = fabs(lambda[2]) + lambda[4] - lambda[2];
+    for (int row = 0; row < DIMU; ++row) {
+        lambdaPlus[row] = 0.5 * (lambda[row] + lambdaStar);
+        lambdaMinus[row] = 0.5 * (lambda[row] - lambdaStar);
+    }
+    return 0;
+}
+static int StegerWarming(Real lambdaPlus[], Real lambdaMinus[], const Real lambda[])
+{
+    for (int row = 0; row < DIMU; ++row) {
+        lambdaPlus[row] = 0.5 * (lambda[row] + fabs(lambda[row]));
+        lambdaMinus[row] = 0.5 * (lambda[row] - fabs(lambda[row]));
+    }
     return 0;
 }
 int EigenvectorSpaceL(const int s, Real L[][DIMU], const Real Uo[], const Real gamma)
