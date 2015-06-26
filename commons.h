@@ -587,7 +587,8 @@ typedef struct {
  * Model properties and physics parameters
  */
 typedef struct {
-    int  scheme; /* record numerical scheme */
+    int scheme; /* record numerical scheme */
+    int splitter; /* flux vector splitting method */
     Real refMa; /* reference Mach number */
     Real refMu; /* reference dynamic viscosity for Sutherland's law */
     Real refPr; /* reference Prandtl number */

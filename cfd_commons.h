@@ -40,7 +40,7 @@ extern int EigenvectorSpaceR(const int s, Real R[][DIMU], const Real Uo[]);
  * Function
  *      Splitting eigenvalues by flux splitting methods.
  */
-extern int FluxSplitting(Real lambdaPlus[], Real lambdaMinus[], const Real lambda[]);
+extern int FluxSplitting(Real lambdaPlus[], Real lambdaMinus[], const Real lambda[], const int splitter);
 /*
  * Roe average
  *

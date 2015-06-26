@@ -78,12 +78,12 @@ int EigenvalueLambda(const int s, Real lambda[], const Real Uo[])
     lambda[4] = Uo[s+1] + Uo[5];
     return 0;
 }
-int FluxSplitting(Real lambdaPlus[], Real lambdaMinus[], const Real lambda[])
+int FluxSplitting(Real lambdaPlus[], Real lambdaMinus[], const Real lambda[], const int splitter)
 {
     FluxSplitter SplitFlux[2] = {
         LaxFriedrichs,
         StegerWarming};
-    SplitFlux[0](lambdaPlus, lambdaMinus, lambda);
+    SplitFlux[splitter](lambdaPlus, lambdaMinus, lambda);
     return 0;
 }
 static int LaxFriedrichs(Real lambdaPlus[], Real lambdaMinus[], const Real lambda[])

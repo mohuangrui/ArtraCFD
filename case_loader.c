@@ -117,10 +117,10 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model, Partition
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d", &(model->scheme)); 
-            if (0 == model->scheme) { /* if TVD */
-                fgets(currentLine, sizeof currentLine, filePointer);
-                sscanf(currentLine, formatI, &(model->delta)); 
-            }
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, "%d", &(model->splitter)); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatI, &(model->delta)); 
             continue;
         }
         if (0 == strncmp(currentLine, "fluid begin", sizeof currentLine)) {
@@ -464,9 +464,8 @@ static int WriteVerifyData(const Space *space, const Time *time, const Model *mo
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "spatial scheme: %d\n", model->scheme);
-    if (0 == model->scheme) {
-        fprintf(filePointer, "Harten's numerical dissipation coefficient: %.6g\n", model->delta); 
-    }
+    fprintf(filePointer, "flux splitting method: %d\n", model->splitter);
+    fprintf(filePointer, "Harten's numerical dissipation coefficient: %.6g\n", model->delta); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                    >> Fluid and Flow Properties <<\n");
@@ -574,7 +573,8 @@ static int CheckCaseSettingData(const Space *space, const Time *time, const Mode
         FatalError("wrong values in time section of case settings");
     }
     /* numerical method */
-    if ((0 > model->scheme) || (1 < model->scheme) || (0 > model->delta)) {
+    if ((0 > model->scheme) || (1 < model->scheme) || (0 > model->splitter)
+            || (1 < model->splitter) || (0 > model->delta)) {
         FatalError("wrong values in numerical method of case settings");
     }
     /* fluid and flow */

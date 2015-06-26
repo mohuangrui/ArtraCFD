@@ -57,7 +57,7 @@ int WENO(const int s, Real Fhat[], const Real r, const int k, const int j,
     EigenvalueLambda(s, lambda, Uo);
     EigenvectorSpaceL(s, L, Uo, model->gamma);
     EigenvectorSpaceR(s, R, Uo);
-    FluxSplitting(lambdaPlus, lambdaMinus, lambda);
+    FluxSplitting(lambdaPlus, lambdaMinus, lambda, model->splitter);
     CharacteristicProjection(s, HPlus, lambdaPlus, L, -2, +1, k, j, i, U, space);
     CharacteristicProjection(s, HMinus, lambdaMinus, L, +3, -1, k, j, i, U, space);
     NumericalFlux(HhatPlus, HPlus);
