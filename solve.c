@@ -124,7 +124,7 @@ static Real ComputeTimeStep(const Real *U, const Space *space, const Time *time,
     Real *geo = NULL;
     for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
         geo = IndexGeometry(geoCount, geometry);
-        velocity = MaxReal(fabs(geo[7]), MaxReal(fabs(geo[5]), fabs(geo[6])));
+        velocity = MaxReal(fabs(geo[5]), MaxReal(fabs(geo[6]), fabs(geo[7])));
         if (velocityMax < velocity) {
             velocityMax = velocity;
         }
@@ -142,14 +142,14 @@ static Real ComputeTimeStep(const Real *U, const Space *space, const Time *time,
                     continue;
                 }
                 PrimitiveByConservative(Uo, idx * DIMU, U, model);
-                velocity = MaxReal(fabs(Uo[3]), MaxReal(fabs(Uo[1]), fabs(Uo[2]))) + sqrt((Uo[4] / Uo[0]) * model->gamma);
+                velocity = MaxReal(fabs(Uo[1]), MaxReal(fabs(Uo[2]), fabs(Uo[3]))) + sqrt((Uo[4] / Uo[0]) * model->gamma);
                 if (velocityMax < velocity) {
                     velocityMax = velocity;
                 }
             }
         }
     }
-    return time->numCFL * MinReal(space->dx, MinReal(space->dz, space->dy)) / velocityMax;
+    return time->numCFL * MinReal(space->dx, MinReal(space->dy, space->dz)) / velocityMax;
 }
 /* a good practice: end file with a newline */
 

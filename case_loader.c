@@ -415,6 +415,14 @@ static int WriteRegionalInitializerData(FILE **filePointerPointer, const Partiti
         fprintf(filePointer, "xmax, ymax, zmax: %.6g, %.6g, %.6g\n", 
                 part->valueIC[n][3], part->valueIC[n][4], part->valueIC[n][5]);
     }
+    if (4 == part->typeIC[n]) {
+        fprintf(filePointer, "regional initialization: cylinder\n"); 
+        fprintf(filePointer, "xmin, ymin, zmin: %.6g, %.6g, %.6g\n", 
+                part->valueIC[n][0], part->valueIC[n][1], part->valueIC[n][2]);
+        fprintf(filePointer, "xmax, ymax, zmax: %.6g, %.6g, %.6g\n", 
+                part->valueIC[n][3], part->valueIC[n][4], part->valueIC[n][5]);
+        fprintf(filePointer, "radius: %.6g\n", part->valueIC[n][6]);
+    }
     fprintf(filePointer, "density: %.6g\n", part->valueIC[n][ENTRYIC-5]);
     fprintf(filePointer, "x velocity: %.6g\n", part->valueIC[n][ENTRYIC-4]);
     fprintf(filePointer, "y velocity: %.6g\n", part->valueIC[n][ENTRYIC-3]);

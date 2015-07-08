@@ -98,9 +98,10 @@ static int LaxFriedrichs(Real lambdaPlus[], Real lambdaMinus[], const Real lambd
 }
 static int StegerWarming(Real lambdaPlus[], Real lambdaMinus[], const Real lambda[])
 {
+    const Real epsilon = 1.0e-6;
     for (int row = 0; row < DIMU; ++row) {
-        lambdaPlus[row] = 0.5 * (lambda[row] + fabs(lambda[row]));
-        lambdaMinus[row] = 0.5 * (lambda[row] - fabs(lambda[row]));
+        lambdaPlus[row] = 0.5 * (lambda[row] + sqrt(lambda[row] * lambda[row] + epsilon * epsilon));
+        lambdaMinus[row] = 0.5 * (lambda[row] - sqrt(lambda[row] * lambda[row] + epsilon * epsilon));
     }
     return 0;
 }

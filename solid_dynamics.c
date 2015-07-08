@@ -57,6 +57,7 @@ int SolidDynamics(Real *U, Space *space, const Model *model, const Partition *pa
      */
     int idx = 0; /* linear array index math variable */
     Real Uo[DIMUo] = {0.0}; /* store weighted primitives */
+    Real weightSum = 0.0; /* store the sum of weights */
     int geoID = 0; /* geometry id */
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
@@ -71,10 +72,10 @@ int SolidDynamics(Real *U, Space *space, const Model *model, const Partition *pa
                     continue;
                 }
                 /* reconstruction of flow values */
-                InverseDistanceWeighting(Uo, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
+                InverseDistanceWeighting(Uo, &weightSum, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
                         k, j, i, 2, U, space, model);
                 /* Normalize the weighted values as reconstructed values. */
-                NormalizeReconstructedValues(Uo);
+                NormalizeReconstructedValues(Uo, weightSum);
                 ConservativeByPrimitive(U, idx * DIMU, Uo, model);
             }
         }

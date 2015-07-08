@@ -461,14 +461,17 @@ typedef enum {
     /* dimension of conservative vector, maximum independent primitives */
     DIMU = 5, /* rho, rho_u, rho_v, rho_w, rho_eT */
     /* dimension of primitive vector, contents depend on specific situations */
-    DIMUo = 6,  /* rho, u, v, w, [p, hT, h], [T, c, others] */
+    DIMUo = 6,  /* rho, u, v, w, [p, hT, h], [T, c] */
     /* 
-     * offset of node flag range
-     * >= offset:           interior ghost node, 
-     * <= -offset:          interior solid node,
-     * <= -offset - totalN: interior solid node required for numerical boundary,
-     * otherwise:           fluid node and boundary or exterior ghost node.
-     * totalN is the total number of interior geometries.
+     * node flag range
+     * 0                              fluid nodes
+     * -1                             boundary and exterior nodes
+     * (-offset-M, -offset]:          interior solid node,
+     * [offset, offset+M):            interior ghost node, 
+     * (-offset-2M, -offset-M]:       interior solid node required for numerical boundary,
+     * otherwise:                     reserved space.
+     * M is the total number of interior geometries.
+     * geometry identifier m in [0, M-1].
      */
     OFFSET = 10, 
     /* identifier of fluid nodes */

@@ -40,7 +40,8 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
 {
     int idx = 0; /* linear array index math variable */
     int idxh = 0; /* index at one node distance */
-    int idxhh = 0; /* index at two nodes distance */
+    int idxGhost = 0; /* index at ghost node */
+    int idxImage = 0; /* index at image node */
     Real Uo[DIMUo] = { /* obtain primitive values of current boundary */
         part->valueBC[partID][0],
         part->valueBC[partID][1],
@@ -49,7 +50,8 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
         part->valueBC[partID][4],
         part->valueBC[partID][5]};
     Real Uoh[DIMUo] = {0.0};
-    Real Uohh[DIMUo] = {0.0};
+    Real UoGhost[DIMUo] = {0.0};
+    Real UoImage[DIMUo] = {0.0};
     const int normalZ = part->normalZ[partID];
     const int normalY = part->normalY[partID];
     const int normalX = part->normalX[partID];
@@ -113,25 +115,25 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                  * Extrapolate values for exterior ghost nodes of current node
                  */
                 for (int ng = 1; ng <= space->ng; ++ng) { /* process layer by layer */
-                    idx = IndexMath(k + ng * normalZ, j + ng * normalY, i + ng * normalX, space) * DIMU;
-                    idxh = IndexMath(k + (ng-1) * normalZ, j + (ng-1) * normalY, i + (ng-1) * normalX, space) * DIMU;
+                    idxGhost = IndexMath(k + ng * normalZ, j + ng * normalY, i + ng * normalX, space) * DIMU;
                     switch (part->typeBC[partID]) {
                         case 1: /* inflow */
                         case 2: /* outflow */
                         case 5: /* primary periodic pair */
                         case -5: /* auxiliary periodic pair */
-                            ZeroGradient(U, idx, idxh);
+                            ZeroGradient(U, idxGhost, idx);
                             break;
-                        default: /* linear interpolation will automatically apply the method of image */
-                            idxhh = IndexMath(k + (ng-2) * normalZ, j + (ng-2) * normalY, i + (ng-2) * normalX, space) * DIMU;
-                            PrimitiveByConservative(Uoh, idxh, U, model);
-                            PrimitiveByConservative(Uohh, idxhh, U, model);
-                            U[idx] = Uoh[0];
-                            U[idx+1] = U[idx] * (2.0 * Uoh[1] - Uohh[1]);
-                            U[idx+2] = U[idx] * (2.0 * Uoh[2] - Uohh[2]);
-                            U[idx+3] = U[idx] * (2.0 * Uoh[3] - Uohh[3]);
-                            U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] + 
-                                Uoh[4] / (model->gamma - 1.0);
+                        default: /* apply the method of image */
+                            idxImage = IndexMath(k - ng * normalZ, j - ng * normalY, i - ng * normalX, space) * DIMU;
+                            PrimitiveByConservative(Uo, idx, U, model);
+                            PrimitiveByConservative(UoImage, idxImage, U, model);
+                            UoGhost[1] = 2.0 * Uo[1] - UoImage[1];
+                            UoGhost[2] = 2.0 * Uo[2] - UoImage[2];
+                            UoGhost[3] = 2.0 * Uo[3] - UoImage[3];
+                            UoGhost[4] = Uo[4];
+                            UoGhost[5] = Uo[5];
+                            UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
+                            ConservativeByPrimitive(U, idxGhost, UoGhost, model);
                             break;
                     }
                 }
