@@ -30,9 +30,12 @@ typedef int (*ConvectiveFluxComputer)(Real [], const int, const Real *, const Re
 typedef int (*DiffusiveFluxComputer)(Real [], const int, const int, const int, 
         const Real *, const Space *, const Model *);
 typedef int (*FluxSplitter)(Real [], Real [], const Real[]);
+typedef int (*AverageComputer)(Real [], const int, const int, const Real *, const Real);
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
+static int ArithmeticMean(Real [], const int, const int, const Real *, const Real);
+static int RoeAverage(Real [], const int, const int, const Real *, const Real);
 static int LaxFriedrichs(Real [], Real [], const Real []);
 static int StegerWarming(Real [], Real [], const Real []);
 static int EigenvectorSpaceLZ(Real [][DIMU], const Real [], const Real);
@@ -216,7 +219,34 @@ static int EigenvectorSpaceRX(Real R[][DIMU], const Real Uo[])
     R[4][0] = hT - u * c;  R[4][1] = u * u - q;  R[4][2] = v;  R[4][3] = w;  R[4][4] = hT + u * c;
     return 0;
 }
-int RoeAverage(Real Uo[], const int idx, const int idxh, const Real *U, const Real gamma)
+int SymmetricAverage(Real Uo[], const int idx, const int idxh, const Real *U, const Real gamma, const int averager)
+{
+    AverageComputer ComputeAverage[2] = {
+        ArithmeticMean,
+        RoeAverage};
+    ComputeAverage[averager](Uo, idx, idxh, U, gamma);
+    return 0;
+}
+static int ArithmeticMean(Real Uo[], const int idx, const int idxh, const Real *U, const Real gamma)
+{
+    const Real rho = U[idx];
+    const Real u = U[idx+1] / rho;
+    const Real v = U[idx+2] / rho;
+    const Real w = U[idx+3] / rho;
+    const Real hT = (U[idx+4] / rho) * gamma - 0.5 * (u * u + v * v + w * w) * (gamma - 1.0);
+    const Real rho_h = U[idxh];
+    const Real u_h = U[idxh+1] / rho_h;
+    const Real v_h = U[idxh+2] / rho_h;
+    const Real w_h = U[idxh+3] / rho_h;
+    const Real hT_h = (U[idxh+4] / rho_h) * gamma - 0.5 * (u_h * u_h + v_h * v_h + w_h * w_h) * (gamma - 1.0);
+    Uo[1] = 0.5 * (u + u_h); /* u average */
+    Uo[2] = 0.5 * (v + v_h); /* v average */
+    Uo[3] = 0.5 * (w + w_h); /* w average */
+    Uo[4] = 0.5 * (hT + hT_h); /* hT average */
+    Uo[5] = sqrt((gamma - 1.0) * (Uo[4] - 0.5 * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]))); /* the speed of sound */
+    return 0;
+}
+static int RoeAverage(Real Uo[], const int idx, const int idxh, const Real *U, const Real gamma)
 {
     const Real rho = U[idx];
     const Real u = U[idx+1] / rho;

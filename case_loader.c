@@ -118,6 +118,8 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model, Partition
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d", &(model->scheme)); 
             fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, "%d", &(model->averager)); 
+            fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d", &(model->splitter)); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatI, &(model->delta)); 
@@ -472,6 +474,7 @@ static int WriteVerifyData(const Space *space, const Time *time, const Model *mo
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "spatial scheme: %d\n", model->scheme);
+    fprintf(filePointer, "average method: %d\n", model->averager);
     fprintf(filePointer, "flux splitting method: %d\n", model->splitter);
     fprintf(filePointer, "Harten's numerical dissipation coefficient: %.6g\n", model->delta); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
@@ -581,8 +584,10 @@ static int CheckCaseSettingData(const Space *space, const Time *time, const Mode
         FatalError("wrong values in time section of case settings");
     }
     /* numerical method */
-    if ((0 > model->scheme) || (1 < model->scheme) || (0 > model->splitter)
-            || (1 < model->splitter) || (0 > model->delta)) {
+    if ((0 > model->scheme) || (1 < model->scheme) || 
+            (0 > model->averager) || (1 < model->averager) ||
+            (0 > model->splitter) || (1 < model->splitter) ||
+            (0 > model->delta)) {
         FatalError("wrong values in numerical method of case settings");
     }
     /* fluid and flow */

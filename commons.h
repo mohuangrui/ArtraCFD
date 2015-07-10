@@ -591,6 +591,7 @@ typedef struct {
  */
 typedef struct {
     int scheme; /* record numerical scheme */
+    int averager; /* average method for local constant Jacobian */
     int splitter; /* flux vector splitting method */
     Real refMa; /* reference Mach number */
     Real refMu; /* reference dynamic viscosity for Sutherland's law */

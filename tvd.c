@@ -42,13 +42,13 @@ int TVD(const int s, Real Fhat[], const Real r, const int k, const int j,
     Real Fh[DIMU] = {0.0}; /* flux at neighbour */
     Real R[DIMU][DIMU] = {{0.0}}; /* vector space {Rn} */
     Real Phi[DIMU] = {0.0}; /* flux projection or decomposition coefficients on {Rn} */
-    Real Uo[DIMUo] = {0.0}; /* Roe averaged rho, u, v, w, hT, c */
+    Real Uo[DIMUo] = {0.0}; /* averaged rho, u, v, w, hT, c */
     const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
     const int idx = IndexMath(k, j, i, space) * DIMU;
     const int idxh = IndexMath(k + h[s][Z], j + h[s][Y], i + h[s][X], space) * DIMU;
     ConvectiveFlux(s, F, idx, U, model->gamma);
     ConvectiveFlux(s, Fh, idxh, U, model->gamma);
-    RoeAverage(Uo, idx, idxh, U, model->gamma);
+    SymmetricAverage(Uo, idx, idxh, U, model->gamma, model->averager);
     EigenvectorSpaceR(s, R, Uo);
     FluxDecompositionCoefficientPhi(s, Phi, r, k, j, i, U, space, model);
     CalculateReconstructedFlux(Fhat, F, Fh, R, Phi);
@@ -78,11 +78,11 @@ static int FluxDecompositionCoefficientPhi(const int s, Real Phi[], const Real r
     Real lambda[DIMU] = {0.0}; /* eigenvalues */
     Real L[DIMU][DIMU] = {{0.0}}; /* vector space {Ln} */
     Real alpha[DIMU] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
-    Real Uo[DIMUo] = {0.0}; /* Roe averaged rho, u, v, w, hT, c */
+    Real Uo[DIMUo] = {0.0}; /* averaged rho, u, v, w, hT, c */
     const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
     const int idx = IndexMath(k, j, i, space) * DIMU;
     const int idxh = IndexMath(k + h[s][Z], j + h[s][Y], i + h[s][X], space) * DIMU;
-    RoeAverage(Uo, idx, idxh, U, model->gamma);
+    SymmetricAverage(Uo, idx, idxh, U, model->gamma, model->averager);
     EigenvalueLambda(s, lambda, Uo);
     EigenvectorSpaceL(s, L, Uo, model->gamma);
     DecompositionCoefficientAlpha(alpha, L, idx, idxh, U);
@@ -106,14 +106,14 @@ static int FunctionG(const int s, Real g[], const Real r, const int k, const int
     Real alphah[DIMU] = {0.0}; /* vector deltaU decomposition coefficients on vector space {Rn} */
     Real sigma[DIMU] = {0.0}; /* TVD function sigma */
     Real sigmah[DIMU] = {0.0}; /* TVD function sigma at neighbour */
-    Real Uo[DIMUo] = {0.0}; /* Roe averaged rho, u, v, w, hT, c */
-    Real Uoh[DIMUo] = {0.0}; /* Roe averaged rho, u, v, w, hT, c */
+    Real Uo[DIMUo] = {0.0}; /* averaged rho, u, v, w, hT, c */
+    Real Uoh[DIMUo] = {0.0}; /* averaged rho, u, v, w, hT, c */
     const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
     const int idxl = IndexMath(k - h[s][Z], j - h[s][Y], i - h[s][X], space) * DIMU;
     const int idx = IndexMath(k, j, i, space) * DIMU;
     const int idxr = IndexMath(k + h[s][Z], j + h[s][Y], i + h[s][X], space) * DIMU;
-    RoeAverage(Uo, idx, idxr, U, model->gamma);
-    RoeAverage(Uoh, idxl, idx, U, model->gamma);
+    SymmetricAverage(Uo, idx, idxr, U, model->gamma, model->averager);
+    SymmetricAverage(Uoh, idxl, idx, U, model->gamma, model->averager);
     EigenvalueLambda(s, lambda, Uo);
     EigenvalueLambda(s, lambdah, Uoh);
     EigenvectorSpaceL(s, L, Uo, model->gamma);

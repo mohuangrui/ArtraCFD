@@ -78,6 +78,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "numerical begin\n");
     fprintf(filePointer, "1                  # spatial scheme (0: 2nd Upwind TVD; 1: 5th WENO)\n");
+    fprintf(filePointer, "0                  # average method (0: Arithmetic mean; 1: Roe averages)\n");
     fprintf(filePointer, "0                  # <WENO> flux splitting method (0: L-F; 1: S-W)\n");
     fprintf(filePointer, "0.125              # <TVD> Harten's numerical dissipation coefficient [0, 0.5]\n");
     fprintf(filePointer, "numerical end\n");

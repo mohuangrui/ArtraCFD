@@ -42,13 +42,13 @@ extern int EigenvectorSpaceR(const int s, Real R[][DIMU], const Real Uo[]);
  */
 extern int FluxSplitting(Real lambdaPlus[], Real lambdaMinus[], const Real lambda[], const int splitter);
 /*
- * Roe average
+ * Average method
  *
  * Function
- *      Compute Roe averages.
+ *      Compute averaged variables at interface.
  */
-extern int RoeAverage(Real Uo[], const int idx, const int idxh,
-        const Real *U, const Real gamma);
+extern int SymmetricAverage(Real Uo[], const int idx, const int idxh,
+        const Real *U, const Real gamma, const int averager);
 /*
  * Convective fluxes
  *
