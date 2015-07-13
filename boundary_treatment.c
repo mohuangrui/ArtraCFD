@@ -42,13 +42,14 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
     int idxh = 0; /* index at one node distance */
     int idxGhost = 0; /* index at ghost node */
     int idxImage = 0; /* index at image node */
-    Real Uo[DIMUo] = { /* obtain primitive values of current boundary */
+    const Real UoGiven[DIMUo] = { /* specified primitive values of current boundary */
         part->valueBC[partID][0],
         part->valueBC[partID][1],
         part->valueBC[partID][2],
         part->valueBC[partID][3],
         part->valueBC[partID][4],
         part->valueBC[partID][5]};
+    Real Uo[DIMUo] = {0.0};
     Real Uoh[DIMUo] = {0.0};
     Real UoGhost[DIMUo] = {0.0};
     Real UoImage[DIMUo] = {0.0};
@@ -66,7 +67,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                  */
                 switch (part->typeBC[partID]) {
                     case 1: /* inflow */
-                        ConservativeByPrimitive(U, idx, Uo, model);
+                        ConservativeByPrimitive(U, idx, UoGiven, model);
                         break;
                     case 2: /* outflow */
                         /* Calculate inner neighbour nodes according to normal vector direction. */
@@ -80,9 +81,11 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         Uo[2] = (!normalY) * Uoh[2];
                         Uo[3] = (!normalZ) * Uoh[3];
                         Uo[4] = Uoh[4]; /* zero normal gradient of pressure */
-                        if (0 > Uo[5]) { /* adiabatic, dT/dn = 0 */
+                        if (0 > UoGiven[5]) { /* adiabatic, dT/dn = 0 */
                             Uo[5] = Uoh[5];
-                        } /* otherwise, use specified constant wall temperature, T = Tw */
+                        } else { /* otherwise, use specified constant wall temperature, T = Tw */
+                            Uo[5] = UoGiven[5];
+                        }
                         Uo[0] = Uo[4] / (Uo[5] * model->gasR); /* compute density */
                         ConservativeByPrimitive(U, idx, Uo, model);
                         break;
@@ -93,9 +96,11 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         Uo[2] = 0;
                         Uo[3] = 0;
                         Uo[4] = Uoh[4]; /* zero normal gradient of pressure */
-                        if (0 > Uo[5]) { /* adiabatic, dT/dn = 0 */
+                        if (0 > UoGiven[5]) { /* adiabatic, dT/dn = 0 */
                             Uo[5] = Uoh[5];
-                        } /* otherwise, use specified constant wall temperature, T = Tw */
+                        } else { /* otherwise, use specified constant wall temperature, T = Tw */
+                            Uo[5] = UoGiven[5];
+                        }
                         Uo[0] = Uo[4] / (Uo[5] * model->gasR); /* compute density */
                         ConservativeByPrimitive(U, idx, Uo, model);
                         break;
