@@ -21,9 +21,8 @@
  * Static Function Declarations
  ****************************************************************************/
 static int InitializeDomainGeometry(Space *, const Partition *);
-static int LocateSolidGeometry(Space *, const Partition *, const Geometry *);
-static int IdentifyGhostNodes(Space *, const Partition *);
-static int IdentifySolidNodesAtNumericalBoundary(Space *, const Partition *, const Geometry *);
+static int IdentifySolidNodes(Space *, const Partition *, const Geometry *);
+static int IdentifyGhostNodes(Space *, const Partition *, const Geometry *);
 static int SearchFluidNodes(const int, const int, const int, const int, const Space *);
 static int ApplyWeighting(Real [], Real *, Real, const Real [], const Real);
 /****************************************************************************
@@ -33,19 +32,18 @@ static int ApplyWeighting(Real [], Real *, Real, const Real [], const Real);
  * These functions identify the type of each node: 
  *
  * Procedures are:
- * -- initialize node flag of boundary and exterior nodes to boundary type,
+ * -- initialize node flag of boundary and exterior nodes to exterior type,
  *    and inner nodes to fluid type;
  * -- identify all inner nodes that are in solid geometry as solid node;
  * -- identify ghost nodes according to the node type of its neighbours;
- * -- identify whether a solid node required for numerical boundary.
  *
- * It's necessary to difference boundary nodes and inner nodes because this
- * will not make incorrect mark of ghost nodes nearby domain boundaries.
- * It's necessary to difference ghost node and interior solid node which is
- * also required for numerical boundary because the latter is only required for
- * a numerical scheme has an accuracy order higher than 2nd. Besides, the ghost
- * node is special because the computation of boundary forces are only based on
- * the first nearest solid layer of boundary, that is, ghost node.
+ * Ghost nodes are solid nodes that locate on numerical boundaries.
+ * It's necessary to differ boundary nodes and inner nodes to avoid 
+ * incorrect mark of ghost nodes nearby domain boundaries.
+ * It's necessary to differ different types of ghost node according to
+ * which neighbour of them is a fluid node. The fist type of ghost node 
+ * is special because the computation of boundary forces are only based on
+ * the first nearest solid layer of boundary.
  *
  * The identification process should proceed step by step to correctly handle
  * all these relationships and avoid interference between each step,
@@ -60,29 +58,25 @@ static int ApplyWeighting(Real [], Real *, Real, const Real [], const Real);
 int ComputeDomainGeometryGCIBM(Space *space, const Partition *part, const Geometry *geometry)
 {
     InitializeDomainGeometry(space, part);
-    LocateSolidGeometry(space, part, geometry);
-    IdentifyGhostNodes(space, part);
-    IdentifySolidNodesAtNumericalBoundary(space, part, geometry);
+    IdentifySolidNodes(space, part, geometry);
+    IdentifyGhostNodes(space, part, geometry);
     return 0;
 }
 static int InitializeDomainGeometry(Space *space, const Partition *part)
 {
-    /*
-     * Initialize the entire domain to boundary type. Operation can be achieved
-     * by a single loop since all data are stored by linear arrays.
-     */
     int idx = 0; /* linear array index math variable */
-    for (idx = 0; idx < space->nMax; ++idx) {
-        space->nodeFlag[idx] = EXTERIOR;
-    }
-    /*
-     * Initialize inner nodes to fluid type.
-     */
-    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
+    /* initialize inner nodes to fluid type, others to exterior nodes type. */
+    for (int k = 0; k < space->kMax; ++k) {
+        for (int j = 0; j < space->jMax; ++j) {
+            for (int i = 0; i < space->iMax; ++i) {
                 idx = IndexMath(k, j, i, space);
-                space->nodeFlag[idx] = FLUID;
+                if ((part->kSub[0] <= k) && (part->kSup[0] > k) &&
+                        (part->jSub[0] <= j) && (part->jSup[0] > j) &&
+                        (part->iSub[0] <= i) && (part->iSup[0] > i)) {
+                    space->nodeFlag[idx] = FLUID;
+                } else {
+                    space->nodeFlag[idx] = EXTERIOR;
+                }
             }
         }
     }
@@ -99,7 +93,7 @@ static int InitializeDomainGeometry(Space *space, const Partition *part)
  * validity of the index to avoid index exceed array bound limits and 
  * mysterious bugs.
  */
-static int LocateSolidGeometry(Space *space, const Partition *part, const Geometry *geometry)
+static int IdentifySolidNodes(Space *space, const Partition *part, const Geometry *geometry)
 {
     int idx = 0; /* linear array index math variable */
     for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
@@ -131,7 +125,7 @@ static int LocateSolidGeometry(Space *space, const Partition *part, const Geomet
     }
     return 0;
 }
-static int IdentifyGhostNodes(Space *space, const Partition *part)
+static int IdentifyGhostNodes(Space *space, const Partition *part, const Geometry *geometry)
 {
     int idx = 0; /* linear array index math variable */
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
@@ -141,28 +135,10 @@ static int IdentifyGhostNodes(Space *space, const Partition *part)
                 if (-OFFSET < space->nodeFlag[idx]) { /* it's not solid node */
                     continue;
                 }
-                /* if exist one neighbour is fluid, then it's ghost */
-                if (0 == SearchFluidNodes(k, j, i, 1, space)) {
-                    space->nodeFlag[idx] = -space->nodeFlag[idx]; /* geometry conserved */
-                }
-            }
-        }
-    }
-    return 0;
-}
-static int IdentifySolidNodesAtNumericalBoundary(Space *space, const Partition *part, const Geometry *geometry)
-{
-    int idx = 0; /* linear array index math variable */
-    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = IndexMath(k, j, i, space);
-                if (-OFFSET < space->nodeFlag[idx]) { /* it's not solid node */
-                    continue;
-                }
-                for (int order = 2; order < space->ng + 2; ++order) { /* max search range should be ng + 1 */
-                    if (0 == SearchFluidNodes(k, j, i, order, space)) {
-                        space->nodeFlag[idx] = space->nodeFlag[idx] - geometry->totalN;
+                /* if nth neighbour is fluid, then it's nth type ghost node */
+                for (int type = 1; type < space->ng + 2; ++type) { /* max search range should be ng + 1 */
+                    if (0 == SearchFluidNodes(k, j, i, type, space)) {
+                        space->nodeFlag[idx] = -space->nodeFlag[idx] + (type - 1) * geometry->totalN; /* geometry conserved */
                         break; /* exit search loop once identified successfully */
                     }
                 }
@@ -194,62 +170,66 @@ static int SearchFluidNodes(const int k, const int j, const int i,
 int BoundaryConditionGCIBM(Real *U, const Space *space, const Model *model,
         const Partition *part, const Geometry *geometry)
 {
-    int idx = 0; /* linear array index math variable */
-    Real Uo[DIMUo] = {0.0}; /* save reconstructed primitives */
-    Real Uow[DIMUo] = {0.0}; /* reconstructed primitives at boundary point */
+    Real UoGhost[DIMUo] = {0.0}; /* reconstructed primitives at ghost node */
+    Real UoImage[DIMUo] = {0.0}; /* reconstructed primitives at image point */
+    Real UoBC[DIMUo] = {0.0}; /* physical primitives at boundary point */
     Real info[INFOGEO] = {0.0}; /* store calculated geometry information */
     Real weightSum = 0.0; /* store the sum of weights */
+    Real bcZ = 0.0;
+    Real bcY = 0.0;
+    Real bcX = 0.0;
+    Real imageZ = 0.0;
+    Real imageY = 0.0;
+    Real imageX = 0.0;
+    int idx = 0; /* linear array index math variable */
     int geoID = 0; /* geometry id */
     Real *geo = NULL;
-    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = IndexMath(k, j, i, space);
-                if (-OFFSET - geometry->totalN >= space->nodeFlag[idx]) { /* solid */
-                    geoID = -space->nodeFlag[idx] - OFFSET - geometry->totalN;
-                } else {
-                    if (OFFSET <= space->nodeFlag[idx]) { /* ghost */
-                        geoID = space->nodeFlag[idx] - OFFSET; /* extract geometry */
-                    } else { /* not a numerical boundary node */
+    for (int type = 1; type < space->ng + 2; ++type) {
+        for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+            for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+                for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
+                    idx = IndexMath(k, j, i, space);
+                    geoID = space->nodeFlag[idx] - OFFSET - (type - 1) * geometry->totalN; /* extract geometry */
+                    if ((0 > geoID) || (geometry->totalN <= geoID)) { /* not a ghost node with current type*/
                         continue;
                     }
+                    geo = IndexGeometry(geoID, geometry);
+                    CalculateGeometryInformation(info, k, j, i, geo, space);
+                    /* obtain the spatial coordinates of the boundary point */
+                    bcX = info[0] + info[4] * info[5];
+                    bcY = info[1] + info[4] * info[6];
+                    bcZ = info[2] + info[4] * info[7];
+                    InverseDistanceWeighting(UoBC, &weightSum, bcZ, bcY, bcX, 
+                            ComputeK(bcZ, space), ComputeJ(bcY, space), ComputeI(bcX, space), 
+                            2, U, space, model);
+                    NormalizeReconstructedValues(UoBC, weightSum);
+                    /* enforce Dirichlet boundary conditions, others remain Neumann */
+                    UoBC[1] = geo[5];
+                    UoBC[2] = geo[6];
+                    UoBC[3] = geo[7];
+                    /* obtain the spatial coordinates of the image point */
+                    imageX = info[0] + 2 * info[4] * info[5];
+                    imageY = info[1] + 2 * info[4] * info[6];
+                    imageZ = info[2] + 2 * info[4] * info[7];
+                    InverseDistanceWeighting(UoImage, &weightSum, imageZ, imageY, imageX, 
+                            ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space), 
+                            2, U, space, model);
+                    /* add the boundary point as a stencil */
+                    ApplyWeighting(UoImage, &weightSum, info[4] * info[4], UoBC, space->tinyL);
+                    /* Normalize the weighted values of the image point */
+                    NormalizeReconstructedValues(UoImage, weightSum);
+                    /*
+                     * Apply linear reconstruction to get primitive values at ghost nodes
+                     * That is, variable phi_ghost = 2 * phi_o - phi_image 
+                     */
+                    UoGhost[1] = 2 * UoBC[1] - UoImage[1];
+                    UoGhost[2] = 2 * UoBC[2] - UoImage[2];
+                    UoGhost[3] = 2 * UoBC[3] - UoImage[3];
+                    UoGhost[4] = UoBC[4];
+                    UoGhost[5] = UoBC[5];
+                    UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
+                    ConservativeByPrimitive(U, idx * DIMU, UoGhost, model);
                 }
-                geo = IndexGeometry(geoID, geometry);
-                CalculateGeometryInformation(info, k, j, i, geo, space);
-                /* obtain the spatial coordinates of the boundary point */
-                const Real wallX = info[0] + info[4] * info[5];
-                const Real wallY = info[1] + info[4] * info[6];
-                const Real wallZ = info[2] + info[4] * info[7];
-                InverseDistanceWeighting(Uow, &weightSum, wallZ, wallY, wallX, 
-                        ComputeK(wallZ, space), ComputeJ(wallY, space), ComputeI(wallX, space), 
-                        2, U, space, model);
-                NormalizeReconstructedValues(Uow, weightSum);
-                /* enforce Dirichlet boundary conditions, others remain Neumann */
-                Uow[1] = geo[5];
-                Uow[2] = geo[6];
-                Uow[3] = geo[7];
-                /* obtain the spatial coordinates of the image point */
-                const Real imageX = info[0] + 2 * info[4] * info[5];
-                const Real imageY = info[1] + 2 * info[4] * info[6];
-                const Real imageZ = info[2] + 2 * info[4] * info[7];
-                InverseDistanceWeighting(Uo, &weightSum, imageZ, imageY, imageX, 
-                        ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space), 
-                        2, U, space, model);
-                /* add the boundary point as a stencil */
-                ApplyWeighting(Uo, &weightSum, info[4] * info[4], Uow, space->tinyL);
-                /* Normalize the weighted values of the image point */
-                NormalizeReconstructedValues(Uo, weightSum);
-                /*
-                 * Apply linear reconstruction to get primitive values at nodes
-                 * in wall. That is, variable phi_ghost = 2 * phi_o - phi_image 
-                 */
-                Uo[1] = 2 * Uow[1] - Uo[1];
-                Uo[2] = 2 * Uow[2] - Uo[2];
-                Uo[3] = 2 * Uow[3] - Uo[3];
-                Uo[4] = Uow[4];
-                Uo[5] = Uow[5];
-                Uo[0] = Uo[4] / (Uo[5] * model->gasR); /* compute density */
-                ConservativeByPrimitive(U, idx * DIMU, Uo, model);
             }
         }
     }

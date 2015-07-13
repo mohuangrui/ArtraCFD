@@ -467,8 +467,8 @@ typedef enum {
      * 0                              fluid nodes
      * -1                             boundary and exterior nodes
      * (-offset-M, -offset]:          interior solid node,
-     * [offset, offset+M):            interior ghost node, 
-     * (-offset-2M, -offset-M]:       interior solid node required for numerical boundary,
+     * [offset, +infinity):           interior ghost node, 
+     * [offset+(n-1)*M, offset+n*M):  nth type ghost node, 
      * otherwise:                     reserved space.
      * M is the total number of interior geometries.
      * geometry identifier m in [0, M-1].

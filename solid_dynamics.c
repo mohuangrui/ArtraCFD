@@ -66,7 +66,12 @@ int SolidDynamics(Real *U, Space *space, const Model *model, const Partition *pa
                 if (OFFSET > space->nodeFlag[idx]) { /* it's not a ghost */
                     continue;
                 }
-                geoID = space->nodeFlag[idx] - OFFSET; /* extract geometry information */
+                for (int type = 1; type < space->ng + 2; ++type) { /* extract geometry identifier */
+                    geoID = space->nodeFlag[idx] - OFFSET - (type - 1) * geometry->totalN;
+                    if ((0 <= geoID) && (geometry->totalN > geoID)) { /* a ghost node with current type*/
+                        break;
+                    }
+                }
                 geo = IndexGeometry(geoID, geometry);
                 if (0 > InGeometry(k, j, i, geo, space)) { /* still in the solid geometry */
                     continue;
@@ -117,10 +122,10 @@ static int SurfaceForceIntegration(const Real *U, const Space *space,
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = IndexMath(k, j, i, space);
-                if (OFFSET > space->nodeFlag[idx]) { /* it's not a ghost */
+                geoID = space->nodeFlag[idx] - OFFSET;
+                if ((0 > geoID) || (geometry->totalN <= geoID)) { /* not a first type ghost node */
                     continue;
                 }
-                geoID = space->nodeFlag[idx] - OFFSET; /* extract geometry information */
                 geo = IndexGeometry(geoID, geometry);
                 CalculateGeometryInformation(info, k, j, i, geo, space);
                 p = ComputePressure(idx * DIMU, U, model);
