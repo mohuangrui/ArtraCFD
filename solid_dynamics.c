@@ -89,7 +89,7 @@ int SolidDynamics(Real *U, Space *space, const Model *model, const Partition *pa
      * Recompute the changed geometry and apply boundary condition.
      */
     ComputeDomainGeometryGCIBM(space, part, geometry);
-    BoundaryConditionGCIBM(U, space, model, part, geometry);
+    BoundaryTreatmentsGCIBM(U, space, model, part, geometry);
     return 0;
 }
 /*

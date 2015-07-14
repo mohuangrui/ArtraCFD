@@ -31,8 +31,8 @@ int BoundaryCondtionsAndTreatments(Real *U, const Space *space, const Model *mod
     for (int partID = 1; partID < 7; ++partID) {
         ApplyBoundaryConditions(partID, U, space, model, part);
     }
-    /* Boundary conditions and treatments for interior ghost cells */
-    BoundaryConditionGCIBM(U, space, model, part, geometry);
+    /* Boundary conditions and treatments for interior ghost nodes */
+    BoundaryTreatmentsGCIBM(U, space, model, part, geometry);
     return 0;
 }
 static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space,
@@ -117,18 +117,14 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         break;
                 }
                 /*
-                 * Extrapolate values for exterior ghost nodes of current node
+                 * Reconstruct values for exterior ghost nodes of current node
                  */
                 for (int ng = 1; ng <= space->ng; ++ng) { /* process layer by layer */
                     idxGhost = IndexMath(k + ng * normalZ, j + ng * normalY, i + ng * normalX, space) * DIMU;
                     switch (part->typeBC[partID]) {
-                        case 1: /* inflow */
-                        case 2: /* outflow */
-                        case 5: /* primary periodic pair */
-                        case -5: /* auxiliary periodic pair */
-                            ZeroGradient(U, idxGhost, idxBC);
-                            break;
-                        default: /* apply the method of image */
+                        case 3: /* slip wall */
+                        case 4: /* noslip wall */
+                            /* apply the method of image */
                             idxImage = IndexMath(k - ng * normalZ, j - ng * normalY, i - ng * normalX, space) * DIMU;
                             PrimitiveByConservative(UoBC, idxBC, U, model);
                             PrimitiveByConservative(UoImage, idxImage, U, model);
@@ -139,6 +135,9 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                             UoGhost[5] = UoBC[5];
                             UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
                             ConservativeByPrimitive(U, idxGhost, UoGhost, model);
+                            break;
+                        default:
+                            ZeroGradient(U, idxGhost, idxBC);
                             break;
                     }
                 }

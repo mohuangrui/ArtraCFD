@@ -32,12 +32,12 @@
  */
 extern int ComputeDomainGeometryGCIBM(Space *, const Partition *, const Geometry *);
 /*
- * Boundary condition for interior ghost cells
+ * Boundary treatments for ghost nodes
  *
  * Function
- *      Apply boundary conditions to the interior ghost cells.
+ *      Apply boundary conditions and treatments to ghost nodes.
  */
-extern int BoundaryConditionGCIBM(Real *U, const Space *, const Model *,
+extern int BoundaryTreatmentsGCIBM(Real *U, const Space *, const Model *,
         const Partition *, const Geometry *);
 /*
  * Inverse Distance Weighting

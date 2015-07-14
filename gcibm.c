@@ -95,23 +95,36 @@ static int InitializeDomainGeometry(Space *space, const Partition *part)
  */
 static int IdentifySolidNodes(Space *space, const Partition *part, const Geometry *geometry)
 {
+    Real *geo = NULL;
+    Real safetyCoe = 1.2; /* zoom the search range */
     int idx = 0; /* linear array index math variable */
+    int centerK = 0;
+    int centerJ = 0;
+    int centerI = 0;
+    int rangeK = 0;
+    int rangeJ = 0;
+    int rangeI = 0;
+    int kSub = 0;
+    int kSup = 0;
+    int jSub = 0;
+    int jSup = 0;
+    int iSub = 0;
+    int iSup = 0;
     for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
-        const Real *geo = IndexGeometry(geoCount, geometry);
-        const int centerI = ComputeI(geo[0], space);
-        const int centerJ = ComputeJ(geo[1], space);
-        const int centerK = ComputeK(geo[2], space);
-        const Real safetyCoe = 1.2; /* zoom the search range */
-        const int rangeK = (int)(safetyCoe * geo[3] * space->ddz);
-        const int rangeJ = (int)(safetyCoe * geo[3] * space->ddy);
-        const int rangeI = (int)(safetyCoe * geo[3] * space->ddx);
+        geo = IndexGeometry(geoCount, geometry);
+        centerK = ComputeK(geo[2], space);
+        centerJ = ComputeJ(geo[1], space);
+        centerI = ComputeI(geo[0], space);
+        rangeK = (int)(safetyCoe * geo[3] * space->ddz);
+        rangeJ = (int)(safetyCoe * geo[3] * space->ddy);
+        rangeI = (int)(safetyCoe * geo[3] * space->ddx);
         /* determine search range according to valid region */
-        const int kSub = ValidRegionK(centerK - rangeK, part);
-        const int kSup = ValidRegionK(centerK + rangeK, part) + 1;
-        const int jSub = ValidRegionJ(centerJ - rangeJ, part);
-        const int jSup = ValidRegionJ(centerJ + rangeJ, part) + 1;
-        const int iSub = ValidRegionI(centerI - rangeI, part);
-        const int iSup = ValidRegionI(centerI + rangeI, part) + 1;
+        kSub = ValidRegionK(centerK - rangeK, part);
+        kSup = ValidRegionK(centerK + rangeK, part) + 1;
+        jSub = ValidRegionJ(centerJ - rangeJ, part);
+        jSup = ValidRegionJ(centerJ + rangeJ, part) + 1;
+        iSub = ValidRegionI(centerI - rangeI, part);
+        iSup = ValidRegionI(centerI + rangeI, part) + 1;
         for (int k = kSub; k < kSup; ++k) {
             for (int j = jSub; j < jSup; ++j) {
                 for (int i = iSub; i < iSup; ++i) {
@@ -165,9 +178,9 @@ static int SearchFluidNodes(const int k, const int j, const int i,
             space->nodeFlag[idxF] * space->nodeFlag[idxB]);
 }
 /*
- * Boundary condition for interior ghost and solid nodes at numerical boundary.
+ * Numerical boundary treatments for ghost nodes.
  */
-int BoundaryConditionGCIBM(Real *U, const Space *space, const Model *model,
+int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
         const Partition *part, const Geometry *geometry)
 {
     Real UoGhost[DIMUo] = {0.0}; /* reconstructed primitives at ghost node */
