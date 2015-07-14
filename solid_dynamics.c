@@ -68,7 +68,7 @@ int SolidDynamics(Real *U, Space *space, const Model *model, const Partition *pa
                 }
                 for (int type = 1; type < space->ng + 2; ++type) { /* extract geometry identifier */
                     geoID = space->nodeFlag[idx] - OFFSET - (type - 1) * geometry->totalN;
-                    if ((0 <= geoID) && (geometry->totalN > geoID)) { /* a ghost node with current type*/
+                    if ((0 <= geoID) && (geometry->totalN > geoID)) { /* a ghost node with current type */
                         break;
                     }
                 }
@@ -78,7 +78,7 @@ int SolidDynamics(Real *U, Space *space, const Model *model, const Partition *pa
                 }
                 /* reconstruction of flow values */
                 InverseDistanceWeighting(Uo, &weightSum, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
-                        k, j, i, 2, U, space, model);
+                        k, j, i, 2, FLUID, U, space, model, geometry);
                 /* Normalize the weighted values as reconstructed values. */
                 NormalizeReconstructedValues(Uo, weightSum);
                 ConservativeByPrimitive(U, idx * DIMU, Uo, model);

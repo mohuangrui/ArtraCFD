@@ -203,44 +203,52 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                 for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                     idx = IndexMath(k, j, i, space);
                     geoID = space->nodeFlag[idx] - OFFSET - (type - 1) * geometry->totalN; /* extract geometry */
-                    if ((0 > geoID) || (geometry->totalN <= geoID)) { /* not a ghost node with current type*/
+                    if ((0 > geoID) || (geometry->totalN <= geoID)) { /* not a ghost node with current type */
                         continue;
                     }
-                    geo = IndexGeometry(geoID, geometry);
-                    CalculateGeometryInformation(info, k, j, i, geo, space);
-                    /* obtain the spatial coordinates of the boundary point */
-                    bcX = info[0] + info[4] * info[5];
-                    bcY = info[1] + info[4] * info[6];
-                    bcZ = info[2] + info[4] * info[7];
-                    InverseDistanceWeighting(UoBC, &weightSum, bcZ, bcY, bcX, 
-                            ComputeK(bcZ, space), ComputeJ(bcY, space), ComputeI(bcX, space), 
-                            2, U, space, model);
-                    NormalizeReconstructedValues(UoBC, weightSum);
-                    /* enforce Dirichlet boundary conditions, others remain Neumann */
-                    UoBC[1] = geo[5];
-                    UoBC[2] = geo[6];
-                    UoBC[3] = geo[7];
-                    /* obtain the spatial coordinates of the image point */
-                    imageX = info[0] + 2 * info[4] * info[5];
-                    imageY = info[1] + 2 * info[4] * info[6];
-                    imageZ = info[2] + 2 * info[4] * info[7];
-                    InverseDistanceWeighting(UoImage, &weightSum, imageZ, imageY, imageX, 
-                            ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space), 
-                            2, U, space, model);
-                    /* add the boundary point as a stencil */
-                    ApplyWeighting(UoImage, &weightSum, info[4] * info[4], UoBC, space->tinyL);
-                    /* Normalize the weighted values of the image point */
-                    NormalizeReconstructedValues(UoImage, weightSum);
-                    /*
-                     * Apply linear reconstruction to get primitive values at ghost nodes
-                     * That is, variable phi_ghost = 2 * phi_o - phi_image 
-                     */
-                    UoGhost[1] = 2 * UoBC[1] - UoImage[1];
-                    UoGhost[2] = 2 * UoBC[2] - UoImage[2];
-                    UoGhost[3] = 2 * UoBC[3] - UoImage[3];
-                    UoGhost[4] = UoBC[4];
-                    UoGhost[5] = UoBC[5];
-                    UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
+                    if (1 == type) { /* first type ghost nodes treatments */
+                        geo = IndexGeometry(geoID, geometry);
+                        CalculateGeometryInformation(info, k, j, i, geo, space);
+                        /* obtain the spatial coordinates of the boundary point */
+                        bcX = info[0] + info[4] * info[5];
+                        bcY = info[1] + info[4] * info[6];
+                        bcZ = info[2] + info[4] * info[7];
+                        InverseDistanceWeighting(UoBC, &weightSum, bcZ, bcY, bcX, 
+                                ComputeK(bcZ, space), ComputeJ(bcY, space), ComputeI(bcX, space), 
+                                2, FLUID, U, space, model, geometry);
+                        NormalizeReconstructedValues(UoBC, weightSum);
+                        /* enforce Dirichlet boundary conditions, others remain Neumann */
+                        UoBC[1] = geo[5];
+                        UoBC[2] = geo[6];
+                        UoBC[3] = geo[7];
+                        /* obtain the spatial coordinates of the image point */
+                        imageX = info[0] + 2 * info[4] * info[5];
+                        imageY = info[1] + 2 * info[4] * info[6];
+                        imageZ = info[2] + 2 * info[4] * info[7];
+                        InverseDistanceWeighting(UoImage, &weightSum, imageZ, imageY, imageX, 
+                                ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space), 
+                                2, FLUID, U, space, model, geometry);
+                        /* add the boundary point as a stencil */
+                        ApplyWeighting(UoImage, &weightSum, info[4] * info[4], UoBC, space->tinyL);
+                        /* Normalize the weighted values of the image point */
+                        NormalizeReconstructedValues(UoImage, weightSum);
+                        /*
+                         * Apply linear reconstruction to get primitive values at ghost nodes
+                         * That is, variable phi_ghost = 2 * phi_o - phi_image 
+                         */
+                        UoGhost[1] = 2 * UoBC[1] - UoImage[1];
+                        UoGhost[2] = 2 * UoBC[2] - UoImage[2];
+                        UoGhost[3] = 2 * UoBC[3] - UoImage[3];
+                        UoGhost[4] = UoBC[4];
+                        UoGhost[5] = UoBC[5];
+                        UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
+                    } else { /* other types of ghost nodes treatments */
+                        InverseDistanceWeighting(UoGhost, &weightSum, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
+                                k, j, i, 1, type - 1, U, space, model, geometry);
+                        /* Normalize the weighted values as reconstructed values. */
+                        NormalizeReconstructedValues(UoGhost, weightSum);
+                        UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
+                    }
                     ConservativeByPrimitive(U, idx * DIMU, UoGhost, model);
                 }
             }
@@ -249,11 +257,12 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
     return 0;
 }
 int InverseDistanceWeighting(Real Uo[], Real *weightSum, const Real z, const Real y, const Real x,
-        const int k, const int j, const int i, const int h, const Real *U,
-        const Space *space, const Model *model)
+        const int k, const int j, const int i, const int h, const int nodeType, const Real *U,
+        const Space *space, const Model *model, const Geometry *geometry)
 {
     int idxh = 0; /* linear array index math variable */
     int tally = 0; /* stencil count and zero stencil detector */
+    int geoID = 0;
     Real Uoh[DIMUo] = {0.0}; /* primitive at target node */
     Real distZ = 0.0;
     Real distY = 0.0;
@@ -264,7 +273,7 @@ int InverseDistanceWeighting(Real Uo[], Real *weightSum, const Real z, const Rea
     }
     *weightSum = 0.0; /* reset */
     /* 
-     * Search around the specified node to find required fluid nodes as interpolation stencil.
+     * Search around the specified node to find required target nodes as interpolation stencil.
      */
     for (int kh = -h; kh <= h; ++kh) {
         for (int jh = -h; jh <= h; ++jh) {
@@ -273,8 +282,15 @@ int InverseDistanceWeighting(Real Uo[], Real *weightSum, const Real z, const Rea
                 if ((0 > idxh) || (space->nMax <= idxh)) {
                     continue; /* illegal index */
                 }
-                if (FLUID != space->nodeFlag[idxh]) {
-                    continue;
+                if (FLUID == nodeType) { /* require fluid nodes */
+                    if (FLUID != space->nodeFlag[idxh]) {
+                        continue;
+                    }
+                } else { /* require specified type of ghost nodes */
+                    geoID = space->nodeFlag[idxh] - OFFSET - (nodeType - 1) * geometry->totalN;
+                    if ((0 > geoID) || (geometry->totalN <= geoID)) { /* not a ghost node with current type */
+                        continue;
+                    }
                 }
                 ++tally;
                 distZ = ComputeZ(k + kh, space) - z;

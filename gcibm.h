@@ -51,9 +51,10 @@ extern int BoundaryTreatmentsGCIBM(Real *U, const Space *, const Model *,
  *      Weighted values without normalization, the normalization factor is
  *      saved and returned at the last element of Uo.
  */
-extern int InverseDistanceWeighting(Real Uo[], Real *weightSum, const Real z, 
+extern int InverseDistanceWeighting(Real Uo[], Real *weightSum, const Real z,
         const Real y, const Real x, const int k, const int j, const int i,
-        const int h, const Real *U, const Space *, const Model *);
+        const int h, const int nodeType, const Real *U, const Space *space,
+        const Model *model, const Geometry *geometry);
 extern int NormalizeReconstructedValues(Real Uo[], const Real weightSum);
 /*
  * In geometry criteria
