@@ -122,6 +122,9 @@ static int SurfaceForceIntegration(const Real *U, const Space *space,
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = IndexMath(k, j, i, space);
+                if (OFFSET > space->nodeFlag[idx]) { /* it's not a ghost */
+                    continue;
+                }
                 geoID = space->nodeFlag[idx] - OFFSET;
                 if ((0 > geoID) || (geometry->totalN <= geoID)) { /* not a first type ghost node */
                     continue;

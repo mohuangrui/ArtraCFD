@@ -463,13 +463,13 @@ typedef enum {
     /* dimension of primitive vector, contents depend on specific situations */
     DIMUo = 6,  /* rho, u, v, w, [p, hT, h], [T, c] */
     /* 
-     * node flag range
-     * 0                              fluid nodes
-     * -1                             boundary and exterior nodes
-     * (-offset-M, -offset]:          interior solid node,
-     * [offset, +infinity):           interior ghost node, 
-     * [offset+(n-1)*M, offset+n*M):  nth type ghost node, 
-     * otherwise:                     reserved space.
+     * node flag value          node flag range              node type
+     *      0                          0                   fluid nodes
+     *     -1                         -1                   boundary and exterior nodes
+     * -offset-m              (-offset-M, -offset]         interior solid node,
+     *                         [offset, +infinity)         interior ghost node, 
+     * offset+m+(r-1)*M    [offset+(r-1)*M, offset+r*M)    rth type ghost node, 
+     * otherwise: reserved space.
      * M is the total number of interior geometries.
      * geometry identifier m in [0, M-1].
      */
