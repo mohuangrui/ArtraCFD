@@ -164,7 +164,7 @@ static int ComputeGeometryParameters(const Space *space, const Model *model, Geo
         geo[9] = 0;
         geo[10] = 0;
         geo[11] = 0;
-        if (1 == space->collapsed) { /* space dimension collapsed */
+        if (0 != space->collapsed) { /* space dimension collapsed */
             geo[12] = 2.0 * geo[3] * model->pi; /* circle perimeter */
             geo[13] = geo[4] * geo[3] * geo[3] * model->pi; /* circle mass */
         } else {

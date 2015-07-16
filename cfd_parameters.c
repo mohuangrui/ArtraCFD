@@ -75,8 +75,15 @@ static int NodeBasedMeshNumberRefine(Space *space, const Model *model)
     } else { /* WENO */
         space->ng = 2;
     }
-    /* check whether space collapsed */
-    if (0 == (space->nz - 1) * (space->ny - 1) * (space->nx - 1)) {
+    /* check and mark collapsed space */
+    space->collapsed = 0; /* set to no collapse */
+    if (0 == (space->nz - 1)) {
+        space->collapsed = 3;
+    }
+    if (0 == (space->ny - 1)) {
+        space->collapsed = 2;
+    }
+    if (0 == (space->nx - 1)) {
         space->collapsed = 1;
     }
     /* change from number of cells to number of node layers */
