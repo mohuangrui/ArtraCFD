@@ -131,8 +131,8 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                             UoGhost[1] = 2.0 * UoBC[1] - UoImage[1];
                             UoGhost[2] = 2.0 * UoBC[2] - UoImage[2];
                             UoGhost[3] = 2.0 * UoBC[3] - UoImage[3];
-                            UoGhost[4] = UoBC[4];
-                            UoGhost[5] = UoBC[5];
+                            UoGhost[4] = 2.0 * UoBC[4] - UoImage[4];
+                            UoGhost[5] = 2.0 * UoBC[5] - UoImage[5];
                             UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
                             ConservativeByPrimitive(U, idxGhost, UoGhost, model);
                             break;
