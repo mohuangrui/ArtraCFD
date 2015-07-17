@@ -188,9 +188,6 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
     Real UoBC[DIMUo] = {0.0}; /* physical primitives at boundary point */
     Real info[INFOGEO] = {0.0}; /* store calculated geometry information */
     Real weightSum = 0.0; /* store the sum of weights */
-    Real bcZ = 0.0;
-    Real bcY = 0.0;
-    Real bcX = 0.0;
     Real imageZ = 0.0;
     Real imageY = 0.0;
     Real imageX = 0.0;
@@ -212,18 +209,6 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                     if (1 == type) { /* first type ghost nodes treatments */
                         geo = IndexGeometry(geoID, geometry);
                         CalculateGeometryInformation(info, k, j, i, geo, space);
-                        /* obtain the spatial coordinates of the boundary point */
-                        bcX = info[0] + info[4] * info[5];
-                        bcY = info[1] + info[4] * info[6];
-                        bcZ = info[2] + info[4] * info[7];
-                        InverseDistanceWeighting(UoBC, &weightSum, bcZ, bcY, bcX, 
-                                ComputeK(bcZ, space), ComputeJ(bcY, space), ComputeI(bcX, space), 
-                                2, FLUID, U, space, model, geometry);
-                        NormalizeReconstructedValues(UoBC, weightSum);
-                        /* enforce Dirichlet boundary conditions, others remain Neumann */
-                        UoBC[1] = geo[5];
-                        UoBC[2] = geo[6];
-                        UoBC[3] = geo[7];
                         /* obtain the spatial coordinates of the image point */
                         imageX = info[0] + 2 * info[4] * info[5];
                         imageY = info[1] + 2 * info[4] * info[6];
@@ -231,19 +216,26 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                         InverseDistanceWeighting(UoImage, &weightSum, imageZ, imageY, imageX, 
                                 ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space), 
                                 2, FLUID, U, space, model, geometry);
+                        /* enforce boundary conditions at boundary point */
+                        UoBC[1] = geo[5];
+                        UoBC[2] = geo[6];
+                        UoBC[3] = geo[7];
+                        UoBC[4] = UoImage[4] / weightSum;
+                        UoBC[5] = UoImage[5] / weightSum;
                         /* add the boundary point as a stencil */
                         ApplyWeighting(UoImage, &weightSum, info[4] * info[4], UoBC, space->tinyL);
                         /* Normalize the weighted values of the image point */
                         NormalizeReconstructedValues(UoImage, weightSum);
-                        /*
-                         * Apply linear reconstruction to get primitive values at ghost nodes
-                         * That is, variable phi_ghost = 2 * phi_o - phi_image 
+                        /* 
+                         * Apply the method of image.
+                         *  -- linear interpolation for velocity components.
+                         *  -- zero-gradient for other scalars.
                          */
                         UoGhost[1] = 2 * UoBC[1] - UoImage[1];
                         UoGhost[2] = 2 * UoBC[2] - UoImage[2];
                         UoGhost[3] = 2 * UoBC[3] - UoImage[3];
-                        UoGhost[4] = 2 * UoBC[4] - UoImage[4];
-                        UoGhost[5] = 2 * UoBC[5] - UoImage[5];
+                        UoGhost[4] = UoBC[4];
+                        UoGhost[5] = UoBC[5];
                         UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
                     } else { /* other types of ghost nodes treatments */
                         InverseDistanceWeighting(UoGhost, &weightSum, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 

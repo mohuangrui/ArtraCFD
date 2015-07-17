@@ -124,15 +124,19 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                     switch (part->typeBC[partID]) {
                         case 3: /* slip wall */
                         case 4: /* noslip wall */
-                            /* apply the method of image */
+                            /* 
+                             * Apply the method of image.
+                             *  -- linear interpolation for velocity components.
+                             *  -- zero-gradient for other scalars.
+                             */
                             idxImage = IndexMath(k - ng * normalZ, j - ng * normalY, i - ng * normalX, space) * DIMU;
                             PrimitiveByConservative(UoBC, idxBC, U, model);
                             PrimitiveByConservative(UoImage, idxImage, U, model);
                             UoGhost[1] = 2.0 * UoBC[1] - UoImage[1];
                             UoGhost[2] = 2.0 * UoBC[2] - UoImage[2];
                             UoGhost[3] = 2.0 * UoBC[3] - UoImage[3];
-                            UoGhost[4] = 2.0 * UoBC[4] - UoImage[4];
-                            UoGhost[5] = 2.0 * UoBC[5] - UoImage[5];
+                            UoGhost[4] = UoBC[4];
+                            UoGhost[5] = UoBC[5];
                             UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
                             ConservativeByPrimitive(U, idxGhost, UoGhost, model);
                             break;
