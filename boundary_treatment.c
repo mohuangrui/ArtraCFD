@@ -126,7 +126,8 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                         case 4: /* noslip wall */
                             /* 
                              * Apply the method of image.
-                             *  -- reflecting vectors is equivalent to linear interpolation.
+                             *  -- reflecting vectors over wall for both slip and noslip, stationary and
+                             *     moving conditions is unified by linear interpolation.
                              *  -- scalars are symmetrically reflected between image and ghost.
                              */
                             idxImage = IndexMath(k - ng * normalZ, j - ng * normalY, i - ng * normalX, space) * DIMU;

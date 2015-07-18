@@ -228,7 +228,8 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                         NormalizeReconstructedValues(UoImage, weightSum);
                         /* 
                          * Apply the method of image.
-                         *  -- reflecting vectors is equivalent to linear interpolation.
+                         *  -- reflecting vectors over wall for both slip and noslip, stationary and
+                         *     moving conditions is unified by linear interpolation.
                          *  -- scalars are symmetrically reflected between image and ghost.
                          */
                         UoGhost[1] = 2 * UoBC[1] - UoImage[1];
