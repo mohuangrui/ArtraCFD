@@ -228,14 +228,14 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                         NormalizeReconstructedValues(UoImage, weightSum);
                         /* 
                          * Apply the method of image.
-                         *  -- linear interpolation for velocity components.
-                         *  -- zero-gradient for other scalars.
+                         *  -- reflecting vectors is equivalent to linear interpolation.
+                         *  -- scalars are symmetrically reflected between image and ghost.
                          */
                         UoGhost[1] = 2 * UoBC[1] - UoImage[1];
                         UoGhost[2] = 2 * UoBC[2] - UoImage[2];
                         UoGhost[3] = 2 * UoBC[3] - UoImage[3];
-                        UoGhost[4] = UoBC[4];
-                        UoGhost[5] = UoBC[5];
+                        UoGhost[4] = UoImage[4];
+                        UoGhost[5] = UoImage[5];
                         UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
                     } else { /* other types of ghost nodes treatments */
                         InverseDistanceWeighting(UoGhost, &weightSum, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
