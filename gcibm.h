@@ -53,8 +53,7 @@ extern int BoundaryTreatmentsGCIBM(Real *U, const Space *, const Model *,
  */
 extern int InverseDistanceWeighting(Real Uo[], Real *weightSum, const Real z,
         const Real y, const Real x, const int k, const int j, const int i,
-        const int h, const int nodeType, const Real *U, const Space *space,
-        const Model *model, const Geometry *geometry);
+        const int h, const Real *U, const Space *space, const Model *model);
 extern int NormalizeReconstructedValues(Real Uo[], const Real weightSum);
 /*
  * In geometry criteria

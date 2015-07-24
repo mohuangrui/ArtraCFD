@@ -193,72 +193,64 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
     Real imageX = 0.0;
     int idx = 0; /* linear array index math variable */
     int geoID = 0; /* geometry id */
+    int type = 0;
     Real *geo = NULL;
-    for (int type = 1; type < space->ng + 2; ++type) {
-        for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-            for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-                for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                    idx = IndexMath(k, j, i, space);
-                    if (OFFSET > space->nodeFlag[idx]) { /* it's not a ghost */
-                        continue;
-                    }
-                    geoID = space->nodeFlag[idx] - OFFSET - (type - 1) * geometry->totalN; /* extract geometry */
-                    if ((0 > geoID) || (geometry->totalN <= geoID)) { /* not a ghost node with current type */
-                        continue;
-                    }
-                    if (1 == type) { /* first type ghost nodes treatments */
-                        geo = IndexGeometry(geoID, geometry);
-                        CalculateGeometryInformation(info, k, j, i, geo, space);
-                        /* obtain the spatial coordinates of the image point */
-                        imageX = info[0] + 2 * info[4] * info[5];
-                        imageY = info[1] + 2 * info[4] * info[6];
-                        imageZ = info[2] + 2 * info[4] * info[7];
-                        InverseDistanceWeighting(UoImage, &weightSum, imageZ, imageY, imageX, 
-                                ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space), 
-                                2, FLUID, U, space, model, geometry);
-                        /* enforce boundary conditions at boundary point */
-                        UoBC[1] = geo[5];
-                        UoBC[2] = geo[6];
-                        UoBC[3] = geo[7];
-                        UoBC[4] = UoImage[4] / weightSum;
-                        UoBC[5] = UoImage[5] / weightSum;
-                        /* add the boundary point as a stencil */
-                        ApplyWeighting(UoImage, &weightSum, info[4] * info[4], UoBC, space->tinyL);
-                        /* Normalize the weighted values of the image point */
-                        NormalizeReconstructedValues(UoImage, weightSum);
-                        /* 
-                         * Apply the method of image.
-                         *  -- reflecting vectors over wall for both slip and noslip, stationary and
-                         *     moving conditions is unified by linear interpolation.
-                         *  -- scalars are symmetrically reflected between image and ghost.
-                         */
-                        UoGhost[1] = 2 * UoBC[1] - UoImage[1];
-                        UoGhost[2] = 2 * UoBC[2] - UoImage[2];
-                        UoGhost[3] = 2 * UoBC[3] - UoImage[3];
-                        UoGhost[4] = UoImage[4];
-                        UoGhost[5] = UoImage[5];
-                        UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
-                    } else { /* other types of ghost nodes treatments */
-                        InverseDistanceWeighting(UoGhost, &weightSum, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
-                                k, j, i, 1, type - 1, U, space, model, geometry);
-                        /* Normalize the weighted values as reconstructed values. */
-                        NormalizeReconstructedValues(UoGhost, weightSum);
-                        UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
-                    }
-                    ConservativeByPrimitive(U, idx * DIMU, UoGhost, model);
+    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
+                idx = IndexMath(k, j, i, space);
+                if (OFFSET > space->nodeFlag[idx]) { /* it's not a ghost */
+                    continue;
                 }
+                for (type = 1; type < space->ng + 2; ++type) { /* extract geometry identifier */
+                    geoID = space->nodeFlag[idx] - OFFSET - (type - 1) * geometry->totalN;
+                    if ((0 <= geoID) && (geometry->totalN > geoID)) { /* a ghost node with current type */
+                        break;
+                    }
+                }
+                geo = IndexGeometry(geoID, geometry);
+                CalculateGeometryInformation(info, k, j, i, geo, space);
+                /* obtain the spatial coordinates of the image point */
+                imageX = info[0] + 2 * info[4] * info[5];
+                imageY = info[1] + 2 * info[4] * info[6];
+                imageZ = info[2] + 2 * info[4] * info[7];
+                InverseDistanceWeighting(UoImage, &weightSum, imageZ, imageY, imageX, 
+                        ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space), 
+                        2, U, space, model);
+                /* enforce boundary conditions at boundary point */
+                UoBC[1] = geo[5];
+                UoBC[2] = geo[6];
+                UoBC[3] = geo[7];
+                UoBC[4] = UoImage[4] / weightSum;
+                UoBC[5] = UoImage[5] / weightSum;
+                /* add the boundary point as a stencil */
+                ApplyWeighting(UoImage, &weightSum, info[4] * info[4], UoBC, space->tinyL);
+                /* Normalize the weighted values of the image point */
+                NormalizeReconstructedValues(UoImage, weightSum);
+                /* 
+                 * Apply the method of image.
+                 *  -- reflecting vectors over wall for both slip and noslip, stationary and
+                 *     moving conditions is unified by linear interpolation.
+                 *  -- scalars are symmetrically reflected between image and ghost.
+                 */
+                UoGhost[1] = 2 * UoBC[1] - UoImage[1];
+                UoGhost[2] = 2 * UoBC[2] - UoImage[2];
+                UoGhost[3] = 2 * UoBC[3] - UoImage[3];
+                UoGhost[4] = UoImage[4];
+                UoGhost[5] = UoImage[5];
+                UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
+                ConservativeByPrimitive(U, idx * DIMU, UoGhost, model);
             }
         }
     }
     return 0;
 }
 int InverseDistanceWeighting(Real Uo[], Real *weightSum, const Real z, const Real y, const Real x,
-        const int k, const int j, const int i, const int h, const int nodeType, const Real *U,
-        const Space *space, const Model *model, const Geometry *geometry)
+        const int k, const int j, const int i, const int h, const Real *U,
+        const Space *space, const Model *model)
 {
     int idxh = 0; /* linear array index math variable */
     int tally = 0; /* stencil count and zero stencil detector */
-    int geoID = 0;
     Real Uoh[DIMUo] = {0.0}; /* primitive at target node */
     Real distZ = 0.0;
     Real distY = 0.0;
@@ -278,15 +270,8 @@ int InverseDistanceWeighting(Real Uo[], Real *weightSum, const Real z, const Rea
                 if ((0 > idxh) || (space->nMax <= idxh)) {
                     continue; /* illegal index */
                 }
-                if (FLUID == nodeType) { /* require fluid nodes */
-                    if (FLUID != space->nodeFlag[idxh]) {
-                        continue;
-                    }
-                } else { /* require specified type of ghost nodes */
-                    geoID = space->nodeFlag[idxh] - OFFSET - (nodeType - 1) * geometry->totalN;
-                    if ((0 > geoID) || (geometry->totalN <= geoID)) { /* not a ghost node with current type */
-                        continue;
-                    }
+                if (FLUID != space->nodeFlag[idxh]) {
+                    continue;
                 }
                 ++tally;
                 distZ = ComputeZ(k + kh, space) - z;

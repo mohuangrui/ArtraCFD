@@ -59,6 +59,7 @@ int SolidDynamics(Real *U, Space *space, const Model *model, const Partition *pa
     Real Uo[DIMUo] = {0.0}; /* store weighted primitives */
     Real weightSum = 0.0; /* store the sum of weights */
     int geoID = 0; /* geometry id */
+    int type = 0;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
@@ -66,7 +67,7 @@ int SolidDynamics(Real *U, Space *space, const Model *model, const Partition *pa
                 if (OFFSET > space->nodeFlag[idx]) { /* it's not a ghost */
                     continue;
                 }
-                for (int type = 1; type < space->ng + 2; ++type) { /* extract geometry identifier */
+                for (type = 1; type < space->ng + 2; ++type) { /* extract geometry identifier */
                     geoID = space->nodeFlag[idx] - OFFSET - (type - 1) * geometry->totalN;
                     if ((0 <= geoID) && (geometry->totalN > geoID)) { /* a ghost node with current type */
                         break;
@@ -78,7 +79,7 @@ int SolidDynamics(Real *U, Space *space, const Model *model, const Partition *pa
                 }
                 /* reconstruction of flow values */
                 InverseDistanceWeighting(Uo, &weightSum, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
-                        k, j, i, 2, FLUID, U, space, model, geometry);
+                        k, j, i, 2, U, space, model);
                 /* Normalize the weighted values as reconstructed values. */
                 NormalizeReconstructedValues(Uo, weightSum);
                 ConservativeByPrimitive(U, idx * DIMU, Uo, model);
