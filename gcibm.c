@@ -25,6 +25,7 @@ static int IdentifySolidNodes(Space *, const Partition *, const Geometry *);
 static int IdentifyGhostNodes(Space *, const Partition *, const Geometry *);
 static int SearchFluidNodes(const int, const int, const int, const int, const Space *);
 static int ApplyWeighting(Real [], Real *, Real, const Real [], const Real);
+static int OrthogonalSpace(Real *, Real *, Real *, const Real *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -220,34 +221,14 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                         imageZ = info[GSZ] + 2 * info[GSDS] * info[GSNZ];
                         InverseDistanceWeighting(UoImage, &weightSum, imageZ, imageY, imageX, 
                                 ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space), 
-                                2, type - 1, U, space, model, geometry);
+                                2, FLUID, U, space, model, geometry);
                         /* enforce boundary conditions at boundary point */
                         if (0 < geo[GROUGH]) { /* noslip wall */
                             UoBC[1] = geo[GU];
                             UoBC[2] = geo[GV];
                             UoBC[3] = geo[GW];
                         } else { /* slip wall */
-                            nVec[X] = info[GSNX]; 
-                            nVec[Y] = info[GSNY]; 
-                            nVec[Z] = info[GSNZ]; 
-                            if (0 == nVec[X]) {
-                                taVec[X] = 0;
-                                taVec[Y] = -nVec[Z] / sqrt(nVec[Y] * nVec[Y] + nVec[Z] * nVec[Z]);
-                                taVec[Z] = nVec[Y] / sqrt(nVec[Y] * nVec[Y] + nVec[Z] * nVec[Z]);
-                            } else {
-                                if (0 == nVec[Y]) {
-                                    taVec[X] = -nVec[Z] / sqrt(nVec[X] * nVec[X] + nVec[Z] * nVec[Z]);
-                                    taVec[Y] = 0;
-                                    taVec[Z] = nVec[X] / sqrt(nVec[X] * nVec[X] + nVec[Z] * nVec[Z]);
-                                } else {
-                                    taVec[X] = -nVec[Y] / sqrt(nVec[X] * nVec[X] + nVec[Y] * nVec[Y]);
-                                    taVec[Y] = nVec[X] / sqrt(nVec[X] * nVec[X] + nVec[Y] * nVec[Y]);
-                                    taVec[Z] = 0;
-                                }
-                            }
-                            tbVec[X] = taVec[Y] * nVec[Z] - nVec[Y] * taVec[Z];
-                            tbVec[Y] = -taVec[X] * nVec[Z] + nVec[X] * taVec[Z];
-                            tbVec[Z] = taVec[X] * nVec[Y] - nVec[X] * taVec[Y];
+                            OrthogonalSpace(nVec, taVec, tbVec, info);
                             rhsA = UoImage[1] * taVec[X] + UoImage[2] * taVec[Y] + UoImage[3] * taVec[Z];
                             rhsB = UoImage[1] * tbVec[X] + UoImage[2] * tbVec[Y] + UoImage[3] * tbVec[Z];
                             UoBC[1] = taVec[X] * rhsA + tbVec[X] * rhsB;
@@ -393,6 +374,37 @@ int CalculateGeometryInformation(Real info[], const int k, const int j, const in
     info[GSNY] = info[GSNY] / info[GSDC];
     info[GSNZ] = info[GSNZ] / info[GSDC];
     return 0;
+}
+static int OrthogonalSpace(Real *nVec, Real *taVec, Real *tbVec, const Real *info)
+{
+    nVec[X] = info[GSNX]; 
+    nVec[Y] = info[GSNY]; 
+    nVec[Z] = info[GSNZ]; 
+    int mark = Z; /* default mark for minimum component */
+    if (fabs(nVec[mark]) > fabs(nVec[Y])) {
+        mark = Y;
+    }
+    if (fabs(nVec[mark]) > fabs(nVec[X])) {
+        mark = X;
+    }
+    if (X == mark) {
+        taVec[X] = 0;
+        taVec[Y] = -nVec[Z] / sqrt(nVec[Y] * nVec[Y] + nVec[Z] * nVec[Z]);
+        taVec[Z] = nVec[Y] / sqrt(nVec[Y] * nVec[Y] + nVec[Z] * nVec[Z]);
+    } else {
+        if (Y == mark) {
+            taVec[X] = -nVec[Z] / sqrt(nVec[X] * nVec[X] + nVec[Z] * nVec[Z]);
+            taVec[Y] = 0;
+            taVec[Z] = nVec[X] / sqrt(nVec[X] * nVec[X] + nVec[Z] * nVec[Z]);
+        } else {
+            taVec[X] = -nVec[Y] / sqrt(nVec[X] * nVec[X] + nVec[Y] * nVec[Y]);
+            taVec[Y] = nVec[X] / sqrt(nVec[X] * nVec[X] + nVec[Y] * nVec[Y]);
+            taVec[Z] = 0;
+        }
+    }
+    tbVec[X] = taVec[Y] * nVec[Z] - nVec[Y] * taVec[Z];
+    tbVec[Y] = -taVec[X] * nVec[Z] + nVec[X] * taVec[Z];
+    tbVec[Z] = taVec[X] * nVec[Y] - nVec[X] * taVec[Y];
 }
 /* a good practice: end file with a newline */
 
