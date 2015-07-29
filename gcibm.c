@@ -242,14 +242,13 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                 UoGhost[3] = 2 * UoBC[3] - UoImage[3];
                 UoGhost[4] = UoImage[4];
                 UoGhost[5] = UoImage[5];
-                UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
                 } else {
                 InverseDistanceWeighting(UoGhost, &weightSum, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
                         k, j, i, 2, type - 1, U, space, model, geometry);
                 /* Normalize the weighted values as reconstructed values. */
                 NormalizeReconstructedValues(UoGhost, weightSum);
-                UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
                 }
+                UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
                 ConservativeByPrimitive(U, idx * DIMU, UoGhost, model);
             }
         }
