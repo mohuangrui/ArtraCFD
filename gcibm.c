@@ -195,6 +195,7 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
     int geoID = 0; /* geometry id */
     int type = 0;
     Real *geo = NULL;
+    for (int type = 1; type < space->ng + 2; ++type) {
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
@@ -202,12 +203,11 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                 if (OFFSET > space->nodeFlag[idx]) { /* it's not a ghost */
                     continue;
                 }
-                for (type = 1; type < space->ng + 2; ++type) { /* extract geometry identifier */
-                    geoID = space->nodeFlag[idx] - OFFSET - (type - 1) * geometry->totalN;
-                    if ((0 <= geoID) && (geometry->totalN > geoID)) { /* a ghost node with current type */
-                        break;
-                    }
+                geoID = space->nodeFlag[idx] - OFFSET - (type - 1) * geometry->totalN;
+                if ((0 > geoID) || (geometry->totalN <= geoID)) { /* not a ghost node with current type */
+                    continue;
                 }
+                if (model->layers >= type) {
                 geo = IndexGeometry(geoID, geometry);
                 CalculateGeometryInformation(info, k, j, i, geo, space);
                 /* obtain the spatial coordinates of the image point */
@@ -216,7 +216,7 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                 imageZ = info[GSZ] + 2 * info[GSDS] * info[GSNZ];
                 InverseDistanceWeighting(UoImage, &weightSum, imageZ, imageY, imageX, 
                         ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space), 
-                        2, U, space, model);
+                        2, type - 1, U, space, model, geometry);
                 /* enforce boundary conditions at boundary point */
                 UoBC[1] = geo[GU];
                 UoBC[2] = geo[GV];
@@ -243,18 +243,27 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                 UoGhost[4] = UoImage[4];
                 UoGhost[5] = UoImage[5];
                 UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
+                } else {
+                InverseDistanceWeighting(UoGhost, &weightSum, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
+                        k, j, i, 2, type - 1, U, space, model, geometry);
+                /* Normalize the weighted values as reconstructed values. */
+                NormalizeReconstructedValues(UoGhost, weightSum);
+                UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
+                }
                 ConservativeByPrimitive(U, idx * DIMU, UoGhost, model);
             }
         }
     }
+    }
     return 0;
 }
 int InverseDistanceWeighting(Real Uo[], Real *weightSum, const Real z, const Real y, const Real x,
-        const int k, const int j, const int i, const int h, const Real *U,
-        const Space *space, const Model *model)
+        const int k, const int j, const int i, const int h, const int nodeType, const Real *U,
+        const Space *space, const Model *model, const Geometry *geometry)
 {
     int idxh = 0; /* linear array index math variable */
     int tally = 0; /* stencil count and zero stencil detector */
+    int geoID = 0;
     Real Uoh[DIMUo] = {0.0}; /* primitive at target node */
     Real distZ = 0.0;
     Real distY = 0.0;
@@ -274,8 +283,15 @@ int InverseDistanceWeighting(Real Uo[], Real *weightSum, const Real z, const Rea
                 if ((0 > idxh) || (space->nMax <= idxh)) {
                     continue; /* illegal index */
                 }
-                if (FLUID != space->nodeFlag[idxh]) {
-                    continue;
+                if (FLUID == nodeType) { /* require fluid nodes */
+                    if (FLUID != space->nodeFlag[idxh]) {
+                        continue;
+                    }
+                } else { /* require specified ghost node type */
+                    geoID = space->nodeFlag[idxh] - OFFSET - (nodeType - 1) * geometry->totalN;
+                    if ((0 > geoID) || (geometry->totalN <= geoID)) { /* not a ghost node with current type */
+                        continue;
+                    }
                 }
                 ++tally;
                 distZ = ComputeZ(k + kh, space) - z;
