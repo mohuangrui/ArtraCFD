@@ -281,7 +281,7 @@ static int CaseGeometryFileGenerator(void)
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "sphere begin\n");
-    fprintf(filePointer, "0, 0, 0, 0.5, 1.0e250, 0, 0, 0, -1, 0  # x, y, z, r, rho, u, v, w, T, roughness\n");
+    fprintf(filePointer, "0, 0, 0, 0.5, 1.0e250, 0, 0, 0, -1, 1  # x, y, z, r, rho, u, v, w, T, roughness\n");
     fprintf(filePointer, "sphere end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");

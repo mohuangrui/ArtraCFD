@@ -187,13 +187,17 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
     Real UoImage[DIMUo] = {0.0}; /* reconstructed primitives at image point */
     Real UoBC[DIMUo] = {0.0}; /* physical primitives at boundary point */
     Real info[INFOGHOST] = {0.0}; /* store calculated geometry information */
+    Real nVec[3] = {0.0}; /* normal vector */
+    Real taVec[3] = {0.0}; /* tangential vector */
+    Real tbVec[3] = {0.0}; /* tangential vector */
+    Real rhsA = 0.0; /* right hand side vector component */
+    Real rhsB = 0.0; /* right hand side vector component */
     Real weightSum = 0.0; /* store the sum of weights */
     Real imageZ = 0.0;
     Real imageY = 0.0;
     Real imageX = 0.0;
     int idx = 0; /* linear array index math variable */
     int geoID = 0; /* geometry id */
-    int type = 0;
     Real *geo = NULL;
     for (int type = 1; type < space->ng + 2; ++type) {
         for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
@@ -207,7 +211,7 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                     if ((0 > geoID) || (geometry->totalN <= geoID)) { /* not a ghost node with current type */
                         continue;
                     }
-                    if (model->layers >= type) {
+                    if (model->layers >= type) { /* using method of image */
                         geo = IndexGeometry(geoID, geometry);
                         CalculateGeometryInformation(info, k, j, i, geo, space);
                         /* obtain the spatial coordinates of the image point */
@@ -218,10 +222,39 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                                 ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space), 
                                 2, type - 1, U, space, model, geometry);
                         /* enforce boundary conditions at boundary point */
-                        UoBC[1] = geo[GU];
-                        UoBC[2] = geo[GV];
-                        UoBC[3] = geo[GW];
-                        UoBC[4] = UoImage[4] / weightSum;
+                        if (0 < geo[GROUGH]) { /* noslip wall */
+                            UoBC[1] = geo[GU];
+                            UoBC[2] = geo[GV];
+                            UoBC[3] = geo[GW];
+                        } else { /* slip wall */
+                            nVec[X] = info[GSNX]; 
+                            nVec[Y] = info[GSNY]; 
+                            nVec[Z] = info[GSNZ]; 
+                            if (0 == nVec[X]) {
+                                taVec[X] = 0;
+                                taVec[Y] = -nVec[Z] / sqrt(nVec[Y] * nVec[Y] + nVec[Z] * nVec[Z]);
+                                taVec[Z] = nVec[Y] / sqrt(nVec[Y] * nVec[Y] + nVec[Z] * nVec[Z]);
+                            } else {
+                                if (0 == nVec[Y]) {
+                                    taVec[X] = -nVec[Z] / sqrt(nVec[X] * nVec[X] + nVec[Z] * nVec[Z]);
+                                    taVec[Y] = 0;
+                                    taVec[Z] = nVec[X] / sqrt(nVec[X] * nVec[X] + nVec[Z] * nVec[Z]);
+                                } else {
+                                    taVec[X] = -nVec[Y] / sqrt(nVec[X] * nVec[X] + nVec[Y] * nVec[Y]);
+                                    taVec[Y] = nVec[X] / sqrt(nVec[X] * nVec[X] + nVec[Y] * nVec[Y]);
+                                    taVec[Z] = 0;
+                                }
+                            }
+                            tbVec[X] = taVec[Y] * nVec[Z] - nVec[Y] * taVec[Z];
+                            tbVec[Y] = -taVec[X] * nVec[Z] + nVec[X] * taVec[Z];
+                            tbVec[Z] = taVec[X] * nVec[Y] - nVec[X] * taVec[Y];
+                            rhsA = UoImage[1] * taVec[X] + UoImage[2] * taVec[Y] + UoImage[3] * taVec[Z];
+                            rhsB = UoImage[1] * tbVec[X] + UoImage[2] * tbVec[Y] + UoImage[3] * tbVec[Z];
+                            UoBC[1] = taVec[X] * rhsA + tbVec[X] * rhsB;
+                            UoBC[2] = taVec[Y] * rhsA + tbVec[Y] * rhsB;
+                            UoBC[3] = taVec[Z] * rhsA + tbVec[Z] * rhsB;
+                        }
+                        UoBC[4] = UoImage[4] / weightSum; /* zero gradient pressure */
                         if (0 > geo[GT]) { /* adiabatic, dT/dn = 0 */
                             UoBC[5] = UoImage[5] / weightSum;
                         } else { /* otherwise, use specified constant wall temperature, T = Tw */
@@ -242,9 +275,9 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                         UoGhost[3] = 2 * UoBC[3] - UoImage[3];
                         UoGhost[4] = UoImage[4];
                         UoGhost[5] = UoImage[5];
-                    } else {
+                    } else { /* using inverse distance weighting instead of method of image */
                         InverseDistanceWeighting(UoGhost, &weightSum, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
-                                k, j, i, 2, type - 1, U, space, model, geometry);
+                                k, j, i, 1, type - 1, U, space, model, geometry);
                         /* Normalize the weighted values as reconstructed values. */
                         NormalizeReconstructedValues(UoGhost, weightSum);
                     }
