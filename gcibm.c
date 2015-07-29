@@ -196,63 +196,63 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
     int type = 0;
     Real *geo = NULL;
     for (int type = 1; type < space->ng + 2; ++type) {
-    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = IndexMath(k, j, i, space);
-                if (OFFSET > space->nodeFlag[idx]) { /* it's not a ghost */
-                    continue;
+        for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
+            for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
+                for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
+                    idx = IndexMath(k, j, i, space);
+                    if (OFFSET > space->nodeFlag[idx]) { /* it's not a ghost */
+                        continue;
+                    }
+                    geoID = space->nodeFlag[idx] - OFFSET - (type - 1) * geometry->totalN;
+                    if ((0 > geoID) || (geometry->totalN <= geoID)) { /* not a ghost node with current type */
+                        continue;
+                    }
+                    if (model->layers >= type) {
+                        geo = IndexGeometry(geoID, geometry);
+                        CalculateGeometryInformation(info, k, j, i, geo, space);
+                        /* obtain the spatial coordinates of the image point */
+                        imageX = info[GSX] + 2 * info[GSDS] * info[GSNX];
+                        imageY = info[GSY] + 2 * info[GSDS] * info[GSNY];
+                        imageZ = info[GSZ] + 2 * info[GSDS] * info[GSNZ];
+                        InverseDistanceWeighting(UoImage, &weightSum, imageZ, imageY, imageX, 
+                                ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space), 
+                                2, type - 1, U, space, model, geometry);
+                        /* enforce boundary conditions at boundary point */
+                        UoBC[1] = geo[GU];
+                        UoBC[2] = geo[GV];
+                        UoBC[3] = geo[GW];
+                        UoBC[4] = UoImage[4] / weightSum;
+                        if (0 > geo[GT]) { /* adiabatic, dT/dn = 0 */
+                            UoBC[5] = UoImage[5] / weightSum;
+                        } else { /* otherwise, use specified constant wall temperature, T = Tw */
+                            UoBC[5] = geo[GT];
+                        }
+                        /* add the boundary point as a stencil */
+                        ApplyWeighting(UoImage, &weightSum, info[GSDS] * info[GSDS], UoBC, space->tinyL);
+                        /* Normalize the weighted values of the image point */
+                        NormalizeReconstructedValues(UoImage, weightSum);
+                        /* 
+                         * Apply the method of image.
+                         *  -- reflecting vectors over wall for both slip and noslip, stationary and
+                         *     moving conditions is unified by linear interpolation.
+                         *  -- scalars are symmetrically reflected between image and ghost.
+                         */
+                        UoGhost[1] = 2 * UoBC[1] - UoImage[1];
+                        UoGhost[2] = 2 * UoBC[2] - UoImage[2];
+                        UoGhost[3] = 2 * UoBC[3] - UoImage[3];
+                        UoGhost[4] = UoImage[4];
+                        UoGhost[5] = UoImage[5];
+                    } else {
+                        InverseDistanceWeighting(UoGhost, &weightSum, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
+                                k, j, i, 2, type - 1, U, space, model, geometry);
+                        /* Normalize the weighted values as reconstructed values. */
+                        NormalizeReconstructedValues(UoGhost, weightSum);
+                    }
+                    UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
+                    ConservativeByPrimitive(U, idx * DIMU, UoGhost, model);
                 }
-                geoID = space->nodeFlag[idx] - OFFSET - (type - 1) * geometry->totalN;
-                if ((0 > geoID) || (geometry->totalN <= geoID)) { /* not a ghost node with current type */
-                    continue;
-                }
-                if (model->layers >= type) {
-                geo = IndexGeometry(geoID, geometry);
-                CalculateGeometryInformation(info, k, j, i, geo, space);
-                /* obtain the spatial coordinates of the image point */
-                imageX = info[GSX] + 2 * info[GSDS] * info[GSNX];
-                imageY = info[GSY] + 2 * info[GSDS] * info[GSNY];
-                imageZ = info[GSZ] + 2 * info[GSDS] * info[GSNZ];
-                InverseDistanceWeighting(UoImage, &weightSum, imageZ, imageY, imageX, 
-                        ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space), 
-                        2, type - 1, U, space, model, geometry);
-                /* enforce boundary conditions at boundary point */
-                UoBC[1] = geo[GU];
-                UoBC[2] = geo[GV];
-                UoBC[3] = geo[GW];
-                UoBC[4] = UoImage[4] / weightSum;
-                if (0 > geo[GT]) { /* adiabatic, dT/dn = 0 */
-                    UoBC[5] = UoImage[5] / weightSum;
-                } else { /* otherwise, use specified constant wall temperature, T = Tw */
-                    UoBC[5] = geo[GT];
-                }
-                /* add the boundary point as a stencil */
-                ApplyWeighting(UoImage, &weightSum, info[GSDS] * info[GSDS], UoBC, space->tinyL);
-                /* Normalize the weighted values of the image point */
-                NormalizeReconstructedValues(UoImage, weightSum);
-                /* 
-                 * Apply the method of image.
-                 *  -- reflecting vectors over wall for both slip and noslip, stationary and
-                 *     moving conditions is unified by linear interpolation.
-                 *  -- scalars are symmetrically reflected between image and ghost.
-                 */
-                UoGhost[1] = 2 * UoBC[1] - UoImage[1];
-                UoGhost[2] = 2 * UoBC[2] - UoImage[2];
-                UoGhost[3] = 2 * UoBC[3] - UoImage[3];
-                UoGhost[4] = UoImage[4];
-                UoGhost[5] = UoImage[5];
-                } else {
-                InverseDistanceWeighting(UoGhost, &weightSum, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
-                        k, j, i, 2, type - 1, U, space, model, geometry);
-                /* Normalize the weighted values as reconstructed values. */
-                NormalizeReconstructedValues(UoGhost, weightSum);
-                }
-                UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
-                ConservativeByPrimitive(U, idx * DIMU, UoGhost, model);
             }
         }
-    }
     }
     return 0;
 }
