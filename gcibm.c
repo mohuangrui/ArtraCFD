@@ -229,8 +229,8 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                             UoBC[3] = geo[GW];
                         } else { /* slip wall */
                             OrthogonalSpace(nVec, taVec, tbVec, info);
-                            rhsA = UoImage[1] * taVec[X] + UoImage[2] * taVec[Y] + UoImage[3] * taVec[Z];
-                            rhsB = UoImage[1] * tbVec[X] + UoImage[2] * tbVec[Y] + UoImage[3] * tbVec[Z];
+                            rhsA = (UoImage[1] * taVec[X] + UoImage[2] * taVec[Y] + UoImage[3] * taVec[Z]) / weightSum;
+                            rhsB = (UoImage[1] * tbVec[X] + UoImage[2] * tbVec[Y] + UoImage[3] * tbVec[Z]) / weightSum;
                             UoBC[1] = taVec[X] * rhsA + tbVec[X] * rhsB;
                             UoBC[2] = taVec[Y] * rhsA + tbVec[Y] * rhsB;
                             UoBC[3] = taVec[Z] * rhsA + tbVec[Z] * rhsB;
