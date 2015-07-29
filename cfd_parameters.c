@@ -129,11 +129,11 @@ static int InitializeCFDParameters(Space *space, Time *time, Model *model)
     space->tinyL = 1.0e-6 * MinReal(space->dx, MinReal(space->dz, space->dy));
     /* time */
     time->end = time->end * model->refVelocity / model->refLength;
-    if ((0 > time->stepN)) {
+    if (0 > time->stepN) {
         time->stepN = INT_MAX;
     }
     /* fluid and flow */
-    if ((0 > model->layers)) {
+    if (0 > model->layers) {
         model->layers = INT_MAX;
     }
     model->gamma = 1.4;
