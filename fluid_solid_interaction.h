@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_SOLID_DYNAMICS_H_ /* if this is the first definition */
-#define ARTRACFD_SOLID_DYNAMICS_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_FLUID_SOLID_INTERACTION_H_ /* if this is the first definition */
+#define ARTRACFD_FLUID_SOLID_INTERACTION_H_ /* a unique marker for this header file */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -24,12 +24,12 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Solid Dynamics
+ * Fluid Solid Interaction
  *
  * Function
- *      Evolve solid dynamics.
+ *      Envolve fluid solid interaction.
  */
-extern int SolidDynamics(Real *U, Space *, const Model *, const Partition *,
+extern int FluidSolidInteraction(Real *U, Space *, const Model *, const Partition *,
         Geometry *, const Real dt);
 #endif
 /* a good practice: end file with a newline */

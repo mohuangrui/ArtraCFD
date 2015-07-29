@@ -72,15 +72,15 @@ static int NonrestartGeometryLoader(Geometry *geometry)
             }
             AllocateMemoryForGeometryData(geometry);
             /* set format specifier according to the type of Real */
-            char format[100] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg"; /* default is double type */
+            char format[100] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg"; /* default is double type */
             if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
-                strncpy(format, "%g, %g, %g, %g, %g, %g, %g, %g", sizeof format); /* float type */
+                strncpy(format, "%g, %g, %g, %g, %g, %g, %g, %g, %g, %g", sizeof format); /* float type */
             }
             for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
                 geo = IndexGeometry(geoCount, geometry) ;
                 fgets(currentLine, sizeof currentLine, filePointer);
-                sscanf(currentLine, format, geo + 0, geo + 1, geo + 2, geo + 3, geo + 4, geo + 5,
-                        geo + 6, geo + 7);
+                sscanf(currentLine, format, geo + GX, geo + GY, geo + GZ, geo + GR, geo + GRHO, geo + GU,
+                        geo + GV, geo + GW, geo + GT, geo + GROUGH);
             }
         }
         continue;
@@ -95,12 +95,6 @@ static int NonrestartGeometryLoader(Geometry *geometry)
 }
 static int AllocateMemoryForGeometryData(Geometry *geometry)
 {
-    /* 
-     * Assign storage to store geometry information:
-     * x, y, z, r, density, u, v, w,       fx, fy, fz, tally  area  1/mass
-     * 0, 1, 2, 3,    4,    5, 6, 7,        8,  9, 10,  11     12     13           ENTRYGEO: 14
-     *    need to be read in                  calculated
-     */
     geometry->headAddress = AssignStorage(geometry->totalN * ENTRYGEO, "Real");
     return 0;
 }
@@ -141,7 +135,7 @@ static int LoadGeometryDataParaview(Geometry *geometry)
     if (sizeof(ParaviewReal) == sizeof(float)) {
         strncpy(format, "%g", sizeof format); /* float type */
     }
-    for (int dim = 0; dim < 8; ++dim) {
+    for (int dim = 0; dim < GREAD; ++dim) {
         fgets(currentLine, sizeof currentLine, filePointer);
         for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
             fscanf(filePointer, format, &data);
@@ -160,19 +154,17 @@ static int ComputeGeometryParameters(const Space *space, const Model *model, Geo
     for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
         geo = IndexGeometry(geoCount, geometry);
         /* initialize other uninitialized values */
-        geo[8] = 0;
-        geo[9] = 0;
-        geo[10] = 0;
-        geo[11] = 0;
+        geo[GFX] = 0;
+        geo[GFY] = 0;
+        geo[GFZ] = 0;
+        geo[GTALLY] = 0;
         if (0 != space->collapsed) { /* space dimension collapsed */
-            geo[12] = 2.0 * geo[3] * model->pi; /* circle perimeter */
-            geo[13] = geo[4] * geo[3] * geo[3] * model->pi; /* circle mass */
+            geo[GAREA] = 2.0 * geo[GR] * model->pi; /* circle perimeter */
+            geo[GMASS] = geo[GRHO] * geo[GR] * geo[GR] * model->pi; /* circle mass */
         } else {
-            geo[12] = 4.0 * geo[3] * geo[3] * model->pi; /* sphere surface */
-            geo[13] = geo[4] * (4.0 / 3.0) * geo[3] * geo[3] * geo[3] * model->pi; /* sphere mass */
+            geo[GAREA] = 4.0 * geo[GR] * geo[GR] * model->pi; /* sphere surface */
+            geo[GMASS] = geo[GRHO] * (4.0 / 3.0) * geo[GR] * geo[GR] * geo[GR] * model->pi; /* sphere mass */
         }
-        /* get the mass reciprocal */
-        geo[13] = 1 / geo[13];
     }
     return 0;
 }
@@ -283,7 +275,7 @@ static int WriteParaviewVariableFile(const Geometry *geometry, ParaviewSet *para
     ParaviewReal data = 0.0; /* paraview scalar data */
     ParaviewReal vector[3] = {0.0}; /* paraview vector data elements */
     /* the scalar values at each node in current part */
-    const char name[12][5] = {"x", "y", "z", "r", "rho", "u", "v", "w", "fx", "fy", "fz", "id"};
+    const char name[GWRITE][5] = {"x", "y", "z", "r", "rho", "u", "v", "w", "T", "rough", "fx", "fy", "fz", "id"};
     int iMin = 0;
     int iMax = geometry->totalN - 1;
     int jMin = 0;
@@ -299,13 +291,13 @@ static int WriteParaviewVariableFile(const Geometry *geometry, ParaviewSet *para
             iMin, iMax, jMin, jMax, kMin, kMax);
     fprintf(filePointer, "      <PointData Scalars=\"r\" Vectors=\"Vel\">\n");
     fprintf(filePointer, "      <!-- N %d -->\n", geometry->totalN);
-    for (int dim = 0; dim < 12; ++dim) {
+    for (int dim = 0; dim < GWRITE; ++dim) {
         fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"%s\" format=\"ascii\">\n", 
                 paraSet->floatType, name[dim]);
         fprintf(filePointer, "          ");
         for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
             geo = IndexGeometry(geoCount, geometry);
-            if (11 == dim) {
+            if ((GWRITE - 1) == dim) {
                 data = geoCount;
             } else {
                 data = geo[dim];
@@ -319,9 +311,9 @@ static int WriteParaviewVariableFile(const Geometry *geometry, ParaviewSet *para
     fprintf(filePointer, "          ");
     for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
         geo = IndexGeometry(geoCount, geometry);
-        vector[0] = geo[5];
-        vector[1] = geo[6];
-        vector[2] = geo[7];
+        vector[0] = geo[GU];
+        vector[1] = geo[GV];
+        vector[2] = geo[GW];
         fprintf(filePointer, "%.6g %.6g %.6g ", vector[0], vector[1], vector[2]);
     }
     fprintf(filePointer, "\n        </DataArray>\n");
@@ -330,9 +322,9 @@ static int WriteParaviewVariableFile(const Geometry *geometry, ParaviewSet *para
     fprintf(filePointer, "          ");
     for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
         geo = IndexGeometry(geoCount, geometry);
-        vector[0] = geo[8];
-        vector[1] = geo[9];
-        vector[2] = geo[10];
+        vector[0] = geo[GFX];
+        vector[1] = geo[GFY];
+        vector[2] = geo[GFZ];
         fprintf(filePointer, "%.6g %.6g %.6g ", vector[0], vector[1], vector[2]);
     }
     fprintf(filePointer, "\n        </DataArray>\n");
@@ -345,9 +337,9 @@ static int WriteParaviewVariableFile(const Geometry *geometry, ParaviewSet *para
     fprintf(filePointer, "          ");
     for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
         geo = IndexGeometry(geoCount, geometry);
-        vector[0] = geo[0];
-        vector[1] = geo[1];
-        vector[2] = geo[2];
+        vector[0] = geo[GX];
+        vector[1] = geo[GY];
+        vector[2] = geo[GZ];
         fprintf(filePointer, "%.6g %.6g %.6g ", vector[0], vector[1], vector[2]);
     }
     fprintf(filePointer, "\n        </DataArray>\n");

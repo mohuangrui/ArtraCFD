@@ -112,12 +112,12 @@ static int IdentifySolidNodes(Space *space, const Partition *part, const Geometr
     int iSup = 0;
     for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
         geo = IndexGeometry(geoCount, geometry);
-        centerK = ComputeK(geo[2], space);
-        centerJ = ComputeJ(geo[1], space);
-        centerI = ComputeI(geo[0], space);
-        rangeK = (int)(safetyCoe * geo[3] * space->ddz);
-        rangeJ = (int)(safetyCoe * geo[3] * space->ddy);
-        rangeI = (int)(safetyCoe * geo[3] * space->ddx);
+        centerK = ComputeK(geo[GZ], space);
+        centerJ = ComputeJ(geo[GY], space);
+        centerI = ComputeI(geo[GX], space);
+        rangeK = (int)(safetyCoe * geo[GR] * space->ddz);
+        rangeJ = (int)(safetyCoe * geo[GR] * space->ddy);
+        rangeI = (int)(safetyCoe * geo[GR] * space->ddx);
         /* determine search range according to valid region */
         kSub = ValidRegionK(centerK - rangeK, part);
         kSup = ValidRegionK(centerK + rangeK, part) + 1;
@@ -186,7 +186,7 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
     Real UoGhost[DIMUo] = {0.0}; /* reconstructed primitives at ghost node */
     Real UoImage[DIMUo] = {0.0}; /* reconstructed primitives at image point */
     Real UoBC[DIMUo] = {0.0}; /* physical primitives at boundary point */
-    Real info[INFOGEO] = {0.0}; /* store calculated geometry information */
+    Real info[INFOGHOST] = {0.0}; /* store calculated geometry information */
     Real weightSum = 0.0; /* store the sum of weights */
     Real imageZ = 0.0;
     Real imageY = 0.0;
@@ -211,20 +211,24 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                 geo = IndexGeometry(geoID, geometry);
                 CalculateGeometryInformation(info, k, j, i, geo, space);
                 /* obtain the spatial coordinates of the image point */
-                imageX = info[0] + 2 * info[4] * info[5];
-                imageY = info[1] + 2 * info[4] * info[6];
-                imageZ = info[2] + 2 * info[4] * info[7];
+                imageX = info[GSX] + 2 * info[GSDS] * info[GSNX];
+                imageY = info[GSY] + 2 * info[GSDS] * info[GSNY];
+                imageZ = info[GSZ] + 2 * info[GSDS] * info[GSNZ];
                 InverseDistanceWeighting(UoImage, &weightSum, imageZ, imageY, imageX, 
                         ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space), 
                         2, U, space, model);
                 /* enforce boundary conditions at boundary point */
-                UoBC[1] = geo[5];
-                UoBC[2] = geo[6];
-                UoBC[3] = geo[7];
+                UoBC[1] = geo[GU];
+                UoBC[2] = geo[GV];
+                UoBC[3] = geo[GW];
                 UoBC[4] = UoImage[4] / weightSum;
-                UoBC[5] = UoImage[5] / weightSum;
+                if (0 > geo[GT]) { /* adiabatic, dT/dn = 0 */
+                    UoBC[5] = UoImage[5] / weightSum;
+                } else { /* otherwise, use specified constant wall temperature, T = Tw */
+                    UoBC[5] = geo[GT];
+                }
                 /* add the boundary point as a stencil */
-                ApplyWeighting(UoImage, &weightSum, info[4] * info[4], UoBC, space->tinyL);
+                ApplyWeighting(UoImage, &weightSum, info[GSDS] * info[GSDS], UoBC, space->tinyL);
                 /* Normalize the weighted values of the image point */
                 NormalizeReconstructedValues(UoImage, weightSum);
                 /* 
@@ -316,30 +320,30 @@ int NormalizeReconstructedValues(Real Uo[], const Real weightSum)
 Real InGeometry(const int k, const int j, const int i, const Real *geo, const Space *space)
 {
     /* x, y, z distance to center */
-    const Real lX = ComputeX(i, space) - geo[0];
-    const Real lY = ComputeY(j, space) - geo[1];
-    const Real lZ = ComputeZ(k, space) - geo[2];
-    return (lX * lX + lY * lY + lZ * lZ - geo[3] * geo[3]);
+    const Real lX = ComputeX(i, space) - geo[GX];
+    const Real lY = ComputeY(j, space) - geo[GY];
+    const Real lZ = ComputeZ(k, space) - geo[GZ];
+    return (lX * lX + lY * lY + lZ * lZ - geo[GR] * geo[GR]);
 }
 int CalculateGeometryInformation(Real info[], const int k, const int j, const int i, 
         const Real *geo, const Space *space)
 {
     /* x, y, z coordinates */
-    info[0] = ComputeX(i, space);
-    info[1] = ComputeY(j, space);
-    info[2] = ComputeZ(k, space);
+    info[GSX] = ComputeX(i, space);
+    info[GSY] = ComputeY(j, space);
+    info[GSZ] = ComputeZ(k, space);
     /* temporary store the x, y, z distance to geometry center */
-    info[5] = info[0] - geo[0];
-    info[6] = info[1] - geo[1];
-    info[7] = info[2] - geo[2];
+    info[GSNX] = info[GSX] - geo[GX];
+    info[GSNY] = info[GSY] - geo[GY];
+    info[GSNZ] = info[GSZ] - geo[GZ];
     /* distance to center */
-    info[3] = sqrt(info[5] * info[5] + info[6] * info[6] + info[7] * info[7]);
+    info[GSDC] = sqrt(info[GSNX] * info[GSNX] + info[GSNY] * info[GSNY] + info[GSNZ] * info[GSNZ]);
     /* distance to surface */
-    info[4] = geo[3] - info[3];
+    info[GSDS] = geo[GR] - info[GSDC];
     /* x, y, z normal vector components */
-    info[5] = info[5] / info[3];
-    info[6] = info[6] / info[3];
-    info[7] = info[7] / info[3];
+    info[GSNX] = info[GSNX] / info[GSDC];
+    info[GSNY] = info[GSNY] / info[GSDC];
+    info[GSNZ] = info[GSNZ] / info[GSDC];
     return 0;
 }
 /* a good practice: end file with a newline */

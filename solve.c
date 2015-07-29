@@ -17,7 +17,7 @@
 #include <float.h> /* size of floating point values */
 #include "initialization.h"
 #include "fluid_dynamics.h"
-#include "solid_dynamics.h"
+#include "fluid_solid_interaction.h"
 #include "data_stream.h"
 #include "geometry_stream.h"
 #include "timer.h"
@@ -82,9 +82,13 @@ static int SolutionEvolution(Field *field, Space *space, Time *time,
          * splitting method.
          */
         TickTime(&operationTimer);
-        SolidDynamics(field->U, space, model, part, geometry, 0.5 * time->dt);
+        if (1 == model->fsi) {
+            FluidSolidInteraction(field->U, space, model, part, geometry, 0.5 * time->dt);
+        }
         FluidDynamics(field, space, model, part, geometry, time->dt);
-        SolidDynamics(field->U, space, model, part, geometry, 0.5 * time->dt);
+        if (1 == model->fsi) {
+            FluidSolidInteraction(field->U, space, model, part, geometry, 0.5 * time->dt);
+        }
         operationTime = TockTime(&operationTimer);
         fprintf(stdout, "  elapsed: %.6gs\n", operationTime);
         /*
@@ -124,7 +128,7 @@ static Real ComputeTimeStep(const Real *U, const Space *space, const Time *time,
     Real *geo = NULL;
     for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
         geo = IndexGeometry(geoCount, geometry);
-        velocity = MaxReal(fabs(geo[5]), MaxReal(fabs(geo[6]), fabs(geo[7])));
+        velocity = MaxReal(fabs(geo[GU]), MaxReal(fabs(geo[GV]), fabs(geo[GW])));
         if (velocityMax < velocity) {
             velocityMax = velocity;
         }

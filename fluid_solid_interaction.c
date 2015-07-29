@@ -11,7 +11,7 @@
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "solid_dynamics.h"
+#include "fluid_solid_interaction.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
 #include "gcibm.h"
@@ -25,7 +25,7 @@ static int SurfaceForceIntegration(const Real *, const Space *,
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int SolidDynamics(Real *U, Space *space, const Model *model, const Partition *part,
+int FluidSolidInteraction(Real *U, Space *space, const Model *model, const Partition *part,
         Geometry *geometry, const Real dt)
 {
     /*
@@ -38,14 +38,14 @@ int SolidDynamics(Real *U, Space *space, const Model *model, const Partition *pa
     Real *geo = NULL;
     for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
         geo = IndexGeometry(geoCount, geometry);
-        /* velocity: v(t) = v(t0) + f * (1/m) * dt */
-        geo[5] = geo[5] + geo[8] * geo[13] * dt;
-        geo[6] = geo[6] + geo[9] * geo[13] * dt;
-        geo[7] = geo[7] + geo[10] * geo[13] * dt;
-        /* spatial position: x(t) = x(t0) + v(t) * dt - 1/2 * f * (1/m) * dt^2 */
-        geo[0] = geo[0] + geo[5] * dt - 0.5 * geo[8] * geo[13] * dt * dt;
-        geo[1] = geo[1] + geo[6] * dt - 0.5 * geo[9] * geo[13] * dt * dt;
-        geo[2] = geo[2] + geo[7] * dt - 0.5 * geo[10] * geo[13] * dt * dt;
+        /* velocity: v(t[n+1]) = v(t[n]) + f * (1/m) * dt */
+        geo[GU] = geo[GU] + geo[GFX] * (1/geo[GMASS]) * dt;
+        geo[GV] = geo[GV] + geo[GFY] * (1/geo[GMASS]) * dt;
+        geo[GW] = geo[GW] + geo[GFZ] * (1/geo[GMASS]) * dt;
+        /* spatial position: x(t[n+1]) = x(t[n]) + v(t[n+1]) * dt - 1/2 * f * (1/m) * dt^2 */
+        geo[GX] = geo[GX] + geo[GU] * dt - 0.5 * geo[GFX] * (1/geo[GMASS]) * dt * dt;
+        geo[GY] = geo[GY] + geo[GV] * dt - 0.5 * geo[GFY] * (1/geo[GMASS]) * dt * dt;
+        geo[GZ] = geo[GZ] + geo[GW] * dt - 0.5 * geo[GFZ] * (1/geo[GMASS]) * dt * dt;
     }
     /*
      * After the spatial positions of particles updated, some inner nodes fall
@@ -109,15 +109,15 @@ static int SurfaceForceIntegration(const Real *U, const Space *space,
     int idx = 0; /* linear array index math variable */
     int geoID = 0; /* geometry id */
     Real *geo = NULL;
-    Real info[INFOGEO] = {0.0}; /* store calculated geometry information */
+    Real info[INFOGHOST] = {0.0}; /* store calculated geometry information */
     Real p = 0.0;
     /* reset some non accumulative information of particles to zero */
     for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
         geo = IndexGeometry(geoCount, geometry);
-        geo[8] = 0; /* fx */
-        geo[9] = 0; /* fy */
-        geo[10] = 0; /* fz */
-        geo[11] = 0; /* tally */
+        geo[GFX] = 0; /* fx */
+        geo[GFY] = 0; /* fy */
+        geo[GFZ] = 0; /* fz */
+        geo[GTALLY] = 0; /* tally */
     }
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
@@ -133,19 +133,19 @@ static int SurfaceForceIntegration(const Real *U, const Space *space,
                 geo = IndexGeometry(geoID, geometry);
                 CalculateGeometryInformation(info, k, j, i, geo, space);
                 p = ComputePressure(idx * DIMU, U, model);
-                geo[8] = geo[8] - p * info[5]; /* integrate fx */
-                geo[9] = geo[9] - p * info[6]; /* integrate fy */
-                geo[10] = geo[10] - p * info[7]; /* integrate fz */
-                geo[11] = geo[11] + 1; /* count number of ghosts */
+                geo[GFX] = geo[GFX] - p * info[GSNX]; /* integrate fx */
+                geo[GFY] = geo[GFY] - p * info[GSNY]; /* integrate fy */
+                geo[GFZ] = geo[GFZ] - p * info[GSNZ]; /* integrate fz */
+                geo[GTALLY] = geo[GTALLY] + 1; /* count number of ghosts */
             }
         }
     }
     /* calibrate the sum of discrete forces into integration */
     for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
         geo = IndexGeometry(geoCount, geometry);
-        geo[8] = geo[8] * geo[12] / geo[11];
-        geo[9] = geo[9] * geo[12] / geo[11];
-        geo[10] = geo[10] * geo[12] / geo[11];
+        geo[GFX] = geo[GFX] * geo[GAREA] / geo[GTALLY];
+        geo[GFY] = geo[GFY] * geo[GAREA] / geo[GTALLY];
+        geo[GFZ] = geo[GFZ] * geo[GAREA] / geo[GTALLY];
     }
     return 0;
 }

@@ -81,6 +81,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "0                  # average method (0: Arithmetic mean; 1: Roe averages)\n");
     fprintf(filePointer, "0                  # <WENO> flux splitting method (0: L-F; 1: S-W)\n");
     fprintf(filePointer, "0.125              # <TVD> Harten's numerical dissipation coefficient [0, 0.5]\n");
+    fprintf(filePointer, "0                  # fluid solid interaction (0: Off; 1: On)\n");
     fprintf(filePointer, "numerical end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
@@ -279,7 +280,7 @@ static int CaseGeometryFileGenerator(void)
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "sphere begin\n");
-    fprintf(filePointer, "0, 0, 0, 0.5, 1.0e250, 0, 0, 0   # x, y, z, r, rho, u, v, w\n");
+    fprintf(filePointer, "0, 0, 0, 0.5, 1.0e250, 0, 0, 0, -1, 0  # x, y, z, r, rho, u, v, w, T, roughness\n");
     fprintf(filePointer, "sphere end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");

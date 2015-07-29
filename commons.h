@@ -479,9 +479,35 @@ typedef enum {
     /* identifier of boundary and exterior ghost nodes */
     EXTERIOR = -1,
     /* entry number of geometry information */
-    ENTRYGEO = 14, /* x, y, z, r, rho, u, v, w, fx, fy, fz, tally, area, 1/mass */
-    /* entry number of calculated geometry information */
-    INFOGEO = 8, /* x, y, z, distance to center, to surface, normalX, normalY, normalZ */
+    ENTRYGEO = 16, /* x, y, z, r, rho, u, v, w, T, roughness, fx, fy, fz, area, mass, tally */
+    GREAD = 10, /* number of items read from file */
+    GWRITE = 14, /* number of items write to file */
+    GX = 0,
+    GY = 1,
+    GZ = 2,
+    GR = 3,
+    GRHO = 4,
+    GU = 5,
+    GV = 6,
+    GW = 7,
+    GT = 8,
+    GROUGH = 9,
+    GFX = 10,
+    GFY = 11,
+    GFZ = 12,
+    GAREA = 13,
+    GMASS = 14,
+    GTALLY = 15,
+    /* entry number of calculated geometry information of ghost node */
+    INFOGHOST = 8, /* x, y, z, distance to center, to surface, normalX, normalY, normalZ */
+    GSX = 0,
+    GSY = 1,
+    GSZ = 2,
+    GSDC = 3,
+    GSDS = 4,
+    GSNX = 5,
+    GSNY = 6,
+    GSNZ = 7,
     /* maximum number of probes to support */
     NPROBE = 4,
     /* entry number of probe information */
@@ -593,6 +619,7 @@ typedef struct {
     int scheme; /* record numerical scheme */
     int averager; /* average method for local constant Jacobian */
     int splitter; /* flux vector splitting method */
+    int fsi; /* fluid solid interaction trigger */
     Real refMa; /* reference Mach number */
     Real refMu; /* reference dynamic viscosity for Sutherland's law */
     Real refPr; /* reference Prandtl number */

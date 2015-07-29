@@ -123,6 +123,8 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model, Partition
             sscanf(currentLine, "%d", &(model->splitter)); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatI, &(model->delta)); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, "%d", &(model->fsi)); 
             continue;
         }
         if (0 == strncmp(currentLine, "fluid begin", sizeof currentLine)) {
@@ -477,6 +479,7 @@ static int WriteVerifyData(const Space *space, const Time *time, const Model *mo
     fprintf(filePointer, "average method: %d\n", model->averager);
     fprintf(filePointer, "flux splitting method: %d\n", model->splitter);
     fprintf(filePointer, "Harten's numerical dissipation coefficient: %.6g\n", model->delta); 
+    fprintf(filePointer, "fluid solid interaction: %d\n", model->fsi);
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                    >> Fluid and Flow Properties <<\n");
@@ -587,6 +590,7 @@ static int CheckCaseSettingData(const Space *space, const Time *time, const Mode
     if ((0 > model->scheme) || (1 < model->scheme) || 
             (0 > model->averager) || (1 < model->averager) ||
             (0 > model->splitter) || (1 < model->splitter) ||
+            (0 > model->fsi) || (1 < model->fsi) ||
             (0 > model->delta)) {
         FatalError("wrong values in numerical method of case settings");
     }
