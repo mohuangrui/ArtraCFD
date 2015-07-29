@@ -133,6 +133,9 @@ static int InitializeCFDParameters(Space *space, Time *time, Model *model)
         time->stepN = INT_MAX;
     }
     /* fluid and flow */
+    if ((0 > model->layers)) {
+        model->layers = INT_MAX;
+    }
     model->gamma = 1.4;
     model->gasR = 8.314462175;
     model->pi = acos(-1);

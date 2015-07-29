@@ -125,6 +125,8 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model, Partition
             sscanf(currentLine, formatI, &(model->delta)); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d", &(model->fsi)); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, "%d", &(model->layers)); 
             continue;
         }
         if (0 == strncmp(currentLine, "fluid begin", sizeof currentLine)) {
@@ -480,6 +482,7 @@ static int WriteVerifyData(const Space *space, const Time *time, const Model *mo
     fprintf(filePointer, "flux splitting method: %d\n", model->splitter);
     fprintf(filePointer, "Harten's numerical dissipation coefficient: %.6g\n", model->delta); 
     fprintf(filePointer, "fluid solid interaction: %d\n", model->fsi);
+    fprintf(filePointer, "layers of ghost nodes using method of image: %d\n", model->layers);
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                    >> Fluid and Flow Properties <<\n");

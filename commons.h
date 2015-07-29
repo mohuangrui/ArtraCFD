@@ -620,6 +620,7 @@ typedef struct {
     int averager; /* average method for local constant Jacobian */
     int splitter; /* flux vector splitting method */
     int fsi; /* fluid solid interaction trigger */
+    int layers; /* number of ghost layers using method of image */
     Real refMa; /* reference Mach number */
     Real refMu; /* reference dynamic viscosity for Sutherland's law */
     Real refPr; /* reference Prandtl number */

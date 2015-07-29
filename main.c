@@ -77,6 +77,7 @@ int main(int argc, char *argv[])
         .averager = 0,
         .splitter = 0,
         .fsi = 0,
+        .layers = 0,
         .refMa = 0.0,
         .refMu = 0.0,
         .refPr = 0.0,
