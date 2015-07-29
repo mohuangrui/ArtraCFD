@@ -405,6 +405,7 @@ static int OrthogonalSpace(Real *nVec, Real *taVec, Real *tbVec, const Real *inf
     tbVec[X] = taVec[Y] * nVec[Z] - nVec[Y] * taVec[Z];
     tbVec[Y] = -taVec[X] * nVec[Z] + nVec[X] * taVec[Z];
     tbVec[Z] = taVec[X] * nVec[Y] - nVec[X] * taVec[Y];
+    return 0;
 }
 /* a good practice: end file with a newline */
 
