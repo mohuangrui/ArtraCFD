@@ -188,10 +188,10 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
     Real UoImage[DIMUo] = {0.0}; /* reconstructed primitives at image point */
     Real UoBC[DIMUo] = {0.0}; /* physical primitives at boundary point */
     Real info[INFOGHOST] = {0.0}; /* store calculated geometry information */
-    Real nVec[3] = {0.0}; /* normal vector */
-    Real taVec[3] = {0.0}; /* tangential vector */
-    Real tbVec[3] = {0.0}; /* tangential vector */
-    Real rhs[3] = {0.0}; /* right hand side vector */
+    Real nVec[DIMS] = {0.0}; /* normal vector */
+    Real taVec[DIMS] = {0.0}; /* tangential vector */
+    Real tbVec[DIMS] = {0.0}; /* tangential vector */
+    Real rhs[DIMS] = {0.0}; /* right hand side vector */
     Real weightSum = 0.0; /* store the sum of weights */
     Real imageZ = 0.0;
     Real imageY = 0.0;
