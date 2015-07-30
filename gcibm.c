@@ -191,8 +191,7 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
     Real nVec[3] = {0.0}; /* normal vector */
     Real taVec[3] = {0.0}; /* tangential vector */
     Real tbVec[3] = {0.0}; /* tangential vector */
-    Real rhsA = 0.0; /* right hand side vector component */
-    Real rhsB = 0.0; /* right hand side vector component */
+    Real rhs[3] = {0.0}; /* right hand side vector */
     Real weightSum = 0.0; /* store the sum of weights */
     Real imageZ = 0.0;
     Real imageY = 0.0;
@@ -229,11 +228,12 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                             UoBC[3] = geo[GW];
                         } else { /* slip wall */
                             OrthogonalSpace(nVec, taVec, tbVec, info);
-                            rhsA = (UoImage[1] * taVec[X] + UoImage[2] * taVec[Y] + UoImage[3] * taVec[Z]) / weightSum;
-                            rhsB = (UoImage[1] * tbVec[X] + UoImage[2] * tbVec[Y] + UoImage[3] * tbVec[Z]) / weightSum;
-                            UoBC[1] = taVec[X] * rhsA + tbVec[X] * rhsB;
-                            UoBC[2] = taVec[Y] * rhsA + tbVec[Y] * rhsB;
-                            UoBC[3] = taVec[Z] * rhsA + tbVec[Z] * rhsB;
+                            rhs[X] = geo[GU] * nVec[X] + geo[GV] * nVec[Y] + geo[GW] * nVec[Z];
+                            rhs[Y] = (UoImage[1] * taVec[X] + UoImage[2] * taVec[Y] + UoImage[3] * taVec[Z]) / weightSum;
+                            rhs[Z] = (UoImage[1] * tbVec[X] + UoImage[2] * tbVec[Y] + UoImage[3] * tbVec[Z]) / weightSum;
+                            UoBC[1] = nVec[X] * rhs[X] + taVec[X] * rhs[Y] + tbVec[X] * rhs[Z];
+                            UoBC[2] = nVec[Y] * rhs[X] + taVec[Y] * rhs[Y] + tbVec[Y] * rhs[Z];
+                            UoBC[3] = nVec[Z] * rhs[X] + taVec[Z] * rhs[Y] + tbVec[Z] * rhs[Z];
                         }
                         UoBC[4] = UoImage[4] / weightSum; /* zero gradient pressure */
                         if (0 > geo[GT]) { /* adiabatic, dT/dn = 0 */
