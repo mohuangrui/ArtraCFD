@@ -220,7 +220,7 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                         imageZ = info[GSZ] + 2 * info[GSDS] * info[GSNZ];
                         InverseDistanceWeighting(UoImage, &weightSum, imageZ, imageY, imageX, 
                                 ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space), 
-                                2, FLUID, U, space, model, geometry);
+                                1, FLUID, U, space, model, geometry);
                         /* enforce boundary conditions at boundary point */
                         if (0 < geo[GROUGH]) { /* noslip wall */
                             UoBC[1] = geo[GU];
