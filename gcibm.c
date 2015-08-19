@@ -306,15 +306,15 @@ int InverseDistanceWeighting(Real Uo[], Real *weightSum, const Real z, const Rea
     for (int kh = -h; kh <= h; ++kh) {
         for (int jh = -h; jh <= h; ++jh) {
             for (int ih = -h; ih <= h; ++ih) {
-                /* limit number of stencils to further ensure stability with extreme discontinuities */
-                if (2 > (!kh + !jh + !ih)) {
-                    continue;
-                }
                 idxh = IndexMath(k + kh, j + jh, i + ih, space);
                 if ((0 > idxh) || (space->nMax <= idxh)) {
                     continue; /* illegal index */
                 }
                 if (FLUID == nodeType) { /* require fluid nodes */
+                    /* limit number of stencils to further ensure stability with extreme discontinuities */
+                    if (2 > (!kh + !jh + !ih)) {
+                        continue;
+                    }
                     if (FLUID != space->nodeFlag[idxh]) {
                         continue;
                     }
