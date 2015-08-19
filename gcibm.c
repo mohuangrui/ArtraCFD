@@ -218,9 +218,23 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                         imageX = info[GSX] + 2 * info[GSDS] * info[GSNX];
                         imageY = info[GSY] + 2 * info[GSDS] * info[GSNY];
                         imageZ = info[GSZ] + 2 * info[GSDS] * info[GSNZ];
+                        /*
+                         * When extremely strong discontinuities exist in the
+                         * domain of dependence of inverse distance weighting,
+                         * the original weighting approach may produce spurious
+                         * discontinuities among the weighted node and its
+                         * neighboring nodes. The best way to solve this issue
+                         * is to apply WENO's idea to avoid discontinuous
+                         * stencils and to only use smooth stencils. However,
+                         * this will make the algorithm much more complex.
+                         * Another compensation way is using a small domain of
+                         * dependence that centered at the ghost node instead
+                         * of using a domain of dependence that centered at the
+                         * image point. This limited domain of dependence can
+                         * stable the algorithm when extreme conditions exist.
+                         */
                         InverseDistanceWeighting(UoImage, &weightSum, imageZ, imageY, imageX, 
-                                ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space), 
-                                1, FLUID, U, space, model, geometry);
+                                k, j, i, type, FLUID, U, space, model, geometry);
                         /* enforce boundary conditions at boundary point */
                         if (0 < geo[GROUGH]) { /* noslip wall */
                             UoBC[1] = geo[GU];
@@ -292,6 +306,10 @@ int InverseDistanceWeighting(Real Uo[], Real *weightSum, const Real z, const Rea
     for (int kh = -h; kh <= h; ++kh) {
         for (int jh = -h; jh <= h; ++jh) {
             for (int ih = -h; ih <= h; ++ih) {
+                /* limit number of stencils to further ensure stability with extreme discontinuities */
+                if (2 > (!kh + !jh + !ih)) {
+                    continue;
+                }
                 idxh = IndexMath(k + kh, j + jh, i + ih, space);
                 if ((0 > idxh) || (space->nMax <= idxh)) {
                     continue; /* illegal index */

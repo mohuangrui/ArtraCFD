@@ -79,7 +79,7 @@ int FluidSolidInteraction(Real *U, Space *space, const Model *model, const Parti
                 }
                 /* reconstruction of flow values */
                 InverseDistanceWeighting(Uo, &weightSum, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
-                        k, j, i, 1, FLUID, U, space, model, geometry);
+                        k, j, i, type, FLUID, U, space, model, geometry);
                 /* Normalize the weighted values as reconstructed values. */
                 NormalizeReconstructedValues(Uo, weightSum);
                 ConservativeByPrimitive(U, idx * DIMU, Uo, model);
