@@ -24,8 +24,12 @@ static int InitializeDomainGeometry(Space *, const Partition *);
 static int IdentifySolidNodes(Space *, const Partition *, const Geometry *);
 static int IdentifyGhostNodes(Space *, const Partition *, const Geometry *);
 static int SearchFluidNodes(const int, const int, const int, const int, const Space *);
+static int InverseDistanceWeighting(Real [], Real *, const Real, const Real, const Real,
+        const int, const int, const int, const int, const int, const Real *,
+        const Space *, const Model *, const Geometry *);
 static int ApplyWeighting(Real [], Real *, Real, const Real [], const Real);
-static int OrthogonalSpace(Real *, Real *, Real *, const Real *);
+static int NormalizeReconstructedValues(Real [], const Real);
+static int OrthogonalSpace(Real [], Real [], Real [], const Real []);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -235,7 +239,7 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                          */
                         InverseDistanceWeighting(UoImage, &weightSum, imageZ, imageY, imageX, 
                                 k, j, i, type, FLUID, U, space, model, geometry);
-                        /* enforce boundary conditions at boundary point */
+                        /* reconstruct boundary values by enforcing boundary conditions */
                         if (0 < geo[GROUGH]) { /* noslip wall */
                             UoBC[1] = geo[GU];
                             UoBC[2] = geo[GV];
@@ -284,7 +288,13 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
     }
     return 0;
 }
-int InverseDistanceWeighting(Real Uo[], Real *weightSum, const Real z, const Real y, const Real x,
+int FlowReconstruction(Real Uo[], const Real z, const Real y, const Real x,
+        const int k, const int j, const int i, const int h, 
+        Real UoBC[],  const Real *geo, const Real info[], const Real *U,
+        const Space *space, const Model *model, const Geometry *geometry)
+{
+}
+static int InverseDistanceWeighting(Real Uo[], Real *weightSum, const Real z, const Real y, const Real x,
         const int k, const int j, const int i, const int h, const int nodeType, const Real *U,
         const Space *space, const Model *model, const Geometry *geometry)
 {
@@ -357,7 +367,7 @@ static int ApplyWeighting(Real Uo[], Real *weightSum, Real distance, const Real 
     *weightSum = *weightSum + distance; /* accumulate normalizer */
     return 0;
 }
-int NormalizeReconstructedValues(Real Uo[], const Real weightSum)
+static int NormalizeReconstructedValues(Real Uo[], const Real weightSum)
 {
     for (int n = 0; n < DIMUo; ++n) {
         Uo[n] = Uo[n] / weightSum;
@@ -393,7 +403,7 @@ int CalculateGeometryInformation(Real info[], const int k, const int j, const in
     info[GSNZ] = info[GSNZ] / info[GSDC];
     return 0;
 }
-static int OrthogonalSpace(Real *nVec, Real *taVec, Real *tbVec, const Real *info)
+static int OrthogonalSpace(Real nVec[], Real taVec[], Real tbVec[], const Real info[])
 {
     nVec[X] = info[GSNX]; 
     nVec[Y] = info[GSNY]; 

@@ -40,21 +40,13 @@ extern int ComputeDomainGeometryGCIBM(Space *, const Partition *, const Geometry
 extern int BoundaryTreatmentsGCIBM(Real *U, const Space *, const Model *,
         const Partition *, const Geometry *);
 /*
- * Inverse Distance Weighting
+ * Reconstruct flow variables by Inverse Distance Weighting
  *
  * Function
  *      Reconstruction of the values of primitive vector Uo for a spatial
  *      point (z, y, x) based on the neighbours around node (k, j, i) in
- *      index range h by inversed distance weighting.
- *
- * Return
- *      Weighted values without normalization, the normalization factor is
- *      saved and returned at the last element of Uo.
+ *      index range h and a nearby boundary point by inversed distance weighting.
  */
-extern int InverseDistanceWeighting(Real Uo[], Real *weightSum, const Real z, const Real y, const Real x,
-        const int k, const int j, const int i, const int h, const int nodeType, const Real *U,
-        const Space *space, const Model *model, const Geometry *geometry);
-extern int NormalizeReconstructedValues(Real Uo[], const Real weightSum);
 /*
  * In geometry criteria
  *
