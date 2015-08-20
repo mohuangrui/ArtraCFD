@@ -28,7 +28,7 @@ static int InverseDistanceWeighting(Real [], Real *, const Real, const Real, con
         const int, const int, const int, const int, const int, const Real *,
         const Space *, const Model *, const Geometry *);
 static int ApplyWeighting(Real [], Real *, Real, const Real [], const Real);
-static int NormalizeReconstructedValues(Real [], const Real);
+static int NormalizeWeightedValues(Real [], const Real);
 static int OrthogonalSpace(Real [], Real [], Real [], const Real []);
 /****************************************************************************
  * Function definitions
@@ -192,10 +192,6 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
     Real UoImage[DIMUo] = {0.0}; /* reconstructed primitives at image point */
     Real UoBC[DIMUo] = {0.0}; /* physical primitives at boundary point */
     Real info[INFOGHOST] = {0.0}; /* store calculated geometry information */
-    Real nVec[DIMS] = {0.0}; /* normal vector */
-    Real taVec[DIMS] = {0.0}; /* tangential vector */
-    Real tbVec[DIMS] = {0.0}; /* tangential vector */
-    Real rhs[DIMS] = {0.0}; /* right hand side vector */
     Real weightSum = 0.0; /* store the sum of weights */
     Real imageZ = 0.0;
     Real imageY = 0.0;
@@ -237,32 +233,8 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                          * image point. This limited domain of dependence can
                          * stable the algorithm when extreme conditions exist.
                          */
-                        InverseDistanceWeighting(UoImage, &weightSum, imageZ, imageY, imageX, 
-                                k, j, i, type, FLUID, U, space, model, geometry);
-                        /* reconstruct boundary values by enforcing boundary conditions */
-                        if (0 < geo[GROUGH]) { /* noslip wall */
-                            UoBC[1] = geo[GU];
-                            UoBC[2] = geo[GV];
-                            UoBC[3] = geo[GW];
-                        } else { /* slip wall */
-                            OrthogonalSpace(nVec, taVec, tbVec, info);
-                            rhs[X] = geo[GU] * nVec[X] + geo[GV] * nVec[Y] + geo[GW] * nVec[Z];
-                            rhs[Y] = (UoImage[1] * taVec[X] + UoImage[2] * taVec[Y] + UoImage[3] * taVec[Z]) / weightSum;
-                            rhs[Z] = (UoImage[1] * tbVec[X] + UoImage[2] * tbVec[Y] + UoImage[3] * tbVec[Z]) / weightSum;
-                            UoBC[1] = nVec[X] * rhs[X] + taVec[X] * rhs[Y] + tbVec[X] * rhs[Z];
-                            UoBC[2] = nVec[Y] * rhs[X] + taVec[Y] * rhs[Y] + tbVec[Y] * rhs[Z];
-                            UoBC[3] = nVec[Z] * rhs[X] + taVec[Z] * rhs[Y] + tbVec[Z] * rhs[Z];
-                        }
-                        UoBC[4] = UoImage[4] / weightSum; /* zero gradient pressure */
-                        if (0 > geo[GT]) { /* adiabatic, dT/dn = 0 */
-                            UoBC[5] = UoImage[5] / weightSum;
-                        } else { /* otherwise, use specified constant wall temperature, T = Tw */
-                            UoBC[5] = geo[GT];
-                        }
-                        /* add the boundary point as a stencil */
-                        ApplyWeighting(UoImage, &weightSum, info[GSDS] * info[GSDS], UoBC, space->tinyL);
-                        /* Normalize the weighted values of the image point */
-                        NormalizeReconstructedValues(UoImage, weightSum);
+                        FlowReconstruction(UoImage, imageZ, imageY, imageX, k, j, i, type,
+                                UoBC, info, geo, U, space, model, geometry);
                         /* 
                          * Apply the method of image.
                          *  -- reflecting vectors over wall for both slip and noslip, stationary and
@@ -277,8 +249,8 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                     } else { /* using inverse distance weighting instead of method of image */
                         InverseDistanceWeighting(UoGhost, &weightSum, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
                                 k, j, i, 1, type - 1, U, space, model, geometry);
-                        /* Normalize the weighted values as reconstructed values. */
-                        NormalizeReconstructedValues(UoGhost, weightSum);
+                        /* Normalize the weighted values */
+                        NormalizeWeightedValues(UoGhost, weightSum);
                     }
                     UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
                     ConservativeByPrimitive(U, idx * DIMU, UoGhost, model);
@@ -290,9 +262,40 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
 }
 int FlowReconstruction(Real Uo[], const Real z, const Real y, const Real x,
         const int k, const int j, const int i, const int h, 
-        Real UoBC[],  const Real *geo, const Real info[], const Real *U,
+        Real UoBC[], const Real info[], const Real *geo, const Real *U,
         const Space *space, const Model *model, const Geometry *geometry)
 {
+    Real weightSum = 0.0; /* store the sum of weights */
+    InverseDistanceWeighting(Uo, &weightSum, z, y, x, k, j, i, h, FLUID, U, space, model, geometry);
+    /* reconstruct boundary values by enforcing boundary conditions */
+    if (0 < geo[GROUGH]) { /* noslip wall */
+        UoBC[1] = geo[GU];
+        UoBC[2] = geo[GV];
+        UoBC[3] = geo[GW];
+    } else { /* slip wall */
+        Real nVec[DIMS] = {0.0}; /* normal vector */
+        Real taVec[DIMS] = {0.0}; /* tangential vector */
+        Real tbVec[DIMS] = {0.0}; /* tangential vector */
+        Real rhs[DIMS] = {0.0}; /* right hand side vector */
+        OrthogonalSpace(nVec, taVec, tbVec, info);
+        rhs[X] = geo[GU] * nVec[X] + geo[GV] * nVec[Y] + geo[GW] * nVec[Z];
+        rhs[Y] = (Uo[1] * taVec[X] + Uo[2] * taVec[Y] + Uo[3] * taVec[Z]) / weightSum;
+        rhs[Z] = (Uo[1] * tbVec[X] + Uo[2] * tbVec[Y] + Uo[3] * tbVec[Z]) / weightSum;
+        UoBC[1] = nVec[X] * rhs[X] + taVec[X] * rhs[Y] + tbVec[X] * rhs[Z];
+        UoBC[2] = nVec[Y] * rhs[X] + taVec[Y] * rhs[Y] + tbVec[Y] * rhs[Z];
+        UoBC[3] = nVec[Z] * rhs[X] + taVec[Z] * rhs[Y] + tbVec[Z] * rhs[Z];
+    }
+    UoBC[4] = Uo[4] / weightSum; /* zero gradient pressure */
+    if (0 > geo[GT]) { /* adiabatic, dT/dn = 0 */
+        UoBC[5] = Uo[5] / weightSum;
+    } else { /* otherwise, use specified constant wall temperature, T = Tw */
+        UoBC[5] = geo[GT];
+    }
+    /* add the boundary point as a stencil */
+    ApplyWeighting(Uo, &weightSum, info[GSDS] * info[GSDS], UoBC, space->tinyL);
+    /* Normalize the weighted values */
+    NormalizeWeightedValues(Uo, weightSum);
+    return 0;
 }
 static int InverseDistanceWeighting(Real Uo[], Real *weightSum, const Real z, const Real y, const Real x,
         const int k, const int j, const int i, const int h, const int nodeType, const Real *U,
@@ -367,7 +370,7 @@ static int ApplyWeighting(Real Uo[], Real *weightSum, Real distance, const Real 
     *weightSum = *weightSum + distance; /* accumulate normalizer */
     return 0;
 }
-static int NormalizeReconstructedValues(Real Uo[], const Real weightSum)
+static int NormalizeWeightedValues(Real Uo[], const Real weightSum)
 {
     for (int n = 0; n < DIMUo; ++n) {
         Uo[n] = Uo[n] / weightSum;

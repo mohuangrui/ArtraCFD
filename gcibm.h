@@ -47,6 +47,10 @@ extern int BoundaryTreatmentsGCIBM(Real *U, const Space *, const Model *,
  *      point (z, y, x) based on the neighbours around node (k, j, i) in
  *      index range h and a nearby boundary point by inversed distance weighting.
  */
+extern int FlowReconstruction(Real Uo[], const Real z, const Real y, const Real x,
+        const int k, const int j, const int i, const int h, 
+        Real UoBC[], const Real info[], const Real *geo, const Real *U,
+        const Space *space, const Model *model, const Geometry *geometry);
 /*
  * In geometry criteria
  *

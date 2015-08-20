@@ -57,7 +57,8 @@ int FluidSolidInteraction(Real *U, Space *space, const Model *model, const Parti
      */
     int idx = 0; /* linear array index math variable */
     Real Uo[DIMUo] = {0.0}; /* store weighted primitives */
-    Real weightSum = 0.0; /* store the sum of weights */
+    Real UoBC[DIMUo] = {0.0}; /* physical primitives at boundary point */
+    Real info[INFOGHOST] = {0.0}; /* store calculated geometry information */
     int geoID = 0; /* geometry id */
     int type = 0;
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
@@ -78,10 +79,10 @@ int FluidSolidInteraction(Real *U, Space *space, const Model *model, const Parti
                     continue;
                 }
                 /* reconstruction of flow values */
-                InverseDistanceWeighting(Uo, &weightSum, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
-                        k, j, i, type, FLUID, U, space, model, geometry);
-                /* Normalize the weighted values as reconstructed values. */
-                NormalizeReconstructedValues(Uo, weightSum);
+                CalculateGeometryInformation(info, k, j, i, geo, space);
+                FlowReconstruction(Uo, info[GSZ], info[GSY], info[GSX], k, j, i, type,
+                        UoBC, info, geo, U, space, model, geometry);
+                Uo[0] = Uo[4] / (Uo[5] * model->gasR); /* compute density */
                 ConservativeByPrimitive(U, idx * DIMU, Uo, model);
             }
         }
