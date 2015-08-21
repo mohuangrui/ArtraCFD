@@ -275,7 +275,7 @@ static int WriteParaviewVariableFile(const Geometry *geometry, ParaviewSet *para
     ParaviewReal data = 0.0; /* paraview scalar data */
     ParaviewReal vector[3] = {0.0}; /* paraview vector data elements */
     /* the scalar values at each node in current part */
-    const char name[GWRITE][5] = {"x", "y", "z", "r", "rho", "u", "v", "w", "T", "rough", "fx", "fy", "fz", "id"};
+    const char name[GWRITE][10] = {"x", "y", "z", "r", "rho", "u", "v", "w", "T", "rough", "fx", "fy", "fz", "id"};
     int iMin = 0;
     int iMax = geometry->totalN - 1;
     int jMin = 0;
