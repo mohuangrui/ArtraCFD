@@ -372,9 +372,9 @@ static int NormalizeWeightedValues(Real Uo[], const Real weightSum)
     for (int n = 0; n < DIMUo; ++n) {
         Uo[n] = Uo[n] / weightSum;
     }
-    if (!((0 < Uo[0]) && (FLT_MAX > Uo[0]))) {
-        fprintf(stderr, "rho=%.6g\n", Uo[0]);
-        FatalError("illegal density reconstructed, solution diverges...");
+    if (!((0 < Uo[4]) && (FLT_MAX > Uo[4]))) {
+        fprintf(stderr, "pressure=%.6g\n", Uo[4]);
+        FatalError("illegal pressure reconstructed, solution diverges...");
     }
     return 0;
 }
