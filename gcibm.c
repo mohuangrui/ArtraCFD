@@ -253,6 +253,10 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                         NormalizeWeightedValues(UoGhost, weightSum);
                     }
                     UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
+                    if (!((0 < UoGhost[0]) && (FLT_MAX > UoGhost[0]))) {
+                        fprintf(stderr, "rho=%.6g\n", UoGhost[0]);
+                        FatalError("illegal density reconstructed, solution diverges...");
+                    }
                     ConservativeByPrimitive(U, idx * DIMU, UoGhost, model);
                 }
             }
@@ -371,10 +375,6 @@ static int NormalizeWeightedValues(Real Uo[], const Real weightSum)
 {
     for (int n = 0; n < DIMUo; ++n) {
         Uo[n] = Uo[n] / weightSum;
-    }
-    if (!((0 < Uo[4]) && (FLT_MAX > Uo[4]))) {
-        fprintf(stderr, "pressure=%.6g\n", Uo[4]);
-        FatalError("illegal pressure reconstructed, solution diverges...");
     }
     return 0;
 }
