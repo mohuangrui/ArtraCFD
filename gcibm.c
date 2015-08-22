@@ -291,6 +291,7 @@ int FlowReconstruction(Real Uo[], const Real z, const Real y, const Real x,
     } else { /* otherwise, use specified constant wall temperature, T = Tw */
         UoBC[5] = geo[GT];
     }
+    UoBC[0] = UoBC[4] / (UoBC[5] * model->gasR); /* compute density */
     /* add the boundary point as a stencil */
     ApplyWeighting(Uo, &weightSum, info[GSDS] * info[GSDS], UoBC, space->tinyL);
     /* Normalize the weighted values */
