@@ -344,10 +344,6 @@ static int InverseDistanceWeighting(Real Uo[], Real *weightSum, const Real z, co
                 /* use distance square to avoid expensive sqrt */
                 distance = distX * distX + distY * distY + distZ * distZ;
                 PrimitiveByConservative(Uoh, idxh * DIMU, U, model);
-                if (!((0 < Uoh[0]) && (FLT_MAX > Uoh[0]))) {
-                    fprintf(stderr, "k=%d, j=%d, i=%d, rho=%.6g\n", k + kh, j + jh, i + ih, Uoh[0]);
-                    FatalError("illegal density encountered, solution diverges...");
-                }
                 ApplyWeighting(Uo, weightSum, distance, Uoh, space->tinyL);
             }
         }
@@ -374,6 +370,10 @@ static int NormalizeWeightedValues(Real Uo[], const Real weightSum)
 {
     for (int n = 0; n < DIMUo; ++n) {
         Uo[n] = Uo[n] / weightSum;
+    }
+    if (!((0 < Uo[0]) && (FLT_MAX > Uo[0]))) {
+        fprintf(stderr, "rho=%.6g\n", Uo[0]);
+        FatalError("illegal density reconstructed, solution diverges...");
     }
     return 0;
 }
