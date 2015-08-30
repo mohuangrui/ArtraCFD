@@ -329,10 +329,6 @@ static int InverseDistanceWeighting(Real Uo[], Real *weightSum, const Real z, co
                     continue; /* illegal index */
                 }
                 if (FLUID == nodeType) { /* require fluid nodes */
-                    /* limit number of stencils to further ensure stability with extreme discontinuities */
-                    if (2 > (!kh + !jh + !ih)) {
-                        continue;
-                    }
                     if (FLUID != space->nodeFlag[idxh]) {
                         continue;
                     }
