@@ -72,6 +72,7 @@ srcdir = .
 #
 #    gcc        GNU C compiler
 #    icc        Intel C compiler
+#    mpicc      MPI compiler
 #
 CC := gcc
 
@@ -107,10 +108,10 @@ CC := gcc
 #   CPUPROFILE=./cpu.prof ./artracfd arg1 arg2
 #   pprof --gv /bin/ls ./cpu.prof  (Displays annotated call-graph via 'gv')
 #
-ifeq ($(CC),gcc)
-CFLAGS += -Wall -Wextra -O2 -std=c99 -pedantic
-else
+ifeq ($(CC),icc)
 CFLAGS += -Wall -Wextra -fast -std=c99 -pedantic
+else
+CFLAGS += -Wall -Wextra -O2 -std=c99 -pedantic
 endif
 
 #
@@ -231,7 +232,7 @@ DPND := $(SRCS:.c=.d)
 
 # Automatic prerequisites flag: -M for any compiler, -MM for GNU to 
 # omit system headers. But -MM usually work with ICC without problem.
-ifeq ($(CC),gcc)
+ifeq ($(CC),icc)
 AUTOPRE := -MM
 else
 AUTOPRE := -MM
