@@ -309,8 +309,15 @@
  *
  ****************************************************************************/
 /****************************************************************************
+ *
+ *                 Best Practices for Scientific Programming
+ *
+ * Use revision control system
+ *
+ * - Extremely useful for comparing, recovering, maintenance, etc.
+ * - Available options: CVS, Subversion, Github.
  * 
- *                           Compile with make
+ * Compile with make for automatic build procedures
  *
  * - http://www.gnu.org/software/make/manual/make.html
  * - Use make program to compile and link programs.
@@ -322,6 +329,11 @@
  * - Finally, if any source file has been recompiled, all the object files
  *   whether newly made or saved from previous compilations, must be linked 
  *   together to produce the new executable program.
+ *
+ * Use a robust and exhaustive test suite
+ *
+ * - Verify the functionality of the software whenever modified.
+ * - Should be coupled to the build infrastructure with every release.
  *
  ****************************************************************************/
 /****************************************************************************
