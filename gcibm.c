@@ -20,7 +20,7 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int InitializeDomainGeometry(Space *, const Partition *);
+static int InitializeGeometryDomain(Space *, const Partition *);
 static int IdentifySolidNodes(Space *, const Partition *, const Geometry *);
 static int IdentifyGhostNodes(Space *, const Partition *, const Geometry *);
 static int SearchFluidNodes(const int, const int, const int, const int, const Space *);
@@ -34,21 +34,17 @@ static int OrthogonalSpace(Real [], Real [], Real [], const Real []);
  * Function definitions
  ****************************************************************************/
 /*
- * These functions identify the type of each node: 
+ * This function identify the type of each node: 
  *
  * Procedures are:
- * -- initialize node flag of boundary and exterior nodes to exterior type,
- *    and inner nodes to fluid type;
- * -- identify all inner nodes that are in solid geometry as solid node;
- * -- identify ghost nodes according to the node type of its neighbours;
+ * -- initialize node flag of global boundary and exterior nodes to exterior
+ *    type, and inner nodes to fluid type;
+ * -- identify all inner nodes that are in geometry as solid node;
+ * -- identify ghost nodes by the node type of neighbours of solid nodes;
  *
  * Ghost nodes are solid nodes that locate on numerical boundaries.
  * It's necessary to differ boundary nodes and inner nodes to avoid 
  * incorrect mark of ghost nodes nearby domain boundaries.
- * It's necessary to differ different types of ghost node according to
- * which neighbour of them is a fluid node. The fist type of ghost node 
- * is special because the computation of boundary forces are only based on
- * the first nearest solid layer of boundary.
  *
  * The identification process should proceed step by step to correctly handle
  * all these relationships and avoid interference between each step,
@@ -60,14 +56,14 @@ static int OrthogonalSpace(Real [], Real [], Real [], const Real []);
  * The rational is that don't store every information for each ghost node, but
  * only store necessary information. When need it, access and calculate it.
  */
-int ComputeDomainGeometryGCIBM(Space *space, const Partition *part, const Geometry *geometry)
+int ComputeGeometryDomain(Space *space, const Partition *part, const Geometry *geometry)
 {
-    InitializeDomainGeometry(space, part);
+    InitializeGeometryDomain(space, part);
     IdentifySolidNodes(space, part, geometry);
     IdentifyGhostNodes(space, part, geometry);
     return 0;
 }
-static int InitializeDomainGeometry(Space *space, const Partition *part)
+static int InitializeGeometryDomain(Space *space, const Partition *part)
 {
     int idx = 0; /* linear array index math variable */
     /* initialize inner nodes to fluid type, others to exterior nodes type. */
@@ -130,6 +126,7 @@ static int IdentifySolidNodes(Space *space, const Partition *part, const Geometr
         jSup = ValidRegionJ(centerJ + rangeJ, part) + 1;
         iSub = ValidRegionI(centerI - rangeI, part);
         iSup = ValidRegionI(centerI + rangeI, part) + 1;
+        /* find nodes in geometry, then flag as solid and link to geometry. */
         for (int k = kSub; k < kSup; ++k) {
             for (int j = jSub; j < jSup; ++j) {
                 for (int i = iSub; i < iSup; ++i) {
@@ -146,17 +143,19 @@ static int IdentifySolidNodes(Space *space, const Partition *part, const Geometr
 static int IdentifyGhostNodes(Space *space, const Partition *part, const Geometry *geometry)
 {
     int idx = 0; /* linear array index math variable */
+    /* find solid nodes at numerical boundary, then flag as ghost while preserving link. */
     for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
         for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
             for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
                 idx = IndexMath(k, j, i, space);
-                if (-OFFSET < space->nodeFlag[idx]) { /* it's not solid node */
+                if (-OFFSET < space->nodeFlag[idx]) { /* not solid node */
                     continue;
                 }
-                /* if nth neighbour is fluid, then it's nth type ghost node */
+                /* search neighbours of node(k, j, i) to check fluid node */
                 for (int type = 1; type < space->ng + 2; ++type) { /* max search range should be ng + 1 */
+                    /* if rth neighbours has fluid, then it's rth type ghost node */
                     if (0 == SearchFluidNodes(k, j, i, type, space)) {
-                        space->nodeFlag[idx] = -space->nodeFlag[idx] + (type - 1) * geometry->totalN; /* geometry conserved */
+                        space->nodeFlag[idx] = -space->nodeFlag[idx] + (type - 1) * geometry->totalN; /* geometry link preserved */
                         break; /* exit search loop once identified successfully */
                     }
                 }
@@ -165,13 +164,13 @@ static int IdentifyGhostNodes(Space *space, const Partition *part, const Geometr
     }
     return 0;
 }
-/*
- * Search around current node and check whether current node has at
- * least one fluid node regarding to the specified coordinate range.
- */
 static int SearchFluidNodes(const int k, const int j, const int i, 
         const int h, const Space *space)
 {
+    /*
+     * Search around the specified node and return the infomation of whether 
+     * current node has fluid neighbours at the specified coordinate range.
+     */
     const int idxW = IndexMath(k, j, i - h, space);
     const int idxE = IndexMath(k, j, i + h, space);
     const int idxS = IndexMath(k, j - h, i, space);

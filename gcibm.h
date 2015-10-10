@@ -24,13 +24,13 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Compute domain geometry
+ * Compute geometry domain
  *
  * Function
- *      Employ GCIBM approach to handle complex geometry that locates in
+ *      Employ node flagging algorithm to handle complex geometry that locates in
  *      the computational domain.
  */
-extern int ComputeDomainGeometryGCIBM(Space *, const Partition *, const Geometry *);
+extern int ComputeGeometryDomain(Space *, const Partition *, const Geometry *);
 /*
  * Boundary treatments for ghost nodes
  *

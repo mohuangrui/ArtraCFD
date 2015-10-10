@@ -38,7 +38,7 @@ int Preprocess(Field *field, Space *space, Time *time, Model *model,
     DomainPartition(space, part);
     ProgramMemoryAllocate(field, space);
     LoadGeometryData(space, time, model, geometry);
-    ComputeDomainGeometryGCIBM(space, part, geometry);
+    ComputeGeometryDomain(space, part, geometry);
     return 0;
 }
 /*

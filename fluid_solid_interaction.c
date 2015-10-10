@@ -90,7 +90,7 @@ int FluidSolidInteraction(Real *U, Space *space, const Model *model, const Parti
     /*
      * Recompute the changed geometry and apply boundary condition.
      */
-    ComputeDomainGeometryGCIBM(space, part, geometry);
+    ComputeGeometryDomain(space, part, geometry);
     BoundaryTreatmentsGCIBM(U, space, model, part, geometry);
     return 0;
 }
