@@ -90,9 +90,8 @@ static int InitializeGeometryDomain(Space *space, const Partition *part)
  * The second method is adopted here for performance reason, although it's much
  * more complicated than the first one.
  * Be cautious with the validity of any calculated index. It's extremely
- * necessary to adjust the index into the valid region or check the
- * validity of the index to avoid index exceed array bound limits and 
- * mysterious bugs.
+ * necessary to adjust the index into the valid region or check the validity of
+ * the index to avoid index exceed array bound limits and mysterious bugs.
  */
 static int IdentifySolidNodes(Space *space, const Partition *part, const Geometry *geometry)
 {
@@ -226,11 +225,6 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                          * is to apply WENO's idea to avoid discontinuous
                          * stencils and to only use smooth stencils. However,
                          * this will make the algorithm much more complex.
-                         * Another compensation way is using a small domain of
-                         * dependence that centered at the ghost node instead
-                         * of using a domain of dependence that centered at the
-                         * image point. This limited domain of dependence can
-                         * stable the algorithm when extreme conditions exist.
                          */
                         FlowReconstruction(UoImage, imageZ, imageY, imageX, k, j, i, type,
                                 UoBC, info, geo, U, space, model, geometry);
@@ -269,8 +263,9 @@ int FlowReconstruction(Real Uo[], const Real z, const Real y, const Real x,
         const Space *space, const Model *model, const Geometry *geometry)
 {
     Real weightSum = 0.0; /* store the sum of weights */
+    /* pre-estimate step */
     InverseDistanceWeighting(Uo, &weightSum, z, y, x, k, j, i, h, FLUID, U, space, model, geometry);
-    /* reconstruct boundary values by enforcing boundary conditions */
+    /* physical boundary condition enforcement step */
     if (0 < geo[GROUGH]) { /* noslip wall */
         UoBC[1] = geo[GU];
         UoBC[2] = geo[GV];
@@ -295,7 +290,7 @@ int FlowReconstruction(Real Uo[], const Real z, const Real y, const Real x,
         UoBC[5] = geo[GT];
     }
     UoBC[0] = UoBC[4] / (UoBC[5] * model->gasR); /* compute density */
-    /* add the boundary point as a stencil */
+    /* correction step by adding the boundary point as a stencil */
     ApplyWeighting(Uo, &weightSum, info[GSDS] * info[GSDS], UoBC, space->tinyL);
     /* Normalize the weighted values */
     NormalizeWeightedValues(Uo, weightSum);
