@@ -11,11 +11,10 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  * - Header files should be once-only headers. A standard way to prevent 
- *   include a header file more than once is to enclose the entire area
+ *   including a header file more than once is to enclose the entire
  *   contents of the file in a conditional.
  * - Do not start the guard symbol with an underscore. Leading underscore 
- *   names are reserved for internal use by the C implementation, breaking
- *   this rule can cause unnecessary and very puzzling errors.
+ *   names are reserved for internal use by the C implementation.
  * - To guarantee uniqueness, the format of the name should be
  *   <PROJECT>_<PATH>_<FILE>_H_
  ****************************************************************************/
@@ -77,7 +76,7 @@
  * - Avoid complex logic like multiply nested ifs. Consider splitting your 
  *   code into multiple procedures, to decrease the level of complexity.
  * - Variables should be declared as locally as possible:
- *    * declare non-constant variables that are used through-out the function
+ *    * declare non-constant variables that are used throughout the function
  *      at the top.
  *    * declare constant variables when their values can be determined.
  *    * declare variables that are used in only a local scope of the function
@@ -551,7 +550,7 @@ typedef enum {
  * multi-dimensional array as a single linear array with hand-authored array
  * indexing math to keep track of what values are where:
  *
- * value = data[ k * height * depth + j * depth + i ];
+ * value = data[k * height * depth + j * depth + i];
  *
  * Since the array is a single large chunk of memory, sweeping through it from
  * start-to-finish creates a regular access pattern that processor prefetchers
