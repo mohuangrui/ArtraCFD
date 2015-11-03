@@ -120,11 +120,11 @@ int ShowInformation(const char *statement)
 void *AssignStorage(const int idxMax, const char *dataType)
 {
     void *pointer = NULL;
-    if (0 == strcmp(dataType, "double")) {
-        pointer = malloc(idxMax * sizeof(double));
-    }
     if (0 == strcmp(dataType, "Real")) {
         pointer = malloc(idxMax * sizeof(Real));
+    }
+    if (0 == strcmp(dataType, "double")) {
+        pointer = malloc(idxMax * sizeof(double));
     }
     if (0 == strcmp(dataType, "float")) {
         pointer = malloc(idxMax * sizeof(float));

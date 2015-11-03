@@ -140,7 +140,7 @@ int ExpressionCalculator(void)
             SetAngleMode(&theParameter);
             continue;
         }
-        if (0 == strncmp(currentLine, "quit", sizeof currentLine)) {
+        if (0 == strncmp(currentLine, "exit", sizeof currentLine)) {
             return 0;
         } 
         if ('\0' == currentLine[0]) { /* no useful information in the command */
@@ -810,7 +810,7 @@ static void HelpCalculator(void)
     fprintf(stdout, "[help]              show this information\n");
     fprintf(stdout, "[set]               set angle mode in radian (default) or degree\n");
     fprintf(stdout, "math expression     calculator the inputted math expression\n");
-    fprintf(stdout, "[quit]              return to ArtraCFD\n\n");
+    fprintf(stdout, "[exit]              return to ArtraCFD\n\n");
     fprintf(stdout, "                   Expression Calculator\n");
     fprintf(stdout, "Notice: Please avoid ambiguity expressions and use parenthesis:\n");
     fprintf(stdout, "        \'()\',\'[]\',\'{}\' to make semantic clear\n");

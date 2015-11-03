@@ -464,16 +464,17 @@ typedef double Real;
  * enum statement is used instead of macros for handling these magic numbers.
  */
 typedef enum {
-    /* dimension of space */
-    DIMS = 3, /* X, Y, Z */
+    /* dimensions related to space */
+    DIMS = 3, /* space dimension */
     X = 0,
     Y = 1,
     Z = 2,
-    /* dimension of conservative vector, maximum independent primitives */
-    DIMU = 5, /* rho, rho_u, rho_v, rho_w, rho_eT */
-    /* dimension of primitive vector, contents depend on specific situations */
-    DIMUo = 6,  /* rho, u, v, w, [p, hT, h], [T, c] */
+    /* dimensions related to field variables */
+    DIMU = 5, /* conservative vector: rho, rho_u, rho_v, rho_w, rho_eT */
+    DIMUo = 6, /* primitive vector: rho, u, v, w, [p, hT, h], [T, c] */
     /* 
+     * parameters related to node flag space
+     *
      * node flag value          node flag range              node type
      *      0                          0                   fluid nodes
      *     -1                         -1                   boundary and exterior nodes
@@ -485,53 +486,28 @@ typedef enum {
      * geometry identifier m in [0, M-1].
      */
     OFFSET = 10, 
-    /* identifier of fluid nodes */
-    FLUID = 0,
-    /* identifier of boundary and exterior ghost nodes */
-    EXTERIOR = -1,
-    /* entry number of geometry information */
-    ENTRYGEO = 16, /* x, y, z, r, rho, u, v, w, T, roughness, fx, fy, fz, area, mass, tally */
-    GREAD = 10, /* number of items read from file */
-    GWRITE = 14, /* number of items write to file */
-    GX = 0,
-    GY = 1,
-    GZ = 2,
-    GR = 3,
-    GRHO = 4,
-    GU = 5,
-    GV = 6,
-    GW = 7,
-    GT = 8,
-    GROUGH = 9,
-    GFX = 10,
-    GFY = 11,
-    GFZ = 12,
-    GAREA = 13,
-    GMASS = 14,
-    GTALLY = 15,
-    /* entry number of calculated geometry information of ghost node */
-    INFOGHOST = 8, /* x, y, z, distance to center, to surface, normalX, normalY, normalZ */
-    GSX = 0,
-    GSY = 1,
-    GSZ = 2,
-    GSDC = 3,
-    GSDS = 4,
-    GSNX = 5,
-    GSNY = 6,
-    GSNZ = 7,
-    /* maximum number of probes to support */
-    NPROBE = 4,
-    /* entry number of probe information */
+    FLUID = 0, /* identifier of fluid nodes */
+    EXTERIOR = -1, /* identifier of global boundary and exterior ghost nodes */
+    /* parameters related to geometry */
+    GEOREAD = 10, /* number of items read from geometry file */
+    GEOWRITE = 14, /* number of items write to geometry file */
+    ENTRYFACET = 12, /* entries of polygon facet data */
+    ENTRYGEOCALC = 7, /* entries of calculated geometry information of a node */
+    GX = 0, /* x coordinate */
+    GY = 1, /* y coordinate */
+    GZ = 2, /* z coordinate */
+    GDS = 3, /* distance to surface */
+    GNX = 4, /* x component of normal */
+    GNY = 5, /* y component of normal */
+    GNZ = 6, /* z component of normal */
+    /* parameters related to probe */
+    NPROBE = 4, /* maximum number of probes to support */
     ENTRYPROBE = 7, /* x1, y1, z1, x2, y2, z2, resolution */
-    /* number of inner sub partitions */
+    /* parameters related to domain and partitions */
     NSUBPART = 13, /* interior region, [west, east, south, north, front, back] x [BC, Ghost] */
-    /* max index of inner partitions of physical BC */
     NBC = 7, /* interior region, [west, east, south, north, front, back] x [BC] */
-    /* entry number of BC information */
     ENTRYBC = 6, /* rho, u, v, w, p, T */
-    /* maximum number of regional initializer to support */
-    NIC = 10,
-    /* entry number of regional initializer information */
+    NIC = 10, /* maximum number of regional initializer to support */
     ENTRYIC = 12, /* x1, y1, z1, [r, x2], [y2], [z2], ..., primitive variables */
 } Constants;
 /*
@@ -574,7 +550,7 @@ typedef enum {
  */
 typedef struct {
     Real *Un; /* store the "old" field data for intermediate calculation */
-    Real *U; /* store updating field data, and updated data after every computation  */
+    Real *U; /* store updating field data, and updated data after every computation */
     Real *Uswap; /* an auxiliary storage space */
 } Field;
 /*
@@ -603,7 +579,7 @@ typedef struct {
     Real zMax; /* coordinates define the space domain */
     Real yMax; /* coordinates define the space domain */
     Real xMax; /* coordinates define the space domain */
-    int *nodeFlag; /* node type integer flag: normal, ghost, solid, etc. */
+    int *nodeFlag; /* node type flag: fluid, ghost, solid, etc. */
 } Space;
 /*
  * Time domain parameters
@@ -670,14 +646,45 @@ typedef struct {
  */
 typedef struct {
     int totalN; /* total number of geometries */
-    Real *headAddress; /* record the head address that stores information */
+    int sphereN; /* number of analytical spheres */
+    int stlN; /* number of triangulated surface geometry */
+    Polygon *list; /* geometry list */
 } Geometry;
+/*
+ * Polygon structure
+ */
+typedef struct {
+    int facetN; /* number of facets. 0 for analytical sphere */
+    int tally; /* tally for 1st type ghost node in polygon */
+    Real xc; /* a point in the polygon */
+    Real yc;
+    Real zc;
+    Real r; /* radius of analytical sphere */
+    Real *facet; /* facet data */
+    Real xMin; /* a range contains the entire polygon */
+    Real yMin;
+    Real zMin;
+    Real xMax;
+    Real yMax;
+    Real zMax;
+    Real u; /* velocity */
+    Real v;
+    Real w;
+    Real fx; /* force */
+    Real fy;
+    Real fz;
+    Real rho; /* density */
+    Real area; /* surface area */
+    Real mass; /* polygon mass */
+    Real T; /* wall temperature. T <= 0, adiabatic; T > 0, constant temperature */
+    Real cf; /* roughness. cf <= 0, slip wall; cf > 0, no-slip wall */
+} Polygon;
 /*
  * Program command line arguments and overall control
  */
 typedef struct {
-    char runMode; /* mode: [s] serial, [i] interact, [t] threaded, [m] mpi, [g] gpu */
-    int processorN; /* number of processors */
+    char runMode; /* mode: [i] interact, [s] serial, [t] threaded, [m] mpi, [g] gpu */
+    int procN; /* number of processors */
 } Control;
 /****************************************************************************
  * Public Functions Declaration
@@ -722,8 +729,8 @@ extern int ShowInformation(const char *statement);
  *
  * Parameters
  *      idxMax -- the maximum number of elements
- *      dataType -- the data type of elements, can be "int", "double", "char",
- *      "Real", "float"
+ *      dataType -- the data type of elements,
+ *      "Real", "double", "float", "int", "char"
  * Function
  *      Use malloc to assign a linear array of storage with specified data type.
  * Returns

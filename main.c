@@ -110,11 +110,13 @@ int main(int argc, char *argv[])
     };
     Geometry theGeometry = {
         .totalN = 0,
-        .headAddress = NULL
+        .sphereN = 0,
+        .stlN = 0,
+        .list = NULL
     };
     Control theControl = {
         .runMode = 'i',
-        .processorN = 1
+        .procN = 1
     };
     /*
      * Program Entrance

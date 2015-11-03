@@ -21,41 +21,35 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ConfigureProgram(const Control *);
-static int Preamble(void);
+static int ConfigureProgram(Control *);
+static int Preamble(Control *);
 static int ProgramManual(void);
 /****************************************************************************
  * Function Definitions
  ****************************************************************************/
-/*
- * This is the overall entrance function
- */
 int ProgramEntrance(int argc, char *argv[], Control *control)
 {
     /*
-     * Loop for command line options
+     * Loop command line to process options
      */
     while ((1 < argc) && ('-' == argv[1][0])) {
         if (3 > argc) { /* not enough arguments */
             fprintf(stderr,"error, empty entry after %s\n", argv[1]);
             exit(EXIT_FAILURE);
         }
-        /*
-         * argv[1][1] is the actual option character
-         */
-        switch (argv[1][1]) {
+        switch (argv[1][1]) { /* argv[1][1] is the actual option character */
             /*
-             * run mode: -m [serial], [interact], [threaded], [mpi], [gpu]
+             * run mode: -m [interact], [serial], [threaded], [mpi], [gpu]
              */
             case 'm':
                 ++argv;
                 --argc;
-                if (0 == strcmp(argv[1], "serial")) {
-                    control->runMode = 's';
-                    break;
-                }
                 if (0 == strcmp(argv[1], "interact")) {
                     control->runMode = 'i';
+                    break;
+                }
+                if (0 == strcmp(argv[1], "serial")) {
+                    control->runMode = 's';
                     break;
                 }
                 if (0 == strcmp(argv[1], "threaded")) {
@@ -78,7 +72,7 @@ int ProgramEntrance(int argc, char *argv[], Control *control)
             case 'n':
                 ++argv;
                 --argc;
-                sscanf(argv[1], "%d", &(control->processorN));
+                sscanf(argv[1], "%d", &(control->procN));
                 break;
             default: 
                 fprintf(stderr,"error, bad option %s\n", argv[1]);
@@ -98,34 +92,27 @@ int ProgramEntrance(int argc, char *argv[], Control *control)
         fprintf(stderr,"warning, unidentified arguments ignored: %s...\n", argv[1]);
     } 
     /*
-     * Check the consistency of run mode and number of processors
-     */
-    if (('t' == control->runMode) || ('m' == control->runMode) ||
-            ('g' == control->runMode)) {
-        if (1 >= control->processorN) {
-            fprintf(stderr,"error, illegal number of processors %d\n", control->processorN);
-            exit(EXIT_FAILURE);
-        }
-    } else {
-        control->processorN = 1; /* otherwise always set to 1 and ignore input */
-    }
-    /*
      * Configure program according to inputted commands and information
      */
     ConfigureProgram(control);
     return 0;
 }
-static int ConfigureProgram(const Control *control)
+static int ConfigureProgram(Control *control)
 {
-    if ('i' == control->runMode) {
-        Preamble();
+    if ('i' == control->runMode) { /* interaction mode */
+        Preamble(control);
+    }
+    if ('s' == control->runMode) { /* serial mode */
+    }
+    if ('t' == control->runMode) { /* threaded mode */
+    }
+    if ('m' == control->runMode) { /* mpi mode */
+    }
+    if ('g' == control->runMode) { /* gpu mode */
     }
     return 0;
 }
-/*
- * This function provides the interactive environment of the program
- */
-static int Preamble(void)
+static int Preamble(Control *control)
 {
     fprintf(stdout, "**********************************************************\n");
     fprintf(stdout, "*                        ArtraCFD                        *\n");
@@ -142,7 +129,7 @@ static int Preamble(void)
         if (0 == strncmp(currentLine, "help", sizeof currentLine)) {
             fprintf(stdout, "Options under interactive environment:\n\n");
             fprintf(stdout, "[help]    show this information\n");
-            fprintf(stdout, "[init]    generate input files of a sample case\n");
+            fprintf(stdout, "[init]    generate files for a sample case\n");
             fprintf(stdout, "[solve]   solve current case in serial mode\n");
             fprintf(stdout, "[calc]    access expression calculator\n");
             fprintf(stdout, "[manual]  show a brief user manual of ArtraCFD\n");
@@ -151,7 +138,7 @@ static int Preamble(void)
         }
         if (0 == strncmp(currentLine, "init", sizeof currentLine)) {
             GenerateCaseFiles();
-            fprintf(stdout, "case files generated successfully\n");
+            fprintf(stdout, "sample case generated successfully\n");
             continue;
         }
         if (0 == strncmp(currentLine, "calc", sizeof currentLine)) {
@@ -167,6 +154,7 @@ static int Preamble(void)
             continue;
         }
         if (0 == strncmp(currentLine, "solve", sizeof currentLine)) {
+            control->runMode = 's'; /* change mode to serial */
             ShowInformation("Session End");
             return 0;
         }
@@ -184,7 +172,7 @@ static int ProgramManual(void)
     fprintf(stdout, "SYSNOPSIS:\n");
     fprintf(stdout, "        artracfd [-m runmode] [-n nprocessors]\n");
     fprintf(stdout, "OPTIONS:\n");
-    fprintf(stdout, "        -m runmode        run mode: serial, interact, threaded, mpi, gpu\n");
+    fprintf(stdout, "        -m runmode        run mode: interact, serial, threaded, mpi, gpu\n");
     fprintf(stdout, "        -n nprocessors    number of processors\n");
     fprintf(stdout, "NOTES:\n");
     fprintf(stdout, "        default run mode is 'interact'\n");
