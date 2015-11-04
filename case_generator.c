@@ -13,12 +13,15 @@
  ****************************************************************************/
 #include "case_generator.h"
 #include <stdio.h> /* standard library for input and output */
+#include "stl.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
 static int CaseSettingFileGenerator(void);
 static int CaseGeometryFileGenerator(void);
+static int AnalyticalGeometryFileGenerator(void);
+static int TriangulatedGeometryFileGenerator(void);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -65,7 +68,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "time begin\n");
     fprintf(filePointer, "0                  # restart flag (integer; 0: false; 1: true)\n");
     fprintf(filePointer, "1.0                # total evolution time\n");
-    fprintf(filePointer, "-1                 # maximum steps to force cease (integer; -1: unlimited)\n");
+    fprintf(filePointer, "-1                 # maximum computing steps (integer; -1: automatic)\n");
     fprintf(filePointer, "0.6                # CFL condition number\n");
     fprintf(filePointer, "1                  # total number of times of exporting computed data (integer)\n");
     fprintf(filePointer, "2                  # data streamer (integer; 0: ParaView; 1: Ensight; 2 Parasight)\n");
@@ -269,25 +272,113 @@ static int CaseGeometryFileGenerator(void)
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#                   >> Total Number of Objects <<\n");
+    fprintf(filePointer, "#                  >> Total Number of Geometries <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "count begin\n");
-    fprintf(filePointer, "1            # total number of objects (integer)\n");
+    fprintf(filePointer, "2                  # integer\n");
     fprintf(filePointer, "count end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#                    >> Geometry Information <<\n");
+    fprintf(filePointer, "#                 >> Analytical Geometry Section <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "sphere begin\n");
-    fprintf(filePointer, "0, 0, 0, 0.5, 1.0e250, 0, 0, 0, -1, 1  # x, y, z, r, rho, u, v, w, T, roughness\n");
+    fprintf(filePointer, "1                  # number of entities (integer)\n");
+    fprintf(filePointer, "artracfd.sph       # geometry file name\n");
     fprintf(filePointer, "sphere end\n");
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#                 >> Triangulated Geometry Section <<\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "STL begin\n");
+    fprintf(filePointer, "artracfd.stl       # geometry file name\n");
+    fprintf(filePointer, "0.0, 0.0, 0.0      # u, v, w\n");
+    fprintf(filePointer, "1.0e250, -1, 1     # rho, T, roughness\n");
+    fprintf(filePointer, "STL end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#/* a good practice: end file with a newline */\n");
     fprintf(filePointer, "\n");
     fclose(filePointer); /* close current opened file */
+    AnalyticalGeometryFileGenerator();
+    TriangulatedGeometryFileGenerator();
+    return 0;
+}
+static int AnalyticalGeometryFileGenerator(void)
+{
+    FILE *filePointer = fopen("artracfd.sph", "w");
+    if (NULL == filePointer) {
+        FatalError("failed to write analytical geometry file: artracfd.sph...");
+    }
+    fprintf(filePointer, "0, 0, 0, 0.5, 0, 0, 0, 1.0e250, -1, 1  # x, y, z, r, u, v, w, rho, T, roughness\n");
+    fclose(filePointer); /* close current opened file */
+    return 0;
+}
+static int TriangulatedGeometryFileGenerator(void)
+{
+    Real facetData[96] = {
+        -5.000000e-001, 8.660254e-001, 0.000000e+000,
+        8.660254e-001, 1.000000e+000, 5.000000e-001,
+        8.660254e-001, 1.000000e+000, -5.000000e-001,
+        0.000000e+000, 5.000000e-001, 5.000000e-001,
+        -5.000000e-001, 8.660254e-001, 0.000000e+000,
+        0.000000e+000, 5.000000e-001, 5.000000e-001,
+        8.660254e-001, 1.000000e+000, -5.000000e-001,
+        0.000000e+000, 5.000000e-001, -5.000000e-001,
+        1.000000e+000, 0.000000e+000, 0.000000e+000,
+        8.660254e-001, 0.000000e+000, 5.000000e-001,
+        8.660254e-001, 0.000000e+000, -5.000000e-001,
+        8.660254e-001, 1.000000e+000, 5.000000e-001,
+        1.000000e+000, 0.000000e+000, 0.000000e+000,
+        8.660254e-001, 1.000000e+000, 5.000000e-001,
+        8.660254e-001, 0.000000e+000, -5.000000e-001,
+        8.660254e-001, 1.000000e+000, -5.000000e-001,
+        -5.000000e-001, -8.660254e-001, 0.000000e+000,
+        0.000000e+000, 5.000000e-001, 5.000000e-001,
+        0.000000e+000, 5.000000e-001, -5.000000e-001,
+        8.660254e-001, 0.000000e+000, 5.000000e-001,
+        -5.000000e-001, -8.660254e-001, 0.000000e+000,
+        8.660254e-001, 0.000000e+000, 5.000000e-001,
+        0.000000e+000, 5.000000e-001, -5.000000e-001,
+        8.660254e-001, 0.000000e+000, -5.000000e-001,
+        0.000000e+000, 0.000000e+000, -1.000000e+000,
+        8.660254e-001, 1.000000e+000, -5.000000e-001,
+        8.660254e-001, 0.000000e+000, -5.000000e-001,
+        0.000000e+000, 5.000000e-001, -5.000000e-001,
+        0.000000e+000, 0.000000e+000, 1.000000e+000,
+        0.000000e+000, 5.000000e-001, 5.000000e-001,
+        8.660254e-001, 0.000000e+000, 5.000000e-001,
+        8.660254e-001, 1.000000e+000, 5.000000e-001
+    };
+    Polygon wedge = {
+        .facetN = 8,
+        .tally = 0,
+        .xc = 0.5,
+        .yc = 0.5,
+        .zc = 0.5,
+        .r = 0.0,
+        .facet = facetData,
+        .xMin = 0.0,
+        .yMin = 0.0,
+        .zMin = 0.0,
+        .xMax = 1.0,
+        .yMax = 1.0,
+        .zMax = 1.0,
+        .u = 0.0,
+        .v = 0.0,
+        .w = 0.0,
+        .fx = 0.0,
+        .fy = 0.0,
+        .fz = 0.0,
+        .rho = 1.0e250,
+        .area = 4,
+        .mass = 1.0e250,
+        .T = -1.0,
+        .cf = 1.0
+    };
+    WriteStlFile("artracfd.stl", &wedge);
     return 0;
 }
 /* a good practice: end file with a newline */

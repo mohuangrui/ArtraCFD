@@ -91,14 +91,7 @@ extern int ConservativeByPrimitive(Real *U, const int idx, const Real Uo[], cons
  * Returns
  *      int -- the calculated index value
  */
-extern int IndexMath(const int k, const int j, const int i, const Space *);
-/*
- * Index geometry
- *
- * Function
- *      Compute the address pointed to current geometry information.
- */
-extern Real *IndexGeometry(const int geoID, const Geometry *geometry);
+extern int IndexNode(const int k, const int j, const int i, const Space *);
 /*
  * Coordinates transformation
  *

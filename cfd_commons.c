@@ -568,13 +568,9 @@ Real ComputeTemperature(const int idx, const Real *U, const Model *model)
 /*
  * Index math.
  */
-int IndexMath(const int k, const int j, const int i, const Space *space)
+int IndexNode(const int k, const int j, const int i, const Space *space)
 {
     return ((k * space->jMax + j) * space->iMax + i);
-}
-Real *IndexGeometry(const int geoID, const Geometry *geometry)
-{
-    return geometry->headAddress + geoID * ENTRYGEO;
 }
 /*
  * Coordinates transformations.

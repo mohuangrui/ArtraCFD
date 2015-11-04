@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_COMPUTATIONAL_GEOMETRY_H_ /* if this is the first definition */
-#define ARTRACFD_COMPUTATIONAL_GEOMETRY_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_STL_H_ /* if this is the first definition */
+#define ARTRACFD_STL_H_ /* a unique marker for this header file */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -20,31 +20,24 @@
 /****************************************************************************
  * Data Structure Declarations
  ****************************************************************************/
+/*
+ * STL data format and type control
+ */
+typedef char StlString[80]; /* STL string data requires 80 chars */
+typedef unsigned long StlLongInt; /* STL unsigned long integer */
+typedef unsigned int StlInt; /* STL unsigned integer */
+typedef float StlReal; /* STL requires real data to be float */
 /****************************************************************************
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * In geometry criteria
- *
- * Function
- *      Check node whether locates in the geometry pointed by the geometry
- *      pointer.
- *
- * Return
- *      negative -- in current geometry
- *      zero     -- on current geometry
- *      positive -- out of current geometry
+ * STL Reader
  */
-extern Real InGeometry(const int k, const int j, const int i, const Real *geo, const Space *);
+extern int ReadStlFile(const char *fileName, Polygon *);
 /*
- * Calculate geometry information
- *
- * Function
- *
- *      Calculate geometry information of current node.
+ * STL Writer
  */
-extern int CalculateGeometryInformation(Real info[], const int k, const int j, 
-        const int i, const Real *geo, const Space *);
+extern int WriteStlFile(const char *fileName, const Polygon *);
 #endif
 /* a good practice: end file with a newline */
 

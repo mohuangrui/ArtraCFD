@@ -492,6 +492,18 @@ typedef enum {
     GEOREAD = 10, /* number of items read from geometry file */
     GEOWRITE = 14, /* number of items write to geometry file */
     ENTRYFACET = 12, /* entries of polygon facet data */
+    FNX = 0, /* x component of normal */
+    FNY = 1, /* y component of normal */
+    FNZ = 2, /* z component of normal */
+    FX1 = 3, /* x1 coordinate */
+    FY1 = 4, /* y1 coordinate */
+    FZ1 = 5, /* z1 coordinate */
+    FX2 = 6, /* x2 coordinate */
+    FY2 = 7, /* y2 coordinate */
+    FZ2 = 8, /* z2 coordinate */
+    FX3 = 9, /* x3 coordinate */
+    FY3 = 10, /* y3 coordinate */
+    FZ3 = 11, /* z3 coordinate */
     ENTRYGEOCALC = 7, /* entries of calculated geometry information of a node */
     GX = 0, /* x coordinate */
     GY = 1, /* y coordinate */
@@ -642,15 +654,6 @@ typedef struct {
     Real valueIC[NIC][ENTRYIC]; /* store initializer values */
 } Partition;
 /*
- * Geometry Entities
- */
-typedef struct {
-    int totalN; /* total number of geometries */
-    int sphereN; /* number of analytical spheres */
-    int stlN; /* number of triangulated surface geometry */
-    Polygon *list; /* geometry list */
-} Geometry;
-/*
  * Polygon structure
  */
 typedef struct {
@@ -679,6 +682,15 @@ typedef struct {
     Real T; /* wall temperature. T <= 0, adiabatic; T > 0, constant temperature */
     Real cf; /* roughness. cf <= 0, slip wall; cf > 0, no-slip wall */
 } Polygon;
+/*
+ * Geometry Entities
+ */
+typedef struct {
+    int totalN; /* total number of geometries */
+    int sphereN; /* number of analytical spheres */
+    int stlN; /* number of triangulated surface geometry */
+    Polygon *list; /* geometry list */
+} Geometry;
 /*
  * Program command line arguments and overall control
  */

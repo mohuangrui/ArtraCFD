@@ -11,7 +11,7 @@
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "gcibm.h"
+#include "computational_geometry.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
 #include <float.h> /* size of floating point values */
