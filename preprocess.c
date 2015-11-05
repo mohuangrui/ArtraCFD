@@ -18,7 +18,7 @@
 #include "cfd_parameters.h"
 #include "domain_partition.h"
 #include "geometry_stream.h"
-#include "gcibm.h"
+#include "immersed_boundary_treatment.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations

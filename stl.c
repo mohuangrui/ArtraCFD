@@ -27,7 +27,7 @@ int ReadStlFile(const char *fileName, Polygon *polygon)
     StlString header = {'\0'};
     StlLongInt facetN = 0;
     StlInt attributeCount = 0;
-    StlReal realData = 0.0;
+    StlReal facetData = 0.0;
     FILE *filePointer = fopen(fileName, "rb");
     if (NULL == filePointer) {
         FatalError("failed to read STL file...");
@@ -37,30 +37,30 @@ int ReadStlFile(const char *fileName, Polygon *polygon)
     polygon->facetN = facetN;
     for (int count = 0; count < facetN; ++count) {
         idx = count * ENTRYFACET;
-        fread(&realData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FNX] = realData;
-        fread(&realData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FNY] = realData;
-        fread(&realData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FNZ] = realData;
-        fread(&realData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FX1] = realData;
-        fread(&realData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FY1] = realData;
-        fread(&realData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FZ1] = realData;
-        fread(&realData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FX2] = realData;
-        fread(&realData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FY2] = realData;
-        fread(&realData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FZ2] = realData;
-        fread(&realData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FX3] = realData;
-        fread(&realData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FY3] = realData;
-        fread(&realData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FZ3] = realData;
+        fread(&facetData, sizeof(StlReal), 1, filePointer);
+        polygon->facet[idx+FNX] = facetData;
+        fread(&facetData, sizeof(StlReal), 1, filePointer);
+        polygon->facet[idx+FNY] = facetData;
+        fread(&facetData, sizeof(StlReal), 1, filePointer);
+        polygon->facet[idx+FNZ] = facetData;
+        fread(&facetData, sizeof(StlReal), 1, filePointer);
+        polygon->facet[idx+FX1] = facetData;
+        fread(&facetData, sizeof(StlReal), 1, filePointer);
+        polygon->facet[idx+FY1] = facetData;
+        fread(&facetData, sizeof(StlReal), 1, filePointer);
+        polygon->facet[idx+FZ1] = facetData;
+        fread(&facetData, sizeof(StlReal), 1, filePointer);
+        polygon->facet[idx+FX2] = facetData;
+        fread(&facetData, sizeof(StlReal), 1, filePointer);
+        polygon->facet[idx+FY2] = facetData;
+        fread(&facetData, sizeof(StlReal), 1, filePointer);
+        polygon->facet[idx+FZ2] = facetData;
+        fread(&facetData, sizeof(StlReal), 1, filePointer);
+        polygon->facet[idx+FX3] = facetData;
+        fread(&facetData, sizeof(StlReal), 1, filePointer);
+        polygon->facet[idx+FY3] = facetData;
+        fread(&facetData, sizeof(StlReal), 1, filePointer);
+        polygon->facet[idx+FZ3] = facetData;
         fread(&attributeCount, sizeof(StlInt), 1, filePointer);
     }
     fclose(filePointer); /* close current opened file */
@@ -72,7 +72,7 @@ int WriteStlFile(const char *fileName, const Polygon *polygon)
     StlString header = {'\0'};
     StlLongInt facetN = 0;
     StlInt attributeCount = 0;
-    StlReal realData = 0.0;
+    StlReal facetData = 0.0;
     FILE *filePointer = fopen(fileName, "wb");
     if (NULL == filePointer) {
         FatalError("failed to write STL file...");
@@ -83,30 +83,30 @@ int WriteStlFile(const char *fileName, const Polygon *polygon)
     fwrite(&facetN, sizeof(StlLongInt), 1, filePointer);
     for (int count = 0; count < facetN; ++count) {
         idx = count * ENTRYFACET;
-        realData = polygon->facet[idx+FNX];
-        fwrite(&realData, sizeof(StlReal), 1, filePointer);
-        realData = polygon->facet[idx+FNY];
-        fwrite(&realData, sizeof(StlReal), 1, filePointer);
-        realData = polygon->facet[idx+FNZ];
-        fwrite(&realData, sizeof(StlReal), 1, filePointer);
-        realData = polygon->facet[idx+FX1];
-        fwrite(&realData, sizeof(StlReal), 1, filePointer);
-        realData = polygon->facet[idx+FY1];
-        fwrite(&realData, sizeof(StlReal), 1, filePointer);
-        realData = polygon->facet[idx+FZ1];
-        fwrite(&realData, sizeof(StlReal), 1, filePointer);
-        realData = polygon->facet[idx+FX2];
-        fwrite(&realData, sizeof(StlReal), 1, filePointer);
-        realData = polygon->facet[idx+FY2];
-        fwrite(&realData, sizeof(StlReal), 1, filePointer);
-        realData = polygon->facet[idx+FZ2];
-        fwrite(&realData, sizeof(StlReal), 1, filePointer);
-        realData = polygon->facet[idx+FX3];
-        fwrite(&realData, sizeof(StlReal), 1, filePointer);
-        realData = polygon->facet[idx+FY3];
-        fwrite(&realData, sizeof(StlReal), 1, filePointer);
-        realData = polygon->facet[idx+FZ3];
-        fwrite(&realData, sizeof(StlReal), 1, filePointer);
+        facetData = polygon->facet[idx+FNX];
+        fwrite(&facetData, sizeof(StlReal), 1, filePointer);
+        facetData = polygon->facet[idx+FNY];
+        fwrite(&facetData, sizeof(StlReal), 1, filePointer);
+        facetData = polygon->facet[idx+FNZ];
+        fwrite(&facetData, sizeof(StlReal), 1, filePointer);
+        facetData = polygon->facet[idx+FX1];
+        fwrite(&facetData, sizeof(StlReal), 1, filePointer);
+        facetData = polygon->facet[idx+FY1];
+        fwrite(&facetData, sizeof(StlReal), 1, filePointer);
+        facetData = polygon->facet[idx+FZ1];
+        fwrite(&facetData, sizeof(StlReal), 1, filePointer);
+        facetData = polygon->facet[idx+FX2];
+        fwrite(&facetData, sizeof(StlReal), 1, filePointer);
+        facetData = polygon->facet[idx+FY2];
+        fwrite(&facetData, sizeof(StlReal), 1, filePointer);
+        facetData = polygon->facet[idx+FZ2];
+        fwrite(&facetData, sizeof(StlReal), 1, filePointer);
+        facetData = polygon->facet[idx+FX3];
+        fwrite(&facetData, sizeof(StlReal), 1, filePointer);
+        facetData = polygon->facet[idx+FY3];
+        fwrite(&facetData, sizeof(StlReal), 1, filePointer);
+        facetData = polygon->facet[idx+FZ3];
+        fwrite(&facetData, sizeof(StlReal), 1, filePointer);
         fwrite(&attributeCount, sizeof(StlInt), 1, filePointer);
     }
     fclose(filePointer); /* close current opened file */

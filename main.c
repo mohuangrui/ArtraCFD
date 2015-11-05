@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
         .iMax = 0,
         .nMax = 0,
         .collapsed = 0,
+        .nodeFlag = NULL,
         .dz = 0.0,
         .dy = 0.0,
         .dx = 0.0,
@@ -54,22 +55,21 @@ int main(int argc, char *argv[])
         .xMin = 0.0,
         .zMax = 0.0,
         .yMax = 0.0,
-        .xMax = 0.0,
-        .nodeFlag = NULL
+        .xMax = 0.0
     };
     Time theTime = {
         .restart = 0,
-        .end = 0.0,
-        .now = 0.0,
-        .dt = 0.0,
-        .numCFL = 0.0,
         .stepN = 0,
         .stepCount = 0,
         .outputN = 0,
         .outputCount = 0,
         .dataStreamer = 0,
-        .outputProbe = 0,
+        .outputNProbe = 0,
         .tallyProbe = 0,
+        .end = 0.0,
+        .now = 0.0,
+        .dt = 0.0,
+        .numCFL = 0.0,
         .probe = {{0.0}}
     };
     Model theModel = {
@@ -92,20 +92,12 @@ int main(int argc, char *argv[])
         .refTemperature = 0.0
     };
     Partition thePart = {
-        .totalN = 1,
-        .kSub = {0},
-        .kSup = {0},
-        .jSub = {0},
-        .jSup = {0},
-        .iSub = {0},
-        .iSup = {0},
-        .normalZ = {0},
-        .normalY = {0},
-        .normalX = {0},
+        .range = {{0}},
+        .normal = {{0}},
         .typeBC = {0},
-        .valueBC = {{0.0}},
         .tallyIC = 0,
         .typeIC = {0},
+        .valueBC = {{0.0}},
         .valueIC = {{0.0}}
     };
     Geometry theGeometry = {

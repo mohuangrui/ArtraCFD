@@ -226,8 +226,9 @@ int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
                          * stencils and to only use smooth stencils. However,
                          * this will make the algorithm much more complex.
                          */
-                        FlowReconstruction(UoImage, imageZ, imageY, imageX, k, j, i, type,
-                                UoBC, info, geo, U, space, model, geometry);
+                        FlowReconstruction(UoImage, imageZ, imageY, imageX, 
+                                ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space),
+                                type, UoBC, info, geo, U, space, model, geometry);
                         /* 
                          * Apply the method of image.
                          *  -- reflecting vectors over wall for both slip and noslip, stationary and

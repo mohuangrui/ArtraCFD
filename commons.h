@@ -466,9 +466,9 @@ typedef double Real;
 typedef enum {
     /* dimensions related to space */
     DIMS = 3, /* space dimension */
-    X = 0,
-    Y = 1,
-    Z = 2,
+    X = 0, /* x dimension */
+    Y = 1, /* y dimension */
+    Z = 2, /* z dimension */
     /* dimensions related to field variables */
     DIMU = 5, /* conservative vector: rho, rho_u, rho_v, rho_w, rho_eT */
     DIMUo = 6, /* primitive vector: rho, u, v, w, [p, hT, h], [T, c] */
@@ -485,7 +485,7 @@ typedef enum {
      * M is the total number of interior geometries.
      * geometry identifier m in [0, M-1].
      */
-    OFFSET = 10, 
+    OFFSET = 10, /* reserved space */
     FLUID = 0, /* identifier of fluid nodes */
     EXTERIOR = -1, /* identifier of global boundary and exterior ghost nodes */
     /* parameters related to geometry */
@@ -515,12 +515,52 @@ typedef enum {
     /* parameters related to probe */
     NPROBE = 4, /* maximum number of probes to support */
     ENTRYPROBE = 7, /* x1, y1, z1, x2, y2, z2, resolution */
-    /* parameters related to domain and partitions */
-    NSUBPART = 13, /* interior region, [west, east, south, north, front, back] x [BC, Ghost] */
-    NBC = 7, /* interior region, [west, east, south, north, front, back] x [BC] */
+    /* parameters related to domain partitions */
+    NPART = 13, /* inner region, [west, east, south, north, front, back] x [Boundary, Ghost] */
+    PIN = 0, /* inner region of partition */
+    PWB = 1, /* west boundary of partition */
+    PEB = 2, /* east boundary of partition */
+    PSB = 3, /* south boundary of partition */
+    PNB = 4, /* north boundary of partition */
+    PFB = 5, /* front boundary of partition */
+    PBB = 6, /* back boundary of partition */
+    PWG = 7, /* west ghost region of partition */
+    PEG = 8, /* east ghost region of partition */
+    PSG = 9, /* south ghost region of partition */
+    PNG = 10, /* north ghost region of partition */
+    PFG = 11, /* front ghost region of partition */
+    PBG = 12, /* back ghost region of partition */
+    NRANGE = 6, /* range of partition */
+    KSUB = 0, /* sub limit of k in partition */
+    KSUP = 1, /* sup limit of k in partition */
+    JSUB = 2, /* sub limit of j in partition */
+    JSUP = 3, /* sup limit of j in partition */
+    ISUB = 4, /* sub limit of i in partition */
+    ISUP = 5, /* sup limit of i in partition */
+    /* parameters related to domain boundary conditions */
+    NBC = 6, /* [west, east, south, north, front, back] x [BC] */
+    BCWEST = 0, /* west domain boundary */
+    BCEAST = 1, /* east domain boundary */
+    BCSOUTH = 2, /* south domain boundary */
+    BCNORTH = 3, /* north domain boundary */
+    BCFRONT = 4, /* front domain boundary */
+    BCBACK = 5, /* back domain boundary */
+    INFLOW = 0, /* inflow boundary condition identifier */
+    OUTFLOW = 1, /* outflow boundary condition identifier */
+    SLIPWALL = 2, /* slip wall boundary condition identifier */
+    NOSLIPWALL = 3, /* no-slip wall boundary condition identifier */
+    PERIODIC = 4, /* periodic boundary condition identifier */
+    PERIODICPAIR = -4, /* periodic pair identifier */
     ENTRYBC = 6, /* rho, u, v, w, p, T */
-    NIC = 10, /* maximum number of regional initializer to support */
+    /* parameters related to global and regional initialization */
+    NIC = 10, /* maximum number of initializer to support */
+    ICGLOBAL = 0, /* global initializer */
+    ICPLANE = 1, /* plane initializer */
+    ICSPHERE = 2, /* sphere initializer */
+    ICBOX = 3, /* box initializer */
+    ICCYLINDER = 4, /* cylinder initializer */
     ENTRYIC = 12, /* x1, y1, z1, [r, x2], [y2], [z2], ..., primitive variables */
+    ENTRYVAR = 5, /* primitive variables: rho, u, v, w, p */
 } Constants;
 /*
  * Field variables
@@ -578,6 +618,7 @@ typedef struct {
     int iMax; /* total node number in x */
     int nMax; /* total node number */
     int collapsed; /* space collapse flag */
+    int *nodeFlag; /* node flag field */
     Real dz; /* mesh size in z */
     Real dy; /* mesh size in y */
     Real dx; /* mesh size in x */
@@ -591,24 +632,23 @@ typedef struct {
     Real zMax; /* coordinates define the space domain */
     Real yMax; /* coordinates define the space domain */
     Real xMax; /* coordinates define the space domain */
-    int *nodeFlag; /* node type flag: fluid, ghost, solid, etc. */
 } Space;
 /*
  * Time domain parameters
  */
 typedef struct {
     int restart; /* restart flag */
-    Real end; /* total evolution time */
-    Real now; /* current time recorder */
-    Real dt; /* time step size */
-    Real numCFL; /* CFL number */
     int stepN; /* total number of steps */
     int stepCount; /* step number count */
     int outputN; /* total times of exporting computed data */
     int outputCount; /* exporting data count */
     int dataStreamer; /* types of data streamer */
-    int outputProbe; /* times to write probe information */
+    int outputNProbe; /* times to write probe information */
     int tallyProbe; /* tally of probes */
+    Real end; /* total evolution time */
+    Real now; /* current time recorder */
+    Real dt; /* time step size */
+    Real numCFL; /* CFL number */
     Real probe[NPROBE][ENTRYPROBE]; /* store information of probes */
 } Time;
 /*
@@ -637,21 +677,13 @@ typedef struct {
  * Domain partition structure
  */
 typedef struct {
-    int totalN; /* total number of domain partitions */
-    int kSub[NSUBPART]; /* inner decomposition control for each partition */
-    int kSup[NSUBPART];
-    int jSub[NSUBPART];
-    int jSup[NSUBPART];
-    int iSub[NSUBPART];
-    int iSup[NSUBPART];
-    int normalZ[NBC]; /* outer surface normal vector of physical BC parts */
-    int normalY[NBC];
-    int normalX[NBC];
+    int range[NPART][NRANGE]; /* decomposition range for each partition */
+    int normal[NBC][DIMS]; /* outer surface normal of domain boundary */
     int typeBC[NBC]; /* BC types recorder */
-    Real valueBC[NBC][ENTRYBC]; /* BC values of each BC part */
-    int tallyIC; /* tally of regional initializers */
+    int tallyIC; /* tally of flow initializers */
     int typeIC[NIC]; /* record type of each initializer */
-    Real valueIC[NIC][ENTRYIC]; /* store initializer values */
+    Real valueBC[NBC][ENTRYBC]; /* field values of each boundary */
+    Real valueIC[NIC][ENTRYIC]; /* field values of each initializer */
 } Partition;
 /*
  * Polygon structure
