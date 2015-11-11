@@ -24,14 +24,14 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Geometry data loader
+ * Geometry data reader
  *
  * Function
- *      Load geometry data to program.
- *      -- non restart run, load from file artracfd.geo
- *      -- restart run, load from the restart geometry file.
+ *      Read geometry data to program.
+ *      -- non restart run, read from file artracfd.geo
+ *      -- restart run, read from the restart geometry file.
  */
-extern int LoadGeometryData(const Space *, const Time *, const Model *, Geometry *);
+extern int ReadGeometryData(const Space *, const Time *, const Model *, Geometry *);
 /*
  * Geometry data writer
  *

@@ -129,7 +129,7 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model, Partition
         if (0 == strncmp(currentLine, "fluid begin", sizeof currentLine)) {
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(model->refPr)); 
+            sscanf(currentLine, "%d", &(model->fluid)); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatI, &(model->refMu)); 
             continue;
@@ -205,7 +205,7 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model, Partition
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatI, part->valueIC[part->tallyIC] + 3); 
             ReadConsecutiveRealData(&filePointer, part->valueIC[part->tallyIC] + ENTRYIC - ENTRYVAR, ENTRYVAR);
-            ++part->tallyIC; /* regional initializer count and pointer */
+            ++part->tallyIC; /* initializer count and pointer */
             continue;
         }
         if (0 == strncmp(currentLine, "box initialization begin", sizeof currentLine)) {
@@ -218,7 +218,7 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model, Partition
             sscanf(currentLine, formatIII, part->valueIC[part->tallyIC] + 3, 
                     part->valueIC[part->tallyIC] + 4, part->valueIC[part->tallyIC] + 5); 
             ReadConsecutiveRealData(&filePointer, part->valueIC[part->tallyIC] + ENTRYIC - ENTRYVAR, ENTRYVAR);
-            ++part->tallyIC; /* regional initializer count and pointer */
+            ++part->tallyIC; /* initializer count and pointer */
             continue;
         }
         if (0 == strncmp(currentLine, "cylinder initialization begin", sizeof currentLine)) {
@@ -233,7 +233,7 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model, Partition
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatI, part->valueIC[part->tallyIC] + 6); 
             ReadConsecutiveRealData(&filePointer, part->valueIC[part->tallyIC] + ENTRYIC - ENTRYVAR, ENTRYVAR);
-            ++part->tallyIC; /* regional initializer count and pointer */
+            ++part->tallyIC; /* initializer count and pointer */
             continue;
         }
         if (0 == strncmp(currentLine, "probe control begin", sizeof currentLine)) {
@@ -293,14 +293,14 @@ static int ReadBoundaryData(FILE **filePointerPointer, Partition *part, const in
     if (0 == strncmp(currentLine, "slip wall", sizeof currentLine)) {
         part->typeBC[boundary] = SLIPWALL;
         fgets(currentLine, sizeof currentLine, filePointer);
-        sscanf(currentLine, formatI, &(part->valueBC[boundary][ENTRYBC-1])); 
+        sscanf(currentLine, formatI, &(part->valueBC[boundary][ENTRYBC-1]));
         *filePointerPointer = filePointer;
         return 0;
     }
     if (0 == strncmp(currentLine, "noslip wall", sizeof currentLine)) {
         part->typeBC[boundary] = NOSLIPWALL;
         fgets(currentLine, sizeof currentLine, filePointer);
-        sscanf(currentLine, formatI, &(part->valueBC[boundary][ENTRYBC-1])); 
+        sscanf(currentLine, formatI, &(part->valueBC[boundary][ENTRYBC-1]));
         *filePointerPointer = filePointer;
         return 0;
     }
@@ -451,7 +451,7 @@ static int WriteVerifyData(const Space *space, const Time *time, const Model *mo
     fprintf(filePointer, "#                          >> Time Domain <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "restart flag: %d\n", time->restart); 
+    fprintf(filePointer, "restart step: %d\n", time->restart); 
     fprintf(filePointer, "total evolution time: %.6g\n", time->end); 
     fprintf(filePointer, "maximum number of steps: %d\n", time->stepN); 
     fprintf(filePointer, "CFL condition number: %.6g\n", time->numCFL); 
@@ -473,8 +473,8 @@ static int WriteVerifyData(const Space *space, const Time *time, const Model *mo
     fprintf(filePointer, "#                    >> Fluid and Flow Properties <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "Prandtl number: %.6g\n", model->refPr); 
-    fprintf(filePointer, "modify coefficient of dynamic viscosity: %.6g\n", model->refMu); 
+    fprintf(filePointer, "fluid: %d\n", model->fluid); 
+    fprintf(filePointer, "dynamic viscosity coefficient: %.6g\n", model->refMu); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                        >> Reference Values  <<\n");
@@ -566,7 +566,7 @@ static int CheckCaseSettingData(const Space *space, const Time *time, const Mode
         FatalError("too small mesh values in case settings");
     }
     /* time */
-    if ((0 > time->restart) || (1 < time->restart)|| (0 >= time->end)
+    if ((0 > time->restart) || (0 >= time->end)
             || (0 >= time->numCFL ) || (1 > time->outputN)) {
         FatalError("wrong values in time section of case settings");
     }
@@ -579,7 +579,7 @@ static int CheckCaseSettingData(const Space *space, const Time *time, const Mode
         FatalError("wrong values in numerical method of case settings");
     }
     /* fluid and flow */
-    if ((0 >= model->refPr) || (0 > model->refMu)) {
+    if ((0 > model->fluid) || (1 < model->fluid) || (0 > model->refMu)) {
         FatalError("wrong values in fluid and flow section of case settings");
     }
     /* reference */

@@ -23,6 +23,7 @@
 /****************************************************************************
  * Public Functions Declaration
  ****************************************************************************/
+static int ComputeGeometryParameters(const Space *, const Model *, Geometry *);
 /*
  * In geometry criteria
  *

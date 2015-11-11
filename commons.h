@@ -469,6 +469,14 @@ typedef enum {
     X = 0, /* x dimension */
     Y = 1, /* y dimension */
     Z = 2, /* z dimension */
+    COLLAPSEN = 0, /* no dimension collapsed */
+    COLLAPSEX = 1, /* x dimension collapsed */
+    COLLAPSEY = 2, /* y dimension collapsed */
+    COLLAPSEZ = 3, /* z dimension collapsed */
+    COLLAPSEXY = 5, /* x and y dimension collapsed */
+    COLLAPSEXZ = 7, /* x and z dimension collapsed */
+    COLLAPSEYZ = 8, /* y and z  dimension collapsed */
+    COLLAPSEXYZ = 17, /* x, y, and z dimension collapsed */
     /* dimensions related to field variables */
     DIMU = 5, /* conservative vector: rho, rho_u, rho_v, rho_w, rho_eT */
     DIMUo = 6, /* primitive vector: rho, u, v, w, [p, hT, h], [T, c] */
@@ -488,22 +496,12 @@ typedef enum {
     OFFSET = 10, /* reserved space */
     FLUID = 0, /* identifier of fluid nodes */
     EXTERIOR = -1, /* identifier of global boundary and exterior ghost nodes */
+    /* parameters related to numerical model */
+    TVD = 0, /* TVD scheme identifier */
+    WENO = 1, /* WENO scheme identifier */
+    GAS = 0, /* gas */
+    WATER = 1, /* water */
     /* parameters related to geometry */
-    GEOREAD = 10, /* number of items read from geometry file */
-    GEOWRITE = 14, /* number of items write to geometry file */
-    ENTRYFACET = 12, /* entries of polygon facet data */
-    FNX = 0, /* x component of normal */
-    FNY = 1, /* y component of normal */
-    FNZ = 2, /* z component of normal */
-    FX1 = 3, /* x1 coordinate */
-    FY1 = 4, /* y1 coordinate */
-    FZ1 = 5, /* z1 coordinate */
-    FX2 = 6, /* x2 coordinate */
-    FY2 = 7, /* y2 coordinate */
-    FZ2 = 8, /* z2 coordinate */
-    FX3 = 9, /* x3 coordinate */
-    FY3 = 10, /* y3 coordinate */
-    FZ3 = 11, /* z3 coordinate */
     ENTRYGEOCALC = 7, /* entries of calculated geometry information of a node */
     GX = 0, /* x coordinate */
     GY = 1, /* y coordinate */
@@ -660,9 +658,9 @@ typedef struct {
     int splitter; /* flux vector splitting method */
     int fsi; /* fluid solid interaction trigger */
     int layers; /* number of ghost layers using method of image */
+    int fluid; /* fluid type */
     Real refMa; /* reference Mach number */
-    Real refMu; /* reference dynamic viscosity for Sutherland's law */
-    Real refPr; /* reference Prandtl number */
+    Real refMu; /* reference dynamic viscosity */
     Real gamma; /* heat capacity ratio */
     Real gasR; /* the gas constant */
     Real cv; /* specific heat capacity at constant volume */
@@ -686,6 +684,23 @@ typedef struct {
     Real valueIC[NIC][ENTRYIC]; /* field values of each initializer */
 } Partition;
 /*
+ * Facet structure
+ */
+typedef struct {
+    Real nx; /* normal vector */
+    Real ny;
+    Real nz;
+    Real x1; /* vertical 1 */
+    Real y1;
+    Real z1;
+    Real x2; /* vertical 2 */
+    Real y2;
+    Real z2;
+    Real x3; /* vertical 3 */
+    Real y3;
+    Real z3;
+} Facet;
+/*
  * Polygon structure
  */
 typedef struct {
@@ -695,7 +710,7 @@ typedef struct {
     Real yc;
     Real zc;
     Real r; /* radius of analytical sphere */
-    Real *facet; /* facet data */
+    Facet *facet; /* facet data */
     Real xMin; /* a range contains the entire polygon */
     Real yMin;
     Real zMin;
@@ -718,9 +733,9 @@ typedef struct {
  * Geometry Entities
  */
 typedef struct {
-    int totalN; /* total number of geometries */
-    int sphereN; /* number of analytical spheres */
-    int stlN; /* number of triangulated surface geometry */
+    int totalM; /* total number of geometries */
+    int sphereM; /* number of analytical spheres */
+    int stlM; /* number of triangulated surface geometry */
     Polygon *list; /* geometry list */
 } Geometry;
 /*

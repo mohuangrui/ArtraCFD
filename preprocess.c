@@ -31,14 +31,14 @@ static int ProgramMemoryAllocate(Field *, Space *);
  * This is the overall preprocessing function
  */
 int Preprocess(Field *field, Space *space, Time *time, Model *model,
-        Partition *part, Geometry *geometry)
+        Partition *part, Geometry *geo)
 {
     LoadCaseSettingData(space, time, model, part);
     ComputeCFDParameters(space, time, model);
     DomainPartition(space, part);
     ProgramMemoryAllocate(field, space);
-    LoadGeometryData(space, time, model, geometry);
-    ComputeGeometryDomain(space, part, geometry);
+    ReadGeometryData(space, time, model, geo);
+    ComputeGeometryDomain(space, part, geo);
     return 0;
 }
 /*

@@ -41,60 +41,34 @@ int ComputeCFDParameters(Space *space, Time *time, Model *model)
  *
  * Consequently, if we have m cells, we will have m + 2 node layers.
  *
- * After these operations, member nx, ny, nz in Space is the total number of
- * node layers. Considering the exterior ghost cells, The detailed 
- * node range of the domain will be the following:
- *
- * (In this program, Sub and Sup are used for domain range identifying,
- * therefore they are widely used in for loop control. To reduce the for loop
- * operations, we always use a reachable value for Sub, and unreachable value
- * for the Sup. To count the total valid objects, simply do Sup - Sub).
- *
- * Entire domain (includes exterior ghost): Sub = 0; Sup = n + 2 * ng;
- * Lower exterior ghost: Sub = 0; Sup = ng;
- * Normal nodes: Sub = ng; Sup = n + ng;
- *      Lower boundary: Sub = ng; Sup = ng + 1;
- *      Interior cells(node layers): Sub = ng + 1; Sup = n + ng - 1;
- *      Upper Boundary: Sub = n + ng - 1; Sup = n + ng;
- * Upper exterior ghost: Sub = n + ng; Sup = n + 2 *ng;
- *
  * In this program, 2D and 3D space are unified, that is, a 2D space
  * will be equivalent to a non-zero thickness 3D space with
  * 1 cells(that is, three node layers) in the collapsed direction.
- * These three node layers are treated as Domain Boundary, 
- * inner node, Domain Boundary respectively. Periodic boundary 
+ * These three node layers are treated as Domain Boundary,
+ * inner node, Domain Boundary respectively. Periodic boundary
  * condition need to be forced on these two boundaries.
- * That is, dimension collapse should be achieved by single cell 
+ * That is, dimension collapse should be achieved by single cell
  * with periodic boundary conditions;
  */
 static int NodeBasedMeshNumberRefine(Space *space, const Model *model)
 {
     /* set ghost layers according to numerical scheme */
-    if (0 == model->scheme) { /* TVD */
+    if (TVD == model->scheme) {
         space->ng = 1;
-    } else { /* WENO */
+    }
+    if (WENO == model->scheme) {
         space->ng = 2;
     }
-    /* 
-     * Check and mark collapsed space.
-     * 0 -- no collapse
-     * 1 -- x collapse
-     * 2 -- y collapse
-     * 3 -- z collapse
-     * 5 -- y and x collapse
-     * 7 -- z and x collapse
-     * 8 -- z and y collapse
-     * 17 -- z, y, and x collaspe
-     */
-    space->collapsed = 0; /* set to no collapse */
+    /* check and mark collapsed space. */
+    space->collapsed = COLLAPSEN;
     if (0 == (space->nz - 1)) {
-        space->collapsed = 3;
+        space->collapsed = COLLAPSEZ;
     }
     if (0 == (space->ny - 1)) {
-        space->collapsed = 2 * space->collapsed + 2;
+        space->collapsed = 2 * space->collapsed + COLLAPSEY;
     }
     if (0 == (space->nx - 1)) {
-        space->collapsed = 2 * space->collapsed + 1;
+        space->collapsed = 2 * space->collapsed + COLLAPSEX;
     }
     /* change from number of cells to number of node layers */
     space->nz = space->nz + 2;
@@ -141,7 +115,7 @@ static int InitializeCFDParameters(Space *space, Time *time, Model *model)
     model->pi = acos(-1);
     /* reference Mach number */
     model->refMa = model->refVelocity / sqrt(model->gamma * model->gasR * model->refTemperature);
-    /* reference dynamic viscosity for viscosity normalization and modify Sutherland's law */
+    /* reference dynamic viscosity for viscosity normalization */
     model->refMu = model->refMu / (model->refDensity * model->refVelocity * model->refLength);
     /*
      * Now replace some parameters by general forms that are valid

@@ -78,9 +78,9 @@ int main(int argc, char *argv[])
         .splitter = 0,
         .fsi = 0,
         .layers = 0,
+        .fluid = 0,
         .refMa = 0.0,
         .refMu = 0.0,
-        .refPr = 0.0,
         .gamma = 0.0,
         .gasR = 0.0,
         .cv = 0.0,
@@ -100,10 +100,10 @@ int main(int argc, char *argv[])
         .valueBC = {{0.0}},
         .valueIC = {{0.0}}
     };
-    Geometry theGeometry = {
-        .totalN = 0,
-        .sphereN = 0,
-        .stlN = 0,
+    Geometry theGeo = {
+        .totalM = 0,
+        .sphereM = 0,
+        .stlM = 0,
         .list = NULL
     };
     Control theControl = {
@@ -117,15 +117,15 @@ int main(int argc, char *argv[])
     /*
      * Preprocessing
      */
-    Preprocess(&theField, &theSpace, &theTime, &theModel, &thePart, &theGeometry);
+    Preprocess(&theField, &theSpace, &theTime, &theModel, &thePart, &theGeo);
     /*
      * Solve
      */
-    Solve(&theField, &theSpace, &theTime, &theModel, &thePart, &theGeometry);
+    Solve(&theField, &theSpace, &theTime, &theModel, &thePart, &theGeo);
     /*
      * Postprocessing
      */
-    Postprocess(&theField, &theSpace, &theGeometry);
+    Postprocess(&theField, &theSpace, &theGeo);
     /*
      * Successfully return
      */

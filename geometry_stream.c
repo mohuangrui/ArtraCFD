@@ -14,17 +14,19 @@
 #include "geometry_stream.h"
 #include <stdio.h> /* standard library for input and output */
 #include <string.h> /* manipulating strings */
+#include "stl.h"
 #include "paraview.h"
 #include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int NonrestartGeometryLoader(Geometry *);
-static int RestartGeometryLoader(Geometry *);
-static int LoadGeometryDataParaview(Geometry *);
-static int AllocateMemoryForGeometryData(Geometry *);
-static int ComputeGeometryParameters(const Space *, const Model *, Geometry *);
+static int NonrestartGeometryReader(Geometry *);
+static int RestartGeometryReader(const Time *, Geometry *);
+static int ReadSphereFile(const char *, Geometry *);
+static int ReadPolygonStatusData(FILE **, Polygon *);
+static int WritePolygonStatusData(FILE **, Polygon *);
+static int ReadGeometryDataParaview(const Time *, Geometry *);
 static int WriteGeometryDataParaview(const Time *, const Geometry *);
 static int InitializeTransientParaviewDataFile(ParaviewSet *);
 static int WriteSteadyParaviewDataFile(const Time *, ParaviewSet *);
@@ -32,175 +34,259 @@ static int WriteParaviewVariableFile(const Geometry *, ParaviewSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-/*
- * This function load geometry data from the geometry file.
- */
-int LoadGeometryData(const Space *space, const Time *time, const Model *model,
-        Geometry *geometry)
+int ReadGeometryData(const Space *space, const Time *time, const Model *model,
+        Geometry *geo)
 {
     if (0 == time->restart) { /* if non-restart, read input file */
-        NonrestartGeometryLoader(geometry);
+        NonrestartGeometryReader(geo);
     } else { /* if restart, read the geometry file */
-        RestartGeometryLoader(geometry);
+        RestartGeometryReader(time, geo);
     }
-    ComputeGeometryParameters(space, model, geometry);
+    ComputeGeometryParameters(space, model, geo);
     return 0;
 }
-static int NonrestartGeometryLoader(Geometry *geometry)
+static int NonrestartGeometryReader(Geometry *geo)
 {
-    ShowInformation("Loading geometry data ...");
+    ShowInformation("Reading geometry data ...");
     FILE *filePointer = fopen("artracfd.geo", "r");
     if (NULL == filePointer) {
         FatalError("failed to open geometry file: artracfd.geo...");
     }
     /* read and process file line by line */
     char currentLine[500] = {'\0'}; /* store the current read line */
-    Real *geo = NULL;
+    char fileName[100] = {'\0'}; /* store current geometry file name */
     int entryCount = 0; /* entry count */
     while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
         CommandLineProcessor(currentLine); /* process current line */
         if (0 == strncmp(currentLine, "count begin", sizeof currentLine)) {
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%d", &(geometry->totalN)); 
+            sscanf(currentLine, "%d", &(geo->totalM));
+            if (0 == geo->totalM) {
+                ++entryCount;
+                break;
+            }
+            geo->list = AssignStorage(geo->totalM, "Polygon");
             continue;
         }
         if (0 == strncmp(currentLine, "sphere begin", sizeof currentLine)) {
             ++entryCount;
-            if (0 == geometry->totalN) { /* no interior geometries */
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, "%d", &(geo->sphereM));
+            if (0 == geo->sphereM) {
                 continue;
             }
-            AllocateMemoryForGeometryData(geometry);
-            /* set format specifier according to the type of Real */
-            char format[100] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg"; /* default is double type */
-            if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
-                strncpy(format, "%g, %g, %g, %g, %g, %g, %g, %g, %g, %g", sizeof format); /* float type */
+            if (geo->totalM < geo->sphereM) {
+                geo->sphereM = geo->totalM;
             }
-            for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
-                geo = IndexGeometry(geoCount, geometry) ;
-                fgets(currentLine, sizeof currentLine, filePointer);
-                sscanf(currentLine, format, geo + GX, geo + GY, geo + GZ, geo + GR, geo + GRHO, geo + GU,
-                        geo + GV, geo + GW, geo + GT, geo + GROUGH);
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, "%s", fileName);
+            ReadSphereFile(fileName, geo);
+            if (geo->totalM == geo->sphereM) {
+                break;
             }
+            continue;
         }
-        continue;
+        if (0 == strncmp(currentLine, "STL begin", sizeof currentLine)) {
+            ++entryCount;
+            int m = geo->sphereM + geo->stlM; /* current geometry pointer */
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, "%s", fileName);
+            ReadStlFile(fileName, geo->list + m);
+            ReadPolygonStatusData(&filePointer, geo->list + m);
+            ++geo->stlM; /* point to the next geometry */
+            continue;
+        }
     }
     fclose(filePointer); /* close current opened file */
     /* Check missing information section in configuration */
-    if (2 != entryCount) {
-        FatalError("missing or repeated necessary information section");
+    if (2 + geo->stlM != entryCount) {
+        FatalError("missing necessary information section");
     }
     ShowInformation("Session End");
     return 0;
 }
-static int AllocateMemoryForGeometryData(Geometry *geometry)
+static int ReadSphereFile(const char *fileName, Geometry *geo)
 {
-    geometry->headAddress = AssignStorage(geometry->totalN * ENTRYGEO, "Real");
+    FILE *filePointer = fopen(fileName, "r");
+    if (NULL == filePointer) {
+        FatalError("failed to read sphere geometry file ...");
+    }
+    for (int m = 0; m < geo->sphereM; ++m) {
+        ReadPolygonStatusData(&filePointer, geo->list + m);
+        geo->list[m].facetN = 0; /* analytical geometry tag */
+        geo->list[m].facet = NULL;
+    }
+    fclose(filePointer); /* close current opened file */
     return 0;
 }
-static int RestartGeometryLoader(Geometry *geometry)
+static int ReadPolygonStatusData(FILE **filePointerPointer, Polygon *poly)
+{
+    FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
+    char currentLine[500] = {'\0'}; /* store the current read line */
+    /* set format specifier according to the type of Real */
+    char format[100] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg"; /* default is double type */
+    if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
+        strncpy(format, "%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g", sizeof format); /* float type */
+    }
+    fgets(currentLine, sizeof currentLine, filePointer);
+    sscanf(currentLine, format,
+            &(poly->xc), &(poly->yc), &(poly->zc), &(poly->r),
+            &(poly->u), &(poly->v), &(poly->w),
+            &(poly->fx), &(poly->fy), &(poly->fz),
+            &(poly->rho), &(poly->T), &(poly->cf));
+    *filePointerPointer = filePointer; /* updated file pointer */
+    return 0;
+}
+static int WritePolygonStatusData(FILE **filePointerPointer, Polygon *poly)
+{
+    FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
+    fprintf(filePointer, "        <!-- %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g -->\n",
+            poly->xc, poly->yc, poly->zc, poly->r,
+            poly->u, poly->v, poly->w,
+            poly->fx, poly->fy, poly->fz,
+            poly->rho, poly->T, poly->cf);
+    *filePointerPointer = filePointer; /* updated file pointer */
+    return 0;
+}
+static int RestartGeometryReader(const Time *time, Geometry *geo)
 {
     ShowInformation("Restore geometry data ...");
-    LoadGeometryDataParaview(geometry);
+    ReadGeometryDataParaview(time, geo);
     ShowInformation("Session End");
     return 0;
 }
-static int LoadGeometryDataParaview(Geometry *geometry)
+static int ReadGeometryDataParaview(const Time *time, Geometry *geo)
 {
-    FILE *filePointer = NULL;
-    Real *geo = NULL;
-    filePointer = fopen("restart.geo", "r");
+    ParaviewSet paraSet = { /* initialize ParaviewSet environment */
+        .rootName = "geometry", /* data file root name */
+        .baseName = {'\0'}, /* data file base name */
+        .fileName = {'\0'}, /* data file name */
+        .intType = "Int32", /* paraview data type */
+        .floatType = "Float32", /* paraview data type */
+        .byteOrder = "LittleEndian" /* byte order of data */
+    };
+    snprintf(paraSet.fileName, sizeof(ParaviewString), "%s%05d.vtp", 
+            paraSet.rootName, time->restart); 
+    FILE *filePointer = fopen(paraSet.fileName, "r");
     if (NULL == filePointer) {
-        FatalError("failed to reload geometry from restart.geo file...");
+        FatalError("failed to restore geometry file...");
     }
     /* get rid of redundant lines */
     char currentLine[200] = {'\0'}; /* store current line */
     fgets(currentLine, sizeof currentLine, filePointer);
+    /* get number of geometries */
     fgets(currentLine, sizeof currentLine, filePointer);
+    sscanf(currentLine, "%*s %*s %d", &(geo->totalM)); 
     fgets(currentLine, sizeof currentLine, filePointer);
+    sscanf(currentLine, "%*s %*s %d", &(geo->sphereM)); 
     fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    /* get total number of geometrys */
-    fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, "%*s %*s %d", &(geometry->totalN)); 
-    if (0 == geometry->totalN) { /* no internal geometries */
-        fclose(filePointer); /* close current opened file */
+    sscanf(currentLine, "%*s %*s %d", &(geo->stlM)); 
+    if (0 == geo->totalM) {
+        fclose(filePointer);
         return 0;
     }
-    AllocateMemoryForGeometryData(geometry);
-    ParaviewReal data = 0.0; /* the Paraview data format */
-    /* set format specifier according to the type of Real */
-    char format[5] = "%lg"; /* default is double type */
-    if (sizeof(ParaviewReal) == sizeof(float)) {
-        strncpy(format, "%g", sizeof format); /* float type */
-    }
-    for (int dim = 0; dim < GREAD; ++dim) {
-        fgets(currentLine, sizeof currentLine, filePointer);
-        for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
-            fscanf(filePointer, format, &data);
-            geo = IndexGeometry(geoCount, geometry);
-            geo[dim] = data;
+    geo->list = AssignStorage(geo->totalM, "Polygon");
+    while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
+        CommandLineProcessor(currentLine); /* process current line */
+        if (0 != strncmp(currentLine, "<!-- appended data begin -->", sizeof currentLine)) {
+            continue;
         }
-        fgets(currentLine, sizeof currentLine, filePointer); /* get rid of the end of line of data */
+        break;
+    }
+    for (int m = 0; m < geo->sphereM; ++m) {
+        ReadPolygonStatusData(&filePointer, geo->list + m);
+        geo->list[m].facetN = 0; /* analytical geometry tag */
+        geo->list[m].facet = NULL;
+    }
+    fgets(currentLine, sizeof currentLine, filePointer);
+    fgets(currentLine, sizeof currentLine, filePointer);
+    for (int m = geo->sphereM; m < geo->totalM; ++m) {
+        fgets(currentLine, sizeof currentLine, filePointer);
+        sscanf(currentLine, "%*s %*s NumberOfPolys=\"%d\"", &(geo->list[m].facetN)); 
+        geo->list[m].facet = AssignStorage(geo->list[m].facetN, "Facet");
+        fgets(currentLine, sizeof currentLine, filePointer);
+        fgets(currentLine, sizeof currentLine, filePointer);
+        fgets(currentLine, sizeof currentLine, filePointer);
+        fgets(currentLine, sizeof currentLine, filePointer);
+        fgets(currentLine, sizeof currentLine, filePointer);
+        fgets(currentLine, sizeof currentLine, filePointer);
+        fgets(currentLine, sizeof currentLine, filePointer);
+        ParaviewReal data = 0.0; /* the Paraview data format */
+        /* set format specifier according to the type of Real */
+        char format[5] = "%lg"; /* default is double type */
+        if (sizeof(ParaviewReal) == sizeof(float)) {
+            strncpy(format, "%g", sizeof format); /* float type */
+        }
+        for (int n = 0; n < geo->list[m].facetN; ++m) {
+            fscanf(filePointer, format, &data);
+            geo->list[m].facet[n].x1 = data;
+            fscanf(filePointer, format, &data);
+            geo->list[m].facet[n].y1 = data;
+            fscanf(filePointer, format, &data);
+            geo->list[m].facet[n].z1 = data;
+            fscanf(filePointer, format, &data);
+            geo->list[m].facet[n].x2 = data;
+            fscanf(filePointer, format, &data);
+            geo->list[m].facet[n].y2 = data;
+            fscanf(filePointer, format, &data);
+            geo->list[m].facet[n].z2 = data;
+            fscanf(filePointer, format, &data);
+            geo->list[m].facet[n].x3 = data;
+            fscanf(filePointer, format, &data);
+            geo->list[m].facet[n].y3 = data;
+            fscanf(filePointer, format, &data);
+            geo->list[m].facet[n].z3 = data;
+        }
+        while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
+            CommandLineProcessor(currentLine); /* process current line */
+            if (0 != strncmp(currentLine, "<!-- appended data begin -->", sizeof currentLine)) {
+                continue;
+            }
+            break;
+        }
+        ReadPolygonStatusData(&filePointer, geo->list + m);
+        fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);
     }
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-static int ComputeGeometryParameters(const Space *space, const Model *model, Geometry *geometry)
+int WriteGeometryData(const Time *time, const Geometry *geo)
 {
-    Real *geo = NULL;
-    for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
-        geo = IndexGeometry(geoCount, geometry);
-        /* initialize other uninitialized values */
-        geo[GFX] = 0;
-        geo[GFY] = 0;
-        geo[GFZ] = 0;
-        geo[GTALLY] = 0;
-        if (0 != space->collapsed) { /* space dimension collapsed */
-            geo[GAREA] = 2.0 * geo[GR] * model->pi; /* circle perimeter */
-            geo[GMASS] = geo[GRHO] * geo[GR] * geo[GR] * model->pi; /* circle mass */
-        } else {
-            geo[GAREA] = 4.0 * geo[GR] * geo[GR] * model->pi; /* sphere surface */
-            geo[GMASS] = geo[GRHO] * (4.0 / 3.0) * geo[GR] * geo[GR] * geo[GR] * model->pi; /* sphere mass */
-        }
-    }
+    WriteGeometryDataParaview(time, geo);
     return 0;
 }
-/*
- * Write geometry information of geometrys.
- */
-int WriteGeometryData(const Time *time, const Geometry *geometry)
-{
-    WriteGeometryDataParaview(time, geometry);
-    return 0;
-}
-static int WriteGeometryDataParaview(const Time *time, const Geometry *geometry)
+static int WriteGeometryDataParaview(const Time *time, const Geometry *geo)
 {
     ParaviewSet paraSet = { /* initialize ParaviewSet environment */
-        .baseName = "geometry", /* data file base name */
+        .rootName = "geometry", /* data file root name */
+        .baseName = {'\0'}, /* data file base name */
         .fileName = {'\0'}, /* data file name */
+        .intType = "Int32", /* paraview data type */
         .floatType = "Float32", /* paraview data type */
         .byteOrder = "LittleEndian" /* byte order of data */
     };
+    snprintf(paraSet.baseName, sizeof(ParaviewString), "%s%05d", 
+            paraSet.rootName, time->outputCount); 
     if (0 == time->stepCount) { /* this is the initialization step */
         InitializeTransientParaviewDataFile(&paraSet);
     }
     WriteSteadyParaviewDataFile(time, &paraSet);
-    WriteParaviewVariableFile(geometry, &paraSet);
+    WriteParaviewVariableFile(geo, &paraSet);
     return 0;
 }
 static int InitializeTransientParaviewDataFile(ParaviewSet *paraSet)
 {
-    FILE *filePointer = fopen("geometry.pvd", "w");
+    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.pvd", 
+            paraSet->rootName); 
+    FILE *filePointer = fopen(paraSet->fileName, "w");
     if (NULL == filePointer) {
         FatalError("failed to write data to transient geometry file...");
     }
     /* output information to file */
     fprintf(filePointer, "<?xml version=\"1.0\"?>\n");
-    fprintf(filePointer, "<VTKFile type=\"Collection\" version=\"1.0\"\n");
-    fprintf(filePointer, "         byte_order=\"%s\">\n", paraSet->byteOrder);
+    fprintf(filePointer, "<VTKFile type=\"Collection\" version=\"1.0\" byte_order=\"%s\">\n", paraSet->byteOrder);
     fprintf(filePointer, "  <Collection>\n");
     fprintf(filePointer, "  </Collection>\n");
     fprintf(filePointer, "</VTKFile>\n");
@@ -209,24 +295,18 @@ static int InitializeTransientParaviewDataFile(ParaviewSet *paraSet)
 }
 static int WriteSteadyParaviewDataFile(const Time *time, ParaviewSet *paraSet)
 {
-    /* store updated basename in filename */
-    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s%05d", 
-            paraSet->baseName, time->outputCount); 
-    /* basename is updated here! */
-    snprintf(paraSet->baseName, sizeof(ParaviewString), "%s", paraSet->fileName); 
-    /* current filename */
-    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.pvd", paraSet->baseName); 
+    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.pvd", 
+            paraSet->baseName); 
     FILE *filePointer = fopen(paraSet->fileName, "w");
     if (NULL == filePointer) {
         FatalError("failed to write data to steady geometry file...");
     }
     /* output information to file */
     fprintf(filePointer, "<?xml version=\"1.0\"?>\n");
-    fprintf(filePointer, "<VTKFile type=\"Collection\" version=\"1.0\"\n");
-    fprintf(filePointer, "         byte_order=\"%s\">\n", paraSet->byteOrder);
+    fprintf(filePointer, "<VTKFile type=\"Collection\" version=\"1.0\" byte_order=\"%s\">\n", paraSet->byteOrder);
     fprintf(filePointer, "  <Collection>\n");
     fprintf(filePointer, "    <DataSet timestep=\"%.6g\" group=\"\" part=\"0\"\n", time->now);
-    fprintf(filePointer, "             file=\"%s.vts\"/>\n", paraSet->baseName);
+    fprintf(filePointer, "             file=\"%s.vtp\"/>\n", paraSet->baseName);
     fprintf(filePointer, "  </Collection>\n");
     fprintf(filePointer, "  <!-- Order %d -->\n", time->outputCount);
     fprintf(filePointer, "  <!-- Time %.6g -->\n", time->now);
@@ -236,7 +316,9 @@ static int WriteSteadyParaviewDataFile(const Time *time, ParaviewSet *paraSet)
     /*
      * Add the current export to the transient case
      */
-    filePointer = fopen("geometry.pvd", "r+");
+    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.pvd", 
+            paraSet->rootName); 
+    filePointer = fopen(paraSet->fileName, "r+");
     if (NULL == filePointer) {
         FatalError("failed to add data to transient geometry file...");
     }
@@ -257,74 +339,43 @@ static int WriteSteadyParaviewDataFile(const Time *time, ParaviewSet *paraSet)
     }
     /* append informatiom */
     fprintf(filePointer, "    <DataSet timestep=\"%.6g\" group=\"\" part=\"0\"\n", time->now);
-    fprintf(filePointer, "             file=\"%s.vts\"/>\n", paraSet->baseName);
+    fprintf(filePointer, "             file=\"%s.vtp\"/>\n", paraSet->baseName);
     fprintf(filePointer, "  </Collection>\n");
     fprintf(filePointer, "</VTKFile>\n");
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-static int WriteParaviewVariableFile(const Geometry *geometry, ParaviewSet *paraSet)
+static int WriteParaviewVariableFile(const Geometry *geo, ParaviewSet *paraSet)
 {
-    FILE *filePointer = NULL;
-    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.vts", paraSet->baseName); 
-    filePointer = fopen(paraSet->fileName, "w");
+    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.vtp", paraSet->baseName); 
+    FILE *filePointer = fopen(paraSet->fileName, "w");
     if (NULL == filePointer) {
         FatalError("failed to write data file...");
     }
-    Real *geo = NULL;
     ParaviewReal data = 0.0; /* paraview scalar data */
     ParaviewReal vector[3] = {0.0}; /* paraview vector data elements */
-    /* the scalar values at each node in current part */
-    const char name[GWRITE][10] = {"x", "y", "z", "r", "rho", "u", "v", "w", "T", "rough", "fx", "fy", "fz", "id"};
-    int iMin = 0;
-    int iMax = geometry->totalN - 1;
-    int jMin = 0;
-    int jMax = 0;
-    int kMin = 0;
-    int kMax = 0;
     fprintf(filePointer, "<?xml version=\"1.0\"?>\n");
-    fprintf(filePointer, "<VTKFile type=\"StructuredGrid\" version=\"0.1\"\n");
-    fprintf(filePointer, "         byte_order=\"%s\">\n", paraSet->byteOrder);
-    fprintf(filePointer, "  <StructuredGrid WholeExtent=\"%d %d %d %d %d %d\">\n", 
-            iMin, iMax, jMin, jMax, kMin, kMax);
-    fprintf(filePointer, "    <Piece Extent=\"%d %d %d %d %d %d\">\n", 
-            iMin, iMax, jMin, jMax, kMin, kMax);
+    fprintf(filePointer, "<!-- M %d -->\n", geo->totalM);
+    fprintf(filePointer, "<!-- sphereM %d -->\n", geo->sphereM);
+    fprintf(filePointer, "<!-- stlM %d -->\n", geo->stlM);
+    fprintf(filePointer, "<VTKFile type=\"PolyData\" version=\"0.1\" byte_order=\"%s\">\n", paraSet->byteOrder);
+    fprintf(filePointer, "  <PolyData>");
+    fprintf(filePointer, "    <Piece NumberOfPoints=\"%d\" NumberOfPolys=\"%d\">", geo->sphereM, 0);
     fprintf(filePointer, "      <PointData Scalars=\"r\" Vectors=\"Vel\">\n");
-    fprintf(filePointer, "      <!-- N %d -->\n", geometry->totalN);
-    for (int dim = 0; dim < GWRITE; ++dim) {
-        fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"%s\" format=\"ascii\">\n", 
-                paraSet->floatType, name[dim]);
-        fprintf(filePointer, "          ");
-        for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
-            geo = IndexGeometry(geoCount, geometry);
-            if ((GWRITE - 1) == dim) {
-                data = geoCount;
-            } else {
-                data = geo[dim];
-            }
-            fprintf(filePointer, "%.6g ", data);
-        }
-        fprintf(filePointer, "\n        </DataArray>\n");
+    fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"r\" format=\"ascii\">\n", paraSet->floatType);
+    fprintf(filePointer, "          ");
+    for (int m = 0; m < geo->sphereM; ++m) {
+        data = geo->list[m].r;
+        fprintf(filePointer, "%.6g ", data);
     }
+    fprintf(filePointer, "\n        </DataArray>\n");
     fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"Vel\"\n", paraSet->floatType);
     fprintf(filePointer, "                   NumberOfComponents=\"3\" format=\"ascii\">\n");
     fprintf(filePointer, "          ");
-    for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
-        geo = IndexGeometry(geoCount, geometry);
-        vector[0] = geo[GU];
-        vector[1] = geo[GV];
-        vector[2] = geo[GW];
-        fprintf(filePointer, "%.6g %.6g %.6g ", vector[0], vector[1], vector[2]);
-    }
-    fprintf(filePointer, "\n        </DataArray>\n");
-    fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"Force\"\n", paraSet->floatType);
-    fprintf(filePointer, "                   NumberOfComponents=\"3\" format=\"ascii\">\n");
-    fprintf(filePointer, "          ");
-    for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
-        geo = IndexGeometry(geoCount, geometry);
-        vector[0] = geo[GFX];
-        vector[1] = geo[GFY];
-        vector[2] = geo[GFZ];
+    for (int m = 0; m < geo->sphereM; ++m) {
+        vector[0] = geo->list[m].u;
+        vector[1] = geo->list[m].v;
+        vector[2] = geo->list[m].w;
         fprintf(filePointer, "%.6g %.6g %.6g ", vector[0], vector[1], vector[2]);
     }
     fprintf(filePointer, "\n        </DataArray>\n");
@@ -335,17 +386,68 @@ static int WriteParaviewVariableFile(const Geometry *geometry, ParaviewSet *para
     fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"points\"\n", paraSet->floatType);
     fprintf(filePointer, "                   NumberOfComponents=\"3\" format=\"ascii\">\n");
     fprintf(filePointer, "          ");
-    for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
-        geo = IndexGeometry(geoCount, geometry);
-        vector[0] = geo[GX];
-        vector[1] = geo[GY];
-        vector[2] = geo[GZ];
+    for (int m = 0; m < geo->sphereM; ++m) {
+        vector[0] = geo->list[m].xc;
+        vector[1] = geo->list[m].yc;
+        vector[2] = geo->list[m].zc;
         fprintf(filePointer, "%.6g %.6g %.6g ", vector[0], vector[1], vector[2]);
     }
     fprintf(filePointer, "\n        </DataArray>\n");
     fprintf(filePointer, "      </Points>\n");
+    fprintf(filePointer, "      <Polys>\n");
+    fprintf(filePointer, "      </Polys>\n");
+    fprintf(filePointer, "      <!-- appended data begin -->\n");
+    for (int m = 0; m < geo->sphereM; ++m) {
+        WritePolygonStatusData(&filePointer, geo->list + m);
+    }
+    fprintf(filePointer, "      <!-- appended data end -->\n");
     fprintf(filePointer, "    </Piece>\n");
-    fprintf(filePointer, "  </StructuredGrid>\n");
+    for (int m = geo->sphereM; m < geo->totalM; ++m) {
+        fprintf(filePointer, "    <Piece NumberOfPoints=\"%d\" NumberOfPolys=\"%d\">", geo->list[m].facetN * 3, geo->list[m].facetN);
+        fprintf(filePointer, "      <PointData>\n");
+        fprintf(filePointer, "      </PointData>\n");
+        fprintf(filePointer, "      <CellData>\n");
+        fprintf(filePointer, "      </CellData>\n");
+        fprintf(filePointer, "      <Points>\n");
+        fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"points\"\n", paraSet->floatType);
+        fprintf(filePointer, "                   NumberOfComponents=\"3\" format=\"ascii\">\n");
+        fprintf(filePointer, "          ");
+        for (int n = 0; n < geo->list[m].facetN; ++m) {
+            vector[0] = geo->list[m].facet[n].x1;
+            vector[1] = geo->list[m].facet[n].y1;
+            vector[2] = geo->list[m].facet[n].z1;
+            fprintf(filePointer, "%.6g %.6g %.6g ", vector[0], vector[1], vector[2]);
+            vector[0] = geo->list[m].facet[n].x2;
+            vector[1] = geo->list[m].facet[n].y2;
+            vector[2] = geo->list[m].facet[n].z2;
+            fprintf(filePointer, "%.6g %.6g %.6g ", vector[0], vector[1], vector[2]);
+            vector[0] = geo->list[m].facet[n].x3;
+            vector[1] = geo->list[m].facet[n].y3;
+            vector[2] = geo->list[m].facet[n].z3;
+            fprintf(filePointer, "%.6g %.6g %.6g ", vector[0], vector[1], vector[2]);
+        }
+        fprintf(filePointer, "\n        </DataArray>\n");
+        fprintf(filePointer, "      </Points>\n");
+        fprintf(filePointer, "      <Polys>\n");
+        fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"connectivity\" format=\"ascii\">\n", paraSet->intType);
+        fprintf(filePointer, "          ");
+        for (int n = 0; n < geo->list[m].facetN; ++m) {
+            fprintf(filePointer, "%d %d %d ", 3 * n, 3 * n + 1, 3 * n + 2);
+        }
+        fprintf(filePointer, "\n        </DataArray>\n");
+        fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"offsets\" format=\"ascii\">\n", paraSet->intType);
+        fprintf(filePointer, "          ");
+        for (int n = 0; n < geo->list[m].facetN; ++m) {
+            fprintf(filePointer, "%d ", 3 * (n + 1));
+        }
+        fprintf(filePointer, "\n        </DataArray>\n");
+        fprintf(filePointer, "      </Polys>\n");
+        fprintf(filePointer, "      <!-- appended data begin -->\n");
+        WritePolygonStatusData(&filePointer, geo->list + m);
+        fprintf(filePointer, "      <!-- appended data end -->\n");
+        fprintf(filePointer, "    </Piece>\n");
+    }
+    fprintf(filePointer, "  </PolyData>\n");
     fprintf(filePointer, "</VTKFile>\n");
     fclose(filePointer); /* close current opened file */
     return 0;

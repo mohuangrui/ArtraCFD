@@ -28,6 +28,7 @@ typedef float EnsightReal; /* Ensight requires real data to be float */
  * Ensight configuration structure
  */
 typedef struct {
+    EnsightString rootName; /* data file root name */
     EnsightString baseName; /* data file base name */
     EnsightString fileName; /* store current open file name */
     EnsightString stringData; /* Ensight string data */

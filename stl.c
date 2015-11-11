@@ -21,9 +21,8 @@
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int ReadStlFile(const char *fileName, Polygon *polygon)
+int ReadStlFile(const char *fileName, Polygon *poly)
 {
-    int idx = 0; /* linear array index math variable */
     StlString header = {'\0'};
     StlLongInt facetN = 0;
     StlInt attributeCount = 0;
@@ -34,41 +33,40 @@ int ReadStlFile(const char *fileName, Polygon *polygon)
     }
     fread(header, sizeof(char), sizeof(StlString), filePointer);
     fread(&facetN, sizeof(StlLongInt), 1, filePointer);
-    polygon->facetN = facetN;
-    for (int count = 0; count < facetN; ++count) {
-        idx = count * ENTRYFACET;
+    poly->facetN = facetN;
+    poly->facet = AssignStorage(poly->facetN, "Facet");
+    for (int n = 0; n < facetN; ++n) {
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FNX] = facetData;
+        poly->facet[n].nx = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FNY] = facetData;
+        poly->facet[n].ny = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FNZ] = facetData;
+        poly->facet[n].nz = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FX1] = facetData;
+        poly->facet[n].x1 = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FY1] = facetData;
+        poly->facet[n].y1 = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FZ1] = facetData;
+        poly->facet[n].z1 = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FX2] = facetData;
+        poly->facet[n].x2 = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FY2] = facetData;
+        poly->facet[n].y2 = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FZ2] = facetData;
+        poly->facet[n].z2 = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FX3] = facetData;
+        poly->facet[n].x3 = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FY3] = facetData;
+        poly->facet[n].y3 = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        polygon->facet[idx+FZ3] = facetData;
+        poly->facet[n].z3 = facetData;
         fread(&attributeCount, sizeof(StlInt), 1, filePointer);
     }
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-int WriteStlFile(const char *fileName, const Polygon *polygon)
+int WriteStlFile(const char *fileName, const Polygon *poly)
 {
-    int idx = 0; /* linear array index math variable */
     StlString header = {'\0'};
     StlLongInt facetN = 0;
     StlInt attributeCount = 0;
@@ -79,33 +77,32 @@ int WriteStlFile(const char *fileName, const Polygon *polygon)
     }
     strncpy(header, "binary stl", sizeof(StlString));
     fwrite(header, sizeof(char), sizeof(StlString), filePointer);
-    facetN = polygon->facetN;
+    facetN = poly->facetN;
     fwrite(&facetN, sizeof(StlLongInt), 1, filePointer);
-    for (int count = 0; count < facetN; ++count) {
-        idx = count * ENTRYFACET;
-        facetData = polygon->facet[idx+FNX];
+    for (int n = 0; n < facetN; ++n) {
+        facetData = poly->facet[n].nx;
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = polygon->facet[idx+FNY];
+        facetData = poly->facet[n].ny;
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = polygon->facet[idx+FNZ];
+        facetData = poly->facet[n].nz;
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = polygon->facet[idx+FX1];
+        facetData = poly->facet[n].x1;
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = polygon->facet[idx+FY1];
+        facetData = poly->facet[n].y1;
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = polygon->facet[idx+FZ1];
+        facetData = poly->facet[n].z1;
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = polygon->facet[idx+FX2];
+        facetData = poly->facet[n].x2;
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = polygon->facet[idx+FY2];
+        facetData = poly->facet[n].y2;
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = polygon->facet[idx+FZ2];
+        facetData = poly->facet[n].z2;
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = polygon->facet[idx+FX3];
+        facetData = poly->facet[n].x3;
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = polygon->facet[idx+FY3];
+        facetData = poly->facet[n].y3;
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = polygon->facet[idx+FZ3];
+        facetData = poly->facet[n].z3;
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
         fwrite(&attributeCount, sizeof(StlInt), 1, filePointer);
     }

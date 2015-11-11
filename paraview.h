@@ -28,8 +28,10 @@ typedef double ParaviewReal; /* Paraview real data */
  * Paraview configuration structure
  */
 typedef struct {
+    ParaviewString rootName; /* data file root name */
     ParaviewString baseName; /* data file base name */
     ParaviewString fileName; /* store current open file name */
+    ParaviewString intType; /* Paraview data type */
     ParaviewString floatType; /* Paraview data type */
     ParaviewString byteOrder; /* byte order of data */
 }ParaviewSet;
