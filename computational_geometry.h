@@ -23,7 +23,14 @@
 /****************************************************************************
  * Public Functions Declaration
  ****************************************************************************/
-static int ComputeGeometryParameters(const Space *, const Model *, Geometry *);
+/*
+ * Compute geometry parameters
+ *
+ * Function
+ *
+ *      Compute parameters of the geometry.
+ */
+extern int ComputeGeometryParameters(Geometry *);
 /*
  * In geometry criteria
  *
@@ -33,19 +40,19 @@ static int ComputeGeometryParameters(const Space *, const Model *, Geometry *);
  *
  * Return
  *      negative -- in current geometry
- *      zero     -- on current geometry
  *      positive -- out of current geometry
  */
-extern Real InGeometry(const int k, const int j, const int i, const Real *geo, const Space *);
+extern Real InGeometry(const int k, const int j, const int i,
+        const Geometry *geo, const int m, const Space *);
 /*
- * Calculate geometry information
+ * Calculate node information
  *
  * Function
  *
  *      Calculate geometry information of current node.
  */
-extern int CalculateGeometryInformation(Real info[], const int k, const int j, 
-        const int i, const Real *geo, const Space *);
+extern int CalculateNodeInformation(Real info[], const int k, const int j, 
+        const int i, const Geometry *geo, const int m, const Space *);
 #endif
 /* a good practice: end file with a newline */
 

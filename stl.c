@@ -21,7 +21,7 @@
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int ReadStlFile(const char *fileName, Polygon *poly)
+int ReadStlFile(const char *fileName, Polyhedron *poly)
 {
     StlString header = {'\0'};
     StlLongInt facetN = 0;
@@ -65,7 +65,7 @@ int ReadStlFile(const char *fileName, Polygon *poly)
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-int WriteStlFile(const char *fileName, const Polygon *poly)
+int WriteStlFile(const char *fileName, const Polyhedron *poly)
 {
     StlString header = {'\0'};
     StlLongInt facetN = 0;

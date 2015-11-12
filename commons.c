@@ -123,8 +123,8 @@ void *AssignStorage(const int idxMax, const char *dataType)
     if (0 == strcmp(dataType, "Facet")) {
         pointer = malloc(idxMax * sizeof(Facet));
     }
-    if (0 == strcmp(dataType, "Polygon")) {
-        pointer = malloc(idxMax * sizeof(Polygon));
+    if (0 == strcmp(dataType, "Polyhedron")) {
+        pointer = malloc(idxMax * sizeof(Polyhedron));
     }
     if (0 == strcmp(dataType, "Real")) {
         pointer = malloc(idxMax * sizeof(Real));

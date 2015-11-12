@@ -33,11 +33,11 @@ typedef float StlReal; /* STL requires real data to be float */
 /*
  * STL Reader
  */
-extern int ReadStlFile(const char *fileName, Polygon *);
+extern int ReadStlFile(const char *fileName, Polyhedron *);
 /*
  * STL Writer
  */
-extern int WriteStlFile(const char *fileName, const Polygon *);
+extern int WriteStlFile(const char *fileName, const Polyhedron *);
 #endif
 /* a good practice: end file with a newline */
 

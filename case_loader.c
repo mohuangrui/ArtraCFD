@@ -451,7 +451,7 @@ static int WriteVerifyData(const Space *space, const Time *time, const Model *mo
     fprintf(filePointer, "#                          >> Time Domain <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "restart step: %d\n", time->restart); 
+    fprintf(filePointer, "restart tag: %d\n", time->restart); 
     fprintf(filePointer, "total evolution time: %.6g\n", time->end); 
     fprintf(filePointer, "maximum number of steps: %d\n", time->stepN); 
     fprintf(filePointer, "CFL condition number: %.6g\n", time->numCFL); 

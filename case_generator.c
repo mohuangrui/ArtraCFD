@@ -351,14 +351,13 @@ static int TriangulatedGeometryFileGenerator(void)
             8.660254e-001, -5.000000e-001, 5.000000e-001,
             8.660254e-001, 5.000000e-001, 5.000000e-001}
     };
-    Polygon wedge = {
+    Polyhedron wedge = {
         .facetN = 8,
         .tally = 0,
         .xc = 0.5,
         .yc = 0.0,
         .zc = 0.0,
         .r = 0.0,
-        .facet = facetData,
         .xMin = 0.0,
         .yMin = -0.5,
         .zMin = -0.5,
@@ -372,10 +371,11 @@ static int TriangulatedGeometryFileGenerator(void)
         .fy = 0.0,
         .fz = 0.0,
         .rho = 1.0e250,
-        .area = 4,
-        .mass = 1.0e250,
         .T = -1.0,
-        .cf = 1.0
+        .cf = 1.0,
+        .area = 4,
+        .volume = 0.5,
+        .facet = facetData
     };
     WriteStlFile("artracfd.stl", &wedge);
     return 0;

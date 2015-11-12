@@ -701,17 +701,16 @@ typedef struct {
     Real z3;
 } Facet;
 /*
- * Polygon structure
+ * Polyhedron structure
  */
 typedef struct {
     int facetN; /* number of facets. 0 for analytical sphere */
-    int tally; /* tally for 1st type ghost node in polygon */
-    Real xc; /* a point in the polygon */
+    int tally; /* tally for 1st type ghost node in polyhedron */
+    Real xc; /* a bounding sphere of the polyhedron */
     Real yc;
     Real zc;
-    Real r; /* radius of analytical sphere */
-    Facet *facet; /* facet data */
-    Real xMin; /* a range contains the entire polygon */
+    Real r;
+    Real xMin; /* a bounding box of the polyhedron */
     Real yMin;
     Real zMin;
     Real xMax;
@@ -724,19 +723,20 @@ typedef struct {
     Real fy;
     Real fz;
     Real rho; /* density */
-    Real area; /* surface area */
-    Real mass; /* polygon mass */
     Real T; /* wall temperature. T <= 0, adiabatic; T > 0, constant temperature */
     Real cf; /* roughness. cf <= 0, slip wall; cf > 0, no-slip wall */
-} Polygon;
+    Real area; /* area */
+    Real volume; /* volume */
+    Facet *facet; /* facet data */
+} Polyhedron;
 /*
  * Geometry Entities
  */
 typedef struct {
     int totalM; /* total number of geometries */
     int sphereM; /* number of analytical spheres */
-    int stlM; /* number of triangulated surface geometry */
-    Polygon *list; /* geometry list */
+    int stlM; /* number of triangulated polyhedrons */
+    Polyhedron *list; /* geometry list */
 } Geometry;
 /*
  * Program command line arguments and overall control

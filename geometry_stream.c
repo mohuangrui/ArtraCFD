@@ -16,6 +16,7 @@
 #include <string.h> /* manipulating strings */
 #include "stl.h"
 #include "paraview.h"
+#include "computational_geometry.h"
 #include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
@@ -24,8 +25,8 @@
 static int NonrestartGeometryReader(Geometry *);
 static int RestartGeometryReader(const Time *, Geometry *);
 static int ReadSphereFile(const char *, Geometry *);
-static int ReadPolygonStatusData(FILE **, Polygon *);
-static int WritePolygonStatusData(FILE **, Polygon *);
+static int ReadPolyhedronStatusData(FILE **, Polyhedron *);
+static int WritePolyhedronStatusData(FILE **, Polyhedron *);
 static int ReadGeometryDataParaview(const Time *, Geometry *);
 static int WriteGeometryDataParaview(const Time *, const Geometry *);
 static int InitializeTransientParaviewDataFile(ParaviewSet *);
@@ -42,7 +43,7 @@ int ReadGeometryData(const Space *space, const Time *time, const Model *model,
     } else { /* if restart, read the geometry file */
         RestartGeometryReader(time, geo);
     }
-    ComputeGeometryParameters(space, model, geo);
+    ComputeGeometryParameters(geo);
     return 0;
 }
 static int NonrestartGeometryReader(Geometry *geo)
@@ -66,7 +67,7 @@ static int NonrestartGeometryReader(Geometry *geo)
                 ++entryCount;
                 break;
             }
-            geo->list = AssignStorage(geo->totalM, "Polygon");
+            geo->list = AssignStorage(geo->totalM, "Polyhedron");
             continue;
         }
         if (0 == strncmp(currentLine, "sphere begin", sizeof currentLine)) {
@@ -93,7 +94,7 @@ static int NonrestartGeometryReader(Geometry *geo)
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%s", fileName);
             ReadStlFile(fileName, geo->list + m);
-            ReadPolygonStatusData(&filePointer, geo->list + m);
+            ReadPolyhedronStatusData(&filePointer, geo->list + m);
             ++geo->stlM; /* point to the next geometry */
             continue;
         }
@@ -113,14 +114,14 @@ static int ReadSphereFile(const char *fileName, Geometry *geo)
         FatalError("failed to read sphere geometry file ...");
     }
     for (int m = 0; m < geo->sphereM; ++m) {
-        ReadPolygonStatusData(&filePointer, geo->list + m);
+        ReadPolyhedronStatusData(&filePointer, geo->list + m);
         geo->list[m].facetN = 0; /* analytical geometry tag */
         geo->list[m].facet = NULL;
     }
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-static int ReadPolygonStatusData(FILE **filePointerPointer, Polygon *poly)
+static int ReadPolyhedronStatusData(FILE **filePointerPointer, Polyhedron *poly)
 {
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
     char currentLine[500] = {'\0'}; /* store the current read line */
@@ -138,7 +139,7 @@ static int ReadPolygonStatusData(FILE **filePointerPointer, Polygon *poly)
     *filePointerPointer = filePointer; /* updated file pointer */
     return 0;
 }
-static int WritePolygonStatusData(FILE **filePointerPointer, Polygon *poly)
+static int WritePolyhedronStatusData(FILE **filePointerPointer, Polyhedron *poly)
 {
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
     fprintf(filePointer, "        <!-- %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g -->\n",
@@ -186,7 +187,7 @@ static int ReadGeometryDataParaview(const Time *time, Geometry *geo)
         fclose(filePointer);
         return 0;
     }
-    geo->list = AssignStorage(geo->totalM, "Polygon");
+    geo->list = AssignStorage(geo->totalM, "Polyhedron");
     while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
         CommandLineProcessor(currentLine); /* process current line */
         if (0 != strncmp(currentLine, "<!-- appended data begin -->", sizeof currentLine)) {
@@ -195,7 +196,7 @@ static int ReadGeometryDataParaview(const Time *time, Geometry *geo)
         break;
     }
     for (int m = 0; m < geo->sphereM; ++m) {
-        ReadPolygonStatusData(&filePointer, geo->list + m);
+        ReadPolyhedronStatusData(&filePointer, geo->list + m);
         geo->list[m].facetN = 0; /* analytical geometry tag */
         geo->list[m].facet = NULL;
     }
@@ -245,7 +246,7 @@ static int ReadGeometryDataParaview(const Time *time, Geometry *geo)
             }
             break;
         }
-        ReadPolygonStatusData(&filePointer, geo->list + m);
+        ReadPolyhedronStatusData(&filePointer, geo->list + m);
         fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);
     }
@@ -398,7 +399,7 @@ static int WriteParaviewVariableFile(const Geometry *geo, ParaviewSet *paraSet)
     fprintf(filePointer, "      </Polys>\n");
     fprintf(filePointer, "      <!-- appended data begin -->\n");
     for (int m = 0; m < geo->sphereM; ++m) {
-        WritePolygonStatusData(&filePointer, geo->list + m);
+        WritePolyhedronStatusData(&filePointer, geo->list + m);
     }
     fprintf(filePointer, "      <!-- appended data end -->\n");
     fprintf(filePointer, "    </Piece>\n");
@@ -443,7 +444,7 @@ static int WriteParaviewVariableFile(const Geometry *geo, ParaviewSet *paraSet)
         fprintf(filePointer, "\n        </DataArray>\n");
         fprintf(filePointer, "      </Polys>\n");
         fprintf(filePointer, "      <!-- appended data begin -->\n");
-        WritePolygonStatusData(&filePointer, geo->list + m);
+        WritePolyhedronStatusData(&filePointer, geo->list + m);
         fprintf(filePointer, "      <!-- appended data end -->\n");
         fprintf(filePointer, "    </Piece>\n");
     }
