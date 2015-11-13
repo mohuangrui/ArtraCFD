@@ -466,36 +466,27 @@ typedef double Real;
 typedef enum {
     /* dimensions related to space */
     DIMS = 3, /* space dimension */
-    X = 0, /* x dimension */
-    Y = 1, /* y dimension */
-    Z = 2, /* z dimension */
-    COLLAPSEN = 0, /* no dimension collapsed */
-    COLLAPSEX = 1, /* x dimension collapsed */
-    COLLAPSEY = 2, /* y dimension collapsed */
-    COLLAPSEZ = 3, /* z dimension collapsed */
-    COLLAPSEXY = 5, /* x and y dimension collapsed */
-    COLLAPSEXZ = 7, /* x and z dimension collapsed */
-    COLLAPSEYZ = 8, /* y and z  dimension collapsed */
-    COLLAPSEXYZ = 17, /* x, y, and z dimension collapsed */
+    X = 0,
+    Y = 1,
+    Z = 2,
+    COLLAPSEN = 0, /* dimension collapsed tag */
+    COLLAPSEX = 1,
+    COLLAPSEY = 2,
+    COLLAPSEZ = 3,
+    COLLAPSEXY = 5,
+    COLLAPSEXZ = 7,
+    COLLAPSEYZ = 8, 
+    COLLAPSEXYZ = 17, 
     /* dimensions related to field variables */
     DIMU = 5, /* conservative vector: rho, rho_u, rho_v, rho_w, rho_eT */
     DIMUo = 6, /* primitive vector: rho, u, v, w, [p, hT, h], [T, c] */
     /* 
-     * parameters related to node flag space
-     *
-     * node flag value          node flag range              node type
-     *      0                          0                   fluid nodes
-     *     -1                         -1                   boundary and exterior nodes
-     * -offset-m              (-offset-M, -offset]         interior solid node,
-     *                         [offset, +infinity)         interior ghost node, 
-     * offset+m+(r-1)*M    [offset+(r-1)*M, offset+r*M)    rth type ghost node, 
-     * otherwise: reserved space.
-     * M is the total number of interior geometries.
-     * geometry identifier m in [0, M-1].
+     * parameters related to node type space
      */
-    OFFSET = 10, /* reserved space */
     FLUID = 0, /* identifier of fluid nodes */
-    EXTERIOR = -1, /* identifier of global boundary and exterior ghost nodes */
+    GHOST = 1, /* identifier of ghost nodes */
+    SOLID = -1, /* identifier of solid nodes */
+    EXTERIOR = -2, /* identifier of global boundary and exterior ghost nodes */
     /* parameters related to numerical model */
     TVD = 0, /* TVD scheme identifier */
     WENO = 1, /* WENO scheme identifier */
@@ -503,52 +494,52 @@ typedef enum {
     WATER = 1, /* water */
     /* parameters related to geometry */
     ENTRYGEOCALC = 7, /* entries of calculated geometry information of a node */
-    GX = 0, /* x coordinate */
-    GY = 1, /* y coordinate */
-    GZ = 2, /* z coordinate */
+    GX = 0, /* coordinate */
+    GY = 1,
+    GZ = 2,
     GDS = 3, /* distance to surface */
-    GNX = 4, /* x component of normal */
-    GNY = 5, /* y component of normal */
-    GNZ = 6, /* z component of normal */
+    GNX = 4, /* components of normal */
+    GNY = 5,
+    GNZ = 6,
     /* parameters related to probe */
     NPROBE = 4, /* maximum number of probes to support */
     ENTRYPROBE = 7, /* x1, y1, z1, x2, y2, z2, resolution */
     /* parameters related to domain partitions */
     NPART = 13, /* inner region, [west, east, south, north, front, back] x [Boundary, Ghost] */
-    PIN = 0, /* inner region of partition */
-    PWB = 1, /* west boundary of partition */
-    PEB = 2, /* east boundary of partition */
-    PSB = 3, /* south boundary of partition */
-    PNB = 4, /* north boundary of partition */
-    PFB = 5, /* front boundary of partition */
-    PBB = 6, /* back boundary of partition */
-    PWG = 7, /* west ghost region of partition */
-    PEG = 8, /* east ghost region of partition */
-    PSG = 9, /* south ghost region of partition */
-    PNG = 10, /* north ghost region of partition */
-    PFG = 11, /* front ghost region of partition */
-    PBG = 12, /* back ghost region of partition */
+    PIN = 0,
+    PWB = 1, 
+    PEB = 2, 
+    PSB = 3,
+    PNB = 4,
+    PFB = 5,
+    PBB = 6,
+    PWG = 7,
+    PEG = 8,
+    PSG = 9,
+    PNG = 10,
+    PFG = 11,
+    PBG = 12,
     NRANGE = 6, /* range of partition */
-    KSUB = 0, /* sub limit of k in partition */
-    KSUP = 1, /* sup limit of k in partition */
-    JSUB = 2, /* sub limit of j in partition */
-    JSUP = 3, /* sup limit of j in partition */
-    ISUB = 4, /* sub limit of i in partition */
-    ISUP = 5, /* sup limit of i in partition */
+    KSUB = 0,
+    KSUP = 1,
+    JSUB = 2,
+    JSUP = 3,
+    ISUB = 4,
+    ISUP = 5,
     /* parameters related to domain boundary conditions */
     NBC = 6, /* [west, east, south, north, front, back] x [BC] */
-    BCWEST = 0, /* west domain boundary */
-    BCEAST = 1, /* east domain boundary */
-    BCSOUTH = 2, /* south domain boundary */
-    BCNORTH = 3, /* north domain boundary */
-    BCFRONT = 4, /* front domain boundary */
-    BCBACK = 5, /* back domain boundary */
-    INFLOW = 0, /* inflow boundary condition identifier */
-    OUTFLOW = 1, /* outflow boundary condition identifier */
-    SLIPWALL = 2, /* slip wall boundary condition identifier */
-    NOSLIPWALL = 3, /* no-slip wall boundary condition identifier */
-    PERIODIC = 4, /* periodic boundary condition identifier */
-    PERIODICPAIR = -4, /* periodic pair identifier */
+    BCWEST = 0,
+    BCEAST = 1,
+    BCSOUTH = 2,
+    BCNORTH = 3,
+    BCFRONT = 4,
+    BCBACK = 5,
+    INFLOW = 0, /* boundary condition identifier */
+    OUTFLOW = 1,
+    SLIPWALL = 2,
+    NOSLIPWALL = 3,
+    PERIODIC = 4,
+    PERIODICPAIR = -4,
     ENTRYBC = 6, /* rho, u, v, w, p, T */
     /* parameters related to global and regional initialization */
     NIC = 10, /* maximum number of initializer to support */
@@ -561,22 +552,21 @@ typedef enum {
     ENTRYVAR = 5, /* primitive variables: rho, u, v, w, p */
 } Constants;
 /*
- * Field variables
+ * Field variables of computational node
  *
- * Conservative variables are vectors with many elements, with each element
- * is a three dimensional array in 3D space.
+ * Using high order pointers for multidimensional arrays wastes space and
+ * the malloc( ) calls are expensive, and it is also very time-consuming
+ * for nested loops because of causing lots of cache misses.
  *
- * Using high order pointers (arrays) is complicated. The pointers in the 
- * array of arrays of arrays waste space and the malloc( ) calls are 
- * expensive, and it is also very time-consuming for nested loops 
- * because of causing lots of cache misses.
- *
- * Maintaining a multi-dimensional array within a single linear array is a
+ * Maintaining a multidimensional array within a single linear array is a
  * common performance technique. High-performance code instead implements a
- * multi-dimensional array as a single linear array with hand-authored array
+ * multidimensional array as a single linear array with hand-authored array
  * indexing math to keep track of what values are where:
  *
- * value = data[k * height * depth + j * depth + i];
+ * data[kMax][jMax][iMax]
+ * int k, j, i;
+ * int idx; use long type if needed
+ * idx = ((k * jMax + j) * iMax + i);
  *
  * Since the array is a single large chunk of memory, sweeping through it from
  * start-to-finish creates a regular access pattern that processor prefetchers
@@ -584,52 +574,47 @@ typedef enum {
  * result is fewer cache misses and much better performance.
  *
  * This code use nested loops with linear array and index math instead nested
- * loops with multi-dimensional arrays. Because we need to store a sequence of
- * conservative variables at each (k,j,i), the most efficient index arrangement
- * should be the following:
+ * loops with multidimensional arrays. Because we need to store a sequence of
+ * different field variables at each (k,j,i), a node data structure is defined
+ * to pack data for each node and to achieve high locality of data management.
  *
- * U[kMax][jMax][iMax][dimU] (Note: NOT U[dimU][kMax][jMax][iMax]);
- * int k, j, i, dimU;
- * int idx; use long type if needed
- * idx = ((k * jMax + j) * iMax + i) * dimU;
- * rho    = U[idx+0];
- * rho_u  = U[idx+1];
- * rho_v  = U[idx+2];
- * rho_w  = U[idx+3];
- * rho_eT = U[idx+4];
  */
 typedef struct {
-    Real *Un; /* store the "old" field data for intermediate calculation */
-    Real *U; /* store updating field data, and updated data after every computation */
-    Real *Uswap; /* an auxiliary storage space */
-} Field;
+    int type; /* node type identifier */
+    int layerID; /* ghost layer identifier */
+    int geoID; /* geometry identifier of the node */
+    int facetID; /* geometric facet identifier of the node */
+    Real Un[DIMU]; /* store the "old" field data for intermediate calculation */
+    Real U[DIMU]; /* store updating field data, and updated data after every computation */
+    Real Uswap[DIMU]; /* an auxiliary storage space */
+} Node;
 /*
  * Space domain parameters
  */
 typedef struct {
-    int nz; /* mesh number in z */
-    int ny; /* mesh number in y */
-    int nx; /* mesh number in x */
+    Node *node; /* field data */
+    int nz; /* mesh number of each direction */
+    int ny;
+    int nx;
     int ng; /* number of layers of ghost cells */
-    int kMax; /* total node number in z */
-    int jMax; /* total node number in y */
-    int iMax; /* total node number in x */
-    int nMax; /* total node number */
+    int kMax; /* total node number of each direction */
+    int jMax;
+    int iMax;
+    int nMax; /* total node number of domain */
     int collapsed; /* space collapse flag */
-    int *nodeFlag; /* node flag field */
-    Real dz; /* mesh size in z */
-    Real dy; /* mesh size in y */
-    Real dx; /* mesh size in x */
-    Real ddz; /* reciprocal of mesh size in z */
-    Real ddy; /* reciprocal of mesh size in y */
-    Real ddx; /* reciprocal of mesh size in x */
+    Real dz; /* mesh size of each direction */
+    Real dy;
+    Real dx;
+    Real ddz; /* reciprocal of mesh sizes */
+    Real ddy;
+    Real ddx;
     Real tinyL; /* smallest length scale related to grid size */
     Real zMin; /* coordinates define the space domain */
-    Real yMin; /* coordinates define the space domain */
-    Real xMin; /* coordinates define the space domain */
-    Real zMax; /* coordinates define the space domain */
-    Real yMax; /* coordinates define the space domain */
-    Real xMax; /* coordinates define the space domain */
+    Real yMin;
+    Real xMin;
+    Real zMax;
+    Real yMax;
+    Real xMax;
 } Space;
 /*
  * Time domain parameters
@@ -664,8 +649,6 @@ typedef struct {
     Real gamma; /* heat capacity ratio */
     Real gasR; /* the gas constant */
     Real cv; /* specific heat capacity at constant volume */
-    Real pi; /* pi */
-    Real delta; /* numerical dissipation */
     Real refLength; /* characteristic length */
     Real refDensity; /* characteristic density */
     Real refVelocity;  /*characteristic velocity */
@@ -699,9 +682,23 @@ typedef struct {
     Real x3; /* vertical 3 */
     Real y3;
     Real z3;
+    Real s; /* area */
 } Facet;
 /*
  * Polyhedron structure
+ *
+ * A bounding box and a bounding sphere are both used as bounding containers
+ * to enclose a finite geometric object. Meanwhile, triangulated polyhedrons
+ * and analytical spheres are unified by the using of bounding container,
+ * since an analytical sphere is the bounding sphere of itself. Moreover,
+ * a polyhedron with a unit length thickness is used to represent a polygon
+ * with the same cross-section shape.
+ *
+ * Before conducting computationally expensive intersection or containment
+ * algorithms for a complicated object, using simple bounding containers as
+ * a preprocessing test can often exclude the possibility of intersection
+ * or containment and significantly speed up software for ray tracing,
+ * collision detection, hidden object detection, etc.
  */
 typedef struct {
     int facetN; /* number of facets. 0 for analytical sphere */
@@ -789,7 +786,6 @@ extern int ShowInformation(const char *statement);
  * Parameters
  *      idxMax -- the maximum number of elements
  *      dataType -- the data type of elements,
- *      "Real", "double", "float", "int", "char"
  * Function
  *      Use malloc to assign a linear array of storage with specified data type.
  * Returns

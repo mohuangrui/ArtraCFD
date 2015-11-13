@@ -23,45 +23,31 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ProgramMemoryAllocate(Field *, Space *);
+static int ProgramMemoryAllocate(Space *);
 /****************************************************************************
  * Function Definitions
  ****************************************************************************/
 /*
  * This is the overall preprocessing function
  */
-int Preprocess(Field *field, Space *space, Time *time, Model *model,
-        Partition *part, Geometry *geo)
+int Preprocess(Space *space, Time *time, Model *model, Partition *part, Geometry *geo)
 {
     LoadCaseSettingData(space, time, model, part);
     ComputeCFDParameters(space, time, model);
     DomainPartition(space, part);
-    ProgramMemoryAllocate(field, space);
+    ProgramMemoryAllocate(space);
     ReadGeometryData(space, time, model, geo);
     ComputeGeometryDomain(space, part, geo);
     return 0;
 }
 /*
- * This function together with some subfuctions realize the dynamic
- * memory allocation for each global pointer. The storage retrieving
+ * This function allocates memory for field data. The storage retrieving
  * need to be done in the postprocessor.
  */
-static int ProgramMemoryAllocate(Field *field, Space *space)
+static int ProgramMemoryAllocate(Space *space)
 {
     ShowInformation("Allocating memory...");
-    /*
-     * Conservative variables.
-     * Tips: the storage space of U is best between Un and Uswap.
-     */
-    int idxMax = space->nMax * DIMU;
-    field->Un = AssignStorage(idxMax, "Real");
-    field->U = AssignStorage(idxMax, "Real");
-    field->Uswap = AssignStorage(idxMax, "Real");
-    /*
-     * Node type identifier
-     */
-    idxMax = space->nMax;
-    space->nodeFlag = AssignStorage(idxMax, "int");
+    space->node = AssignStorage(space->nMax, "Node");
     ShowInformation("Session End");
     return 0;
 }

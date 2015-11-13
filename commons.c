@@ -120,6 +120,9 @@ int ShowInformation(const char *statement)
 void *AssignStorage(const int idxMax, const char *dataType)
 {
     void *pointer = NULL;
+    if (0 == strcmp(dataType, "Node")) {
+        pointer = malloc(idxMax * sizeof(Node));
+    }
     if (0 == strcmp(dataType, "Facet")) {
         pointer = malloc(idxMax * sizeof(Facet));
     }

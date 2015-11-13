@@ -126,27 +126,29 @@ static int ReadPolyhedronStatusData(FILE **filePointerPointer, Polyhedron *poly)
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
     char currentLine[500] = {'\0'}; /* store the current read line */
     /* set format specifier according to the type of Real */
-    char format[100] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg"; /* default is double type */
+    char format[100] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg"; /* default is double type */
     if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
-        strncpy(format, "%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g", sizeof format); /* float type */
+        strncpy(format, "%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g", sizeof format); /* float type */
     }
     fgets(currentLine, sizeof currentLine, filePointer);
     sscanf(currentLine, format,
             &(poly->xc), &(poly->yc), &(poly->zc), &(poly->r),
             &(poly->u), &(poly->v), &(poly->w),
             &(poly->fx), &(poly->fy), &(poly->fz),
-            &(poly->rho), &(poly->T), &(poly->cf));
+            &(poly->rho), &(poly->T), &(poly->cf),
+            &(poly->area), &(poly->volume));
     *filePointerPointer = filePointer; /* updated file pointer */
     return 0;
 }
 static int WritePolyhedronStatusData(FILE **filePointerPointer, Polyhedron *poly)
 {
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
-    fprintf(filePointer, "        <!-- %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g -->\n",
+    fprintf(filePointer, "        <!-- %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g -->\n",
             poly->xc, poly->yc, poly->zc, poly->r,
             poly->u, poly->v, poly->w,
             poly->fx, poly->fy, poly->fz,
-            poly->rho, poly->T, poly->cf);
+            poly->rho, poly->T, poly->cf,
+            poly->area, poly->volume);
     *filePointerPointer = filePointer; /* updated file pointer */
     return 0;
 }
@@ -359,6 +361,10 @@ static int WriteParaviewVariableFile(const Geometry *geo, ParaviewSet *paraSet)
     fprintf(filePointer, "<!-- M %d -->\n", geo->totalM);
     fprintf(filePointer, "<!-- sphereM %d -->\n", geo->sphereM);
     fprintf(filePointer, "<!-- stlM %d -->\n", geo->stlM);
+    if (0 == geo->totalM) {
+        fclose(filePointer);
+        return 0;
+    }
     fprintf(filePointer, "<VTKFile type=\"PolyData\" version=\"0.1\" byte_order=\"%s\">\n", paraSet->byteOrder);
     fprintf(filePointer, "  <PolyData>");
     fprintf(filePointer, "    <Piece NumberOfPoints=\"%d\" NumberOfPolys=\"%d\">", geo->sphereM, 0);

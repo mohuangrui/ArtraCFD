@@ -12,9 +12,6 @@
  * Required Header Files
  ****************************************************************************/
 #include "domain_partition.h"
-#include <stdio.h> /* standard library for input and output */
-#include <stdlib.h> /* dynamic memory allocation and exit */
-#include <string.h> /* manipulating strings */
 #include "commons.h"
 /****************************************************************************
  * Function definitions

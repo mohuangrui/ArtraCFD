@@ -119,8 +119,6 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model, Partition
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d", &(model->splitter)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(model->delta)); 
-            fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d", &(model->fsi)); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d", &(model->layers)); 
@@ -465,7 +463,6 @@ static int WriteVerifyData(const Space *space, const Time *time, const Model *mo
     fprintf(filePointer, "spatial scheme: %d\n", model->scheme);
     fprintf(filePointer, "average method: %d\n", model->averager);
     fprintf(filePointer, "flux splitting method: %d\n", model->splitter);
-    fprintf(filePointer, "Harten's numerical dissipation coefficient: %.6g\n", model->delta); 
     fprintf(filePointer, "fluid solid interaction: %d\n", model->fsi);
     fprintf(filePointer, "layers of ghost nodes using method of image: %d\n", model->layers);
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
@@ -567,15 +564,14 @@ static int CheckCaseSettingData(const Space *space, const Time *time, const Mode
     }
     /* time */
     if ((0 > time->restart) || (0 >= time->end)
-            || (0 >= time->numCFL ) || (1 > time->outputN)) {
+            || (0 >= time->numCFL) || (1 > time->outputN)) {
         FatalError("wrong values in time section of case settings");
     }
     /* numerical method */
     if ((0 > model->scheme) || (1 < model->scheme) || 
             (0 > model->averager) || (1 < model->averager) ||
             (0 > model->splitter) || (1 < model->splitter) ||
-            (0 > model->fsi) || (1 < model->fsi) ||
-            (0 > model->delta)) {
+            (0 > model->fsi) || (1 < model->fsi)) {
         FatalError("wrong values in numerical method of case settings");
     }
     /* fluid and flow */

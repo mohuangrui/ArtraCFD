@@ -100,7 +100,7 @@ static int InitializeCFDParameters(Space *space, Time *time, Model *model)
     space->ddz = 1.0 / space->dz;
     space->ddy = 1.0 / space->dy;
     space->ddx = 1.0 / space->dx;
-    space->tinyL = 1.0e-6 * MinReal(space->dx, MinReal(space->dz, space->dy));
+    space->tinyL = 1.0e-6 * MinReal(space->dz, MinReal(space->dy, space->dx));
     /* time */
     time->end = time->end * model->refVelocity / model->refLength;
     if (0 > time->stepN) {
@@ -112,7 +112,6 @@ static int InitializeCFDParameters(Space *space, Time *time, Model *model)
     }
     model->gamma = 1.4;
     model->gasR = 8.314462175;
-    model->pi = acos(-1);
     /* reference Mach number */
     model->refMa = model->refVelocity / sqrt(model->gamma * model->gasR * model->refTemperature);
     /* reference dynamic viscosity for viscosity normalization */

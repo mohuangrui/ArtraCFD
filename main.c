@@ -27,12 +27,8 @@ int main(int argc, char *argv[])
     /*
      * Declare and initialize variables
      */    
-    Field theField = {
-        .Un = NULL,
-        .U = NULL,
-        .Uswap = NULL
-    };
     Space theSpace = {
+        .node = NULL,
         .nz = 0,
         .ny = 0,
         .nx = 0,
@@ -42,7 +38,6 @@ int main(int argc, char *argv[])
         .iMax = 0,
         .nMax = 0,
         .collapsed = 0,
-        .nodeFlag = NULL,
         .dz = 0.0,
         .dy = 0.0,
         .dx = 0.0,
@@ -84,8 +79,6 @@ int main(int argc, char *argv[])
         .gamma = 0.0,
         .gasR = 0.0,
         .cv = 0.0,
-        .pi = 0.0,
-        .delta = 0.0,
         .refLength = 0.0,
         .refDensity = 0.0,
         .refVelocity = 0.0,
@@ -117,15 +110,15 @@ int main(int argc, char *argv[])
     /*
      * Preprocessing
      */
-    Preprocess(&theField, &theSpace, &theTime, &theModel, &thePart, &theGeo);
+    Preprocess(&theSpace, &theTime, &theModel, &thePart, &theGeo);
     /*
      * Solve
      */
-    Solve(&theField, &theSpace, &theTime, &theModel, &thePart, &theGeo);
+    Solve(&theSpace, &theTime, &theModel, &thePart, &theGeo);
     /*
      * Postprocessing
      */
-    Postprocess(&theField, &theSpace, &theGeo);
+    Postprocess(&theSpace, &theGeo);
     /*
      * Successfully return
      */
