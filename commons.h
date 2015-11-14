@@ -488,15 +488,6 @@ typedef enum {
     WENO = 1, /* WENO scheme identifier */
     GAS = 0, /* gas */
     WATER = 1, /* water */
-    /* parameters related to geometry */
-    ENTRYGEOCALC = 7, /* entries of calculated geometry information of a node */
-    GX = 0, /* coordinate */
-    GY = 1,
-    GZ = 2,
-    GDS = 3, /* distance to surface */
-    GNX = 4, /* components of normal */
-    GNY = 5,
-    GNZ = 6,
     /* parameters related to probe */
     NPROBE = 4, /* maximum number of probes to support */
     ENTRYPROBE = 7, /* x1, y1, z1, x2, y2, z2, resolution */
@@ -515,13 +506,9 @@ typedef enum {
     PNG = 10,
     PFG = 11,
     PBG = 12,
-    NRANGE = 6, /* range of partition */
-    KSUB = 0,
-    KSUP = 1,
-    JSUB = 2,
-    JSUP = 3,
-    ISUB = 4,
-    ISUP = 5,
+    LIMIT = 2, /* number of limits */
+    MIN = 0,
+    MAX = 1,
     /* parameters related to domain boundary conditions */
     NBC = 6, /* [west, east, south, north, front, back] x [BC] */
     BCWEST = 0,
@@ -551,8 +538,10 @@ typedef enum {
  * Define some universe data type for portability and maintenance.
  */
 typedef double Real; /* real data */
+typedef int Index; /* index type data */
 typedef char String[200]; /* string data */
-typedef Real Vector[DIMS]; /* vector */
+typedef int IntVector[DIMS]; /* integer type vector */
+typedef Real RealVector[DIMS]; /* real type vector */
 /*
  * Field variables of computational node
  *
@@ -595,28 +584,15 @@ typedef struct {
  */
 typedef struct {
     Node *node; /* field data */
-    int nz; /* mesh number of each direction */
-    int ny;
-    int nx;
-    int ng; /* number of layers of ghost cells */
-    int kMax; /* total node number of each direction */
-    int jMax;
-    int iMax;
-    int nMax; /* total node number of domain */
+    IntVector m; /* mesh number of each direction */
+    IntVector n; /* node number of each direction */
+    Index totalN; /* total node number of domain */
+    int ng; /* number of node layers of ghosts */
     int collapsed; /* space collapse flag */
-    Real dz; /* mesh size of each direction */
-    Real dy;
-    Real dx;
-    Real ddz; /* reciprocal of mesh sizes */
-    Real ddy;
-    Real ddx;
+    RealVector d; /* mesh size of each direction */
+    RealVector dd; /* reciprocal of mesh sizes */
     Real tinyL; /* smallest length scale related to grid size */
-    Real zMin; /* coordinates define the space domain */
-    Real yMin;
-    Real xMin;
-    Real zMax;
-    Real yMax;
-    Real xMax;
+    Real domain[DIMS][LIMIT]; /* coordinates define the space domain */
 } Space;
 /*
  * Time domain parameters
@@ -660,7 +636,7 @@ typedef struct {
  * Domain partition structure
  */
 typedef struct {
-    int range[NPART][NRANGE]; /* decomposition range for each partition */
+    int n[NPART][DIMS][LIMIT]; /* decomposition node range for each partition */
     int normal[NBC][DIMS]; /* outer surface normal of domain boundary */
     int typeBC[NBC]; /* BC types recorder */
     int tallyIC; /* tally of flow initializers */
@@ -672,18 +648,10 @@ typedef struct {
  * Facet structure
  */
 typedef struct {
-    Real nx; /* normal vector */
-    Real ny;
-    Real nz;
-    Real x1; /* vertical 1 */
-    Real y1;
-    Real z1;
-    Real x2; /* vertical 2 */
-    Real y2;
-    Real z2;
-    Real x3; /* vertical 3 */
-    Real y3;
-    Real z3;
+    RealVector n; /* normal vector */
+    RealVector p1; /* vertical 1 */
+    RealVector p2; /* vertical 2 */
+    RealVector p3; /* vertical 3 */
     Real s; /* area */
 } Facet;
 /*
@@ -705,22 +673,11 @@ typedef struct {
 typedef struct {
     int facetN; /* number of facets. 0 for analytical sphere */
     int tally; /* tally for 1st type ghost node in polyhedron */
-    Real xc; /* a bounding sphere of the polyhedron */
-    Real yc;
-    Real zc;
+    RealVector o; /* a bounding sphere of the polyhedron */
     Real r;
-    Real xMin; /* a bounding box of the polyhedron */
-    Real yMin;
-    Real zMin;
-    Real xMax;
-    Real yMax;
-    Real zMax;
-    Real u; /* velocity */
-    Real v;
-    Real w;
-    Real fx; /* force */
-    Real fy;
-    Real fz;
+    Real box[DIMS][LIMIT]; /* a bounding box of the polyhedron */
+    RealVector V; /* velocity */
+    RealVector F; /* force */
     Real rho; /* density */
     Real T; /* wall temperature. T <= 0, adiabatic; T > 0, constant temperature */
     Real cf; /* roughness. cf <= 0, slip wall; cf > 0, no-slip wall */
@@ -737,6 +694,16 @@ typedef struct {
     int stlM; /* number of triangulated polyhedrons */
     Polyhedron *list; /* geometry list */
 } Geometry;
+/*
+ * Ghost node structure
+ */
+typedef struct {
+    Real ds; /* distance to surface */
+    RealVector g; /* ghost point position */
+    RealVector i; /* image point position */
+    RealVector o; /* boundary point position */
+    RealVector n; /* normal vector */
+} Ghost;
 /*
  * Program command line arguments and overall control
  */

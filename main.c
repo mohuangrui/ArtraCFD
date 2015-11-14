@@ -29,28 +29,15 @@ int main(int argc, char *argv[])
      */    
     Space theSpace = {
         .node = NULL,
-        .nz = 0,
-        .ny = 0,
-        .nx = 0,
+        .m = {0},
+        .n = {0},
+        .totalN = 0,
         .ng = 0,
-        .kMax = 0,
-        .jMax = 0,
-        .iMax = 0,
-        .nMax = 0,
         .collapsed = 0,
-        .dz = 0.0,
-        .dy = 0.0,
-        .dx = 0.0,
-        .ddz = 0.0,
-        .ddy = 0.0,
-        .ddx = 0.0,
+        .d = {0.0},
+        .dd = {0.0},
         .tinyL = 0.0,
-        .zMin = 0.0,
-        .yMin = 0.0,
-        .xMin = 0.0,
-        .zMax = 0.0,
-        .yMax = 0.0,
-        .xMax = 0.0
+        .domain = {{0.0}}
     };
     Time theTime = {
         .restart = 0,
@@ -85,7 +72,7 @@ int main(int argc, char *argv[])
         .refTemperature = 0.0
     };
     Partition thePart = {
-        .range = {{0}},
+        .n = {{{0}}},
         .normal = {{0}},
         .typeBC = {0},
         .tallyIC = 0,
