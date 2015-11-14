@@ -61,23 +61,22 @@ static int NodeBasedMeshNumberRefine(Space *space, const Model *model)
     }
     /* check and mark collapsed space. */
     space->collapsed = COLLAPSEN;
-    if (0 == (space->nz - 1)) {
+    if (0 == (space->m[Z] - 1)) {
         space->collapsed = COLLAPSEZ;
     }
-    if (0 == (space->ny - 1)) {
+    if (0 == (space->m[Y] - 1)) {
         space->collapsed = 2 * space->collapsed + COLLAPSEY;
     }
-    if (0 == (space->nx - 1)) {
+    if (0 == (space->m[X] - 1)) {
         space->collapsed = 2 * space->collapsed + COLLAPSEX;
     }
-    /* change from number of cells to number of node layers */
-    space->nz = space->nz + 2;
-    space->ny = space->ny + 2;
-    space->nx = space->nx + 2;
-    space->kMax = space->nz + 2 * space->ng; /* nz nodes + 2*ng ghosts */
-    space->jMax = space->ny + 2 * space->ng; /* ny nodes + 2*ng ghosts */
-    space->iMax = space->nx + 2 * space->ng; /* nx nodes + 2*ng ghosts */
-    space->nMax = space->kMax * space->jMax * space->iMax; /* total node number */
+    for (int s = 0; s < DIMS; ++s) {
+        /* change from number of cells to number of node layers */
+        space->m[s] = space->m[s] + 2;
+        /* total number of nodes need to add ghosts nodes */
+        space->n[s] = space->m[s] + 2 * space->ng; 
+    }
+    space->totalN = space->n[Z] * space->n[Y] * space->n[X];
     return 0;
 }
 /*
@@ -88,19 +87,13 @@ static int NodeBasedMeshNumberRefine(Space *space, const Model *model)
 static int InitializeCFDParameters(Space *space, Time *time, Model *model)
 {
     /* space */
-    space->dz = ((space->zMax - space->zMin) / (Real)(space->nz - 1)) / model->refLength;
-    space->dy = ((space->yMax - space->yMin) / (Real)(space->ny - 1)) / model->refLength;
-    space->dx = ((space->xMax - space->xMin) / (Real)(space->nx - 1)) / model->refLength;
-    space->zMax = space->zMax / model->refLength;
-    space->yMax = space->yMax / model->refLength;
-    space->xMax = space->xMax / model->refLength;
-    space->zMin = space->zMin / model->refLength;
-    space->yMin = space->yMin / model->refLength;
-    space->xMin = space->xMin / model->refLength;
-    space->ddz = 1.0 / space->dz;
-    space->ddy = 1.0 / space->dy;
-    space->ddx = 1.0 / space->dx;
-    space->tinyL = 1.0e-6 * MinReal(space->dz, MinReal(space->dy, space->dx));
+    for (int s = 0; s < DIMS; ++s) {
+        space->d[s] = ((space->domain[s][MAX] - space->domain[s][MIN]) / (Real)(space->m[s] - 1)) / model->refLength;
+        space->domain[s][MAX] = space->domain[s][MAX] / model->refLength;
+        space->domain[s][MIN] = space->domain[s][MIN] / model->refLength;
+        space->dd[s] = 1.0 / space->d[s];
+    }
+    space->tinyL = 1.0e-6 * MinReal(space->d[Z], MinReal(space->d[Y], space->d[X]));
     /* time */
     time->end = time->end * model->refVelocity / model->refLength;
     if (0 > time->stepN) {
