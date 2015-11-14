@@ -68,8 +68,8 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "time begin\n");
     fprintf(filePointer, "0                  # restart tag (integer; 0: non restart)\n");
     fprintf(filePointer, "1.0                # total evolution time\n");
-    fprintf(filePointer, "-1                 # maximum computing steps (integer; -1: automatic)\n");
     fprintf(filePointer, "0.6                # CFL condition number\n");
+    fprintf(filePointer, "-1                 # maximum computing steps (integer; -1: automatic)\n");
     fprintf(filePointer, "1                  # number of times to write computed data (integer)\n");
     fprintf(filePointer, "2                  # data streamer (integer; 0: ParaView; 1: Ensight; 2 Parasight)\n");
     fprintf(filePointer, "time end\n");
@@ -353,22 +353,11 @@ static int TriangulatedGeometryFileGenerator(void)
     Polyhedron wedge = {
         .facetN = 8,
         .tally = 0,
-        .xc = 0.5,
-        .yc = 0.0,
-        .zc = 0.0,
-        .r = 0.0,
-        .xMin = 0.0,
-        .yMin = -0.5,
-        .zMin = -0.5,
-        .xMax = 1.0,
-        .yMax = 0.5,
-        .zMax = 0.5,
-        .u = 0.0,
-        .v = 0.0,
-        .w = 0.0,
-        .fx = 0.0,
-        .fy = 0.0,
-        .fz = 0.0,
+        .o = {0.5, 0.0, 0.0},
+        .r = 1.0,
+        .box = {{0.0, 1.0}, {-0.5, 0.5}, {-0.5, 0.5}},
+        .V = {0.0, 0.0, 0.0},
+        .F = {0.0, 0.0, 0.0},
         .rho = 1.0e250,
         .T = -1.0,
         .cf = 1.0,

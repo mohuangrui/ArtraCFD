@@ -57,7 +57,7 @@ int LoadCaseSettingData(Space *space, Time *time, Model *model, Partition *part)
  * in sscanf() what is passed is a pointer to the variable so no rvalue type 
  * promotions occur or are expected. Thus %f and %lf are quite different in
  * sscanf, but the same in fprintf. Consequently, we need to use %g for 
- * double in fprintf and %lg for double in sscanf. It doesn't matter which
+ * float and %lg for double in sscanf. It doesn't matter which
  * you use for fprintf because the fprintf library function treats them as
  * synonymous, but it's crucial to get it right for sscanf. 
  */
@@ -70,7 +70,7 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model, Partition
     /*
      * Read file line by line to get case setting data
      */
-    char currentLine[200] = {'\0'}; /* store the current read line */
+    String currentLine = {'\0'}; /* store the current read line */
     int entryCount = 0; /* entry count */
     /* set format specifier according to the type of Real */
     char formatI[5] = "%lg"; /* default is double type */
@@ -85,13 +85,13 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model, Partition
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatIII, 
-                    &(space->xMin), &(space->yMin), &(space->zMin)); 
+                    &(space->domain[X][MIN]), &(space->domain[Y][MIN]), &(space->domain[Z][MIN])); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatIII, 
-                    &(space->xMax), &(space->yMax), &(space->zMax)); 
+                    &(space->domain[X][MAX]), &(space->domain[Y][MAX]), &(space->domain[Z][MAX])); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d, %d, %d", 
-                    &(space->nx), &(space->ny), &(space->nz)); 
+                    &(space->m[X]), &(space->m[Y]), &(space->m[Z])); 
             continue;
         }
         if (0 == strncmp(currentLine, "time begin", sizeof currentLine)) {
@@ -101,9 +101,9 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model, Partition
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatI, &(time->end)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%d", &(time->stepN)); 
-            fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatI, &(time->numCFL)); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, "%d", &(time->stepN)); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d", &(time->outputN)); 
             fgets(currentLine, sizeof currentLine, filePointer);
@@ -270,7 +270,7 @@ static int ReadBoundaryData(FILE **filePointerPointer, Partition *part, const in
         return 0;
     }
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
-    char currentLine[200] = {'\0'}; /* store the current read line */
+    String currentLine = {'\0'}; /* store the current read line */
     char formatI[5] = "%lg"; /* default is double type */
     if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
         strncpy(formatI, "%g", sizeof formatI); /* float type */
@@ -323,7 +323,7 @@ static int ReadBoundaryData(FILE **filePointerPointer, Partition *part, const in
 static int ReadConsecutiveRealData(FILE **filePointerPointer, Real *address, const int entryN)
 {
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
-    char currentLine[200] = {'\0'}; /* store the current read line */
+    String currentLine = {'\0'}; /* store the current read line */
     char formatI[5] = "%lg"; /* default is double type */
     if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
         strncpy(formatI, "%g", sizeof formatI); /* float type */
@@ -441,9 +441,9 @@ static int WriteVerifyData(const Space *space, const Time *time, const Model *mo
     fprintf(filePointer, "#                          >> Space Domain <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "domain xmin, ymin, zmin: %.6g, %.6g, %.6g\n", space->xMin, space->yMin, space->zMin); 
-    fprintf(filePointer, "domain xmax, ymax, zmax: %.6g, %.6g, %.6g\n", space->xMax, space->yMax, space->zMax); 
-    fprintf(filePointer, "x, y, z mesh number: %d, %d, %d\n", space->nx, space->ny, space->nz); 
+    fprintf(filePointer, "domain xmin, ymin, zmin: %.6g, %.6g, %.6g\n", space->domain[X][MIN], space->domain[Y][MIN], space->domain[Z][MIN]); 
+    fprintf(filePointer, "domain xmax, ymax, zmax: %.6g, %.6g, %.6g\n", space->domain[X][MAX], space->domain[Y][MAX], space->domain[Z][MAX]); 
+    fprintf(filePointer, "x, y, z mesh number: %d, %d, %d\n", space->m[X], space->m[Y], space->m[Z]); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                          >> Time Domain <<\n");
@@ -555,11 +555,12 @@ static int CheckCaseSettingData(const Space *space, const Time *time, const Mode
 {
     ShowInformation("  Preliminary case data checking ...");
     /* space */
-    if ((0 >= (space->xMax - space->xMin)) || (0 >= (space->yMax - space->yMin)) ||
-            (0 >= (space->zMax - space->zMin))) {
+    if ((0 >= (space->domain[X][MAX] - space->domain[X][MIN])) ||
+            (0 >= (space->domain[Y][MAX] - space->domain[Y][MIN])) ||
+            (0 >= (space->domain[Z][MAX] - space->domain[Z][MIN]))) {
         FatalError("wrong domian region values in case settings");
     }
-    if ((1 > space->nz) || (1 > space->ny) || (1 > space->nx)) {
+    if ((1 > space->m[X]) || (1 > space->m[Y]) || (1 > space->m[Z])) {
         FatalError("too small mesh values in case settings");
     }
     /* time */

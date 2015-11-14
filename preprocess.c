@@ -47,7 +47,7 @@ int Preprocess(Space *space, Time *time, Model *model, Partition *part, Geometry
 static int ProgramMemoryAllocate(Space *space)
 {
     ShowInformation("Allocating memory...");
-    space->node = AssignStorage(space->nMax, "Node");
+    space->node = AssignStorage(space->totalN, "Node");
     ShowInformation("Session End");
     return 0;
 }

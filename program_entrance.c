@@ -120,7 +120,7 @@ static int Preamble(Control *control)
     fprintf(stdout, "**********************************************************\n\n");
     fprintf(stdout, "Enter 'help' for more information\n");
     fprintf(stdout, "**********************************************************\n\n");
-    char currentLine[200] = {'\0'}; /* store the current read line */
+    String currentLine = {'\0'}; /* store the current read line */
     while (1) {
         fprintf(stdout, "\nArtraCFD << ");
         fgets(currentLine, sizeof currentLine, stdin); /* read a line */

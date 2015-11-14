@@ -122,7 +122,7 @@ int ExpressionCalculator(void)
         .radianMode = 1,
         .angleFactor = 1.0
     };
-    char currentLine[250] = {'\0'}; /* store the input information */
+    String currentLine = {'\0'}; /* store the input information */
     /* main loop */
     fprintf(stdout, "**********************************************************\n\n");
     fprintf(stdout, "Enter 'help' for a brief user manual of calculator\n");
@@ -159,7 +159,7 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
      *  unclear interference between each inputted data which has different
      *  content and lengths.
      */
-    char expression[250] = {'\0'};
+    String expression = {'\0'};
     /*
      * Use as a flag to judge whether '+' and '-' are unary operator based on 
      * the assumption that if "+" "-" appears as unary operator then it must
@@ -785,7 +785,7 @@ static int SetAngleMode(Parameter *parameter)
 {
     fprintf(stdout, "Set mode by order number\n");
     fprintf(stdout, "\n 1 Angle in radian\n 2 Angle in degree\n\nSet:");
-    char currentLine[250] = {'\0'}; /* store current line */
+    String currentLine = {'\0'}; /* store current line */
     fgets(currentLine, sizeof currentLine, stdin); /* read a line */
     sscanf(currentLine, "%d", &(parameter->radianMode));
     fprintf(stdout, "\n");
