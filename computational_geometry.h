@@ -30,7 +30,7 @@
  *
  *      Compute parameters of the geometry.
  */
-extern int ComputeGeometryParameters(Geometry *);
+extern int ComputeGeometryParameters(const Space *, Geometry *);
 /*
  * In geometry criteria
  *

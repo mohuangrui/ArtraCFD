@@ -43,7 +43,7 @@ int ReadGeometryData(const Space *space, const Time *time, const Model *model,
     } else { /* if restart, read the geometry file */
         RestartGeometryReader(time, geo);
     }
-    ComputeGeometryParameters(geo);
+    ComputeGeometryParameters(space, geo);
     return 0;
 }
 static int NonrestartGeometryReader(Geometry *geo)
