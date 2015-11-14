@@ -1,7 +1,7 @@
 /****************************************************************************
  *                              ArtraCFD                                    *
  *                          <By Huangrui Mo>                                *
- * Copyright (C) 2014-2018 Huangrui Mo <huangrui.mo@gmail.com>              *
+ * Copyright (C) Huangrui Mo <huangrui.mo@gmail.com>                        *
  * This file is part of ArtraCFD.                                           *
  * ArtraCFD is free software: you can redistribute it and/or modify it      *
  * under the terms of the GNU General Public License as published by        *

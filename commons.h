@@ -1,7 +1,7 @@
 /****************************************************************************
  *                              ArtraCFD                                    *
  *                          <By Huangrui Mo>                                *
- * Copyright (C) 2014-2018 Huangrui Mo <huangrui.mo@gmail.com>              *
+ * Copyright (C) Huangrui Mo <huangrui.mo@gmail.com>                        *
  * This file is part of ArtraCFD.                                           *
  * ArtraCFD is free software: you can redistribute it and/or modify it      *
  * under the terms of the GNU General Public License as published by        *
@@ -456,10 +456,6 @@
  *   dereferencing a pointer!
  ****************************************************************************/
 /*
- * Define some universe data type for portability and maintenance.
- */
-typedef double Real;
-/*
  * Define some global integer constants for array bounds, identifiers, etc.
  * enum statement is used instead of macros for handling these magic numbers.
  */
@@ -551,6 +547,12 @@ typedef enum {
     ENTRYIC = 12, /* x1, y1, z1, [r, x2], [y2], [z2], ..., primitive variables */
     ENTRYVAR = 5, /* primitive variables: rho, u, v, w, p */
 } Constants;
+/*
+ * Define some universe data type for portability and maintenance.
+ */
+typedef double Real; /* real data */
+typedef char String[200]; /* string data */
+typedef Real Vector[DIMS]; /* vector */
 /*
  * Field variables of computational node
  *
