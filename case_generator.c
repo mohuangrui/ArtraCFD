@@ -353,7 +353,7 @@ static int TriangulatedGeometryFileGenerator(void)
     Polyhedron wedge = {
         .facetN = 8,
         .tally = 0,
-        .o = {0.5, 0.0, 0.0},
+        .O = {0.5, 0.0, 0.0},
         .r = 1.0,
         .box = {{0.0, 1.0}, {-0.5, 0.5}, {-0.5, 0.5}},
         .V = {0.0, 0.0, 0.0},

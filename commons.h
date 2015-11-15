@@ -648,10 +648,10 @@ typedef struct {
  * Facet structure
  */
 typedef struct {
-    RealVector n; /* normal vector */
-    RealVector p1; /* vertical 1 */
-    RealVector p2; /* vertical 2 */
-    RealVector p3; /* vertical 3 */
+    RealVector N; /* normal vector */
+    RealVector P1; /* vertical 1 */
+    RealVector P2; /* vertical 2 */
+    RealVector P3; /* vertical 3 */
     Real s; /* area */
 } Facet;
 /*
@@ -673,7 +673,7 @@ typedef struct {
 typedef struct {
     int facetN; /* number of facets. 0 for analytical sphere */
     int tally; /* tally for 1st type ghost node in polyhedron */
-    RealVector o; /* a bounding sphere of the polyhedron */
+    RealVector O; /* a bounding sphere of the polyhedron */
     Real r;
     Real box[DIMS][LIMIT]; /* a bounding box of the polyhedron */
     RealVector V; /* velocity */
@@ -699,10 +699,10 @@ typedef struct {
  */
 typedef struct {
     Real ds; /* distance to surface */
-    RealVector g; /* ghost point position */
-    RealVector i; /* image point position */
-    RealVector o; /* boundary point position */
-    RealVector n; /* normal vector */
+    RealVector G; /* ghost point position */
+    RealVector I; /* image point position */
+    RealVector O; /* boundary point position */
+    RealVector N; /* normal vector */
 } Ghost;
 /*
  * Program command line arguments and overall control

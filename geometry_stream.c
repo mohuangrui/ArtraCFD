@@ -54,8 +54,8 @@ static int NonrestartGeometryReader(Geometry *geo)
         FatalError("failed to open geometry file: artracfd.geo...");
     }
     /* read and process file line by line */
-    char currentLine[500] = {'\0'}; /* store the current read line */
-    char fileName[100] = {'\0'}; /* store current geometry file name */
+    String currentLine = {'\0'}; /* store the current read line */
+    String fileName = {'\0'}; /* store current geometry file name */
     int entryCount = 0; /* entry count */
     while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
         CommandLineProcessor(currentLine); /* process current line */
@@ -124,7 +124,7 @@ static int ReadSphereFile(const char *fileName, Geometry *geo)
 static int ReadPolyhedronStatusData(FILE **filePointerPointer, Polyhedron *poly)
 {
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
-    char currentLine[500] = {'\0'}; /* store the current read line */
+    String currentLine = {'\0'}; /* store the current read line */
     /* set format specifier according to the type of Real */
     char format[100] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg"; /* default is double type */
     if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
@@ -132,9 +132,9 @@ static int ReadPolyhedronStatusData(FILE **filePointerPointer, Polyhedron *poly)
     }
     fgets(currentLine, sizeof currentLine, filePointer);
     sscanf(currentLine, format,
-            &(poly->xc), &(poly->yc), &(poly->zc), &(poly->r),
-            &(poly->u), &(poly->v), &(poly->w),
-            &(poly->fx), &(poly->fy), &(poly->fz),
+            &(poly->O[X]), &(poly->O[Y]), &(poly->O[Z]), &(poly->r),
+            &(poly->V[X]), &(poly->V[Y]), &(poly->V[Z]),
+            &(poly->F[X]), &(poly->F[Y]), &(poly->F[Z]),
             &(poly->rho), &(poly->T), &(poly->cf),
             &(poly->area), &(poly->volume));
     *filePointerPointer = filePointer; /* updated file pointer */
@@ -143,10 +143,10 @@ static int ReadPolyhedronStatusData(FILE **filePointerPointer, Polyhedron *poly)
 static int WritePolyhedronStatusData(FILE **filePointerPointer, Polyhedron *poly)
 {
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
-    fprintf(filePointer, "        <!-- %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g -->\n",
-            poly->xc, poly->yc, poly->zc, poly->r,
-            poly->u, poly->v, poly->w,
-            poly->fx, poly->fy, poly->fz,
+    fprintf(filePointer, "        %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g\n",
+            poly->O[X], poly->O[Y], poly->O[Z], poly->r,
+            poly->V[X], poly->V[Y], poly->V[Z],
+            poly->F[X], poly->F[Y], poly->F[Z],
             poly->rho, poly->T, poly->cf,
             poly->area, poly->volume);
     *filePointerPointer = filePointer; /* updated file pointer */
@@ -176,7 +176,7 @@ static int ReadGeometryDataParaview(const Time *time, Geometry *geo)
         FatalError("failed to restore geometry file...");
     }
     /* get rid of redundant lines */
-    char currentLine[200] = {'\0'}; /* store current line */
+    String currentLine = {'\0'}; /* store current line */
     fgets(currentLine, sizeof currentLine, filePointer);
     /* get number of geometries */
     fgets(currentLine, sizeof currentLine, filePointer);
@@ -197,11 +197,13 @@ static int ReadGeometryDataParaview(const Time *time, Geometry *geo)
         }
         break;
     }
+    fgets(currentLine, sizeof currentLine, filePointer);
     for (int m = 0; m < geo->sphereM; ++m) {
         ReadPolyhedronStatusData(&filePointer, geo->list + m);
         geo->list[m].facetN = 0; /* analytical geometry tag */
         geo->list[m].facet = NULL;
     }
+    fgets(currentLine, sizeof currentLine, filePointer);
     fgets(currentLine, sizeof currentLine, filePointer);
     fgets(currentLine, sizeof currentLine, filePointer);
     for (int m = geo->sphereM; m < geo->totalM; ++m) {
@@ -223,23 +225,23 @@ static int ReadGeometryDataParaview(const Time *time, Geometry *geo)
         }
         for (int n = 0; n < geo->list[m].facetN; ++m) {
             fscanf(filePointer, format, &data);
-            geo->list[m].facet[n].x1 = data;
+            geo->list[m].facet[n].P1[X] = data;
             fscanf(filePointer, format, &data);
-            geo->list[m].facet[n].y1 = data;
+            geo->list[m].facet[n].P1[Y] = data;
             fscanf(filePointer, format, &data);
-            geo->list[m].facet[n].z1 = data;
+            geo->list[m].facet[n].P1[Z] = data;
             fscanf(filePointer, format, &data);
-            geo->list[m].facet[n].x2 = data;
+            geo->list[m].facet[n].P2[X] = data;
             fscanf(filePointer, format, &data);
-            geo->list[m].facet[n].y2 = data;
+            geo->list[m].facet[n].P2[Y] = data;
             fscanf(filePointer, format, &data);
-            geo->list[m].facet[n].z2 = data;
+            geo->list[m].facet[n].P2[Z] = data;
             fscanf(filePointer, format, &data);
-            geo->list[m].facet[n].x3 = data;
+            geo->list[m].facet[n].P3[X] = data;
             fscanf(filePointer, format, &data);
-            geo->list[m].facet[n].y3 = data;
+            geo->list[m].facet[n].P3[Y] = data;
             fscanf(filePointer, format, &data);
-            geo->list[m].facet[n].z3 = data;
+            geo->list[m].facet[n].P3[Z] = data;
         }
         while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
             CommandLineProcessor(currentLine); /* process current line */
@@ -248,7 +250,9 @@ static int ReadGeometryDataParaview(const Time *time, Geometry *geo)
             }
             break;
         }
+        fgets(currentLine, sizeof currentLine, filePointer);
         ReadPolyhedronStatusData(&filePointer, geo->list + m);
+        fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);
     }
@@ -326,7 +330,7 @@ static int WriteSteadyParaviewDataFile(const Time *time, ParaviewSet *paraSet)
         FatalError("failed to add data to transient geometry file...");
     }
     /* seek the target line for adding information */
-    char currentLine[200] = {'\0'}; /* store the current read line */
+    String currentLine = {'\0'}; /* store the current read line */
     int targetLine = 1;
     while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
         CommandLineProcessor(currentLine); /* process current line */
@@ -356,7 +360,7 @@ static int WriteParaviewVariableFile(const Geometry *geo, ParaviewSet *paraSet)
         FatalError("failed to write data file...");
     }
     ParaviewReal data = 0.0; /* paraview scalar data */
-    ParaviewReal vector[3] = {0.0}; /* paraview vector data elements */
+    ParaviewVector Vec = {0.0}; /* paraview vector data elements */
     fprintf(filePointer, "<?xml version=\"1.0\"?>\n");
     fprintf(filePointer, "<!-- M %d -->\n", geo->totalM);
     fprintf(filePointer, "<!-- sphereM %d -->\n", geo->sphereM);
@@ -377,13 +381,13 @@ static int WriteParaviewVariableFile(const Geometry *geo, ParaviewSet *paraSet)
     }
     fprintf(filePointer, "\n        </DataArray>\n");
     fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"Vel\"\n", paraSet->floatType);
-    fprintf(filePointer, "                   NumberOfComponents=\"3\" format=\"ascii\">\n");
+    fprintf(filePointer, "                   NumberOfComponents=\"%d\" format=\"ascii\">\n", DIMS);
     fprintf(filePointer, "          ");
     for (int m = 0; m < geo->sphereM; ++m) {
-        vector[0] = geo->list[m].u;
-        vector[1] = geo->list[m].v;
-        vector[2] = geo->list[m].w;
-        fprintf(filePointer, "%.6g %.6g %.6g ", vector[0], vector[1], vector[2]);
+        Vec[X] = geo->list[m].V[X];
+        Vec[Y] = geo->list[m].V[Y];
+        Vec[Z] = geo->list[m].V[Z];
+        fprintf(filePointer, "%.6g %.6g %.6g ", Vec[X], Vec[Y], Vec[Z]);
     }
     fprintf(filePointer, "\n        </DataArray>\n");
     fprintf(filePointer, "      </PointData>\n");
@@ -391,22 +395,24 @@ static int WriteParaviewVariableFile(const Geometry *geo, ParaviewSet *paraSet)
     fprintf(filePointer, "      </CellData>\n");
     fprintf(filePointer, "      <Points>\n");
     fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"points\"\n", paraSet->floatType);
-    fprintf(filePointer, "                   NumberOfComponents=\"3\" format=\"ascii\">\n");
+    fprintf(filePointer, "                   NumberOfComponents=\"%d\" format=\"ascii\">\n", DIMS);
     fprintf(filePointer, "          ");
     for (int m = 0; m < geo->sphereM; ++m) {
-        vector[0] = geo->list[m].xc;
-        vector[1] = geo->list[m].yc;
-        vector[2] = geo->list[m].zc;
-        fprintf(filePointer, "%.6g %.6g %.6g ", vector[0], vector[1], vector[2]);
+        Vec[X] = geo->list[m].O[X];
+        Vec[Y] = geo->list[m].O[Y];
+        Vec[Z] = geo->list[m].O[Z];
+        fprintf(filePointer, "%.6g %.6g %.6g ", Vec[X], Vec[Y], Vec[Z]);
     }
     fprintf(filePointer, "\n        </DataArray>\n");
     fprintf(filePointer, "      </Points>\n");
     fprintf(filePointer, "      <Polys>\n");
     fprintf(filePointer, "      </Polys>\n");
     fprintf(filePointer, "      <!-- appended data begin -->\n");
+    fprintf(filePointer, "      <!-- \n");
     for (int m = 0; m < geo->sphereM; ++m) {
         WritePolyhedronStatusData(&filePointer, geo->list + m);
     }
+    fprintf(filePointer, "       -->\n");
     fprintf(filePointer, "      <!-- appended data end -->\n");
     fprintf(filePointer, "    </Piece>\n");
     for (int m = geo->sphereM; m < geo->totalM; ++m) {
@@ -417,21 +423,21 @@ static int WriteParaviewVariableFile(const Geometry *geo, ParaviewSet *paraSet)
         fprintf(filePointer, "      </CellData>\n");
         fprintf(filePointer, "      <Points>\n");
         fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"points\"\n", paraSet->floatType);
-        fprintf(filePointer, "                   NumberOfComponents=\"3\" format=\"ascii\">\n");
+        fprintf(filePointer, "                   NumberOfComponents=\"%d\" format=\"ascii\">\n", DIMS);
         fprintf(filePointer, "          ");
         for (int n = 0; n < geo->list[m].facetN; ++m) {
-            vector[0] = geo->list[m].facet[n].x1;
-            vector[1] = geo->list[m].facet[n].y1;
-            vector[2] = geo->list[m].facet[n].z1;
-            fprintf(filePointer, "%.6g %.6g %.6g ", vector[0], vector[1], vector[2]);
-            vector[0] = geo->list[m].facet[n].x2;
-            vector[1] = geo->list[m].facet[n].y2;
-            vector[2] = geo->list[m].facet[n].z2;
-            fprintf(filePointer, "%.6g %.6g %.6g ", vector[0], vector[1], vector[2]);
-            vector[0] = geo->list[m].facet[n].x3;
-            vector[1] = geo->list[m].facet[n].y3;
-            vector[2] = geo->list[m].facet[n].z3;
-            fprintf(filePointer, "%.6g %.6g %.6g ", vector[0], vector[1], vector[2]);
+            Vec[X] = geo->list[m].facet[n].P1[X];
+            Vec[Y] = geo->list[m].facet[n].P1[Y];
+            Vec[Z] = geo->list[m].facet[n].P1[Z];
+            fprintf(filePointer, "%.6g %.6g %.6g ", Vec[X], Vec[Y], Vec[Z]);
+            Vec[X] = geo->list[m].facet[n].P2[X];
+            Vec[Y] = geo->list[m].facet[n].P2[Y];
+            Vec[Z] = geo->list[m].facet[n].P2[Z];
+            fprintf(filePointer, "%.6g %.6g %.6g ", Vec[X], Vec[Y], Vec[Z]);
+            Vec[X] = geo->list[m].facet[n].P3[X];
+            Vec[Y] = geo->list[m].facet[n].P3[Y];
+            Vec[Z] = geo->list[m].facet[n].P3[Z];
+            fprintf(filePointer, "%.6g %.6g %.6g ", Vec[X], Vec[Y], Vec[Z]);
         }
         fprintf(filePointer, "\n        </DataArray>\n");
         fprintf(filePointer, "      </Points>\n");
@@ -450,7 +456,9 @@ static int WriteParaviewVariableFile(const Geometry *geo, ParaviewSet *paraSet)
         fprintf(filePointer, "\n        </DataArray>\n");
         fprintf(filePointer, "      </Polys>\n");
         fprintf(filePointer, "      <!-- appended data begin -->\n");
+        fprintf(filePointer, "      <!-- \n");
         WritePolyhedronStatusData(&filePointer, geo->list + m);
+        fprintf(filePointer, "       -->\n");
         fprintf(filePointer, "      <!-- appended data end -->\n");
         fprintf(filePointer, "    </Piece>\n");
     }
