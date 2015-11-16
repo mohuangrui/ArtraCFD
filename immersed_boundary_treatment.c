@@ -89,9 +89,10 @@ static int InitializeGeometryDomain(Space *space, const Partition *part)
  * is search each geometry and find all the nodes inside current geometry.
  * The second method is adopted here for performance reason, although it's much
  * more complicated than the first one.
- * Be cautious with the validity of any calculated index. It's extremely
- * necessary to adjust the index into the valid region or check the validity of
- * the index to avoid index exceed array bound limits and mysterious bugs.
+ * It is efficient to only test points that are inside the bounding box or
+ * sphere of a large polyhedron. Be cautious with the validity of any calculated
+ * index. It's extremely necessary to adjust the index into the valid region or 
+ * check the validity of the index to avoid index exceed array bound limits.
  */
 static int IdentifySolidNodes(Space *space, const Partition *part, const Geometry *geometry)
 {

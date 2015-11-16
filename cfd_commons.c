@@ -653,5 +653,36 @@ int Sign(const Real x)
     }
     return 0;
 }
+Real Dot(const RealVector V1, const RealVector V2)
+{
+    return (V1[X] * V2[X] + V1[Y] * V2[Y] + V1[Z] * V2[Z]);
+}
+Real Norm(const RealVector V)
+{
+    return sqrt(Dot(V, V));
+}
+Real Dist2(const RealVector V1, const RealVector V2)
+{
+    const RealVector V = {V1[X] - V2[X], V1[Y] - V2[Y], V1[Z] - V2[Z]};
+    return Dot(V, V);
+}
+Real Dist(const RealVector V1, const RealVector V2)
+{
+    return sqrt(Dist2(V1, V2));
+}
+int Cross(RealVector V, const RealVector V1, const RealVector V2)
+{
+    V[X] = V1[Y] * V2[Z] - V1[Z] * V2[Y];
+    V[Y] = V1[Z] * V2[X] - V1[X] * V2[Z];
+    V[Z] = V1[X] * V2[Y] - V1[Y] * V2[X];
+    return 0;
+}
+int Normalize(Real V[], const int dimV, const Real normalizer)
+{
+    for (int n = 0; n < dimV; ++n) {
+        V[n] = V[n] / normalizer;
+    }
+    return 0;
+}
 /* a good practice: end file with a newline */
 

@@ -39,12 +39,10 @@ int ComputeGeometryParameters(const Space *space, Geometry *geo)
 static int ComputeParametersAnalyticalSphere(const Space *space, Polyhedron *poly)
 {
     const Real pi = acos(-1);
-    poly->xMin = poly->xc - poly->r;
-    poly->yMin = poly->yc - poly->r;
-    poly->zMin = poly->zc - poly->r;
-    poly->xMax = poly->xc + poly->r;
-    poly->yMax = poly->yc + poly->r;
-    poly->zMax = poly->zc + poly->r;
+    for (int s = 0; s < DIMS; ++s) {
+        poly->box[s][MIN] = poly->O[s] - poly->r;
+        poly->box[s][MAX] = poly->O[s] + poly->r;
+    }
     if (COLLAPSEN != space->collapsed) { /* space dimension collapsed */
         poly->area = 2.0 * pi * poly->r; /* side area of a unit thickness cylinder */
         poly->volume = pi * poly->r * poly->r; /* volume of a unit thickness cylinder */
@@ -57,42 +55,43 @@ static int ComputeParametersAnalyticalSphere(const Space *space, Polyhedron *pol
 static int ComputeParametersTriangulatedPolyhedron(const Space *space, Polyhedron *poly)
 {
     /* initialize parameters */
+    RealVector P1P2 = {0.0};
+    RealVector P1P3 = {0.0};
     poly->area = 0.0;
     poly->volume = 0.0;
-    poly->xMin = FLT_MAX;
-    poly->yMin = FLT_MAX;
-    poly->zMin = FLT_MAX;
-    poly->xMax = FLT_MIN;
-    poly->yMax = FLT_MIN;
-    poly->zMax = FLT_MIN;
+    for (int s = 0; s < DIMS; ++s) {
+        poly->box[s][MIN] = FLT_MAX;
+        poly->box[s][MAX] = FLT_MIN;
+    }
     for (int n = 0; n < poly->facetN; ++n) {
-        /* bounding box */
-        poly->xMin = MinReal(poly->xMin, MinReal(poly->facet[n].x3, MinReal(poly->facet[n].x2, poly->facet[n].x1)));
-        poly->yMin = MinReal(poly->yMin, MinReal(poly->facet[n].y3, MinReal(poly->facet[n].y2, poly->facet[n].y1)));
-        poly->zMin = MinReal(poly->zMin, MinReal(poly->facet[n].z3, MinReal(poly->facet[n].z2, poly->facet[n].z1)));
-        poly->xMax = MaxReal(poly->xMax, MaxReal(poly->facet[n].x3, MaxReal(poly->facet[n].x2, poly->facet[n].x1)));
-        poly->yMax = MaxReal(poly->yMax, MaxReal(poly->facet[n].y3, MaxReal(poly->facet[n].y2, poly->facet[n].y1)));
-        poly->zMax = MaxReal(poly->zMax, MaxReal(poly->facet[n].z3, MaxReal(poly->facet[n].z2, poly->facet[n].z1)));
+        for (int s = 0; s < DIMS; ++s) {
+            /* bounding box */
+            poly->box[s][MIN] = MinReal(poly->box[s][MIN], MinReal(poly->facet[n].P1[s], MinReal(poly->facet[n].P2[s], poly->facet[n].P3[s])));
+            poly->box[s][MAX] = MaxReal(poly->box[s][MAX], MaxReal(poly->facet[n].P1[s], MaxReal(poly->facet[n].P2[s], poly->facet[n].P3[s])));
+            /* edge vectors */
+            P1P2[s] = poly->facet[n].P2[s] - poly->facet[n].P1[s];
+            P1P3[s] = poly->facet[n].P3[s] - poly->facet[n].P1[s];
+        }
         /* normal vector */
-        poly->facet[n].nx = (poly->facet[n].y2 - poly->facet[n].y1) * (poly->facet[n].z3 - poly->facet[n].z1) -
-            (poly->facet[n].y3 - poly->facet[n].y1) * (poly->facet[n].z2 - poly->facet[n].z1);
-        poly->facet[n].ny = (poly->facet[n].x3 - poly->facet[n].x1) * (poly->facet[n].z2 - poly->facet[n].z1) -
-            (poly->facet[n].x2 - poly->facet[n].x1) * (poly->facet[n].z3 - poly->facet[n].z1);
-        poly->facet[n].nz = (poly->facet[n].x2 - poly->facet[n].x1) * (poly->facet[n].y3 - poly->facet[n].y1) -
-            (poly->facet[n].x3 - poly->facet[n].x1) * (poly->facet[n].y2 - poly->facet[n].y1);
-        poly->facet[n].s = 0.5 * sqrt(poly->facet[n].nx * poly->facet[n].nx + poly->facet[n].ny * poly->facet[n].ny + poly->facet[n].nz * poly->facet[n].nz);
+        Cross(poly->facet[n].N, P1P2, P1P3);
+        poly->facet[n].s = 0.5 * Norm(poly->facet[n].N);
         /* accumulate area and volume */
         poly->area = poly->area + poly->facet[n].s;
-        poly->volume = poly->volume + poly->facet[n].x1 * poly->facet[n].nx + poly->facet[n].y1 * poly->facet[n].ny + poly->facet[n].z1 * poly->facet[n].nz;
+        poly->volume = poly->volume + Dot(poly->facet[n].P1, poly->facet[n].N);
         /* unit normal */
-        poly->facet[n].nx = poly->facet[n].nx / (2.0 * poly->facet[n].s);
-        poly->facet[n].ny = poly->facet[n].ny / (2.0 * poly->facet[n].s);
-        poly->facet[n].nz = poly->facet[n].nz / (2.0 * poly->facet[n].s);
+        Normalize(poly->facet[n].N, DIMS, 2.0 * poly->facet[n].s);
     }
     poly->volume = poly->volume / 6.0; /* final volume of the polyhedron */
     if (COLLAPSEN != space->collapsed) { /* space dimension collapsed */
         poly->area = poly->area - 2.0 * poly->volume; /* change to side area of a unit thickness polygon */
     }
+    /* bounding sphere */
+    for (int s = 0; s < DIMS; ++s) {
+        poly->O[s] = 0.5 * (poly->box[s][MIN] + poly->box[s][MAX]);
+        P1P2[s] = poly->box[s][MIN];
+        P1P3[s] = poly->box[s][MAX];
+    }
+    poly->r = 0.5 * Dist(P1P2, P1P3);
     return 0;
 }
 /* a good practice: end file with a newline */

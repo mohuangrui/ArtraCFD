@@ -120,6 +120,12 @@ extern Real MaxReal(const Real x, const Real y);
 extern int MinInt(const int x, const int y);
 extern int MaxInt(const int x, const int y);
 extern int Sign(const Real x);
+extern Real Dot(const RealVector V1, const RealVector V2);
+extern Real Norm(const RealVector V);
+extern Real Dist2(const RealVector V1, const RealVector V2);
+extern Real Dist(const RealVector V1, const RealVector V2);
+extern int Cross(RealVector V, const RealVector V1, const RealVector V2);
+extern int Normalize(Real V[], const int dimV, const Real normalizer);
 #endif
 /* a good practice: end file with a newline */
 
