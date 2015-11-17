@@ -458,6 +458,12 @@
 /*
  * Define some global integer constants for array bounds, identifiers, etc.
  * enum statement is used instead of macros for handling these magic numbers.
+ * An enumerator with = defines its enumeration constant as the value of the
+ * constant expression. Using enum member as an array size will not result
+ * a variable length array since enumeration constants are constant
+ * expressions, and if the size is an integer constant expression and the
+ * element type has a known constant size, the array type is not a variable
+ * length array type. 
  */
 typedef enum {
     /* dimensions related to space */
