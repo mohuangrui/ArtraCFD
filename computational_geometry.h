@@ -32,18 +32,17 @@
  */
 extern int ComputeGeometryParameters(const Space *, Geometry *);
 /*
- * In geometry criteria
+ * Point in polyhedron
  *
  * Function
- *      Check node whether locates in the geometry pointed by the geometry
- *      pointer.
+ *      Check node whether locates in the polyhedron.
  *
  * Return
- *      negative -- in current geometry
- *      positive -- out of current geometry
+ *      negative -- in current polyhedron
+ *      positive -- out of current polyhedron
  */
-extern Real InGeometry(const int k, const int j, const int i,
-        const Geometry *geo, const int m, const Space *);
+extern Real PointInPolyhedron(const int k, const int j, const int i,
+        const Polyhedron *, const Space *);
 /*
  * Calculate node information
  *

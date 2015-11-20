@@ -97,21 +97,10 @@ extern int IndexNode(const int k, const int j, const int i, const Space *);
  *
  * Function
  *      transform coordinates between node coordinates and general coordinates.
- * Notice
- *      Be cautious with the validity of any calculated index. It's extremely
- *      necessary to adjust the index into the valid interior region or check
- *      validity of the index to avoid index exceed array bound limits and 
- *      mysterious bugs.
  */
-extern int ComputeK(const Real z, const Space *);
-extern int ComputeJ(const Real y, const Space *);
-extern int ComputeI(const Real x, const Space *);
-extern int ValidRegionK(const int k, const Partition *);
-extern int ValidRegionJ(const int j, const Partition *);
-extern int ValidRegionI(const int i, const Partition *);
-extern Real ComputeZ(const int k, const Space *);
-extern Real ComputeY(const int j, const Space *);
-extern Real ComputeX(const int i, const Space *);
+extern int NodeSpace(const Real point, const int s, const Space *);
+extern int ValidNodeSpace(const int node, const int s, const Partition *);
+extern Real PointSpace(const int node, const int s, const Space *);
 /*
  * Common math functions
  */
@@ -125,6 +114,7 @@ extern Real Norm(const RealVector V);
 extern Real Dist2(const RealVector V1, const RealVector V2);
 extern Real Dist(const RealVector V1, const RealVector V2);
 extern int Cross(RealVector V, const RealVector V1, const RealVector V2);
+extern int OrthogonalSpace(const RealVector N, RealVector Ta, RealVector Tb);
 extern int Normalize(Real V[], const int dimV, const Real normalizer);
 #endif
 /* a good practice: end file with a newline */

@@ -11,10 +11,11 @@
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "gcibm.h"
+#include "immersed_boundary_treatment.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
 #include <float.h> /* size of floating point values */
+#include "computational_geometry.h"
 #include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
@@ -28,8 +29,6 @@ static int InverseDistanceWeighting(Real [], Real *, const Real, const Real, con
         const int, const int, const int, const int, const int, const Real *,
         const Space *, const Model *, const Geometry *);
 static int ApplyWeighting(Real [], Real *, Real, const Real [], const Real);
-static int NormalizeWeightedValues(Real [], const Real);
-static int OrthogonalSpace(Real [], Real [], Real [], const Real []);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -43,8 +42,8 @@ static int OrthogonalSpace(Real [], Real [], Real [], const Real []);
  * -- identify ghost nodes by the node type of neighbours of solid nodes;
  *
  * Ghost nodes are solid nodes that locate on numerical boundaries.
- * It's necessary to differ boundary nodes and inner nodes to avoid 
- * incorrect mark of ghost nodes nearby domain boundaries.
+ * It's necessary to differ global boundary nodes and inner nodes to avoid 
+ * incorrect mark of ghost nodes nearby global domain boundaries.
  *
  * The identification process should proceed step by step to correctly handle
  * all these relationships and avoid interference between each step,
@@ -56,27 +55,27 @@ static int OrthogonalSpace(Real [], Real [], Real [], const Real []);
  * The rational is that don't store every information for each ghost node, but
  * only store necessary information. When need it, access and calculate it.
  */
-int ComputeGeometryDomain(Space *space, const Partition *part, const Geometry *geometry)
+int ComputeGeometryDomain(Space *space, const Partition *part, const Geometry *geo)
 {
     InitializeGeometryDomain(space, part);
-    IdentifySolidNodes(space, part, geometry);
-    IdentifyGhostNodes(space, part, geometry);
+    IdentifySolidNodes(space, part, geo);
+    IdentifyGhostNodes(space, part, geo);
     return 0;
 }
 static int InitializeGeometryDomain(Space *space, const Partition *part)
 {
-    int idx = 0; /* linear array index math variable */
+    Index idx = 0; /* linear array index math variable */
     /* initialize inner nodes to fluid type, others to exterior nodes type. */
-    for (int k = 0; k < space->kMax; ++k) {
-        for (int j = 0; j < space->jMax; ++j) {
-            for (int i = 0; i < space->iMax; ++i) {
-                idx = IndexMath(k, j, i, space);
-                if ((part->kSub[0] <= k) && (part->kSup[0] > k) &&
-                        (part->jSub[0] <= j) && (part->jSup[0] > j) &&
-                        (part->iSub[0] <= i) && (part->iSup[0] > i)) {
-                    space->nodeFlag[idx] = FLUID;
+    for (int k = 0; k < space->n[Z]; ++k) {
+        for (int j = 0; j < space->n[Y]; ++j) {
+            for (int i = 0; i < space->n[X]; ++i) {
+                idx = IndexNode(k, j, i, space);
+                if ((part->n[PIN][Z][MIN] <= k) && (part->n[PIN][Z][MAX] > k) &&
+                        (part->n[PIN][Y][MIN] <= j) && (part->n[PIN][Y][MAX] > j) &&
+                        (part->n[PIN][X][MIN] <= i) && (part->n[PIN][X][MAX] > i)) {
+                    space->node[idx].type = FLUID;
                 } else {
-                    space->nodeFlag[idx] = EXTERIOR;
+                    space->node[idx].type = EXTERIOR;
                 }
             }
         }
@@ -94,45 +93,24 @@ static int InitializeGeometryDomain(Space *space, const Partition *part)
  * index. It's extremely necessary to adjust the index into the valid region or 
  * check the validity of the index to avoid index exceed array bound limits.
  */
-static int IdentifySolidNodes(Space *space, const Partition *part, const Geometry *geometry)
+static int IdentifySolidNodes(Space *space, const Partition *part, const Geometry *geo)
 {
-    Real *geo = NULL;
-    Real safetyCoe = 1.2; /* zoom the search range */
-    int idx = 0; /* linear array index math variable */
-    int centerK = 0;
-    int centerJ = 0;
-    int centerI = 0;
-    int rangeK = 0;
-    int rangeJ = 0;
-    int rangeI = 0;
-    int kSub = 0;
-    int kSup = 0;
-    int jSub = 0;
-    int jSup = 0;
-    int iSub = 0;
-    int iSup = 0;
-    for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
-        geo = IndexGeometry(geoCount, geometry);
-        centerK = ComputeK(geo[GZ], space);
-        centerJ = ComputeJ(geo[GY], space);
-        centerI = ComputeI(geo[GX], space);
-        rangeK = (int)(safetyCoe * geo[GR] * space->ddz);
-        rangeJ = (int)(safetyCoe * geo[GR] * space->ddy);
-        rangeI = (int)(safetyCoe * geo[GR] * space->ddx);
-        /* determine search range according to valid region */
-        kSub = ValidRegionK(centerK - rangeK, part);
-        kSup = ValidRegionK(centerK + rangeK, part) + 1;
-        jSub = ValidRegionJ(centerJ - rangeJ, part);
-        jSup = ValidRegionJ(centerJ + rangeJ, part) + 1;
-        iSub = ValidRegionI(centerI - rangeI, part);
-        iSup = ValidRegionI(centerI + rangeI, part) + 1;
+    Index idx = 0; /* linear array index math variable */
+    int box[DIMS][LIMIT] = {{0}}; /* range box in node space */
+    for (int m = 0; m < geo->totalM; ++m) {
+        /* determine search range according to bounding box of polyhedron and valid node space */
+        for (int s = 0; s < DIMS; ++s) {
+            box[s][MIN] = ValidNodeSpace(NodeSpace(geo->list[m].box[s][MIN], s, space), s, part);
+            box[s][MAX] = ValidNodeSpace(NodeSpace(geo->list[m].box[s][MAX], s, space), s, part) + 1;
+        }
         /* find nodes in geometry, then flag as solid and link to geometry. */
-        for (int k = kSub; k < kSup; ++k) {
-            for (int j = jSub; j < jSup; ++j) {
-                for (int i = iSub; i < iSup; ++i) {
-                    if (0 > InGeometry(k, j, i, geo, space)) {
-                        idx = IndexMath(k, j, i, space);
-                        space->nodeFlag[idx] = -OFFSET - geoCount; /* geometry are linked */
+        for (int k = box[Z][MIN]; k < box[Z][MAX]; ++k) {
+            for (int j = box[Y][MIN]; j < box[Y][MAX]; ++j) {
+                for (int i = box[X][MIN]; i < box[X][MAX]; ++i) {
+                    if (0 > PointInPolyhedron(k, j, i, geo->list + m, space)) {
+                        idx = IndexNode(k, j, i, space);
+                        space->node[idx].type = SOLID;
+                        space->node[idx].geoID = m;
                     }
                 }
             }
@@ -140,22 +118,23 @@ static int IdentifySolidNodes(Space *space, const Partition *part, const Geometr
     }
     return 0;
 }
-static int IdentifyGhostNodes(Space *space, const Partition *part, const Geometry *geometry)
+static int IdentifyGhostNodes(Space *space, const Partition *part, const Geometry *geo)
 {
-    int idx = 0; /* linear array index math variable */
+    Index idx = 0; /* linear array index math variable */
     /* find solid nodes at numerical boundary, then flag as ghost while preserving link. */
-    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = IndexMath(k, j, i, space);
-                if (-OFFSET < space->nodeFlag[idx]) { /* not solid node */
+    for (int k = part->n[PIN][Z][MIN]; k < part->n[PIN][Z][MAX]; ++k) {
+        for (int j = part->n[PIN][Y][MIN]; j < part->n[PIN][Y][MAX]; ++j) {
+            for (int i = part->n[PIN][X][MIN]; i < part->n[PIN][X][MAX]; ++i) {
+                idx = IndexNode(k, j, i, space);
+                if (SOLID != space->node[idx].type) {
                     continue;
                 }
                 /* search neighbours of node(k, j, i) to check fluid node */
-                for (int type = 1; type < space->ng + 2; ++type) { /* max search range should be ng + 1 */
+                for (int r = 1; r < space->ng + 2; ++r) { /* max search range should be ng + 1 */
                     /* if rth neighbours has fluid, then it's rth type ghost node */
-                    if (0 == SearchFluidNodes(k, j, i, type, space)) {
-                        space->nodeFlag[idx] = -space->nodeFlag[idx] + (type - 1) * geometry->totalN; /* geometry link preserved */
+                    if (0 == SearchFluidNodes(k, j, i, r, space)) {
+                        space->node[idx].type = GHOST;
+                        space->node[idx].layerID = r; /* save ghost layer identifier */
                         break; /* exit search loop once identified successfully */
                     }
                 }
@@ -168,18 +147,18 @@ static int SearchFluidNodes(const int k, const int j, const int i,
         const int h, const Space *space)
 {
     /*
-     * Search around the specified node and return the infomation of whether 
+     * Search around the specified node and return the information of whether 
      * current node has fluid neighbours at the specified coordinate range.
      */
-    const int idxW = IndexMath(k, j, i - h, space);
-    const int idxE = IndexMath(k, j, i + h, space);
-    const int idxS = IndexMath(k, j - h, i, space);
-    const int idxN = IndexMath(k, j + h, i, space);
-    const int idxF = IndexMath(k - h, j, i, space);
-    const int idxB = IndexMath(k + h, j, i, space);
-    return (space->nodeFlag[idxW] * space->nodeFlag[idxE] * 
-            space->nodeFlag[idxS] * space->nodeFlag[idxN] * 
-            space->nodeFlag[idxF] * space->nodeFlag[idxB]);
+    const Index idxW = IndexNode(k, j, i - h, space);
+    const Index idxE = IndexNode(k, j, i + h, space);
+    const Index idxS = IndexNode(k, j - h, i, space);
+    const Index idxN = IndexNode(k, j + h, i, space);
+    const Index idxF = IndexNode(k - h, j, i, space);
+    const Index idxB = IndexNode(k + h, j, i, space);
+    return (space->node[idxW].type * space->node[idxE].type * 
+            space->node[idxS].type * space->node[idxN].type * 
+            space->node[idxF].type * space->node[idxB].type);
 }
 /*
  * Numerical boundary treatments for ghost nodes.
@@ -363,13 +342,6 @@ static int ApplyWeighting(Real Uo[], Real *weightSum, Real distance, const Real 
     *weightSum = *weightSum + distance; /* accumulate normalizer */
     return 0;
 }
-static int NormalizeWeightedValues(Real Uo[], const Real weightSum)
-{
-    for (int n = 0; n < DIMUo; ++n) {
-        Uo[n] = Uo[n] / weightSum;
-    }
-    return 0;
-}
 Real InGeometry(const int k, const int j, const int i, const Real *geo, const Space *space)
 {
     /* x, y, z distance to center */
@@ -397,38 +369,6 @@ int CalculateGeometryInformation(Real info[], const int k, const int j, const in
     info[GSNX] = info[GSNX] / info[GSDC];
     info[GSNY] = info[GSNY] / info[GSDC];
     info[GSNZ] = info[GSNZ] / info[GSDC];
-    return 0;
-}
-static int OrthogonalSpace(Real nVec[], Real taVec[], Real tbVec[], const Real info[])
-{
-    nVec[X] = info[GSNX]; 
-    nVec[Y] = info[GSNY]; 
-    nVec[Z] = info[GSNZ]; 
-    int mark = Z; /* default mark for minimum component */
-    if (fabs(nVec[mark]) > fabs(nVec[Y])) {
-        mark = Y;
-    }
-    if (fabs(nVec[mark]) > fabs(nVec[X])) {
-        mark = X;
-    }
-    if (X == mark) {
-        taVec[X] = 0;
-        taVec[Y] = -nVec[Z] / sqrt(nVec[Y] * nVec[Y] + nVec[Z] * nVec[Z]);
-        taVec[Z] = nVec[Y] / sqrt(nVec[Y] * nVec[Y] + nVec[Z] * nVec[Z]);
-    } else {
-        if (Y == mark) {
-            taVec[X] = -nVec[Z] / sqrt(nVec[X] * nVec[X] + nVec[Z] * nVec[Z]);
-            taVec[Y] = 0;
-            taVec[Z] = nVec[X] / sqrt(nVec[X] * nVec[X] + nVec[Z] * nVec[Z]);
-        } else {
-            taVec[X] = -nVec[Y] / sqrt(nVec[X] * nVec[X] + nVec[Y] * nVec[Y]);
-            taVec[Y] = nVec[X] / sqrt(nVec[X] * nVec[X] + nVec[Y] * nVec[Y]);
-            taVec[Z] = 0;
-        }
-    }
-    tbVec[X] = taVec[Y] * nVec[Z] - nVec[Y] * taVec[Z];
-    tbVec[Y] = -taVec[X] * nVec[Z] + nVec[X] * taVec[Z];
-    tbVec[Z] = taVec[X] * nVec[Y] - nVec[X] * taVec[Y];
     return 0;
 }
 /* a good practice: end file with a newline */

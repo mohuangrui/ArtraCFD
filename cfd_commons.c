@@ -570,7 +570,7 @@ Real ComputeTemperature(const int idx, const Real *U, const Model *model)
  */
 int IndexNode(const int k, const int j, const int i, const Space *space)
 {
-    return ((k * space->jMax + j) * space->iMax + i);
+    return ((k * space->n[Y] + j) * space->n[X] + i);
 }
 /*
  * Coordinates transformations.
@@ -579,42 +579,21 @@ int IndexNode(const int k, const int j, const int i, const Space *space)
  * coordinates considering the downward truncation of (int). 
  * Note: current rounding conversion only works for positive float.
  */
-int ComputeK(const Real z, const Space *space)
+int NodeSpace(const Real point, const int s, const Space *space)
 {
-    return (int)((z - space->zMin) * space->ddz + 0.5) + space->ng;
+    return (int)((point - space->domain[s][MIN]) * space->dd[s] + 0.5) + space->ng;
 }
-int ComputeJ(const Real y, const Space *space)
+int ValidNodeSpace(const int node, const int s, const Partition *part)
 {
-    return (int)((y - space->yMin) * space->ddy + 0.5) + space->ng;
+    return MinInt(part->n[PIN][s][MAX] - 1, MaxInt(part->n[PIN][s][MIN], node));
 }
-int ComputeI(const Real x, const Space *space)
+Real PointSpace(const int node, const int s, const Space *space)
 {
-    return (int)((x - space->xMin) * space->ddx + 0.5) + space->ng;
+    return (space->domain[s][MIN] + (node - space->ng) * space->d[s]);
 }
-int ValidRegionK(const int k, const Partition *part)
-{
-    return MinInt(part->kSup[0] - 1, MaxInt(part->kSub[0], k));
-}
-int ValidRegionJ(const int j, const Partition *part)
-{
-    return MinInt(part->jSup[0] - 1, MaxInt(part->jSub[0], j));
-}
-int ValidRegionI(const int i, const Partition *part)
-{
-    return MinInt(part->iSup[0] - 1, MaxInt(part->iSub[0], i));
-}
-Real ComputeZ(const int k, const Space *space)
-{
-    return (space->zMin + (k - space->ng) * space->dz);
-}
-Real ComputeY(const int j, const Space *space)
-{
-    return (space->yMin + (j - space->ng) * space->dy);
-}
-Real ComputeX(const int i, const Space *space)
-{
-    return (space->xMin + (i - space->ng) * space->dx);
-}
+/*
+ * Math functions
+ */
 Real MinReal(const Real x, const Real y)
 {
     if (x < y) {
@@ -675,6 +654,34 @@ int Cross(RealVector V, const RealVector V1, const RealVector V2)
     V[X] = V1[Y] * V2[Z] - V1[Z] * V2[Y];
     V[Y] = V1[Z] * V2[X] - V1[X] * V2[Z];
     V[Z] = V1[X] * V2[Y] - V1[Y] * V2[X];
+    return 0;
+}
+int OrthogonalSpace(const RealVector N, RealVector Ta, RealVector Tb)
+{
+    int mark = Z; /* default mark for minimum component */
+    if (fabs(N[mark]) > fabs(N[Y])) {
+        mark = Y;
+    }
+    if (fabs(N[mark]) > fabs(N[X])) {
+        mark = X;
+    }
+    if (X == mark) {
+        Ta[X] = 0;
+        Ta[Y] = -N[Z];
+        Ta[Z] = N[Y];
+    } else {
+        if (Y == mark) {
+            Ta[X] = -N[Z];
+            Ta[Y] = 0;
+            Ta[Z] = N[X];
+        } else {
+            Ta[X] = -N[Y];
+            Ta[Y] = N[X];
+            Ta[Z] = 0;
+        }
+    }
+    Normalize(Ta, DIMS, Norm(Ta));
+    Cross(Tb, N, Ta);
     return 0;
 }
 int Normalize(Real V[], const int dimV, const Real normalizer)
