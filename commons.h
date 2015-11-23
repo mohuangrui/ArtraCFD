@@ -670,6 +670,7 @@ typedef struct {
  * a polyhedron with a unit length thickness is used to represent a polygon
  * with the same cross-section shape.
  *
+ * Computational geometry algorithms often benefit from bounding containers.
  * Before conducting computationally expensive intersection or containment
  * algorithms for a complicated object, using simple bounding containers as
  * a preprocessing test can often exclude the possibility of intersection

@@ -107,7 +107,7 @@ static int IdentifySolidNodes(Space *space, const Partition *part, const Geometr
         for (int k = box[Z][MIN]; k < box[Z][MAX]; ++k) {
             for (int j = box[Y][MIN]; j < box[Y][MAX]; ++j) {
                 for (int i = box[X][MIN]; i < box[X][MAX]; ++i) {
-                    if (0 > PointInPolyhedron(k, j, i, geo->list + m, space)) {
+                    if (0 == PointInPolyhedron(k, j, i, geo->list + m, space)) {
                         idx = IndexNode(k, j, i, space);
                         space->node[idx].type = SOLID;
                         space->node[idx].geoID = m;
@@ -340,35 +340,6 @@ static int ApplyWeighting(Real Uo[], Real *weightSum, Real distance, const Real 
         Uo[n] = Uo[n] + Uoh[n] * distance;
     }
     *weightSum = *weightSum + distance; /* accumulate normalizer */
-    return 0;
-}
-Real InGeometry(const int k, const int j, const int i, const Real *geo, const Space *space)
-{
-    /* x, y, z distance to center */
-    const Real lX = ComputeX(i, space) - geo[GX];
-    const Real lY = ComputeY(j, space) - geo[GY];
-    const Real lZ = ComputeZ(k, space) - geo[GZ];
-    return (lX * lX + lY * lY + lZ * lZ - geo[GR] * geo[GR]);
-}
-int CalculateGeometryInformation(Real info[], const int k, const int j, const int i, 
-        const Real *geo, const Space *space)
-{
-    /* x, y, z coordinates */
-    info[GSX] = ComputeX(i, space);
-    info[GSY] = ComputeY(j, space);
-    info[GSZ] = ComputeZ(k, space);
-    /* temporary store the x, y, z distance to geometry center */
-    info[GSNX] = info[GSX] - geo[GX];
-    info[GSNY] = info[GSY] - geo[GY];
-    info[GSNZ] = info[GSZ] - geo[GZ];
-    /* distance to center */
-    info[GSDC] = sqrt(info[GSNX] * info[GSNX] + info[GSNY] * info[GSNY] + info[GSNZ] * info[GSNZ]);
-    /* distance to surface */
-    info[GSDS] = geo[GR] - info[GSDC];
-    /* x, y, z normal vector components */
-    info[GSNX] = info[GSNX] / info[GSDC];
-    info[GSNY] = info[GSNY] / info[GSDC];
-    info[GSNZ] = info[GSNZ] / info[GSDC];
     return 0;
 }
 /* a good practice: end file with a newline */

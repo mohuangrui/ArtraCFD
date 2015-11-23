@@ -38,10 +38,10 @@ extern int ComputeGeometryParameters(const Space *, Geometry *);
  *      Check node whether locates in the polyhedron.
  *
  * Return
- *      negative -- in current polyhedron
- *      positive -- out of current polyhedron
+ *      0 -- in current polyhedron
+ *      1 -- out of current polyhedron
  */
-extern Real PointInPolyhedron(const int k, const int j, const int i,
+extern int PointInPolyhedron(const int k, const int j, const int i,
         const Polyhedron *, const Space *);
 /*
  * Calculate node information
