@@ -662,20 +662,6 @@ typedef struct {
 } Facet;
 /*
  * Polyhedron structure
- *
- * A bounding box and a bounding sphere are both used as bounding containers
- * to enclose a finite geometric object. Meanwhile, triangulated polyhedrons
- * and analytical spheres are unified by the using of bounding container,
- * since an analytical sphere is the bounding sphere of itself. Moreover,
- * a polyhedron with a unit length thickness is used to represent a polygon
- * with the same cross-section shape.
- *
- * Computational geometry algorithms often benefit from bounding containers.
- * Before conducting computationally expensive intersection or containment
- * algorithms for a complicated object, using simple bounding containers as
- * a preprocessing test can often exclude the possibility of intersection
- * or containment and significantly speed up software for ray tracing,
- * collision detection, hidden object detection, etc.
  */
 typedef struct {
     int facetN; /* number of facets. 0 for analytical sphere */
@@ -702,7 +688,7 @@ typedef struct {
     Polyhedron *list; /* geometry list */
 } Geometry;
 /*
- * Ghost node structure
+ * Data collection for flow reconstruction
  */
 typedef struct {
     Real ds; /* distance to surface */
@@ -710,6 +696,9 @@ typedef struct {
     RealVector I; /* image point position */
     RealVector O; /* boundary point position */
     RealVector N; /* normal vector */
+    Real UoG[DIMUo]; /* reconstructed primitives at ghost node */
+    Real UoI[DIMUo]; /* reconstructed primitives at image point */
+    Real UoO[DIMUo]; /* physical primitives at boundary point */
 } Ghost;
 /*
  * Program command line arguments and overall control

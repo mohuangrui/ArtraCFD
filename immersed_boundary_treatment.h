@@ -32,12 +32,12 @@
  */
 extern int ComputeGeometryDomain(Space *, const Partition *, const Geometry *);
 /*
- * Boundary treatments for ghost nodes
+ * Immersed boundary treatments
  *
  * Function
- *      Apply boundary conditions and treatments to ghost nodes.
+ *      Apply boundary conditions and treatments for immersed boundaries.
  */
-extern int BoundaryTreatmentsGCIBM(Real *U, const Space *, const Model *,
+extern int ImmersedBoundaryTreatment(const Space *, const Model *,
         const Partition *, const Geometry *);
 /*
  * Reconstruct flow variables by Inverse Distance Weighting

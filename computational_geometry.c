@@ -63,6 +63,12 @@ static int ComputeParametersTriangulatedPolyhedron(const Space *space, Polyhedro
         poly->box[s][MIN] = FLT_MAX;
         poly->box[s][MAX] = FLT_MIN;
     }
+    /*
+     * Gelder, A. V. (1995). Efficient computation of polygon area and
+     * polyhedron volume. Graphics Gems V.
+     * Robert Nurnberg, (2013). Calculating the area and centroid of a
+     * polygon and polyhedron. Imperial College London.
+     */
     for (int n = 0; n < poly->facetN; ++n) {
         for (int s = 0; s < DIMS; ++s) {
             /* bounding box */
@@ -105,14 +111,18 @@ int PointInPolyhedron(const int k, const int j, const int i, const Polyhedron *p
     }
     /*
      * Solve point-in-polyhedron problem for triangulated polyhedrons.
+     *
+     * Haines, E. (1994). Point in polygon strategies. Graphics gems IV.
+     * Intersections of rays and triangles (3D), http://geomalgorithms.com/a06-_intersect-2.html
+     * Inclusion of a point in a polygon, http://geomalgorithms.com/a03-_inclusion.html
      * 
      * Angle summation test is used instead of ray crossing test due
      * to the simplicity and robustness, although more expensive.
-     *
      * Carvalho, P. C. P., Cavalcanti, P. R. (1995). Point in polyhedron
-     * testing using spherical polygons. Graphics Gems V, 42-49.
+     * testing using spherical polygons. Graphics Gems V.
      * Note: the correct formula for the area of a spherical triangle is
-     *          Delta = R * R * [(A + B + C) - pi]
+     *             Delta = R * R * [(A + B + C) - pi]
+     * Spherical Triangle, http://mathworld.wolfram.com/SphericalTriangle.html
      */
     const Real pi = acos(-1);
     RealVector PcP1 = {0.0};

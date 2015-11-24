@@ -83,15 +83,39 @@ static int InitializeGeometryDomain(Space *space, const Partition *part)
     return 0;
 }
 /*
+ * A bounding box and a bounding sphere are both used as bounding containers
+ * to enclose a finite geometric object. Meanwhile, triangulated polyhedrons
+ * and analytical spheres are unified by the using of bounding container,
+ * since an analytical sphere is the bounding sphere of itself. Moreover,
+ * a polyhedron with a unit length thickness is used to represent a polygon
+ * with the same cross-section shape.
+ *
+ * Computational geometry algorithms often benefit from bounding containers.
+ * Before conducting computationally expensive intersection or containment
+ * algorithms for a complicated object, using simple bounding containers as
+ * a preprocessing test can often exclude the possibility of intersection
+ * or containment and significantly speed up software for ray tracing,
+ * collision detection, hidden object detection, etc.
+ * Bounding containers for point sets, http://geomalgorithms.com/a08-_containers.html
+ *
  * When locate solid nodes, there are two approaches available. One is search
  * over each node and verify each node regarding to all the geometries; another
  * is search each geometry and find all the nodes inside current geometry.
- * The second method is adopted here for performance reason, although it's much
- * more complicated than the first one.
+ * The second method is adopted here for performance reason.
+ *
  * It is efficient to only test points that are inside the bounding box or
  * sphere of a large polyhedron. Be cautious with the validity of any calculated
  * index. It's extremely necessary to adjust the index into the valid region or 
  * check the validity of the index to avoid index exceed array bound limits.
+ *
+ * For a large data set, an extra data preprocessing with spatial subdivision
+ * is required to ensure minimal test in addition to the bounding container
+ * method. Spatial subdivision is to provide internal resolution for the
+ * polyhedron for fast inclusion determination.
+ * Horvat, D., & Zalik, B. (2012). Ray-casting point-in-polyhedron test. In
+ * Proceedings of the CESCG.
+ * Ooms, K., De Maeyer, P., & Neutens, T. (2010). A 3D inclusion test on large
+ * dataset. In Developments in 3D Geo-Information Sciences.
  */
 static int IdentifySolidNodes(Space *space, const Partition *part, const Geometry *geo)
 {
@@ -160,38 +184,25 @@ static int SearchFluidNodes(const int k, const int j, const int i,
             space->node[idxS].type * space->node[idxN].type * 
             space->node[idxF].type * space->node[idxB].type);
 }
-/*
- * Numerical boundary treatments for ghost nodes.
- */
-int BoundaryTreatmentsGCIBM(Real *U, const Space *space, const Model *model,
-        const Partition *part, const Geometry *geometry)
+int ImmersedBoundaryTreatment(const Space *space, const Model *model,
+        const Partition *part, const Geometry *geo)
 {
-    Real UoGhost[DIMUo] = {0.0}; /* reconstructed primitives at ghost node */
-    Real UoImage[DIMUo] = {0.0}; /* reconstructed primitives at image point */
-    Real UoBC[DIMUo] = {0.0}; /* physical primitives at boundary point */
-    Real info[INFOGHOST] = {0.0}; /* store calculated geometry information */
+    Index idx = 0; /* linear array index math variable */
+    Ghost gs = {0.0}; /* data collection for flow reconstruction */
     Real weightSum = 0.0; /* store the sum of weights */
-    Real imageZ = 0.0;
-    Real imageY = 0.0;
-    Real imageX = 0.0;
-    int idx = 0; /* linear array index math variable */
-    int geoID = 0; /* geometry id */
-    Real *geo = NULL;
-    for (int type = 1; type < space->ng + 2; ++type) {
-        for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-            for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-                for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                    idx = IndexMath(k, j, i, space);
-                    if (OFFSET > space->nodeFlag[idx]) { /* it's not a ghost */
+    for (int r = 1; r < space->ng + 2; ++r) {
+        for (int k = part->n[PIN][Z][MIN]; k < part->n[PIN][Z][MAX]; ++k) {
+            for (int j = part->n[PIN][Y][MIN]; j < part->n[PIN][Y][MAX]; ++j) {
+                for (int i = part->n[PIN][X][MIN]; i < part->n[PIN][X][MAX]; ++i) {
+                    idx = IndexNode(k, j, i, space);
+                    if (GHOST != space->node[idx].type) {
                         continue;
                     }
-                    geoID = space->nodeFlag[idx] - OFFSET - (type - 1) * geometry->totalN;
-                    if ((0 > geoID) || (geometry->totalN <= geoID)) { /* not a ghost node with current type */
+                    if (r != space->node[idx].layerID) { /* not a ghost node in current layer */
                         continue;
                     }
-                    if (model->layers >= type) { /* using method of image */
-                        geo = IndexGeometry(geoID, geometry);
-                        CalculateGeometryInformation(info, k, j, i, geo, space);
+                    if (model->layers >= r) { /* using the method of image */
+                        CalculateGeometryInformation(&gs, k, j, i, geo, space);
                         /* obtain the spatial coordinates of the image point */
                         imageX = info[GSX] + 2 * info[GSDS] * info[GSNX];
                         imageY = info[GSY] + 2 * info[GSDS] * info[GSNY];
