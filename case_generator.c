@@ -80,11 +80,11 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "# <Type> means the corresponding parameter only takes effect on <Type>\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "numerical begin\n");
-    fprintf(filePointer, "1                  # spatial scheme (integer; 0: 2nd Upwind TVD; 1: 5th WENO)\n");
+    fprintf(filePointer, "0                  # spatial scheme (integer; 0: 5th WENO)\n");
     fprintf(filePointer, "0                  # average method (integer; 0: Arithmetic mean; 1: Roe averages)\n");
     fprintf(filePointer, "0                  # <WENO> flux splitting method (integer; 0: L-F; 1: S-W)\n");
     fprintf(filePointer, "1                  # fluid solid interaction (integer; 0: Off; 1: On)\n");
-    fprintf(filePointer, "-1                 # layers of ghost nodes using method of image (integer; -1: all)\n");
+    fprintf(filePointer, "-1                 # interfacial layers using reconstruction (integer; -1: all)\n");
     fprintf(filePointer, "numerical end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
@@ -92,7 +92,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "fluid begin\n");
-    fprintf(filePointer, "0                  # fluid (integer; 0: gas; 1: water)\n");
+    fprintf(filePointer, "0                  # equation of states (integer; 0: gas; 1: water)\n");
     fprintf(filePointer, "1                  # dynamic viscosity coefficient (0: inviscid; 1: normal)\n");
     fprintf(filePointer, "fluid end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
@@ -293,7 +293,7 @@ static int CaseGeometryFileGenerator(void)
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "STL begin\n");
     fprintf(filePointer, "artracfd.stl       # geometry file name\n");
-    fprintf(filePointer, "0, 0, 0, 0.5, 0, 0, 0, 0, 0, 0, 1.0e250, -1, 1, 0, 0 # xc, yc, zc, r, u, v, w, fx, fy, fz, rho, T, cf, area, volume\n");
+    fprintf(filePointer, "0, 0, 0, 0.5, 0, 0, 0, 0, 0, 0, 1.0e250, -1, 1, 0, 0, 0 # xc, yc, zc, r, u, v, w, fx, fy, fz, rho, T, cf, eos, area, volume\n");
     fprintf(filePointer, "STL end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
@@ -310,7 +310,7 @@ static int AnalyticalGeometryFileGenerator(void)
     if (NULL == filePointer) {
         FatalError("failed to write analytical geometry file: artracfd.sph...");
     }
-    fprintf(filePointer, "0, 0, 0, 0.5, 0, 0, 0, 0, 0, 0, 1.0e250, -1, 1, 0, 0 # xc, yc, zc, r, u, v, w, fx, fy, fz, rho, T, cf, area, volume\n");
+    fprintf(filePointer, "0, 0, 0, 0.5, 0, 0, 0, 0, 0, 0, 1.0e250, -1, 1, 0, 0, 0 # xc, yc, zc, r, u, v, w, fx, fy, fz, rho, T, cf, eos, area, volume\n");
     fclose(filePointer); /* close current opened file */
     return 0;
 }
@@ -353,6 +353,7 @@ static int TriangulatedGeometryFileGenerator(void)
     Polyhedron wedge = {
         .facetN = 8,
         .tally = 0,
+        .eosID = 1,
         .O = {0.5, 0.0, 0.0},
         .r = 1.0,
         .box = {{0.0, 1.0}, {-0.5, 0.5}, {-0.5, 0.5}},
