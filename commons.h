@@ -357,7 +357,7 @@
  *   Often only a small fraction of the code in a large system has a 
  *   significant impact on efficiency. This is sometimes expressed by the
  *   slogan that 95% of the time is spent in 5% of the code. The task is
- *   to first identify the 5% code that is really matter. If there is a
+ *   to first identify the 5% code that really matters. If there is a
  *   bottleneck in your code, have a close look at it. Ask yourself:
  *   could better algorithms be used? Could it be implemented more 
  *   efficiently? Should a higher level of compiler optimization be used?
