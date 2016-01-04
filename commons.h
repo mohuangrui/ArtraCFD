@@ -9,6 +9,23 @@
  * (at your option) any later version.                                      *
  ****************************************************************************/
 /****************************************************************************
+ *
+ *                             References
+ *
+ * - C wikibook http://en.wikibooks.org/wiki/C_Programming
+ * - Practical C Programming by Steve Oualline
+ * - Expert C Programming: Deep C Secrets by Peter van der Linden
+ * - The Practice of Programming by Brian W. Kernighan and Rob Pike
+ * - Effective C++ by Scott Meyers
+ * - More Effective C++ by Scott Meyers
+ * - Writing Scientific Software: A Guide to Good Style, by Suely Oliveira
+ * - C Header File Guidelines by David Kieras
+ * - Tips for Optimizing C/C++ Code by Clemson
+ * - How to loop through multidimensional arrays quickly by Nadeau software
+ * - How expensive is an operation on a CPU by Vincent Hindriksen
+ *
+ ****************************************************************************/
+/****************************************************************************
  * Header File Guards to Avoid Interdependence
  * - Header files should be once-only headers. A standard way to prevent 
  *   including a header file more than once is to enclose the entire
@@ -292,23 +309,6 @@
  ****************************************************************************/
 /****************************************************************************
  *
- *                  Prototypes of Involved Standard Functions
- *
- * int printf(const char *format, ...);
- * char *strncpy(char *restrict s1, const char *restrict s2, size_t n);
- * int strncmp(const char *s1, const char *s2, size_t n);
- * int strcmp(const char *s1, const char *s2);
- * char *fgets(char *s, int n, FILE *stream);
- * int sscanf(const char *s, const char *format, ...);
- * int snprintf(char *str, size_t size, const char * restrict format, ...)
- * size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
- * size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
- * void free(void *ptr);
- * void *malloc(size_t size);
- *
- ****************************************************************************/
-/****************************************************************************
- *
  *                 Best Practices for Scientific Programming
  *
  * Use revision control system
@@ -343,7 +343,7 @@
  *   compiler optimizations. ICC or GCC are the best.
  * - High performance coding requires understanding modern computer hardware. 
  *   The most crucial concept in all this is that of a memory hierarchy.
- *   Optimizing compilers know more about the target architecture(s) than
+ *   Optimizing compilers know more about the target architecture than
  *   most programmers, so we should write code that the compiler can make 
  *   best use of.
  * - keep your code general instead of obsessively optimizing your code with 
@@ -356,7 +356,8 @@
  * - Note that it is usually not important to make every routine optimal. 
  *   Often only a small fraction of the code in a large system has a 
  *   significant impact on efficiency. This is sometimes expressed by the
- *   slogan that 95% of the time is spent in 5% of the code. If there is a
+ *   slogan that 95% of the time is spent in 5% of the code. The task is
+ *   to first identify the 5% code that is really matter. If there is a
  *   bottleneck in your code, have a close look at it. Ask yourself:
  *   could better algorithms be used? Could it be implemented more 
  *   efficiently? Should a higher level of compiler optimization be used?
@@ -421,22 +422,19 @@
  *                             C Textbooks
  *
  * - Reference Style
- *   The C Programming Language (Second edition) - Brian W. Kernighan and
- *   Dennis M. Ritchie (K&R does not address good program design nor good
- *   programming practice)
+ *   The C Programming Language by Brian W. Kernighan and Dennis M. Ritchie
  * - Beginner
  *   C wikibook http://en.wikibooks.org/wiki/C_Programming
- *   Practical C Programming, 3rd Edition - Steve Oualline
- *   C Programming: A Modern Approach - K. N. King
+ *   Practical C Programming by Steve Oualline
+ *   C Programming: A Modern Approach by K. N. King
  * - Intermediate
- *   Algorithms in C - Robert Sedgewick
+ *   Algorithms in C by Robert Sedgewick
  * - Above Intermediate
- *   Expert C Programming: Deep C Secrets - Peter van der Linden
+ *   Expert C Programming: Deep C Secrets by Peter van der Linden
  * - Software engineering
  *   The Practice of Programming by Brian W. Kernighan and Rob Pike
  *   Advanced Programming in the UNIX Environment
- *   Writing Scientific Software: a guide to good style, by Suely Oliveira
- *   and David Stewart
+ * - Writing Scientific Software: A Guide to Good Style, by Suely Oliveira
  *
  ****************************************************************************/
 /****************************************************************************
@@ -482,16 +480,8 @@ typedef enum {
     /* dimensions related to field variables */
     DIMU = 5, /* conservative vector: rho, rho_u, rho_v, rho_w, rho_eT */
     DIMUo = 6, /* primitive vector: rho, u, v, w, [p, hT, h], [T, c] */
-    /* 
-     * parameters related to node type space
-     */
-    FLUID = 0, /* identifier of fluid nodes */
-    GHOST = 1, /* identifier of ghost nodes */
-    SOLID = -1, /* identifier of solid nodes */
-    EXTERIOR = -2, /* identifier of global boundary and exterior ghost nodes */
     /* parameters related to numerical model */
-    TVD = 0, /* TVD scheme identifier */
-    WENO = 1, /* WENO scheme identifier */
+    WENO = 0, /* WENO scheme identifier */
     GAS = 0, /* gas */
     WATER = 1, /* water */
     /* parameters related to probe */
@@ -577,10 +567,10 @@ typedef Real RealVector[DIMS]; /* real type vector */
  *
  */
 typedef struct {
-    int type; /* node type identifier */
-    int layerID; /* ghost layer identifier */
-    int geoID; /* geometry identifier of the node */
-    int facetID; /* geometric facet identifier of the node */
+    int eosID; /* equation of states identifier */
+    int layerID; /* interfacial layer identifier */
+    int geoID; /* geometry identifier */
+    int facetID; /* geometric facet identifier */
     Real Un[DIMU]; /* store the "old" field data for intermediate calculation */
     Real U[DIMU]; /* store updating field data, and updated data after every computation */
     Real Uswap[DIMU]; /* an auxiliary storage space */
@@ -593,7 +583,7 @@ typedef struct {
     IntVector m; /* mesh number of each direction */
     IntVector n; /* node number of each direction */
     Index totalN; /* total node number of domain */
-    int ng; /* number of node layers of ghosts */
+    int ng; /* number of ghost node layers of global domain */
     int collapsed; /* space collapse flag */
     RealVector d; /* mesh size of each direction */
     RealVector dd; /* reciprocal of mesh sizes */
@@ -626,7 +616,7 @@ typedef struct {
     int averager; /* average method for local constant Jacobian */
     int splitter; /* flux vector splitting method */
     int fsi; /* fluid solid interaction trigger */
-    int layers; /* number of ghost layers using method of image */
+    int layers; /* number of interfacial layers using flow reconstruction */
     int fluid; /* fluid type */
     Real refMa; /* reference Mach number */
     Real refMu; /* reference dynamic viscosity */
@@ -665,7 +655,8 @@ typedef struct {
  */
 typedef struct {
     int facetN; /* number of facets. 0 for analytical sphere */
-    int tally; /* tally for 1st type ghost node in polyhedron */
+    int tally; /* tally for 1st type interfacial node in polyhedron */
+    int eosID; /* equation of states for polyhedron domain */
     RealVector O; /* a bounding sphere of the polyhedron */
     Real r;
     Real box[DIMS][LIMIT]; /* a bounding box of the polyhedron */
