@@ -104,7 +104,7 @@ static int InitializeCFDParameters(Space *space, Time *time, Model *model)
         model->layers = INT_MAX;
     }
     model->gamma = 1.4;
-    model->gasR = 8.314462175;
+    model->gasR = 287.058;
     /* reference Mach number */
     model->refMa = model->refVelocity / sqrt(model->gamma * model->gasR * model->refTemperature);
     /* reference dynamic viscosity for viscosity normalization */
