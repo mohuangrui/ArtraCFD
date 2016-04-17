@@ -518,6 +518,7 @@ typedef enum {
     /* dimensions related to field variables */
     DIMU = 5, /* conservative vector: rho, rho_u, rho_v, rho_w, rho_eT */
     DIMUo = 6, /* primitive vector: rho, u, v, w, [p, hT, h], [T, c] */
+    DIMT = 3, /* number of time levels to store field data */
     /* parameters related to numerical model */
     WENO = 0, /* WENO scheme identifier */
     TVD = 1, /* TVD scheme identifier */
@@ -558,6 +559,7 @@ typedef enum {
     NOSLIPWALL = 3,
     PERIODIC = 4,
     PERIODICPAIR = -4,
+    ENTRYBC = 6, /* primitive variables */
     VARBC = 6, /* rho, u, v, w, p, T */
     /* parameters related to global and regional initialization */
     NIC = 10, /* maximum number of initializer to support */
@@ -611,15 +613,12 @@ typedef struct {
     int geoID; /* geometry identifier */
     int facetID; /* closest facet identifier */
     int layerID; /* interfacial layer identifier */
-    Real Un[DIMU]; /* field data of previous time level */
-    Real U[DIMU]; /* field data of current time level */
-    Real Uswap[DIMU]; /* an auxiliary storage space */
+    Real U[DIMT][DIMU]; /* field data at each time level */
 } Node;
 /*
- * Space domain parameters
+ * Domain discretization and partition structure
  */
 typedef struct {
-    Node *node; /* field data */
     IntVector m; /* mesh number of each direction */
     IntVector n; /* node number of each direction */
     Index totalN; /* total node number of domain */
@@ -628,65 +627,14 @@ typedef struct {
     RealVector d; /* mesh size of each direction */
     RealVector dd; /* reciprocal of mesh sizes */
     Real tinyL; /* smallest length scale related to grid size */
-    Real domain[DIMS][LIMIT]; /* coordinates define the space domain */
-} Space;
-/*
- * Time domain parameters
- */
-typedef struct {
-    int restart; /* restart flag */
-    int stepN; /* total number of steps */
-    int stepCount; /* step number count */
-    int outputN; /* total times of exporting computed data */
-    int outputCount; /* exporting data count */
-    int dataStreamer; /* types of data streamer */
-    int outputNProbe; /* times to write probe information */
-    int tallyProbe; /* tally of probes */
-    Real end; /* total evolution time */
-    Real now; /* current time recorder */
-    Real dt; /* time step size */
-    Real numCFL; /* CFL number */
-    Real probe[NPROBE][ENTRYPROBE]; /* store information of probes */
-} Time;
-/*
- * Model properties and physics parameters
- */
-typedef struct {
-    int scheme; /* record numerical scheme */
-    int averager; /* average method for local Jacobian linearization */
-    int splitter; /* flux vector splitting method */
-    int fsi; /* fluid solid interaction trigger */
-    int layers; /* number of interfacial layers using flow reconstruction */
-    Real refMa; /* reference Mach number */
-    Real refMu; /* reference dynamic viscosity */
-    Real gamma; /* heat capacity ratio */
-    Real gasR; /* the gas constant */
-    Real cv; /* specific heat capacity at constant volume */
-    Real refLength; /* characteristic length */
-    Real refDensity; /* characteristic density */
-    Real refVelocity;  /*characteristic velocity */
-    Real refTemperature; /* characteristic temperature */
-    Material material; /* material type */
-} Model;
-/*
- * Material properties
- */
-typedef struct {
-    Real gamma; /* heat capacity ratio */
-    Real gasR; /* the gas constant */
-    Real cv; /* specific heat capacity at constant volume */
-} Material;
-/*
- * Domain partition structure
- */
-typedef struct {
-    int n[NPART][DIMS][LIMIT]; /* decomposition node range for each partition */
+    int ns[NPART][DIMS][LIMIT]; /* decomposition node range for each partition */
     int normal[NBC][DIMS]; /* outer surface normal of domain boundary */
     int typeBC[NBC]; /* BC types recorder */
-    int tallyIC; /* tally of flow initializers */
+    int countIC; /* count of flow initializers */
     int typeIC[NIC]; /* record type of each initializer */
     Real valueBC[NBC][ENTRYBC]; /* field values of each boundary */
     Real valueIC[NIC][ENTRYIC]; /* field values of each initializer */
+    Real domain[DIMS][LIMIT]; /* coordinates define the space domain */
 } Partition;
 /*
  * Facet structure
@@ -696,15 +644,15 @@ typedef struct {
     RealVector P1; /* vertical 1 */
     RealVector P2; /* vertical 2 */
     RealVector P3; /* vertical 3 */
-    Real s; /* area */
+    Real area; /* area */
 } Facet;
 /*
  * Polyhedron structure
  */
 typedef struct {
     int facetN; /* number of facets. 0 for analytical sphere */
-    int tally; /* tally for 1st type interfacial node in polyhedron */
-    int eosID; /* equation of states for polyhedron domain */
+    int nodeN; /* total 1st type interfacial node in polyhedron */
+    int matID; /* material type for polyhedron domain */
     RealVector O; /* a bounding sphere of the polyhedron */
     Real r;
     Real box[DIMS][LIMIT]; /* a bounding box of the polyhedron */
@@ -739,6 +687,59 @@ typedef struct {
     Real UoI[DIMUo]; /* reconstructed primitives at image point */
     Real UoO[DIMUo]; /* physical primitives at boundary point */
 } Ghost;
+/*
+ * Space domain parameters
+ */
+typedef struct {
+    Node *node; /* field data */
+    Partition part; /* domain discretization and partition information */
+    Geometry geo; /* geometry in space */
+} Space;
+/*
+ * Time domain parameters
+ */
+typedef struct {
+    int restart; /* restart flag */
+    int stepN; /* total number of steps */
+    int countStep; /* step number count */
+    int outputN; /* total times of exporting computed data */
+    int countOutput; /* exporting data count */
+    int dataStreamer; /* types of data streamer */
+    int probeN; /* total number of probes */
+    int outputNProbe; /* times to write probe information */
+    Real end; /* total evolution time */
+    Real now; /* current time recorder */
+    Real dt; /* time step size */
+    Real numCFL; /* CFL number */
+    Real probe[NPROBE][ENTRYPROBE]; /* store information of probes */
+} Time;
+/*
+ * Material properties
+ */
+typedef struct {
+    Real eos; /* equation of state */
+} Material;
+/*
+ * Model properties and physics parameters
+ */
+typedef struct {
+    int scheme; /* record numerical scheme */
+    int averager; /* average method for local Jacobian linearization */
+    int splitter; /* flux vector splitting method */
+    int fsi; /* fluid solid interaction trigger */
+    int layers; /* number of interfacial layers using flow reconstruction */
+    int matID; /* material type */
+    Real refMa; /* reference Mach number */
+    Real refMu; /* reference dynamic viscosity */
+    Real gamma; /* heat capacity ratio */
+    Real gasR; /* the gas constant */
+    Real cv; /* specific heat capacity at constant volume */
+    Real refLength; /* characteristic length */
+    Real refDensity; /* characteristic density */
+    Real refVelocity;  /*characteristic velocity */
+    Real refTemperature; /* characteristic temperature */
+    Material mat; /* material database */
+} Model;
 /*
  * Program command line arguments and overall control
  */
