@@ -28,52 +28,52 @@ int CommandLineProcessor(char *lineCommand)
         return 0;
     }
     /* check whether is a empty command line */
-    if ('\0' == lineCommand[0]) {
+    if ('\0' == *lineCommand) {
         return 0;
     }
-    /* then get rid of before tabs and spaces */
-    while ((' ' == scanner[0]) || ('\t' == scanner[0])) {
-        scanner[0] = ' '; /* replace tab with space */
+    /* then skip tabs and spaces at the front */
+    while ((' ' == *scanner) || ('\t' == *scanner)) {
+        *scanner = ' '; /* replace tab with space */
         ++scanner; /* update scanner */
     }
-    while ('\0' != scanner[0]) { /* until reach the end of original command */
-        if (('\r' == scanner[0]) || ('\n' == scanner[0])) {
+    while ('\0' != *scanner) { /* until reach the end of original command */
+        if (('\r' == *scanner) || ('\n' == *scanner)) {
             ++scanner; /* scan the next character */
             continue; /* go to next loop */
         }
-        if ('#' == scanner[0]) {
+        if ('#' == *scanner) {
             break; /* no more scan */
         }
-        if ((' ' == scanner[0]) || ('\t' == scanner[0])) { /* a space or tab */
-            if (' ' != scanner[-1]) { /* only check space; tabs are all replaced */
+        if ((' ' == *scanner) || ('\t' == *scanner)) { /* a space or tab */
+            if (' ' != *(scanner - 1)) { /* only check space; tabs are all replaced */
                 /* now its a first space or tab between words */
-                scanner[0] = ' '; /* replace tab with space */
-                receiver[0] = ' '; /* receive a space */
+                *scanner = ' '; /* replace tab with space */
+                *receiver = ' '; /* receive a space */
                 ++receiver; /* update the receiver address */
                 ++scanner; /* scan the next character */
                 continue;
             }
             /* otherwise, do not receive */
-            scanner[0] = ' '; /* replace tab with space */
+            *scanner = ' '; /* replace tab with space */
             ++scanner; /* scan the next character */
             continue;
         }
         /* now its a normal character */
-        receiver[0] = scanner[0]; /* receive the value of current scanner */
+        *receiver = *scanner; /* receive the value of current scanner */
         ++receiver; /* update the receiver address */
         ++scanner; /* scan the next character */
     }
     /* if no useful information in command, receiver didn't receive anything */
     if (receiver == lineCommand) {
-        receiver[0] = '\0';
+        *receiver = '\0';
         return 0;
     }
     /* if received something and also ended with a space */
-    if (' ' == receiver[-1]) {
-        receiver[-1] = '\0';
+    if (' ' == *(receiver - 1)) {
+        *(receiver - 1) = '\0';
         return 0;
     }
-    receiver[0] = '\0'; /* add string terminator */
+    *receiver = '\0'; /* add string terminator */
     return 0;
 }
 void FatalError(const char *statement)
