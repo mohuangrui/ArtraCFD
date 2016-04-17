@@ -295,12 +295,29 @@
  *   be referred to through different pointers. This has an effect on
  *   optimization of the code: since the compiler cannot be sure that whether
  *   the const variable will be changed after aliasing, it has to assume that
- *   it can be changed, which prevents the desired optimizations. The restrict
- *   keyword in the C99 standard for C is a way of telling a compiler
- *   to assume that aliasing does not occur for a particular variable. That is,
- *   if a variable is declared restrict, the compiler assumes that changes to
- *   other variables cannot affect that variable. Whether aliasing does or 
- *   does not occur is the responsibility of the programmer.
+ *   it can be changed, which prevents the desired optimizations.
+ * - The restrict keyword in the C99 standard for C is a declaration
+ *   of intent given by the programmer to the compiler. It says that for the
+ *   lifetime of the pointer, only the pointer itself or a value directly
+ *   derived from it (such as pointer + 1) will be used to access the object to
+ *   which it points. This limits the effects of pointer aliasing, that is,
+ *   each memory block pointed by a restrict pointer is only accessed by the
+ *   current pointer. Since the strict aliasing rules prohibit aliasing among
+ *   incompatible types, and different restrict pointers of compatible types
+ *   always point to different locations, updating one pointer will not 
+ *   affect the other pointers, aiding better optimizations. Whether aliasing
+ *   does or does not occur is the responsibility of the programmer.
+ * - Strict aliasing means that two objects of incompatible types cannot refer
+ *   to the same location in memory. Enable this option in GCC with the
+ *   -fstrict-aliasing flag. Be sure that all code can safely run with this
+ *   rule enabled. Enable strict aliasing related warnings with
+ *   -Wstrict-aliasing, but do not expect to be warned in all cases.
+ * - Begin using the restrict keyword immediately. Retrofit old code as soon as
+ *   possible. Only use restricted leaf pointers. Use of parent pointers may
+ *   break the restrict contract.
+ * - Keep loads and stores separated from calculations. This results in better
+ *   scheduling in Compilers, and makes the relationship between the output 
+ *   assembly and the original source clearer.
  * - Definition VS Declaration: definition occurs in only one specifies the 
  *   type of an object; reserves storage for it; is used to create place
  *   new objects, example: int my_array[100]; declaration can occur multiple
@@ -453,6 +470,27 @@
  * - Make sure assigning a valid memory location to the pointer before
  *   dereferencing a pointer!
  ****************************************************************************/
+/****************************************************************************
+ *
+ *             Coding Principles for Numerical Solutions of PDEs
+ * 
+ * - The structure of the code should strictly resemble the structure of 
+ *   the mathematical formulation. For example, the data flow in the code
+ *   should follow the data flow in the mathematical formulation. 
+ *   The function hierarchy in the code should follow the function hierarchy
+ *   in the mathematical formulation; and the function definition and content
+ *   in the code should be the same as those in the mathematical formulation. 
+ * - The code verification should be thorough. Start from simple problems that
+ *   numerical methods could solve exactly, such as uniform or linearly
+ *   distributed smooth initial data. In these simple problems, the truncation
+ *   error would be zero since the high order derivatives are all zero. 
+ *   Therefore, numerical methods would solve these problems exactly. 
+ * - Convergence test with convergence rate evaluated should be conducted.
+ *   The employed grids should be successively refined with grid number
+ *   successively doubled. The chosen problem should be smooth enough to
+ *   avoid the affection from discontinuities.
+ *
+ ****************************************************************************/
 /*
  * Define some global integer constants for array bounds, identifiers, etc.
  * enum statement is used instead of macros for handling these magic numbers.
@@ -482,10 +520,11 @@ typedef enum {
     DIMUo = 6, /* primitive vector: rho, u, v, w, [p, hT, h], [T, c] */
     /* parameters related to numerical model */
     WENO = 0, /* WENO scheme identifier */
+    TVD = 1, /* TVD scheme identifier */
     GAS = 0, /* gas */
     WATER = 1, /* water */
     /* parameters related to probe */
-    NPROBE = 4, /* maximum number of probes to support */
+    NPROBE = 10, /* maximum number of probes to support */
     ENTRYPROBE = 7, /* x1, y1, z1, x2, y2, z2, resolution */
     /* parameters related to domain partitions */
     NPART = 13, /* inner region, [west, east, south, north, front, back] x [Boundary, Ghost] */
@@ -519,7 +558,7 @@ typedef enum {
     NOSLIPWALL = 3,
     PERIODIC = 4,
     PERIODICPAIR = -4,
-    ENTRYBC = 6, /* rho, u, v, w, p, T */
+    VARBC = 6, /* rho, u, v, w, p, T */
     /* parameters related to global and regional initialization */
     NIC = 10, /* maximum number of initializer to support */
     ICGLOBAL = 0, /* global initializer */
@@ -528,14 +567,14 @@ typedef enum {
     ICBOX = 3, /* box initializer */
     ICCYLINDER = 4, /* cylinder initializer */
     ENTRYIC = 12, /* x1, y1, z1, [r, x2], [y2], [z2], ..., primitive variables */
-    ENTRYVAR = 5, /* primitive variables: rho, u, v, w, p */
+    VARIC = 5, /* primitive variables: rho, u, v, w, p */
 } Constants;
 /*
  * Define some universe data type for portability and maintenance.
  */
 typedef double Real; /* real data */
 typedef int Index; /* index type data */
-typedef char String[200]; /* string data */
+typedef char String[100]; /* string data */
 typedef int IntVector[DIMS]; /* integer type vector */
 typedef Real RealVector[DIMS]; /* real type vector */
 /*
@@ -550,9 +589,11 @@ typedef Real RealVector[DIMS]; /* real type vector */
  * multidimensional array as a single linear array with hand-authored array
  * indexing math to keep track of what values are where:
  *
- * data[kMax][jMax][iMax]
- * int k, j, i;
- * int idx; use long type if needed
+ * data[kMax][jMax][iMax] mapped to --> data[idxMax]
+ * data[k][j][i] mapped to --> data[idx]
+ * int kMax, jMax, iMax, k, j, i;
+ * int idxMax, idx; use long type if needed
+ * idxMax = kMax * jMax * iMax;
  * idx = ((k * jMax + j) * iMax + i);
  *
  * Since the array is a single large chunk of memory, sweeping through it from
@@ -567,12 +608,11 @@ typedef Real RealVector[DIMS]; /* real type vector */
  *
  */
 typedef struct {
-    int eosID; /* equation of states identifier */
-    int layerID; /* interfacial layer identifier */
     int geoID; /* geometry identifier */
-    int facetID; /* geometric facet identifier */
-    Real Un[DIMU]; /* store the "old" field data for intermediate calculation */
-    Real U[DIMU]; /* store updating field data, and updated data after every computation */
+    int facetID; /* closest facet identifier */
+    int layerID; /* interfacial layer identifier */
+    Real Un[DIMU]; /* field data of previous time level */
+    Real U[DIMU]; /* field data of current time level */
     Real Uswap[DIMU]; /* an auxiliary storage space */
 } Node;
 /*
@@ -613,11 +653,10 @@ typedef struct {
  */
 typedef struct {
     int scheme; /* record numerical scheme */
-    int averager; /* average method for local constant Jacobian */
+    int averager; /* average method for local Jacobian linearization */
     int splitter; /* flux vector splitting method */
     int fsi; /* fluid solid interaction trigger */
     int layers; /* number of interfacial layers using flow reconstruction */
-    int fluid; /* fluid type */
     Real refMa; /* reference Mach number */
     Real refMu; /* reference dynamic viscosity */
     Real gamma; /* heat capacity ratio */
@@ -627,7 +666,16 @@ typedef struct {
     Real refDensity; /* characteristic density */
     Real refVelocity;  /*characteristic velocity */
     Real refTemperature; /* characteristic temperature */
+    Material material; /* material type */
 } Model;
+/*
+ * Material properties
+ */
+typedef struct {
+    Real gamma; /* heat capacity ratio */
+    Real gasR; /* the gas constant */
+    Real cv; /* specific heat capacity at constant volume */
+} Material;
 /*
  * Domain partition structure
  */

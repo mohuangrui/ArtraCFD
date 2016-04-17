@@ -109,9 +109,9 @@ CC := gcc
 #   pprof --gv /bin/ls ./cpu.prof  (Displays annotated call-graph via 'gv')
 #
 ifeq ($(CC),icc)
-CFLAGS += -Wall -Wextra -fast -std=c99 -pedantic
+CFLAGS += -Wall -Wextra -fast -ansi-alias -std=c99 -pedantic
 else
-CFLAGS += -Wall -Wextra -O2 -std=c99 -pedantic
+CFLAGS += -Wall -Wextra -O2 -fstrict-aliasing -std=c99 -pedantic
 endif
 
 #
