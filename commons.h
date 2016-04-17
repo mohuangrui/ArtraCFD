@@ -675,6 +675,12 @@ typedef struct {
     Polyhedron *list; /* geometry list */
 } Geometry;
 /*
+ * Material properties
+ */
+typedef struct {
+    Real eos; /* equation of state */
+} Material;
+/*
  * Data collection for flow reconstruction
  */
 typedef struct {
@@ -713,12 +719,6 @@ typedef struct {
     Real numCFL; /* CFL number */
     Real probe[NPROBE][ENTRYPROBE]; /* store information of probes */
 } Time;
-/*
- * Material properties
- */
-typedef struct {
-    Real eos; /* equation of state */
-} Material;
 /*
  * Model properties and physics parameters
  */

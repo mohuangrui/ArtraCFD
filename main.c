@@ -29,25 +29,18 @@ int main(int argc, char *argv[])
      */    
     Space theSpace = {
         .node = NULL,
-        .m = {0},
-        .n = {0},
-        .totalN = 0,
-        .ng = 0,
-        .collapsed = 0,
-        .d = {0.0},
-        .dd = {0.0},
-        .tinyL = 0.0,
-        .domain = {{0.0}}
+        .part = {0},
+        .geo = {0}
     };
     Time theTime = {
         .restart = 0,
         .stepN = 0,
-        .stepCount = 0,
+        .countStep = 0,
         .outputN = 0,
-        .outputCount = 0,
+        .countOutput = 0,
         .dataStreamer = 0,
+        .probeN = 0,
         .outputNProbe = 0,
-        .tallyProbe = 0,
         .end = 0.0,
         .now = 0.0,
         .dt = 0.0,
@@ -60,7 +53,7 @@ int main(int argc, char *argv[])
         .splitter = 0,
         .fsi = 0,
         .layers = 0,
-        .fluid = 0,
+        .matID = 0,
         .refMa = 0.0,
         .refMu = 0.0,
         .gamma = 0.0,
@@ -69,22 +62,8 @@ int main(int argc, char *argv[])
         .refLength = 0.0,
         .refDensity = 0.0,
         .refVelocity = 0.0,
-        .refTemperature = 0.0
-    };
-    Partition thePart = {
-        .n = {{{0}}},
-        .normal = {{0}},
-        .typeBC = {0},
-        .tallyIC = 0,
-        .typeIC = {0},
-        .valueBC = {{0.0}},
-        .valueIC = {{0.0}}
-    };
-    Geometry theGeo = {
-        .totalM = 0,
-        .sphereM = 0,
-        .stlM = 0,
-        .list = NULL
+        .refTemperature = 0.0,
+        .mat = {0.0}
     };
     Control theControl = {
         .runMode = 'i',
@@ -97,15 +76,15 @@ int main(int argc, char *argv[])
     /*
      * Preprocessing
      */
-    Preprocess(&theSpace, &theTime, &theModel, &thePart, &theGeo);
+    Preprocess(&theSpace, &theTime, &theModel);
     /*
      * Solve
      */
-    Solve(&theSpace, &theTime, &theModel, &thePart, &theGeo);
+    Solve(&theSpace, &theTime, &theModel);
     /*
      * Postprocessing
      */
-    Postprocess(&theSpace, &theGeo);
+    Postprocess(&theSpace);
     /*
      * Successfully return
      */
