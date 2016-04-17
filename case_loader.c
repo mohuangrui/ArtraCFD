@@ -471,7 +471,7 @@ static int WriteVerifyData(const Space *space, const Time *time, const Model *mo
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "material: %d\n", model->matID); 
-    fprintf(filePointer, "dynamic viscosity coefficient: %.6g\n", model->refMu); 
+    fprintf(filePointer, "viscous level: %.6g\n", model->refMu); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                        >> Reference Values  <<\n");

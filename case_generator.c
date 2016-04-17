@@ -93,7 +93,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "material begin\n");
     fprintf(filePointer, "0                  # material (integer; 0: gas; 1: water; 2: solid)\n");
-    fprintf(filePointer, "1                  # dynamic viscosity coefficient (0: inviscid; 1: normal)\n");
+    fprintf(filePointer, "1                  # viscous level (0: non; 1: normal)\n");
     fprintf(filePointer, "material end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");

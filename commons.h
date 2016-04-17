@@ -559,8 +559,8 @@ typedef enum {
     NOSLIPWALL = 3,
     PERIODIC = 4,
     PERIODICPAIR = -4,
-    ENTRYBC = 6, /* primitive variables */
-    VARBC = 6, /* rho, u, v, w, p, T */
+    ENTRYBC = 6, /* rho, u, v, w, p, T */
+    VARBC = 5, /* rho, u, v, w, p */
     /* parameters related to global and regional initialization */
     NIC = 10, /* maximum number of initializer to support */
     ICGLOBAL = 0, /* global initializer */

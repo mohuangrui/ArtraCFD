@@ -34,49 +34,42 @@ int ComputeCFDParameters(Space *space, Time *time, Model *model)
     return 0;
 }
 /*
- * Calculations in this program is node based, we first construct the
- * distribution of nodes with the first node and last node placing at
- * boundaries. Then cells are constructed based on the node distribution.
- * Therefore, boundaries are aligned with the nodes, or say, cell centers.
- *
- * Consequently, if we have m cells, we will have m + 2 node layers.
- *
- * In this program, 2D and 3D space are unified, that is, a 2D space
- * will be equivalent to a non-zero thickness 3D space with
- * 1 cells(that is, three node layers) in the collapsed direction.
- * These three node layers are treated as Domain Boundary,
- * inner node, Domain Boundary respectively. Periodic boundary
- * condition need to be forced on these two boundaries.
- * That is, dimension collapse should be achieved by single cell
- * with periodic boundary conditions;
+ * Calculations are node based, boundaries are aligned with
+ * the nodes. For m inner cells, there are m + 1 node layers.
+ * In this program, 2D and 3D space are unified, a 2D space
+ * is equivalent to a non-zero thickness 3D space with 2 inner
+ * cells (that is, three node layers) in the collapsed direction.
+ * These three node layers are treated as domain boundary,
+ * inner node, domain boundary respectively. Zero gradient
+ * condition need to be forced on the collapsed dimension.
  */
 static int NodeBasedMeshNumberRefine(Space *space, const Model *model)
 {
     /* set ghost layers according to numerical scheme */
     if (TVD == model->scheme) {
-        space->ng = 1;
+        space->part.ng = 1;
     }
     if (WENO == model->scheme) {
-        space->ng = 2;
+        space->part.ng = 2;
     }
     /* check and mark collapsed space. */
-    space->collapsed = COLLAPSEN;
-    if (0 == (space->m[Z] - 1)) {
-        space->collapsed = COLLAPSEZ;
+    space->part.collapsed = COLLAPSEN;
+    if (0 == (space->part.m[Z] - 1)) {
+        space->part.collapsed = COLLAPSEZ;
     }
-    if (0 == (space->m[Y] - 1)) {
-        space->collapsed = 2 * space->collapsed + COLLAPSEY;
+    if (0 == (space->part.m[Y] - 1)) {
+        space->part.collapsed = 2 * space->part.collapsed + COLLAPSEY;
     }
-    if (0 == (space->m[X] - 1)) {
-        space->collapsed = 2 * space->collapsed + COLLAPSEX;
+    if (0 == (space->part.m[X] - 1)) {
+        space->part.collapsed = 2 * space->part.collapsed + COLLAPSEX;
     }
     for (int s = 0; s < DIMS; ++s) {
-        /* change from number of cells to number of node layers */
-        space->m[s] = space->m[s] + 2;
+        /* ensure at least two inner cells per dimension */
+        space->part.m[s] = MinInt(space->part.m[s], 2);
         /* total number of nodes need to add ghosts nodes */
-        space->n[s] = space->m[s] + 2 * space->ng; 
+        space->part.n[s] = space->part.m[s] + 1 + 2 * space->part.ng; 
     }
-    space->totalN = space->n[Z] * space->n[Y] * space->n[X];
+    space->part.totalN = space->part.n[Z] * space->part.n[Y] * space->part.n[X];
     return 0;
 }
 /*
@@ -88,18 +81,19 @@ static int InitializeCFDParameters(Space *space, Time *time, Model *model)
 {
     /* space */
     for (int s = 0; s < DIMS; ++s) {
-        space->d[s] = ((space->domain[s][MAX] - space->domain[s][MIN]) / (Real)(space->m[s] - 1)) / model->refLength;
-        space->domain[s][MAX] = space->domain[s][MAX] / model->refLength;
-        space->domain[s][MIN] = space->domain[s][MIN] / model->refLength;
-        space->dd[s] = 1.0 / space->d[s];
+        space->part.d[s] = ((space->part.domain[s][MAX] - space->part.domain[s][MIN]) /
+                (Real)(space->part.m[s])) / model->refLength;
+        space->part.domain[s][MAX] = space->part.domain[s][MAX] / model->refLength;
+        space->part.domain[s][MIN] = space->part.domain[s][MIN] / model->refLength;
+        space->part.dd[s] = 1.0 / space->part.d[s];
     }
-    space->tinyL = 1.0e-6 * MinReal(space->d[Z], MinReal(space->d[Y], space->d[X]));
+    space->part.tinyL = 1.0e-6 * MinReal(space->part.d[Z], MinReal(space->part.d[Y], space->part.d[X]));
     /* time */
     time->end = time->end * model->refVelocity / model->refLength;
     if (0 > time->stepN) {
         time->stepN = INT_MAX;
     }
-    /* fluid and flow */
+    /* model */
     if (0 > model->layers) {
         model->layers = INT_MAX;
     }
