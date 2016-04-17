@@ -576,7 +576,7 @@ typedef enum {
  */
 typedef double Real; /* real data */
 typedef int Index; /* index type data */
-typedef char String[100]; /* string data */
+typedef char String[200]; /* string data */
 typedef int IntVector[DIMS]; /* integer type vector */
 typedef Real RealVector[DIMS]; /* real type vector */
 /*
@@ -726,7 +726,7 @@ typedef struct {
     int scheme; /* record numerical scheme */
     int averager; /* average method for local Jacobian linearization */
     int splitter; /* flux vector splitting method */
-    int fsi; /* fluid solid interaction trigger */
+    int fsi; /* material interaction trigger */
     int layers; /* number of interfacial layers using flow reconstruction */
     int matID; /* material type */
     Real refMa; /* reference Mach number */

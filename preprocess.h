@@ -34,7 +34,7 @@
  * Returns
  *      0 -- successful
  */
-extern int Preprocess(Space *, Time *, Model *, Partition *, Geometry *);
+extern int Preprocess(Space *, Time *, Model *);
 #endif
 /* a good practice: end file with a newline */
 

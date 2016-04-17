@@ -33,7 +33,7 @@
  * Outcome
  *      Will write loaded data to file artracfd.verify for verification.
  */
-extern int LoadCaseSettingData(Space *, Time *, Model *, Partition *);
+extern int LoadCaseSettingData(Space *, Time *, Model *);
 #endif
 /* a good practice: end file with a newline */
 

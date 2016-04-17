@@ -25,46 +25,12 @@
 int main(int argc, char *argv[])
 {
     /*
-     * Declare and initialize variables
+     * Declare and initialize variables. Anything in C can be initialised
+     * with = 0; this initialises numeric elements to zero and pointers null
      */    
-    Space theSpace = {
-        .node = NULL,
-        .part = {0},
-        .geo = {0}
-    };
-    Time theTime = {
-        .restart = 0,
-        .stepN = 0,
-        .countStep = 0,
-        .outputN = 0,
-        .countOutput = 0,
-        .dataStreamer = 0,
-        .probeN = 0,
-        .outputNProbe = 0,
-        .end = 0.0,
-        .now = 0.0,
-        .dt = 0.0,
-        .numCFL = 0.0,
-        .probe = {{0.0}}
-    };
-    Model theModel = {
-        .scheme = 0,
-        .averager = 0,
-        .splitter = 0,
-        .fsi = 0,
-        .layers = 0,
-        .matID = 0,
-        .refMa = 0.0,
-        .refMu = 0.0,
-        .gamma = 0.0,
-        .gasR = 0.0,
-        .cv = 0.0,
-        .refLength = 0.0,
-        .refDensity = 0.0,
-        .refVelocity = 0.0,
-        .refTemperature = 0.0,
-        .mat = {0.0}
-    };
+    Space theSpace = {0};
+    Time theTime = {0};
+    Model theModel = {0};
     Control theControl = {
         .runMode = 'i',
         .procN = 1

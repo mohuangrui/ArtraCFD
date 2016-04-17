@@ -30,14 +30,14 @@ static int ProgramMemoryAllocate(Space *);
 /*
  * This is the overall preprocessing function
  */
-int Preprocess(Space *space, Time *time, Model *model, Partition *part, Geometry *geo)
+int Preprocess(Space *space, Time *time, Model *model)
 {
-    LoadCaseSettingData(space, time, model, part);
+    LoadCaseSettingData(space, time, model);
     ComputeCFDParameters(space, time, model);
-    DomainPartition(space, part);
+    DomainPartition(space);
     ProgramMemoryAllocate(space);
-    ReadGeometryData(space, time, model, geo);
-    ComputeGeometryDomain(space, part, geo);
+    ReadGeometryData(space, time, model);
+    ComputeGeometryDomain(space);
     return 0;
 }
 /*
@@ -47,7 +47,7 @@ int Preprocess(Space *space, Time *time, Model *model, Partition *part, Geometry
 static int ProgramMemoryAllocate(Space *space)
 {
     ShowInformation("Allocating memory...");
-    space->node = AssignStorage(space->totalN, "Node");
+    space->node = AssignStorage(space->part.totalN, "Node");
     ShowInformation("Session End");
     return 0;
 }
