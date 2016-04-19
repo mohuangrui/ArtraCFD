@@ -29,60 +29,49 @@
  * Function
  *      Compute eigenvalues and eigenvectors.
  */
-extern int DecompositionCoefficientAlpha(Real alpha[], Real L[][DIMU],
-        const int idx, const int idxh, const Real *U);
-extern int EigenvalueLambda(const int s, Real lambda[], const Real Uo[]);
-extern int EigenvectorSpaceL(const int s, Real L[][DIMU], const Real Uo[], const Real gamma);
-extern int EigenvectorSpaceR(const int s, Real R[][DIMU], const Real Uo[]);
-/*
- * Flux splitting
- *
- * Function
- *      Splitting eigenvalues by flux splitting methods.
- */
-extern int FluxSplitting(Real lambdaPlus[], Real lambdaMinus[], const Real lambda[], const int splitter);
+extern void Eigenvalue(const int s, const Real Uo[], Real Lambda[]);
+extern void EigenvalueSplitting(const int splitter, const Real Lambda[], Real LambdaP[], Real LambdaN[]);
+extern void EigenvectorL(const int s, const Real gamma, const Real Uo[], Real L[][DIMU]);
+extern void EigenvectorR(const int s, const Real Uo[], Real R[][DIMU]);
 /*
  * Average method
  *
  * Function
  *      Compute averaged variables at interface.
  */
-extern int SymmetricAverage(Real Uo[], const int idx, const int idxh,
-        const Real *U, const Real gamma, const int averager);
+extern void SymmetricAverage(const int averager, const Real gamma, const Real UL[], const Real UR[], Real Uo[]);
 /*
  * Convective fluxes
  *
  * Function
  *      Compute convective fluxes.
  */
-extern int ConvectiveFlux(const int s, Real F[], const int idx, const Real *U, const Real gamma);
+extern void ConvectiveFlux(const int s, const Real gamma, const Real U[], Real F[]);
 /*
  * Diffusive fluxes
  *
  * Function
  *      Compute Diffusive fluxes.
  */
-extern int DiffusiveFlux(const int s, Real G[], const int k, const int j, const int i, 
-        const Real *U, const Space *, const Model *);
+extern void DiffusiveFlux(const int s, const int k, const int j, const int i, const Space *, const Model *, Real Fv[]);
 /*
  * Compute the values of primitive variable vector
  *
  * Parameter
  *      Uo[] -- a array stores the returned values of primitives.
- *      idx  -- the index of current node.
  * Notice
  *      calculated values are [rho, u, v, w, p]
  */
-extern int PrimitiveByConservative(Real Uo[], const int idx, const Real *U, const Model *);
-extern Real ComputePressure(const int idx, const Real *U, const Model *);
-extern Real ComputeTemperature(const int idx, const Real *U, const Model *);
+extern void PrimitiveByConservative(const Real gamma, const Real gasR, const Real U[], Real Uo[]);
+extern Real ComputePressure(const Real gamma, const Real U[]);
+extern Real ComputeTemperature(const Real cv, const Real U[]);
 /*
  * Compute and update conservative variable vector
  *
  * Function
  *      Compute and update conservative variable vector according to primitive values.
  */
-extern int ConservativeByPrimitive(Real *U, const int idx, const Real Uo[], const Model *);
+extern void ConservativeByPrimitive(const Real gamma, const Real Uo[], Real U[]);
 /*
  * Index math
  *
@@ -91,16 +80,16 @@ extern int ConservativeByPrimitive(Real *U, const int idx, const Real Uo[], cons
  * Returns
  *      int -- the calculated index value
  */
-extern int IndexNode(const int k, const int j, const int i, const Space *);
+extern int IndexNode(const int k, const int j, const int i, const int jMax, const int iMax);
 /*
  * Coordinates transformation
  *
  * Function
  *      transform coordinates between node coordinates and general coordinates.
  */
-extern int NodeSpace(const Real point, const int s, const Space *);
-extern int ValidNodeSpace(const int node, const int s, const Partition *);
-extern Real PointSpace(const int node, const int s, const Space *);
+extern int NodeSpace(const Real sMin, const Real s, const Real dds, const int ng);
+extern int ValidNodeSpace(const int ns, const int nsMin, const int nsMax);
+extern Real PointSpace(const Real sMin, const int ns, const Real ds, const int ng);
 /*
  * Common math functions
  */
@@ -113,9 +102,9 @@ extern Real Dot(const RealVector V1, const RealVector V2);
 extern Real Norm(const RealVector V);
 extern Real Dist2(const RealVector V1, const RealVector V2);
 extern Real Dist(const RealVector V1, const RealVector V2);
-extern int Cross(RealVector V, const RealVector V1, const RealVector V2);
-extern int OrthogonalSpace(const RealVector N, RealVector Ta, RealVector Tb);
-extern int Normalize(Real V[], const int dimV, const Real normalizer);
+extern void Cross(const RealVector V1, const RealVector V2, RealVector V);
+extern void OrthogonalSpace(const RealVector N, RealVector Ta, RealVector Tb);
+extern void Normalize(const int dimV, const Real normalizer, Real V[]);
 #endif
 /* a good practice: end file with a newline */
 

@@ -24,82 +24,53 @@
  * functions can get rather messy. Declaring a typedef to a function pointer
  * generally clarifies the code.
  */
-typedef int (*EigenvectorSpaceLComputer)(Real [][DIMU], const Real [], const Real);
-typedef int (*EigenvectorSpaceRComputer)(Real [][DIMU], const Real []);
-typedef int (*ConvectiveFluxComputer)(Real [], const int, const Real *, const Real);
-typedef int (*DiffusiveFluxComputer)(Real [], const int, const int, const int, 
-        const Real *, const Space *, const Model *);
-typedef int (*FluxSplitter)(Real [], Real [], const Real[]);
-typedef int (*AverageComputer)(Real [], const int, const int, const Real *, const Real);
+typedef void (*EigenvalueSplitter)(const Real[], Real [], Real []);
+typedef void (*EigenvectorLComputer)(const Real, const Real [], Real [][DIMU]);
+typedef void (*EigenvectorRComputer)(const Real [], Real [][DIMU]);
+typedef void (*SymmetricAverager)(const Real, const Real [], const Real [], Real []);
+typedef void (*ConvectiveFluxComputer)(const Real, const Real [], Real []);
+typedef void (*DiffusiveFluxComputer)(const int, const int, const int, 
+        const Space *, const Model *, Real []);
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ArithmeticMean(Real [], const int, const int, const Real *, const Real);
-static int RoeAverage(Real [], const int, const int, const Real *, const Real);
-static int LaxFriedrichs(Real [], Real [], const Real []);
-static int StegerWarming(Real [], Real [], const Real []);
-static int EigenvectorSpaceLZ(Real [][DIMU], const Real [], const Real);
-static int EigenvectorSpaceLY(Real [][DIMU], const Real [], const Real);
-static int EigenvectorSpaceLX(Real [][DIMU], const Real [], const Real);
-static int EigenvectorSpaceRZ(Real [][DIMU], const Real []);
-static int EigenvectorSpaceRY(Real [][DIMU], const Real []);
-static int EigenvectorSpaceRX(Real [][DIMU], const Real []);
-static int ConvectiveFluxZ(Real [], const int, const Real *, const Real);
-static int ConvectiveFluxY(Real [], const int, const Real *, const Real);
-static int ConvectiveFluxX(Real [], const int, const Real *, const Real);
-static int DiffusiveFluxZ(Real [], const int, const int, const int, 
-        const Real *, const Space *, const Model *);
-static int DiffusiveFluxY(Real [], const int, const int, const int, 
-        const Real *, const Space *, const Model *);
-static int DiffusiveFluxX(Real [], const int, const int, const int, 
-        const Real *, const Space *, const Model *);
+
+/****************************************************************************
+ * Global Variables Definition with Private Scope
+ ****************************************************************************/
+static EigenvalueSplitter SplitEigenvalue[2] = {
+    LocalLaxFriedrichs,
+    StegerWarming};
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int DecompositionCoefficientAlpha(Real alpha[], Real L[][DIMU], const int idx, const int idxh, const Real *U)
+void Eigenvalue(const int s, const Real Uo[restrict], Real Lambda[restrict])
 {
-    const Real deltaU[DIMU] = { /* U variation */
-        U[idxh] - U[idx],
-        U[idxh+1] - U[idx+1],
-        U[idxh+2] - U[idx+2],
-        U[idxh+3] - U[idx+3],
-        U[idxh+4] - U[idx+4]};
+    Lambda[0] = Uo[s+1] - Uo[5];
+    Lambda[1] = Uo[s+1];
+    Lambda[2] = Uo[s+1];
+    Lambda[3] = Uo[s+1];
+    Lambda[4] = Uo[s+1] + Uo[5];
+    return;
+}
+void EigenvalueSplitting(const int splitter, const Real Lambda[restrict],
+        Real LambdaP[restrict], Real LambdaN[restrict])
+{
+    SplitEigenvalue[splitter](Lambda, LambdaP, LambdaN);
+    return;
+}
+static void LocalLaxFriedrichs(const Real Lambda[restrict],
+        Real LambdaP[restrict], Real LambdaN[restrict])
+{
+    /* set local maximum as (|Vs| + c) */
+    const Real lambdaStar = fabs(Lambda[2]) + Lambda[4] - Lambda[2];
     for (int row = 0; row < DIMU; ++row) {
-        alpha[row] = 0;
-        for (int dummy = 0; dummy < DIMU; ++dummy) {
-            alpha[row] = alpha[row] + L[row][dummy] * deltaU[dummy];
-        }
+        LambdaP[row] = 0.5 * (Lambda[row] + lambdaStar);
+        LambdaN[row] = 0.5 * (Lambda[row] - lambdaStar);
     }
-    return 0;
+    return;
 }
-int EigenvalueLambda(const int s, Real lambda[], const Real Uo[])
-{
-    lambda[0] = Uo[s+1] - Uo[5];
-    lambda[1] = Uo[s+1];
-    lambda[2] = Uo[s+1];
-    lambda[3] = Uo[s+1];
-    lambda[4] = Uo[s+1] + Uo[5];
-    return 0;
-}
-int FluxSplitting(Real lambdaPlus[], Real lambdaMinus[], const Real lambda[], const int splitter)
-{
-    FluxSplitter SplitFlux[2] = {
-        LaxFriedrichs,
-        StegerWarming};
-    SplitFlux[splitter](lambdaPlus, lambdaMinus, lambda);
-    return 0;
-}
-static int LaxFriedrichs(Real lambdaPlus[], Real lambdaMinus[], const Real lambda[])
-{
-    /* set local maximum as |u| + c */
-    const Real lambdaStar = fabs(lambda[2]) + lambda[4] - lambda[2];
-    for (int row = 0; row < DIMU; ++row) {
-        lambdaPlus[row] = 0.5 * (lambda[row] + lambdaStar);
-        lambdaMinus[row] = 0.5 * (lambda[row] - lambdaStar);
-    }
-    return 0;
-}
-static int StegerWarming(Real lambdaPlus[], Real lambdaMinus[], const Real lambda[])
+static void StegerWarming(Real lambdaPlus[], Real lambdaMinus[], const Real lambda[])
 {
     const Real epsilon = 1.0e-6;
     for (int row = 0; row < DIMU; ++row) {
@@ -117,7 +88,7 @@ int EigenvectorSpaceL(const int s, Real L[][DIMU], const Real Uo[], const Real g
     ComputeEigenvectorSpaceL[s](L, Uo, gamma);
     return 0;
 }
-static int EigenvectorSpaceLZ(Real L[][DIMU], const Real Uo[], const Real gamma)
+static void EigenvectorSpaceLZ(Real L[][DIMU], const Real Uo[], const Real gamma)
 {
     const Real u = Uo[1];
     const Real v = Uo[2];
@@ -133,7 +104,7 @@ static int EigenvectorSpaceLZ(Real L[][DIMU], const Real Uo[], const Real gamma)
     L[4][0] = b * q - d * w;   L[4][1] = -b * u;             L[4][2] = -b * v;             L[4][3] = -b * w + d;     L[4][4] = b;
     return 0;
 }
-static int EigenvectorSpaceLY(Real L[][DIMU], const Real Uo[], const Real gamma)
+static void EigenvectorSpaceLY(Real L[][DIMU], const Real Uo[], const Real gamma)
 {
     const Real u = Uo[1];
     const Real v = Uo[2];
@@ -149,7 +120,7 @@ static int EigenvectorSpaceLY(Real L[][DIMU], const Real Uo[], const Real gamma)
     L[4][0] = b * q - d * v;    L[4][1] = -b * u;             L[4][2] = -b * v + d;     L[4][3] = -b * w;             L[4][4] = b;
     return 0;
 }
-static int EigenvectorSpaceLX(Real L[][DIMU], const Real Uo[], const Real gamma)
+static void EigenvectorSpaceLX(Real L[][DIMU], const Real Uo[], const Real gamma)
 {
     const Real u = Uo[1];
     const Real v = Uo[2];
@@ -174,7 +145,7 @@ int EigenvectorSpaceR(const int s, Real R[][DIMU], const Real Uo[])
     ComputeEigenvectorSpaceR[s](R, Uo);
     return 0;
 }
-static int EigenvectorSpaceRZ(Real R[][DIMU], const Real Uo[])
+static void EigenvectorSpaceRZ(Real R[][DIMU], const Real Uo[])
 {
     const Real u = Uo[1];
     const Real v = Uo[2];
@@ -189,7 +160,7 @@ static int EigenvectorSpaceRZ(Real R[][DIMU], const Real Uo[])
     R[4][0] = hT - w * c;  R[4][1] = u;  R[4][2] = v;  R[4][3] = w * w - q;  R[4][4] = hT + w * c;
     return 0;
 }
-static int EigenvectorSpaceRY(Real R[][DIMU], const Real Uo[])
+static void EigenvectorSpaceRY(Real R[][DIMU], const Real Uo[])
 {
     const Real u = Uo[1];
     const Real v = Uo[2];
@@ -204,7 +175,7 @@ static int EigenvectorSpaceRY(Real R[][DIMU], const Real Uo[])
     R[4][0] = hT - v * c;  R[4][1] = u;  R[4][2] = v * v - q;  R[4][3] = w;  R[4][4] = hT + v * c;
     return 0;
 }
-static int EigenvectorSpaceRX(Real R[][DIMU], const Real Uo[])
+static void EigenvectorSpaceRX(Real R[][DIMU], const Real Uo[])
 {
     const Real u = Uo[1];
     const Real v = Uo[2];
@@ -227,7 +198,7 @@ int SymmetricAverage(Real Uo[], const int idx, const int idxh, const Real *U, co
     ComputeAverage[averager](Uo, idx, idxh, U, gamma);
     return 0;
 }
-static int ArithmeticMean(Real Uo[], const int idx, const int idxh, const Real *U, const Real gamma)
+static void ArithmeticMean(Real Uo[], const int idx, const int idxh, const Real *U, const Real gamma)
 {
     const Real rho = U[idx];
     const Real u = U[idx+1] / rho;
@@ -246,7 +217,7 @@ static int ArithmeticMean(Real Uo[], const int idx, const int idxh, const Real *
     Uo[5] = sqrt((gamma - 1.0) * (Uo[4] - 0.5 * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]))); /* the speed of sound */
     return 0;
 }
-static int RoeAverage(Real Uo[], const int idx, const int idxh, const Real *U, const Real gamma)
+static void RoeAverage(Real Uo[], const int idx, const int idxh, const Real *U, const Real gamma)
 {
     const Real rho = U[idx];
     const Real u = U[idx+1] / rho;
@@ -276,7 +247,7 @@ int ConvectiveFlux(const int s, Real F[], const int idx, const Real *U, const Re
     ComputeConvectiveFlux[s](F, idx, U, gamma);
     return 0;
 }
-static int ConvectiveFluxZ(Real F[], const int idx, const Real *U, const Real gamma)
+static void ConvectiveFluxZ(Real F[], const int idx, const Real *U, const Real gamma)
 {
     const Real rho = U[idx];
     const Real u = U[idx+1] / rho;
@@ -291,7 +262,7 @@ static int ConvectiveFluxZ(Real F[], const int idx, const Real *U, const Real ga
     F[4] = (rho * eT + p) * w;
     return 0;
 }
-static int ConvectiveFluxY(Real F[], const int idx, const Real *U, const Real gamma)
+static void ConvectiveFluxY(Real F[], const int idx, const Real *U, const Real gamma)
 {
     const Real rho = U[idx];
     const Real u = U[idx+1] / rho;
@@ -306,7 +277,7 @@ static int ConvectiveFluxY(Real F[], const int idx, const Real *U, const Real ga
     F[4] = (rho * eT + p) * v;
     return 0;
 }
-static int ConvectiveFluxX(Real F[], const int idx, const Real *U, const Real gamma)
+static void ConvectiveFluxX(Real F[], const int idx, const Real *U, const Real gamma)
 {
     const Real rho = U[idx];
     const Real u = U[idx+1] / rho;
@@ -331,7 +302,7 @@ int DiffusiveFlux(const int s, Real G[], const int k, const int j, const int i,
     ComputeDiffusiveFlux[s](G, k, j, i, U, space, model);
     return 0;
 }
-static int DiffusiveFluxZ(Real G[], const int k, const int j, const int i, 
+static void DiffusiveFluxZ(Real G[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
 {
     const int idx = IndexMath(k, j, i, space) * DIMU;
@@ -398,7 +369,7 @@ static int DiffusiveFluxZ(Real G[], const int k, const int j, const int i,
     G[4] = heatK * dT_dz + u * G[1] + v * G[2] + w * G[3];
     return 0;
 }
-static int DiffusiveFluxY(Real G[], const int k, const int j, const int i, 
+static void DiffusiveFluxY(Real G[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
 {
     const int idx = IndexMath(k, j, i, space) * DIMU;
@@ -465,7 +436,7 @@ static int DiffusiveFluxY(Real G[], const int k, const int j, const int i,
     G[4] = heatK * dT_dy + u * G[1] + v * G[2] + w * G[3];
     return 0;
 }
-static int DiffusiveFluxX(Real G[], const int k, const int j, const int i, 
+static void DiffusiveFluxX(Real G[], const int k, const int j, const int i, 
         const Real *U, const Space *space, const Model *model)
 {
     const int idx = IndexMath(k, j, i, space) * DIMU;

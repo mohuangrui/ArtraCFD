@@ -81,7 +81,7 @@
  *   don't use blank lines when you don't have to. Blank lines at the 
  *   beginning or end of a function very rarely help readability.
  * - When defining a function, parameter order is: inputs, then outputs.
- * - Always return or exit a function with the 0 or 1 code when all of the 
+ * - Return or exit a function with the 0 or 1 code to indicate all of the 
  *   commands executed successfully or unsuccessfully.
  * - Avoid side effects, such as do not use assignment statements in if 
  *   condition, should use ++ and -- on lines by themselves.
@@ -182,7 +182,7 @@
  *                            Modular Programming
  *
  * Several schools of code design exist. In structured programming, you divide
- * the code into modules, then divide the modules into submodules, then 
+ * the program into modules, then divide the modules into submodules, then 
  * divide the sub-modules into subsubmodules, and so on. 
  *
  * "Modular Programming" is the act of designing and writing programs as
@@ -249,8 +249,8 @@
  *   kept private,
  * - Private information should be put in the source file of the module.
  * - Private functions that will not be called from outside the module should
- *   be declared static. Variables declared outside of a function that are 
- *   not used outside the module should be declared static.
+ *   be declared static. Private external variables (variables declared outside
+ *   of all functions) that are not used outside the module should be static.
  * - Obviously, the prototypes for static functions should not be put in the
  *   module's header file.
  *
@@ -259,10 +259,52 @@
  *
  *                            C Puzzles
  *
- * - C uses void for two purposes:
- *   In a function declaration, void indicates that the function returns
- *   no value or takes no arguments.
- *   In a pointer declaration, void defines a generic pointer.
+ * - Definition VS Declaration: 
+ *   Declaration of a variable/function declares that the variable/function 
+ *   exists somewhere in the program. No memory will be allocated by a
+ *   declaration. Declaration can occur multiple times and describes the 
+ *   type of an object; It is used to refer to objects defined, since a 
+ *   declaration of a variable/function is always needed to be given before 
+ *   anything that wants to access them. Declarations subject to scope rule.
+ *   Definition of a variable/function, apart from the role of declaration, 
+ *   it also allocates memory for that variable/function. It is used to create
+ *   new objects, example: int my_array[100]; A variable/function can only be
+ *   defined once within its scope.
+ * - extern keyword: (an object is a variable or a function)
+ *   In the C language, an external (global) object is an object defined
+ *   outside any function block (external to all functions). A local object
+ *   is a object defined inside a function block. External objects are
+ *   allocated and initialized when the program starts, and the memory is only
+ *   released when the program ends. External objects are globally accessible
+ *   and remain in existence permanently, therefore, they can be used to 
+ *   communicate data globally between functions. A declaration of an object
+ *   must be specified before any thing to access it. An external object 
+ *   is directly accessible to all the functions in the same module where the
+ *   external object is defined, since definition also serves as declaration.
+ *   For functions in other module files to access the object, a declaration
+ *   is needed to refer to the object, which is done by the extern keyword.
+ *   The extern keyword means "declare without defining". It is a way to
+ *   explicitly declare an object without a definition.
+ *   Since all external objects are globally accessible in default, their 
+ *   scope is global and hence they must be defined exactly once in one of
+ *   the modules of the program. For modules that do not define the
+ *   external object to access it, a declaration is needed to connect the 
+ *   occurrences of the object, which is greatly facilitated by header files
+ *   to ensure that all the declarations used are consistent with each other
+ *   and with the definition. To simply the declaration of external objects 
+ *   for modules, the usual practice is to collect extern declarations of 
+ *   objects in a separate file called a header, which is included by 
+ *   #include at the front of each source file. The normal methodology is 
+ *   for allocation and actual definitions to go into .c files, and mere 
+ *   declarations and prototypes that do not allocate but just describe the
+ *   types of objects for others to refer to and access should go to .h files.
+ *   The reliable way to declare and define global objects is to use a header
+ *   file to contain an extern declaration of the object. The header is 
+ *   included by the one source file that defines the object to ensure that
+ *   the definition and the declaration are consistent and by all the source
+ *   files that reference the object. For each program, one and only one 
+ *   source file defines the object. One and only one header file should 
+ *   declare the object.
  * - static has two meanings:
  *   For function or global variable, static means "private to this file."
  *   If declare a function or global variable as static, it becomes internal.
@@ -279,6 +321,12 @@
  *   that of global variables, static variables still obey scope rules and
  *   therefore cannot be accessed outside of their scope. Hence, you need to
  *   pass its address out if access is needed outside its local scope.
+ *
+ ****************************************************************************/
+/****************************************************************************
+ * - C uses void for two purposes: In a function declaration, void indicates
+ *   that the function returns no value or takes no arguments. In a pointer 
+ *   declaration, void defines a generic pointer.
  * - In C single quotes identify a single character, while double quotes 
  *   create a string literal. 'a' is a single a character literal, while "a" 
  *   is a string literal containing an 'a' and a null terminator (that is a
@@ -310,18 +358,13 @@
  * - Strict aliasing means that two objects of incompatible types cannot refer
  *   to the same location in memory. Enable this option in GCC with the
  *   -fstrict-aliasing flag. Be sure that all code can safely run with this
- *   rule enabled. Enable strict aliasing related warnings with
- *   -Wstrict-aliasing, but do not expect to be warned in all cases.
+ *   rule enabled.
  * - Begin using the restrict keyword immediately. Retrofit old code as soon as
  *   possible. Only use restricted leaf pointers. Use of parent pointers may
  *   break the restrict contract.
  * - Keep loads and stores separated from calculations. This results in better
  *   scheduling in Compilers, and makes the relationship between the output 
  *   assembly and the original source clearer.
- * - Definition VS Declaration: definition occurs in only one specifies the 
- *   type of an object; reserves storage for it; is used to create place
- *   new objects, example: int my_array[100]; declaration can occur multiple
- *   describes the type of an object; is used to refer to objects defined.
  *
  ****************************************************************************/
 /****************************************************************************
@@ -575,10 +618,19 @@ typedef enum {
  * Define some universe data type for portability and maintenance.
  */
 typedef double Real; /* real data */
-typedef int Index; /* index type data */
 typedef char String[200]; /* string data */
 typedef int IntVector[DIMS]; /* integer type vector */
 typedef Real RealVector[DIMS]; /* real type vector */
+/*
+ * Define structures for packing compound data
+ *
+ * To reduce padding required for data alignment of structures, arranging
+ * members of a structure in increasing order by size is desirable.
+ * In addition, fields shall be sorted by their frequency or by memory 
+ * access pattern. Put frequently accessed elements to small offsets,
+ * and if two elements are used at the same time, put them closely to reduce
+ * cache misses per structure.
+ */
 /*
  * Field variables of computational node
  *
@@ -621,7 +673,7 @@ typedef struct {
 typedef struct {
     IntVector m; /* mesh number of each direction */
     IntVector n; /* node number of each direction */
-    Index totalN; /* total node number of domain */
+    int totalN; /* total node number of domain */
     int ng; /* number of ghost node layers of global domain */
     int collapsed; /* space collapse flag */
     RealVector d; /* mesh size of each direction */
@@ -698,8 +750,8 @@ typedef struct {
  */
 typedef struct {
     Node *node; /* field data */
-    Partition part; /* domain discretization and partition information */
     Geometry geo; /* geometry in space */
+    Partition part; /* domain discretization and partition information */
 } Space;
 /*
  * Time domain parameters
