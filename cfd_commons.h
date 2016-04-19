@@ -24,36 +24,40 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Jacobian matrices, eigenvalues, and eigenvectors
- *
- * Function
- *      Compute eigenvalues and eigenvectors.
- */
-extern void Eigenvalue(const int s, const Real Uo[], Real Lambda[]);
-extern void EigenvalueSplitting(const int splitter, const Real Lambda[], Real LambdaP[], Real LambdaN[]);
-extern void EigenvectorL(const int s, const Real gamma, const Real Uo[], Real L[][DIMU]);
-extern void EigenvectorR(const int s, const Real Uo[], Real R[][DIMU]);
-/*
  * Average method
  *
  * Function
  *      Compute averaged variables at interface.
  */
-extern void SymmetricAverage(const int averager, const Real gamma, const Real UL[], const Real UR[], Real Uo[]);
+extern void SymmetricAverage(const int averager, const Real gamma, 
+        const Real UL[restrict], const Real UR[restrict], Real Uo[restrict]);
+/*
+ * Jacobian matrices, eigenvalues, and eigenvectors
+ *
+ * Function
+ *      Compute eigenvalues and eigenvectors.
+ */
+extern void Eigenvalue(const int s, const Real Uo[restrict], Real Lambda[restrict]);
+extern void EigenvalueSplitting(const int splitter, const Real Lambda[restrict], 
+        Real LambdaP[restrict], Real LambdaN[restrict]);
+extern void EigenvectorL(const int s, const Real gamma, const Real Uo[restrict],
+        Real L[restrict][DIMU]);
+extern void EigenvectorR(const int s, const Real Uo[restrict], Real R[restrict][DIMU]);
 /*
  * Convective fluxes
  *
  * Function
  *      Compute convective fluxes.
  */
-extern void ConvectiveFlux(const int s, const Real gamma, const Real U[], Real F[]);
+extern void ConvectiveFlux(const int s, const Real gamma, const Real U[restrict], Real F[restrict]);
 /*
  * Diffusive fluxes
  *
  * Function
  *      Compute Diffusive fluxes.
  */
-extern void DiffusiveFlux(const int s, const int k, const int j, const int i, const Space *, const Model *, Real Fv[]);
+extern void DiffusiveFlux(const int s, const int k, const int j, const int i, 
+        const Space *, const Model *, Real Fv[restrict]);
 /*
  * Compute the values of primitive variable vector
  *
