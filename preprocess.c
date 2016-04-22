@@ -36,7 +36,7 @@ int Preprocess(Space *space, Time *time, Model *model)
     ComputeCFDParameters(space, time, model);
     DomainPartition(space);
     ProgramMemoryAllocate(space);
-    ReadGeometryData(space, time, model);
+    ReadGeometryData(space, time);
     ComputeGeometryDomain(space);
     return 0;
 }

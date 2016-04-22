@@ -35,8 +35,7 @@ static int WriteParaviewVariableFile(const Geometry *, ParaviewSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int ReadGeometryData(const Space *space, const Time *time, const Model *model,
-        Geometry *geo)
+int ReadGeometryData(Space *space, const Time *time)
 {
     if (0 == time->restart) { /* if non-restart, read input file */
         NonrestartGeometryReader(geo);

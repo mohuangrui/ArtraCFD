@@ -31,14 +31,14 @@
  *      -- non restart run, read from file artracfd.geo
  *      -- restart run, read from the restart geometry file.
  */
-extern int ReadGeometryData(const Space *, const Time *, const Model *, Geometry *);
+extern int ReadGeometryData(Space *, const Time *);
 /*
  * Geometry data writer
  *
  * Function
  *      Write geometry data.
  */
-extern int WriteGeometryData(const Time *, const Geometry *);
+extern int WriteGeometryData(const space *, const Time *);
 #endif
 /* a good practice: end file with a newline */
 
