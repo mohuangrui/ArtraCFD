@@ -174,6 +174,14 @@ static int SearchFluidNodes(const int k, const int j, const int i,
      * Search around the specified node and return the information of whether 
      * current node has fluid neighbours at the specified coordinate range.
      */
+/*
+ * Convective terms only have first order derivatives, discretization
+ * stencils of each computational nodes are cross types.
+ * Diffusive tems have second order mixed derivatives, discretization
+ * stencils of each computational nodes are plane squares with coner
+ * nodes. Therefore, for interfacial computational nodes, neighbouring
+ * nodes at corner directions require to be identified as ghost nodes.
+ */
     const Index idxW = IndexNode(k, j, i - h, space);
     const Index idxE = IndexNode(k, j, i + h, space);
     const Index idxS = IndexNode(k, j - h, i, space);

@@ -40,8 +40,6 @@ static int LL(const int, Real *, const Real *, const Space *, const Model *,
         const Partition *, const Real);
 static int NumericalConvectiveFlux(const int, Real [], const Real, const int,
         const int, const int, const Real *, const Space *, const Model *);
-static int DiffusiveFluxGradient(const int, Real [], const int, const int,
-        const int, const Real *, const Space *, const Model *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -185,63 +183,279 @@ static int NumericalConvectiveFlux(const int s, Real Fhat[], const Real r,
     ReconstructNumericalFlux[model->scheme](s, Fhat, r, k, j, i, U, space, model);
     return 0;
 }
-/*
- * Generally the diffusive terms will only be discretized by central
- * difference scheme. However, for outermost layer of interior nodes, the
- * central scheme of them require the diffusive flux vector at boundaries, 
- * because the corners of current computational domain haven't set with any
- * values, the diffusive flux vector at boundaries can not be interpolated
- * with central scheme, therefore, need to change to forward or backward. 
- * This situation is the same to interior ghost nodes the central
- * difference scheme can't be applied because of lacking stencil. Thus,
- * they also need to be identified and modified.
- */
-static int DiffusiveFluxGradient(const int s, Real gradG[],
-        const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
+void NumericalDiffusiveFlux(const int s, const int tn, const int k, const int j, 
+        const int i, const int n[restrict], const Real dd[restrict], const Node *node, 
+        const Model *model, Real Fvhat[restrict])
 {
-    Real Gl[DIMU] = {0.0}; /* diffusive flux vector at left */
-    Real Gr[DIMU] = {0.0}; /* diffusive flux vector at right */
-    Real dL[DIMS] = {space->ddx, space->ddy, space->ddz}; /* reciprocal of differencing distance */
-    Real dCoe = 0;
-    /* default is central scheme */
-    int hl[DIMS][DIMS] = {{-1, 0, 0}, {0, -1, 0}, {0, 0, -1}}; /* left offset */
-    int hr[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* right offset */
-    if (0 == (k + hl[s][Z] - space->ng) * (j + hl[s][Y] - space->ng) * 
-            (i + hl[s][X] - space->ng)) { /* if left at boundary, no offset */
-        hl[s][Z] = 0;
-        hl[s][Y] = 0;
-        hl[s][X] = 0;
-    }
-    if (0 == (k + hr[s][Z] - space->ng - space->nz + 1) * (j + hr[s][Y] - space->ng - space->ny + 1) * 
-            (i + hr[s][X] - space->ng - space->nx + 1)) { /* if right at boundary, no offset */
-        hr[s][Z] = 0;
-        hr[s][Y] = 0;
-        hr[s][X] = 0;
-    }
-    /* check ghost */
-    const int idxl = IndexMath(k + hl[s][Z], j + hl[s][Y], i + hl[s][X], space);
-    const int idxr = IndexMath(k + hr[s][Z], j + hr[s][Y], i + hr[s][X], space);
-    if (OFFSET <= space->nodeFlag[idxl]) { /* if left is ghost, no offset */
-        hl[s][Z] = 0;
-        hl[s][Y] = 0;
-        hl[s][X] = 0;
-    }
-    if (OFFSET <= space->nodeFlag[idxr]) { /* if right is ghost, no offset */
-        hr[s][Z] = 0;
-        hr[s][Y] = 0;
-        hr[s][X] = 0;
-    }
-    dCoe = hr[s][Z] - hl[s][Z] + hr[s][Y] - hl[s][Y] + hr[s][X] - hr[s][X];
-    if (0 != dCoe) { /* only do calculation when offset exists */
-        dL[s] = dL[s] / dCoe;
-        DiffusiveFlux(s, Gl, k + hl[s][Z], j + hl[s][Y], i + hl[s][X], U, space, model);
-        DiffusiveFlux(s, Gr, k + hr[s][Z], j + hr[s][Y], i + hr[s][X], U, space, model);
-    }
-    for (int row = 0; row < DIMU; ++row) {
-        gradG[row] = dL[s] * (Gr[row] - Gl[row]);
-    }
-    return 0;
+    DiffusiveFluxReconstructor ReconstructDiffusiveFlux[DIMS] = {
+        NumericalDiffusiveFluxX,
+        NumericalDiffusiveFluxY,
+        NumericalDiffusiveFluxZ};
+    ReconstructDiffusiveFlux[s](tn, k, j, i, n, dd, node, model, Fvhat);
+    return;
+}
+static void NumericalDiffusiveFluxZ(const int tn, const int k, const int j, 
+        const int i, const int n[restrict], const Real dd[restrict], const Node *node, 
+        const Model *model, Real Fvhat[restrict])
+{
+    const int idx = IndexNode(k, j, i, n[Y], n[X]);
+    const int idxW = IndexNode(k, j, i - 1, n[Y], n[X]);
+    const int idxE = IndexNode(k, j, i + 1, n[Y], n[X]);
+    const int idxS = IndexNode(k, j - 1, i, n[Y], n[X]);
+    const int idxN = IndexNode(k, j + 1, i, n[Y], n[X]);
+
+    const int idxB = IndexNode(k + 1, j, i, n[Y], n[X]);
+    const int idxWB = IndexNode(k + 1, j, i - 1, n[Y], n[X]);
+    const int idxEB = IndexNode(k + 1, j, i + 1, n[Y], n[X]);
+    const int idxSB = IndexNode(k + 1, j - 1, i, n[Y], n[X]);
+    const int idxNB = IndexNode(k + 1, j + 1, i, n[Y], n[X]);
+
+    const Real * U = node[idx].U[tn];
+    const Real u = U[1] / U[0];
+    const Real v = U[2] / U[0];
+    const Real w = U[3] / U[0];
+    const Real T = ComputeTemperature(model->cv, U);
+
+    U = node[idxW].U[tn];
+    const Real uW = U[1] / U[0];
+    const Real wW = U[3] / U[0];
+
+    U = node[idxE].U[tn];
+    const Real uE = U[1] / U[0];
+    const Real wE = U[3] / U[0];
+
+    U = node[idxS].U[tn];
+    const Real vS = U[2] / U[0];
+    const Real wS = U[3] / U[0];
+
+    U = node[idxN].U[tn];
+    const Real vN = U[2] / U[0];
+    const Real wN = U[3] / U[0];
+
+    U = node[idxB].U[tn];
+    const Real uB = U[1] / U[0];
+    const Real vB = U[2] / U[0];
+    const Real wB = U[3] / U[0];
+    const Real TB = ComputeTemperature(model->cv, U);
+
+    U = node[idxWB].U[tn];
+    const Real uWB = U[1] / U[0];
+    const Real wWB = U[3] / U[0];
+
+    U = node[idxEB].U[tn];
+    const Real uEB = U[1] / U[0];
+    const Real wEB = U[3] / U[0];
+
+    U = node[idxSB].U[tn];
+    const Real vSB = U[2] / U[0];
+    const Real wSB = U[3] / U[0];
+
+    U = node[idxNB].U[tn];
+    const Real vNB = U[2] / U[0];
+    const Real wNB = U[3] / U[0];
+
+    const Real dw_dx = 0.25 * (wE + wEB - wW - wWB) * dd[X];
+    const Real du_dz = (uB - u) * dd[Z];
+    const Real dw_dy = 0.25 * (wN + wNB - wS - wSB) * dd[Y];
+    const Real dv_dz = (vB - v) * dd[Z];
+    const Real du_dx = 0.25 * (uE + uEB - uW - uWB) * dd[X];
+    const Real dv_dy = 0.25 * (vN + vNB - vS - vSB) * dd[Y];
+    const Real dw_dz = (wB - w) * dd[Z];
+    const Real dT_dz = (TB - T) * dd[Z];
+
+    /* Calculate interfacial values */
+    const Real uhat = 0.5 * (u + uB);
+    const Real vhat = 0.5 * (v + vB);
+    const Real what = 0.5 * (w + wB);
+    const Real That = 0.5 * (T + TB);
+    const Real mu = model->refMu * Viscosity(That * model->refT);
+    const Real heatK = model->gamma * model->cv * mu / PrandtlNumber();
+    const Real divV = du_dx + dv_dy + dw_dz;
+
+    Fvhat[0] = 0;
+    Fvhat[1] = mu * (dw_dx + du_dz);
+    Fvhat[2] = mu * (dw_dy + dv_dz);
+    Fvhat[3] = mu * (2.0 * dw_dz - (2.0/3.0) * divV);
+    Fvhat[4] = heatK * dT_dz + Fvhat[1] * uhat + Fvhat[2] * vhat + Fvhat[3] * what;
+    return;
+}
+static void NumericalDiffusiveFluxY(const int tn, const int k, const int j, 
+        const int i, const int n[restrict], const Real dd[restrict], const Node *node, 
+        const Model *model, Real Fvhat[restrict])
+{
+    const int idx = IndexNode(k, j, i, n[Y], n[X]);
+    const int idxW = IndexNode(k, j, i - 1, n[Y], n[X]);
+    const int idxE = IndexNode(k, j, i + 1, n[Y], n[X]);
+    const int idxF = IndexNode(k - 1, j, i, n[Y], n[X]);
+    const int idxB = IndexNode(k + 1, j, i, n[Y], n[X]);
+
+    const int idxN = IndexNode(k, j + 1, i, n[Y], n[X]);
+    const int idxWN = IndexNode(k, j + 1, i - 1, n[Y], n[X]);
+    const int idxEN = IndexNode(k, j + 1, i + 1, n[Y], n[X]);
+    const int idxFN = IndexNode(k - 1, j + 1, i, n[Y], n[X]);
+    const int idxBN = IndexNode(k + 1, j + 1, i, n[Y], n[X]);
+
+    const Real * U = node[idx].U[tn];
+    const Real u = U[1] / U[0];
+    const Real v = U[2] / U[0];
+    const Real w = U[3] / U[0];
+    const Real T = ComputeTemperature(model->cv, U);
+
+    U = node[idxW].U[tn];
+    const Real uW = U[1] / U[0];
+    const Real vW = U[2] / U[0];
+
+    U = node[idxE].U[tn];
+    const Real uE = U[1] / U[0];
+    const Real vE = U[2] / U[0];
+
+    U = node[idxF].U[tn];
+    const Real vF = U[2] / U[0];
+    const Real wF = U[3] / U[0];
+
+    U = node[idxB].U[tn];
+    const Real vB = U[2] / U[0];
+    const Real wB = U[3] / U[0];
+
+    U = node[idxN].U[tn];
+    const Real uN = U[1] / U[0];
+    const Real vN = U[2] / U[0];
+    const Real wN = U[3] / U[0];
+    const Real TN = ComputeTemperature(model->cv, U);
+
+    U = node[idxWN].U[tn];
+    const Real uWN = U[1] / U[0];
+    const Real vWN = U[2] / U[0];
+
+    U = node[idxEN].U[tn];
+    const Real uEN = U[1] / U[0];
+    const Real vEN = U[2] / U[0];
+
+    U = node[idxFN].U[tn];
+    const Real vFN = U[2] / U[0];
+    const Real wFN = U[3] / U[0];
+
+    U = node[idxBN].U[tn];
+    const Real vBN = U[2] / U[0];
+    const Real wBN = U[3] / U[0];
+
+    const Real dv_dx = 0.25 * (vE + vEN - vW - vWN) * dd[X];
+    const Real du_dy = (uN - u) * dd[Y];
+    const Real dv_dy = (vN - v) * dd[Y];
+    const Real du_dx = 0.25 * (uE + uEN - uW - uWN) * dd[X];
+    const Real dw_dz = 0.25 * (wB + wBN - wF - wFN) * dd[Z];
+    const Real dv_dz = 0.25 * (vB + vBN - vF - vFN) * dd[Z];
+    const Real dw_dy = (wN - w) * dd[Y];
+    const Real dT_dy = (TN - T) * dd[Y];
+
+    /* Calculate interfacial values */
+    const Real uhat = 0.5 * (u + uN);
+    const Real vhat = 0.5 * (v + vN);
+    const Real what = 0.5 * (w + wN);
+    const Real That = 0.5 * (T + TN);
+    const Real mu = model->refMu * Viscosity(That * model->refT);
+    const Real heatK = model->gamma * model->cv * mu / PrandtlNumber();
+    const Real divV = du_dx + dv_dy + dw_dz;
+
+    Fvhat[0] = 0;
+    Fvhat[1] = mu * (dv_dx + du_dy);
+    Fvhat[2] = mu * (2.0 * dv_dy - (2.0/3.0) * divV);
+    Fvhat[3] = mu * (dv_dz + dw_dy);
+    Fvhat[4] = heatK * dT_dy + Fvhat[1] * uhat + Fvhat[2] * vhat + Fvhat[3] * what;
+    return ;
+}
+static void NumericalDiffusiveFluxX(const int tn, const int k, const int j, 
+        const int i, const int n[restrict], const Real dd[restrict], const Node *node, 
+        const Model *model, Real Fvhat[restrict])
+{
+    const int idx = IndexNode(k, j, i, n[Y], n[X]);
+    const int idxS = IndexNode(k, j - 1, i, n[Y], n[X]);
+    const int idxN = IndexNode(k, j + 1, i, n[Y], n[X]);
+    const int idxF = IndexNode(k - 1, j, i, n[Y], n[X]);
+    const int idxB = IndexNode(k + 1, j, i, n[Y], n[X]);
+
+    const int idxE = IndexNode(k, j, i + 1, n[Y], n[X]);
+    const int idxSE = IndexNode(k, j - 1, i + 1, n[Y], n[X]);
+    const int idxNE = IndexNode(k, j + 1, i + 1, n[Y], n[X]);
+    const int idxFE = IndexNode(k - 1, j, i + 1, n[Y], n[X]);
+    const int idxBE = IndexNode(k + 1, j, i + 1, n[Y], n[X]);
+
+    const Real * U = node[idx].U[tn];
+    const Real u = U[1] / U[0];
+    const Real v = U[2] / U[0];
+    const Real w = U[3] / U[0];
+    const Real T = ComputeTemperature(model->cv, U);
+
+    U = node[idxS].U[tn];
+    const Real uS = U[1] / U[0];
+    const Real vS = U[2] / U[0];
+
+    U = node[idxN].U[tn];
+    const Real uN = U[1] / U[0];
+    const Real vN = U[2] / U[0];
+
+    U = node[idxF].U[tn];
+    const Real uF = U[1] / U[0];
+    const Real wF = U[3] / U[0];
+
+    U = node[idxB].U[tn];
+    const Real uB = U[1] / U[0];
+    const Real wB = U[3] / U[0];
+
+    U = node[idxE].U[tn];
+    const Real uE = U[1] / U[0];
+    const Real vE = U[2] / U[0];
+    const Real wE = U[3] / U[0];
+    const Real TE = ComputeTemperature(model->cv, U);
+
+    U = node[idxSE].U[tn];
+    const Real uSE = U[1] / U[0];
+    const Real vSE = U[2] / U[0];
+
+    U = node[idxNE].U[tn];
+    const Real uNE = U[1] / U[0];
+    const Real vNE = U[2] / U[0];
+
+    U = node[idxFE].U[tn];
+    const Real uFE = U[1] / U[0];
+    const Real wFE = U[3] / U[0];
+
+    U = node[idxBE].U[tn];
+    const Real uBE = U[1] / U[0];
+    const Real wBE = U[3] / U[0];
+
+    const Real du_dx = (uE - u) * dd[X];
+    const Real dv_dy = 0.25 * (vN + vNE - vS - vSE) * dd[Y];
+    const Real dw_dz = 0.25 * (wB + wBE - wF - wFE) * dd[Z];
+    const Real du_dy = 0.25 * (uN + uNE - uS - uSE) * dd[Y];
+    const Real dv_dx = (vE - v) * dd[X];
+    const Real du_dz = 0.25 * (uB + uBE - uF - uFE) * dd[Z];
+    const Real dw_dx = (wE - w) * dd[X];
+    const Real dT_dx = (TE - T) * dd[X];
+
+    /* Calculate interfacial values */
+    const Real uhat = 0.5 * (u + uE);
+    const Real vhat = 0.5 * (v + vE);
+    const Real what = 0.5 * (w + wE);
+    const Real That = 0.5 * (T + TE);
+    const Real mu = model->refMu * Viscosity(That * model->refT);
+    const Real heatK = model->gamma * model->cv * mu / PrandtlNumber();
+    const Real divV = du_dx + dv_dy + dw_dz;
+
+    Fvhat[0] = 0;
+    Fvhat[1] = mu * (2.0 * du_dx - (2.0/3.0) * divV);
+    Fvhat[2] = mu * (du_dy + dv_dx);
+    Fvhat[3] = mu * (du_dz + dw_dx);
+    Fvhat[4] = heatK * dT_dx + Fvhat[1] * uhat + Fvhat[2] * vhat + Fvhat[3] * what;
+    return;
+}
+static Real Viscosity(const Real T)
+{
+    return 1.458e-6 * pow(T, 1.5) / (T + 110.4); /* Sutherland's law */
+}
+static Real PrandtlNumber(void)
+{
+    return 0.71; /* air */
 }
 /* a good practice: end file with a newline */
 
