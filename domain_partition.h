@@ -28,9 +28,9 @@
  *
  * Function
  *      Decomposite the computational domain, and provide the index range
- *      for each partitions, as well as partition names.
+ *      for each partitions.
  */
-extern int DomainPartition(const Space *, Partition *);
+extern int DomainPartition(Space *);
 #endif
 /* a good practice: end file with a newline */
 

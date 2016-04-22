@@ -16,9 +16,10 @@
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int DomainPartition(const Space *space, Partition *part)
+int DomainPartition(Space *space)
 {
     ShowInformation("Domain partitioning...");
+    Partition * part = &(space->part);
     /*
      * Outward facing surface unit normal vector values of domain boundary, the
      * introducing of surface normal vector can provide great advantange: every
@@ -83,96 +84,96 @@ int DomainPartition(const Space *space, Partition *part)
      * corner block need to be handled. This problem is left here.
      *
      */
-    part->n[PIN][Z][MIN] = space->ng + 1;
-    part->n[PIN][Z][MAX] = space->m[Z] + space->ng - 1;
-    part->n[PIN][Y][MIN] = space->ng + 1;
-    part->n[PIN][Y][MAX] = space->m[Y] + space->ng - 1;
-    part->n[PIN][X][MIN] = space->ng + 1;
-    part->n[PIN][X][MAX] = space->m[X] + space->ng - 1;
+    part->ns[PIN][Z][MIN] = part->ng + 1;
+    part->ns[PIN][Z][MAX] = part->m[Z] + part->ng - 1;
+    part->ns[PIN][Y][MIN] = part->ng + 1;
+    part->ns[PIN][Y][MAX] = part->m[Y] + part->ng - 1;
+    part->ns[PIN][X][MIN] = part->ng + 1;
+    part->ns[PIN][X][MAX] = part->m[X] + part->ng - 1;
 
-    part->n[PWB][Z][MIN] = space->ng + 1;
-    part->n[PWB][Z][MAX] = space->m[Z] + space->ng - 1;
-    part->n[PWB][Y][MIN] = space->ng + 1;
-    part->n[PWB][Y][MAX] = space->m[Y] + space->ng - 1;
-    part->n[PWB][X][MIN] = space->ng;
-    part->n[PWB][X][MAX] = space->ng + 1;
+    part->ns[PWB][Z][MIN] = part->ng + 1;
+    part->ns[PWB][Z][MAX] = part->m[Z] + part->ng - 1;
+    part->ns[PWB][Y][MIN] = part->ng + 1;
+    part->ns[PWB][Y][MAX] = part->m[Y] + part->ng - 1;
+    part->ns[PWB][X][MIN] = part->ng;
+    part->ns[PWB][X][MAX] = part->ng + 1;
 
-    part->n[PEB][Z][MIN] = space->ng + 1;
-    part->n[PEB][Z][MAX] = space->m[Z] + space->ng - 1;
-    part->n[PEB][Y][MIN] = space->ng + 1;
-    part->n[PEB][Y][MAX] = space->m[Y] + space->ng - 1;
-    part->n[PEB][X][MIN] = space->m[X] + space->ng - 1;
-    part->n[PEB][X][MAX] = space->m[X] + space->ng;
+    part->ns[PEB][Z][MIN] = part->ng + 1;
+    part->ns[PEB][Z][MAX] = part->m[Z] + part->ng - 1;
+    part->ns[PEB][Y][MIN] = part->ng + 1;
+    part->ns[PEB][Y][MAX] = part->m[Y] + part->ng - 1;
+    part->ns[PEB][X][MIN] = part->m[X] + part->ng - 1;
+    part->ns[PEB][X][MAX] = part->m[X] + part->ng;
 
-    part->n[PSB][Z][MIN] = space->ng + 1;
-    part->n[PSB][Z][MAX] = space->m[Z] + space->ng - 1;
-    part->n[PSB][Y][MIN] = space->ng;
-    part->n[PSB][Y][MAX] = space->ng + 1;
-    part->n[PSB][X][MIN] = space->ng + 1;
-    part->n[PSB][X][MAX] = space->m[X] + space->ng - 1;
+    part->ns[PSB][Z][MIN] = part->ng + 1;
+    part->ns[PSB][Z][MAX] = part->m[Z] + part->ng - 1;
+    part->ns[PSB][Y][MIN] = part->ng;
+    part->ns[PSB][Y][MAX] = part->ng + 1;
+    part->ns[PSB][X][MIN] = part->ng + 1;
+    part->ns[PSB][X][MAX] = part->m[X] + part->ng - 1;
 
-    part->n[PNB][Z][MIN] = space->ng + 1;
-    part->n[PNB][Z][MAX] = space->m[Z] + space->ng - 1;
-    part->n[PNB][Y][MIN] = space->m[Y] + space->ng - 1;
-    part->n[PNB][Y][MAX] = space->m[Y] + space->ng;
-    part->n[PNB][X][MIN] = space->ng + 1;
-    part->n[PNB][X][MAX] = space->m[X] + space->ng - 1;
+    part->ns[PNB][Z][MIN] = part->ng + 1;
+    part->ns[PNB][Z][MAX] = part->m[Z] + part->ng - 1;
+    part->ns[PNB][Y][MIN] = part->m[Y] + part->ng - 1;
+    part->ns[PNB][Y][MAX] = part->m[Y] + part->ng;
+    part->ns[PNB][X][MIN] = part->ng + 1;
+    part->ns[PNB][X][MAX] = part->m[X] + part->ng - 1;
 
-    part->n[PFB][Z][MIN] = space->ng;
-    part->n[PFB][Z][MAX] = space->ng + 1;
-    part->n[PFB][Y][MIN] = space->ng + 1;
-    part->n[PFB][Y][MAX] = space->m[Y] + space->ng - 1;
-    part->n[PFB][X][MIN] = space->ng + 1;
-    part->n[PFB][X][MAX] = space->m[X] + space->ng - 1;
+    part->ns[PFB][Z][MIN] = part->ng;
+    part->ns[PFB][Z][MAX] = part->ng + 1;
+    part->ns[PFB][Y][MIN] = part->ng + 1;
+    part->ns[PFB][Y][MAX] = part->m[Y] + part->ng - 1;
+    part->ns[PFB][X][MIN] = part->ng + 1;
+    part->ns[PFB][X][MAX] = part->m[X] + part->ng - 1;
 
-    part->n[PBB][Z][MIN] = space->m[Z] + space->ng - 1;
-    part->n[PBB][Z][MAX] = space->m[Z] + space->ng;
-    part->n[PBB][Y][MIN] = space->ng + 1;
-    part->n[PBB][Y][MAX] = space->m[Y] + space->ng - 1;
-    part->n[PBB][X][MIN] = space->ng + 1;
-    part->n[PBB][X][MAX] = space->m[X] + space->ng - 1;
+    part->ns[PBB][Z][MIN] = part->m[Z] + part->ng - 1;
+    part->ns[PBB][Z][MAX] = part->m[Z] + part->ng;
+    part->ns[PBB][Y][MIN] = part->ng + 1;
+    part->ns[PBB][Y][MAX] = part->m[Y] + part->ng - 1;
+    part->ns[PBB][X][MIN] = part->ng + 1;
+    part->ns[PBB][X][MAX] = part->m[X] + part->ng - 1;
 
-    part->n[PWG][Z][MIN] = space->ng + 1;
-    part->n[PWG][Z][MAX] = space->m[Z] + space->ng - 1;
-    part->n[PWG][Y][MIN] = space->ng + 1;
-    part->n[PWG][Y][MAX] = space->m[Y] + space->ng - 1;
-    part->n[PWG][X][MIN] = 0;
-    part->n[PWG][X][MAX] = space->ng;
+    part->ns[PWG][Z][MIN] = part->ng + 1;
+    part->ns[PWG][Z][MAX] = part->m[Z] + part->ng - 1;
+    part->ns[PWG][Y][MIN] = part->ng + 1;
+    part->ns[PWG][Y][MAX] = part->m[Y] + part->ng - 1;
+    part->ns[PWG][X][MIN] = 0;
+    part->ns[PWG][X][MAX] = part->ng;
 
-    part->n[PEG][Z][MIN] = space->ng + 1;
-    part->n[PEG][Z][MAX] = space->m[Z] + space->ng - 1;
-    part->n[PEG][Y][MIN] = space->ng + 1;
-    part->n[PEG][Y][MAX] = space->m[Y] + space->ng - 1;
-    part->n[PEG][X][MIN] = space->m[X] + space->ng;
-    part->n[PEG][X][MAX] = space->m[X] + 2 * space->ng;
+    part->ns[PEG][Z][MIN] = part->ng + 1;
+    part->ns[PEG][Z][MAX] = part->m[Z] + part->ng - 1;
+    part->ns[PEG][Y][MIN] = part->ng + 1;
+    part->ns[PEG][Y][MAX] = part->m[Y] + part->ng - 1;
+    part->ns[PEG][X][MIN] = part->m[X] + part->ng;
+    part->ns[PEG][X][MAX] = part->m[X] + 2 * part->ng;
 
-    part->n[PSG][Z][MIN] = space->ng + 1;
-    part->n[PSG][Z][MAX] = space->m[Z] + space->ng - 1;
-    part->n[PSG][Y][MIN] = 0;
-    part->n[PSG][Y][MAX] = space->ng;
-    part->n[PSG][X][MIN] = space->ng + 1;
-    part->n[PSG][X][MAX] = space->m[X] + space->ng - 1;
+    part->ns[PSG][Z][MIN] = part->ng + 1;
+    part->ns[PSG][Z][MAX] = part->m[Z] + part->ng - 1;
+    part->ns[PSG][Y][MIN] = 0;
+    part->ns[PSG][Y][MAX] = part->ng;
+    part->ns[PSG][X][MIN] = part->ng + 1;
+    part->ns[PSG][X][MAX] = part->m[X] + part->ng - 1;
 
-    part->n[PNG][Z][MIN] = space->ng + 1;
-    part->n[PNG][Z][MAX] = space->m[Z] + space->ng - 1;
-    part->n[PNG][Y][MIN] = space->m[Y] + space->ng;
-    part->n[PNG][Y][MAX] = space->m[Y] + 2 * space->ng;
-    part->n[PNG][X][MIN] = space->ng + 1;
-    part->n[PNG][X][MAX] = space->m[X] + space->ng - 1;
+    part->ns[PNG][Z][MIN] = part->ng + 1;
+    part->ns[PNG][Z][MAX] = part->m[Z] + part->ng - 1;
+    part->ns[PNG][Y][MIN] = part->m[Y] + part->ng;
+    part->ns[PNG][Y][MAX] = part->m[Y] + 2 * part->ng;
+    part->ns[PNG][X][MIN] = part->ng + 1;
+    part->ns[PNG][X][MAX] = part->m[X] + part->ng - 1;
 
-    part->n[PFG][Z][MIN] = 0;
-    part->n[PFG][Z][MAX] = space->ng;
-    part->n[PFG][Y][MIN] = space->ng + 1;
-    part->n[PFG][Y][MAX] = space->m[Y] + space->ng - 1;
-    part->n[PFG][X][MIN] = space->ng + 1;
-    part->n[PFG][X][MAX] = space->m[X] + space->ng - 1;
+    part->ns[PFG][Z][MIN] = 0;
+    part->ns[PFG][Z][MAX] = part->ng;
+    part->ns[PFG][Y][MIN] = part->ng + 1;
+    part->ns[PFG][Y][MAX] = part->m[Y] + part->ng - 1;
+    part->ns[PFG][X][MIN] = part->ng + 1;
+    part->ns[PFG][X][MAX] = part->m[X] + part->ng - 1;
 
-    part->n[PBG][Z][MIN] = space->m[Z] + space->ng;
-    part->n[PBG][Z][MAX] = space->m[Z] + 2 * space->ng;
-    part->n[PBG][Y][MIN] = space->ng + 1;
-    part->n[PBG][Y][MAX] = space->m[Y] + space->ng - 1;
-    part->n[PBG][X][MIN] = space->ng + 1;
-    part->n[PBG][X][MAX] = space->m[X] + space->ng - 1;
+    part->ns[PBG][Z][MIN] = part->m[Z] + part->ng;
+    part->ns[PBG][Z][MAX] = part->m[Z] + 2 * part->ng;
+    part->ns[PBG][Y][MIN] = part->ng + 1;
+    part->ns[PBG][Y][MAX] = part->m[Y] + part->ng - 1;
+    part->ns[PBG][X][MIN] = part->ng + 1;
+    part->ns[PBG][X][MAX] = part->m[X] + part->ng - 1;
     ShowInformation("Session End");
     return 0;
 }
