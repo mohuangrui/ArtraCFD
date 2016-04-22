@@ -135,13 +135,13 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model)
         if (0 == strncmp(currentLine, "reference begin", sizeof currentLine)) {
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(model->refLength)); 
+            sscanf(currentLine, formatI, &(model->refL)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(model->refDensity)); 
+            sscanf(currentLine, formatI, &(model->refRho)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(model->refVelocity)); 
+            sscanf(currentLine, formatI, &(model->refV)); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, &(model->refTemperature)); 
+            sscanf(currentLine, formatI, &(model->refT)); 
             continue;
         }
         if (0 == strncmp(currentLine, "initialization begin", sizeof currentLine)) {
@@ -477,10 +477,10 @@ static int WriteVerifyData(const Space *space, const Time *time, const Model *mo
     fprintf(filePointer, "#                        >> Reference Values  <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "length: %.6g\n", model->refLength); 
-    fprintf(filePointer, "density: %.6g\n", model->refDensity); 
-    fprintf(filePointer, "velocity: %.6g\n", model->refVelocity); 
-    fprintf(filePointer, "temperature: %.6g\n", model->refTemperature); 
+    fprintf(filePointer, "length: %.6g\n", model->refL); 
+    fprintf(filePointer, "density: %.6g\n", model->refRho); 
+    fprintf(filePointer, "velocity: %.6g\n", model->refV); 
+    fprintf(filePointer, "temperature: %.6g\n", model->refT); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                            >> NOTE <<\n");
@@ -580,8 +580,8 @@ static int CheckCaseSettingData(const Space *space, const Time *time, const Mode
         FatalError("wrong values in material section of case settings");
     }
     /* reference */
-    if ((0 >= model->refLength) || (0 >= model->refDensity) || 
-            (0 >= model->refVelocity) || (0 >= model->refTemperature)) {
+    if ((0 >= model->refL) || (0 >= model->refRho) || 
+            (0 >= model->refV) || (0 >= model->refT)) {
         FatalError("wrong values in reference section of case settings");
     }
     return 0;

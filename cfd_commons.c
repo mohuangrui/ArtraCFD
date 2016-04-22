@@ -56,6 +56,8 @@ static void ConvectiveFluxY(const Real, const Real, const Real, const Real,
         const Real, const Real, Real [restrict]);
 static void ConvectiveFluxX(const Real, const Real, const Real, const Real, 
         const Real, const Real, Real [restrict]);
+static Real Viscosity(const Real);
+static Real PrandtlNumber(void);
 
 /****************************************************************************
  * Global Variables Definition with Private Scope
@@ -262,256 +264,319 @@ static void ConvectiveFluxX(const Real rho, const Real u, const Real v, const Re
     F[4] = (rho * eT + p) * u;
     return;
 }
-int DiffusiveFlux(const int s, Real G[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
+void NumericalDiffusiveFlux(const int s, const int tn, const int k, const int j, 
+        const int i, const int n[restrict], const Real dd[restrict], const Node *node, 
+        const Model *model, Real Fvhat[restrict])
 {
-    DiffusiveFluxComputer ComputeDiffusiveFlux[DIMS] = {
-        DiffusiveFluxX,
-        DiffusiveFluxY,
-        DiffusiveFluxZ};
-    ComputeDiffusiveFlux[s](G, k, j, i, U, space, model);
-    return 0;
+    DiffusiveFluxReconstructor ReconstructDiffusiveFlux[DIMS] = {
+        NumericalDiffusiveFluxX,
+        NumericalDiffusiveFluxY,
+        NumericalDiffusiveFluxZ};
+    ReconstructDiffusiveFlux[s](tn, k, j, i, n, dd, node, model, Fvhat);
+    return;
 }
-static void DiffusiveFluxZ(Real G[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
+static void NumericalDiffusiveFluxZ(const int tn, const int k, const int j, 
+        const int i, const int n[restrict], const Real dd[restrict], const Node *node, 
+        const Model *model, Real Fvhat[restrict])
 {
-    const int idx = IndexMath(k, j, i, space) * DIMU;
-    const int idxW = IndexMath(k, j, i - 1, space) * DIMU;
-    const int idxE = IndexMath(k, j, i + 1, space) * DIMU;
-    const int idxS = IndexMath(k, j - 1, i, space) * DIMU;
-    const int idxN = IndexMath(k, j + 1, i, space) * DIMU;
-    const int idxF = IndexMath(k - 1, j, i, space) * DIMU;
-    const int idxB = IndexMath(k + 1, j, i, space) * DIMU;
+    const int idx = IndexNode(k, j, i, n[Y], n[X]);
+    const int idxW = IndexNode(k, j, i - 1, n[Y], n[X]);
+    const int idxE = IndexNode(k, j, i + 1, n[Y], n[X]);
+    const int idxS = IndexNode(k, j - 1, i, n[Y], n[X]);
+    const int idxN = IndexNode(k, j + 1, i, n[Y], n[X]);
 
-    /* calculate derivatives in z direction */
-    const Real rhoB = U[idxB];
-    const Real uB = U[idxB+1] / rhoB;
-    const Real vB = U[idxB+2] / rhoB;
-    const Real wB = U[idxB+3] / rhoB;
-    const Real eTB = U[idxB+4] / rhoB;
-    const Real TB = (eTB - 0.5 * (uB * uB + vB * vB + wB * wB)) / model->cv;
+    const int idxB = IndexNode(k + 1, j, i, n[Y], n[X]);
+    const int idxWB = IndexNode(k + 1, j, i - 1, n[Y], n[X]);
+    const int idxEB = IndexNode(k + 1, j, i + 1, n[Y], n[X]);
+    const int idxSB = IndexNode(k + 1, j - 1, i, n[Y], n[X]);
+    const int idxNB = IndexNode(k + 1, j + 1, i, n[Y], n[X]);
 
-    const Real rhoF = U[idxF];
-    const Real uF = U[idxF+1] / rhoF;
-    const Real vF = U[idxF+2] / rhoF;
-    const Real wF = U[idxF+3] / rhoF;
-    const Real eTF = U[idxF+4] / rhoF;
-    const Real TF = (eTF - 0.5 * (uF * uF + vF * vF + wF * wF)) / model->cv;
+    const Real * U = node[idx].U[tn];
+    const Real u = U[1] / U[0];
+    const Real v = U[2] / U[0];
+    const Real w = U[3] / U[0];
+    const Real T = ComputeTemperature(model->cv, U);
 
-    const Real du_dz = (uB - uF) * (0.5 * space->ddz);
-    const Real dv_dz = (vB - vF) * (0.5 * space->ddz);
-    const Real dw_dz = (wB - wF) * (0.5 * space->ddz);
-    const Real dT_dz = (TB - TF) * (0.5 * space->ddz);
+    U = node[idxW].U[tn];
+    const Real uW = U[1] / U[0];
+    const Real wW = U[3] / U[0];
 
-    /* calculate derivatives in y direction */
-    const Real vN = U[idxN+2] / U[idxN];
-    const Real wN = U[idxN+3] / U[idxN];
-    const Real vS = U[idxS+2] / U[idxS];
-    const Real wS = U[idxS+3] / U[idxS];
-    const Real dv_dy = (vN - vS) * (0.5 * space->ddy);
-    const Real dw_dy = (wN - wS) * (0.5 * space->ddy);
+    U = node[idxE].U[tn];
+    const Real uE = U[1] / U[0];
+    const Real wE = U[3] / U[0];
 
-    /* calculate derivatives in x direction */
-    const Real uE = U[idxE+1] / U[idxE];
-    const Real wE = U[idxE+3] / U[idxE];
-    const Real uW = U[idxW+1] / U[idxW];
-    const Real wW = U[idxW+3] / U[idxW];
-    const Real du_dx = (uE - uW) * (0.5 * space->ddx);
-    const Real dw_dx = (wE - wW) * (0.5 * space->ddx);
+    U = node[idxS].U[tn];
+    const Real vS = U[2] / U[0];
+    const Real wS = U[3] / U[0];
 
-    /* the primitive variables in current point */
-    const Real rho = U[idx];
-    const Real u = U[idx+1] / rho;
-    const Real v = U[idx+2] / rho;
-    const Real w = U[idx+3] / rho;
-    const Real eT = U[idx+4] / rho;
-    const Real T = (eT - 0.5 * (u * u + v * v + w * w)) / model->cv;
+    U = node[idxN].U[tn];
+    const Real vN = U[2] / U[0];
+    const Real wN = U[3] / U[0];
 
-    /* Calculate dynamic viscosity and heat conductivity */
-    const Real mu = model->refMu * 1.45e-6 * (pow(T * model->refTemperature, 1.5) / (T * model->refTemperature + 110));
-    const Real heatK = model->gamma * model->cv * mu / model->refPr;
+    U = node[idxB].U[tn];
+    const Real uB = U[1] / U[0];
+    const Real vB = U[2] / U[0];
+    const Real wB = U[3] / U[0];
+    const Real TB = ComputeTemperature(model->cv, U);
+
+    U = node[idxWB].U[tn];
+    const Real uWB = U[1] / U[0];
+    const Real wWB = U[3] / U[0];
+
+    U = node[idxEB].U[tn];
+    const Real uEB = U[1] / U[0];
+    const Real wEB = U[3] / U[0];
+
+    U = node[idxSB].U[tn];
+    const Real vSB = U[2] / U[0];
+    const Real wSB = U[3] / U[0];
+
+    U = node[idxNB].U[tn];
+    const Real vNB = U[2] / U[0];
+    const Real wNB = U[3] / U[0];
+
+    const Real dw_dx = 0.25 * (wE + wEB - wW - wWB) * dd[X];
+    const Real du_dz = (uB - u) * dd[Z];
+    const Real dw_dy = 0.25 * (wN + wNB - wS - wSB) * dd[Y];
+    const Real dv_dz = (vB - v) * dd[Z];
+    const Real du_dx = 0.25 * (uE + uEB - uW - uWB) * dd[X];
+    const Real dv_dy = 0.25 * (vN + vNB - vS - vSB) * dd[Y];
+    const Real dw_dz = (wB - w) * dd[Z];
+    const Real dT_dz = (TB - T) * dd[Z];
+
+    /* Calculate interfacial values */
+    const Real uhat = 0.5 * (u + uB);
+    const Real vhat = 0.5 * (v + vB);
+    const Real what = 0.5 * (w + wB);
+    const Real That = 0.5 * (T + TB);
+    const Real mu = model->refMu * Viscosity(That * model->refT);
+    const Real heatK = model->gamma * model->cv * mu / PrandtlNumber();
     const Real divV = du_dx + dv_dy + dw_dz;
 
-    G[0] = 0;
-    G[1] = mu * (dw_dx + du_dz);
-    G[2] = mu * (dw_dy + dv_dz);
-    G[3] = mu * (2.0 * dw_dz - (2.0/3.0) * divV);
-    G[4] = heatK * dT_dz + u * G[1] + v * G[2] + w * G[3];
-    return 0;
+    Fvhat[0] = 0;
+    Fvhat[1] = mu * (dw_dx + du_dz);
+    Fvhat[2] = mu * (dw_dy + dv_dz);
+    Fvhat[3] = mu * (2.0 * dw_dz - (2.0/3.0) * divV);
+    Fvhat[4] = heatK * dT_dz + Fvhat[1] * uhat + Fvhat[2] * vhat + Fvhat[3] * what;
+    return;
 }
-static void DiffusiveFluxY(Real G[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
+static void NumericalDiffusiveFluxY(const int tn, const int k, const int j, 
+        const int i, const int n[restrict], const Real dd[restrict], const Node *node, 
+        const Model *model, Real Fvhat[restrict])
 {
-    const int idx = IndexMath(k, j, i, space) * DIMU;
-    const int idxW = IndexMath(k, j, i - 1, space) * DIMU;
-    const int idxE = IndexMath(k, j, i + 1, space) * DIMU;
-    const int idxS = IndexMath(k, j - 1, i, space) * DIMU;
-    const int idxN = IndexMath(k, j + 1, i, space) * DIMU;
-    const int idxF = IndexMath(k - 1, j, i, space) * DIMU;
-    const int idxB = IndexMath(k + 1, j, i, space) * DIMU;
+    const int idx = IndexNode(k, j, i, n[Y], n[X]);
+    const int idxW = IndexNode(k, j, i - 1, n[Y], n[X]);
+    const int idxE = IndexNode(k, j, i + 1, n[Y], n[X]);
+    const int idxF = IndexNode(k - 1, j, i, n[Y], n[X]);
+    const int idxB = IndexNode(k + 1, j, i, n[Y], n[X]);
 
-    /* calculate derivatives in z direction */
-    const Real vB = U[idxB+2] / U[idxB];
-    const Real wB = U[idxB+3] / U[idxB];
-    const Real vF = U[idxF+2] / U[idxF];
-    const Real wF = U[idxF+3] / U[idxF];
-    const Real dv_dz = (vB - vF) * (0.5 * space->ddz);
-    const Real dw_dz = (wB - wF) * (0.5 * space->ddz);
+    const int idxN = IndexNode(k, j + 1, i, n[Y], n[X]);
+    const int idxWN = IndexNode(k, j + 1, i - 1, n[Y], n[X]);
+    const int idxEN = IndexNode(k, j + 1, i + 1, n[Y], n[X]);
+    const int idxFN = IndexNode(k - 1, j + 1, i, n[Y], n[X]);
+    const int idxBN = IndexNode(k + 1, j + 1, i, n[Y], n[X]);
 
-    /* calculate derivatives in y direction */
-    const Real rhoN = U[idxN];
-    const Real uN = U[idxN+1] / rhoN;
-    const Real vN = U[idxN+2] / rhoN;
-    const Real wN = U[idxN+3] / rhoN;
-    const Real eTN = U[idxN+4] / rhoN;
-    const Real TN = (eTN - 0.5 * (uN * uN + vN * vN + wN * wN)) / model->cv;
+    const Real * U = node[idx].U[tn];
+    const Real u = U[1] / U[0];
+    const Real v = U[2] / U[0];
+    const Real w = U[3] / U[0];
+    const Real T = ComputeTemperature(model->cv, U);
 
-    const Real rhoS = U[idxS];
-    const Real uS = U[idxS+1] / rhoS;
-    const Real vS = U[idxS+2] / rhoS;
-    const Real wS = U[idxS+3] / rhoS;
-    const Real eTS = U[idxS+4] / rhoS;
-    const Real TS = (eTS - 0.5 * (uS * uS + vS * vS + wS * wS)) / model->cv;
+    U = node[idxW].U[tn];
+    const Real uW = U[1] / U[0];
+    const Real vW = U[2] / U[0];
 
-    const Real du_dy = (uN - uS) * (0.5 * space->ddy);
-    const Real dv_dy = (vN - vS) * (0.5 * space->ddy);
-    const Real dw_dy = (wN - wS) * (0.5 * space->ddy);
-    const Real dT_dy = (TN - TS) * (0.5 * space->ddy);
+    U = node[idxE].U[tn];
+    const Real uE = U[1] / U[0];
+    const Real vE = U[2] / U[0];
 
-    /* calculate derivatives in x direction */
-    const Real uE = U[idxE+1] / U[idxE];
-    const Real vE = U[idxE+2] / U[idxE];
-    const Real uW = U[idxW+1] / U[idxW];
-    const Real vW = U[idxW+2] / U[idxW];
-    const Real du_dx = (uE - uW) * (0.5 * space->ddx);
-    const Real dv_dx = (vE - vW) * (0.5 * space->ddx);
+    U = node[idxF].U[tn];
+    const Real vF = U[2] / U[0];
+    const Real wF = U[3] / U[0];
 
-    /* the primitive variables in current point */
-    const Real rho = U[idx];
-    const Real u = U[idx+1] / rho;
-    const Real v = U[idx+2] / rho;
-    const Real w = U[idx+3] / rho;
-    const Real eT = U[idx+4] / rho;
-    const Real T = (eT - 0.5 * (u * u + v * v + w * w)) / model->cv;
+    U = node[idxB].U[tn];
+    const Real vB = U[2] / U[0];
+    const Real wB = U[3] / U[0];
 
-    /* Calculate dynamic viscosity and heat conductivity */
-    const Real mu = model->refMu * 1.45e-6 * (pow(T * model->refTemperature, 1.5) / (T * model->refTemperature + 110));
-    const Real heatK = model->gamma * model->cv * mu / model->refPr;
+    U = node[idxN].U[tn];
+    const Real uN = U[1] / U[0];
+    const Real vN = U[2] / U[0];
+    const Real wN = U[3] / U[0];
+    const Real TN = ComputeTemperature(model->cv, U);
+
+    U = node[idxWN].U[tn];
+    const Real uWN = U[1] / U[0];
+    const Real vWN = U[2] / U[0];
+
+    U = node[idxEN].U[tn];
+    const Real uEN = U[1] / U[0];
+    const Real vEN = U[2] / U[0];
+
+    U = node[idxFN].U[tn];
+    const Real vFN = U[2] / U[0];
+    const Real wFN = U[3] / U[0];
+
+    U = node[idxBN].U[tn];
+    const Real vBN = U[2] / U[0];
+    const Real wBN = U[3] / U[0];
+
+    const Real dv_dx = 0.25 * (vE + vEN - vW - vWN) * dd[X];
+    const Real du_dy = (uN - u) * dd[Y];
+    const Real dv_dy = (vN - v) * dd[Y];
+    const Real du_dx = 0.25 * (uE + uEN - uW - uWN) * dd[X];
+    const Real dw_dz = 0.25 * (wB + wBN - wF - wFN) * dd[Z];
+    const Real dv_dz = 0.25 * (vB + vBN - vF - vFN) * dd[Z];
+    const Real dw_dy = (wN - w) * dd[Y];
+    const Real dT_dy = (TN - T) * dd[Y];
+
+    /* Calculate interfacial values */
+    const Real uhat = 0.5 * (u + uN);
+    const Real vhat = 0.5 * (v + vN);
+    const Real what = 0.5 * (w + wN);
+    const Real That = 0.5 * (T + TN);
+    const Real mu = model->refMu * Viscosity(That * model->refT);
+    const Real heatK = model->gamma * model->cv * mu / PrandtlNumber();
     const Real divV = du_dx + dv_dy + dw_dz;
 
-    G[0] = 0;
-    G[1] = mu * (dv_dx + du_dy);
-    G[2] = mu * (2.0 * dv_dy - (2.0/3.0) * divV);
-    G[3] = mu * (dv_dz + dw_dy);
-    G[4] = heatK * dT_dy + u * G[1] + v * G[2] + w * G[3];
-    return 0;
+    Fvhat[0] = 0;
+    Fvhat[1] = mu * (dv_dx + du_dy);
+    Fvhat[2] = mu * (2.0 * dv_dy - (2.0/3.0) * divV);
+    Fvhat[3] = mu * (dv_dz + dw_dy);
+    Fvhat[4] = heatK * dT_dy + Fvhat[1] * uhat + Fvhat[2] * vhat + Fvhat[3] * what;
+    return ;
 }
-static void DiffusiveFluxX(Real G[], const int k, const int j, const int i, 
-        const Real *U, const Space *space, const Model *model)
+static void NumericalDiffusiveFluxX(const int tn, const int k, const int j, 
+        const int i, const int n[restrict], const Real dd[restrict], const Node *node, 
+        const Model *model, Real Fvhat[restrict])
 {
-    const int idx = IndexMath(k, j, i, space) * DIMU;
-    const int idxW = IndexMath(k, j, i - 1, space) * DIMU;
-    const int idxE = IndexMath(k, j, i + 1, space) * DIMU;
-    const int idxS = IndexMath(k, j - 1, i, space) * DIMU;
-    const int idxN = IndexMath(k, j + 1, i, space) * DIMU;
-    const int idxF = IndexMath(k - 1, j, i, space) * DIMU;
-    const int idxB = IndexMath(k + 1, j, i, space) * DIMU;
+    const int idx = IndexNode(k, j, i, n[Y], n[X]);
+    const int idxS = IndexNode(k, j - 1, i, n[Y], n[X]);
+    const int idxN = IndexNode(k, j + 1, i, n[Y], n[X]);
+    const int idxF = IndexNode(k - 1, j, i, n[Y], n[X]);
+    const int idxB = IndexNode(k + 1, j, i, n[Y], n[X]);
 
-    /* calculate derivatives in z direction */
-    const Real uB = U[idxB+1] / U[idxB];
-    const Real uF = U[idxF+1] / U[idxF];
-    const Real wB = U[idxB+3] / U[idxB];
-    const Real wF = U[idxF+3] / U[idxF];
-    const Real du_dz = (uB - uF) * (0.5 * space->ddz);
-    const Real dw_dz = (wB - wF) * (0.5 * space->ddz);
+    const int idxE = IndexNode(k, j, i + 1, n[Y], n[X]);
+    const int idxSE = IndexNode(k, j - 1, i + 1, n[Y], n[X]);
+    const int idxNE = IndexNode(k, j + 1, i + 1, n[Y], n[X]);
+    const int idxFE = IndexNode(k - 1, j, i + 1, n[Y], n[X]);
+    const int idxBE = IndexNode(k + 1, j, i + 1, n[Y], n[X]);
 
-    /* calculate derivatives in y direction */
-    const Real uN = U[idxN+1] / U[idxN];
-    const Real uS = U[idxS+1] / U[idxS];
-    const Real vN = U[idxN+2] / U[idxN];
-    const Real vS = U[idxS+2] / U[idxS];
-    const Real du_dy = (uN - uS) * (0.5 * space->ddy);
-    const Real dv_dy = (vN - vS) * (0.5 * space->ddy);
+    const Real * U = node[idx].U[tn];
+    const Real u = U[1] / U[0];
+    const Real v = U[2] / U[0];
+    const Real w = U[3] / U[0];
+    const Real T = ComputeTemperature(model->cv, U);
 
-    /* calculate derivatives in x direction */
-    const Real rhoE = U[idxE];
-    const Real uE = U[idxE+1] / rhoE;
-    const Real vE = U[idxE+2] / rhoE;
-    const Real wE = U[idxE+3] / rhoE;
-    const Real eTE = U[idxE+4] / rhoE;
-    const Real TE = (eTE - 0.5 * (uE * uE + vE * vE + wE * wE)) / model->cv;
+    U = node[idxS].U[tn];
+    const Real uS = U[1] / U[0];
+    const Real vS = U[2] / U[0];
 
-    const Real rhoW = U[idxW];
-    const Real uW = U[idxW+1] / rhoW;
-    const Real vW = U[idxW+2] / rhoW;
-    const Real wW = U[idxW+3] / rhoW;
-    const Real eTW = U[idxW+4] / rhoW;
-    const Real TW = (eTW - 0.5 * (uW * uW + vW * vW + wW * wW)) / model->cv;
+    U = node[idxN].U[tn];
+    const Real uN = U[1] / U[0];
+    const Real vN = U[2] / U[0];
 
-    const Real du_dx = (uE - uW) * (0.5 * space->ddx);
-    const Real dv_dx = (vE - vW) * (0.5 * space->ddx);
-    const Real dw_dx = (wE - wW) * (0.5 * space->ddx);
-    const Real dT_dx = (TE - TW) * (0.5 * space->ddx);
+    U = node[idxF].U[tn];
+    const Real uF = U[1] / U[0];
+    const Real wF = U[3] / U[0];
 
-    /* the primitive variables in current point */
-    const Real rho = U[idx];
-    const Real u = U[idx+1] / rho;
-    const Real v = U[idx+2] / rho;
-    const Real w = U[idx+3] / rho;
-    const Real eT = U[idx+4] / rho;
-    const Real T = (eT - 0.5 * (u * u + v * v + w * w)) / model->cv;
+    U = node[idxB].U[tn];
+    const Real uB = U[1] / U[0];
+    const Real wB = U[3] / U[0];
 
-    /* Calculate dynamic viscosity and heat conductivity */
-    const Real mu = model->refMu * 1.45e-6 * (pow(T * model->refTemperature, 1.5) / (T * model->refTemperature + 110));
-    const Real heatK = model->gamma * model->cv * mu / model->refPr;
+    U = node[idxE].U[tn];
+    const Real uE = U[1] / U[0];
+    const Real vE = U[2] / U[0];
+    const Real wE = U[3] / U[0];
+    const Real TE = ComputeTemperature(model->cv, U);
+
+    U = node[idxSE].U[tn];
+    const Real uSE = U[1] / U[0];
+    const Real vSE = U[2] / U[0];
+
+    U = node[idxNE].U[tn];
+    const Real uNE = U[1] / U[0];
+    const Real vNE = U[2] / U[0];
+
+    U = node[idxFE].U[tn];
+    const Real uFE = U[1] / U[0];
+    const Real wFE = U[3] / U[0];
+
+    U = node[idxBE].U[tn];
+    const Real uBE = U[1] / U[0];
+    const Real wBE = U[3] / U[0];
+
+    const Real du_dx = (uE - u) * dd[X];
+    const Real dv_dy = 0.25 * (vN + vNE - vS - vSE) * dd[Y];
+    const Real dw_dz = 0.25 * (wB + wBE - wF - wFE) * dd[Z];
+    const Real du_dy = 0.25 * (uN + uNE - uS - uSE) * dd[Y];
+    const Real dv_dx = (vE - v) * dd[X];
+    const Real du_dz = 0.25 * (uB + uBE - uF - uFE) * dd[Z];
+    const Real dw_dx = (wE - w) * dd[X];
+    const Real dT_dx = (TE - T) * dd[X];
+
+    /* Calculate interfacial values */
+    const Real uhat = 0.5 * (u + uE);
+    const Real vhat = 0.5 * (v + vE);
+    const Real what = 0.5 * (w + wE);
+    const Real That = 0.5 * (T + TE);
+    const Real mu = model->refMu * Viscosity(That * model->refT);
+    const Real heatK = model->gamma * model->cv * mu / PrandtlNumber();
     const Real divV = du_dx + dv_dy + dw_dz;
 
-    G[0] = 0;
-    G[1] = mu * (2.0 * du_dx - (2.0/3.0) * divV);
-    G[2] = mu * (du_dy + dv_dx);
-    G[3] = mu * (du_dz + dw_dx);
-    G[4] = heatK * dT_dx + u * G[1] + v * G[2] + w * G[3];
-    return 0;
+    Fvhat[0] = 0;
+    Fvhat[1] = mu * (2.0 * du_dx - (2.0/3.0) * divV);
+    Fvhat[2] = mu * (du_dy + dv_dx);
+    Fvhat[3] = mu * (du_dz + dw_dx);
+    Fvhat[4] = heatK * dT_dx + Fvhat[1] * uhat + Fvhat[2] * vhat + Fvhat[3] * what;
+    return;
+}
+static Real Viscosity(const Real T)
+{
+    return 1.458e-6 * pow(T, 1.5) / (T + 110.4); /* Sutherland's law */
+}
+static Real PrandtlNumber(void)
+{
+    return 0.71; /* air */
 }
 /*
  * Get value of primitive variable vector.
  */
-int PrimitiveByConservative(Real Uo[], const int idx, const Real *U, const Model *model)
+void PrimitiveByConservative(const Real gamma, const Real gasR, const Real U[restrict], Real Uo[restrict])
 {
-    Uo[0] = U[idx];
-    Uo[1] = U[idx+1] / U[idx];
-    Uo[2] = U[idx+2] / U[idx];
-    Uo[3] = U[idx+3] / U[idx];
-    Uo[4] = (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) * (model->gamma - 1.0);
-    Uo[5] = Uo[4] / (Uo[0] * model->gasR);
-    return 0;
+    Uo[0] = U[0];
+    Uo[1] = U[1] / U[0];
+    Uo[2] = U[2] / U[0];
+    Uo[3] = U[3] / U[0];
+    Uo[4] = (U[4] - 0.5 * (U[1] * U[1] + U[2] * U[2] + U[3] * U[3]) / U[0]) * (gamma - 1.0);
+    Uo[5] = Uo[4] / (Uo[0] * gasR);
+    return;
+}
+Real ComputePressure(const Real gamma, const Real U[restrict])
+{
+    return (U[4] - 0.5 * (U[1] * U[1] + U[2] * U[2] + U[3] * U[3]) / U[0]) * (gamma - 1.0);
+}
+Real ComputeTemperature(const Real cv, const Real U[restrict])
+{
+    return (U[4] - 0.5 * (U[1] * U[1] + U[2] * U[2] + U[3] * U[3]) / U[0]) / (U[0] * cv);
 }
 /*
  * Compute conservative variable vector according to primitives.
  */
-int ConservativeByPrimitive(Real *U, const int idx, const Real Uo[], const Model *model)
+void ConservativeByPrimitive(const Real gamma, const Real Uo[restrict], Real U[restrict])
 {
-    U[idx] = Uo[0];
-    U[idx+1] = Uo[0] * Uo[1];
-    U[idx+2] = Uo[0] * Uo[2];
-    U[idx+3] = Uo[0] * Uo[3];
-    U[idx+4] = 0.5 * Uo[0] * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]) + Uo[4] / (model->gamma - 1.0); 
-    return 0;
-}
-Real ComputePressure(const int idx, const Real *U, const Model *model)
-{
-    return (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) * (model->gamma - 1.0);
-}
-Real ComputeTemperature(const int idx, const Real *U, const Model *model)
-{
-    return (U[idx+4] - 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx]) / (U[idx] * model->cv);
+    U[0] = Uo[0];
+    U[1] = Uo[0] * Uo[1];
+    U[2] = Uo[0] * Uo[2];
+    U[3] = Uo[0] * Uo[3];
+    U[4] = 0.5 * Uo[0] * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]) + Uo[4] / (gamma - 1.0); 
+    return;
 }
 /*
  * Index math.
  */
-int IndexNode(const int k, const int j, const int i, const Space *space)
+int IndexNode(const int k, const int j, const int i, const int jMax, const int iMax)
 {
-    return ((k * space->n[Y] + j) * space->n[X] + i);
+    return (k * jMax + j) * iMax + i;
 }
 /*
  * Coordinates transformations.
@@ -520,17 +585,17 @@ int IndexNode(const int k, const int j, const int i, const Space *space)
  * coordinates considering the downward truncation of (int). 
  * Note: current rounding conversion only works for positive float.
  */
-int NodeSpace(const Real point, const int s, const Space *space)
+int NodeSpace(const Real s, const Real sMin, const Real dds, const int ng)
 {
-    return (int)((point - space->domain[s][MIN]) * space->dd[s] + 0.5) + space->ng;
+    return (int)((s - sMin) * dds + 0.5) + ng;
 }
-int ValidNodeSpace(const int node, const int s, const Partition *part)
+int ValidNodeSpace(const int n, const int nMin, const int nMax)
 {
-    return MinInt(part->n[PIN][s][MAX] - 1, MaxInt(part->n[PIN][s][MIN], node));
+    return MinInt(nMax - 1, MaxInt(nMin, n));
 }
-Real PointSpace(const int node, const int s, const Space *space)
+Real PointSpace(const int n, const Real sMin, const Real ds, const int ng)
 {
-    return (space->domain[s][MIN] + (node - space->ng) * space->d[s]);
+    return sMin + (n - ng) * ds;
 }
 /*
  * Math functions
@@ -573,31 +638,31 @@ int Sign(const Real x)
     }
     return 0;
 }
-Real Dot(const RealVector V1, const RealVector V2)
+Real Dot(const Real V1[], const Real V2[])
 {
     return (V1[X] * V2[X] + V1[Y] * V2[Y] + V1[Z] * V2[Z]);
 }
-Real Norm(const RealVector V)
+Real Norm(const Real V[])
 {
     return sqrt(Dot(V, V));
 }
-Real Dist2(const RealVector V1, const RealVector V2)
+Real Dist2(const Real V1[], const Real V2[])
 {
     const RealVector V = {V1[X] - V2[X], V1[Y] - V2[Y], V1[Z] - V2[Z]};
     return Dot(V, V);
 }
-Real Dist(const RealVector V1, const RealVector V2)
+Real Dist(const Real V1[], const Real V2[])
 {
     return sqrt(Dist2(V1, V2));
 }
-int Cross(RealVector V, const RealVector V1, const RealVector V2)
+void Cross(const Real V1[restrict], const Real V2[restrict], Real V[restrict])
 {
     V[X] = V1[Y] * V2[Z] - V1[Z] * V2[Y];
     V[Y] = V1[Z] * V2[X] - V1[X] * V2[Z];
     V[Z] = V1[X] * V2[Y] - V1[Y] * V2[X];
-    return 0;
+    return;
 }
-int OrthogonalSpace(const RealVector N, RealVector Ta, RealVector Tb)
+void OrthogonalSpace(const Real N[restrict], Real Ta[restrict], Real Tb[restrict])
 {
     int mark = Z; /* default mark for minimum component */
     if (fabs(N[mark]) > fabs(N[Y])) {
@@ -621,16 +686,16 @@ int OrthogonalSpace(const RealVector N, RealVector Ta, RealVector Tb)
             Ta[Z] = 0;
         }
     }
-    Normalize(Ta, DIMS, Norm(Ta));
+    Normalize(DIMS, Norm(Ta), Ta);
     Cross(Tb, N, Ta);
-    return 0;
+    return;
 }
-int Normalize(Real V[], const int dimV, const Real normalizer)
+void Normalize(const int dimV, const Real normalizer, Real V[])
 {
     for (int n = 0; n < dimV; ++n) {
         V[n] = V[n] / normalizer;
     }
-    return 0;
+    return;
 }
 /* a good practice: end file with a newline */
 

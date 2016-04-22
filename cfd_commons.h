@@ -51,31 +51,23 @@ extern void EigenvectorR(const int s, const Real Uo[restrict], Real R[restrict][
  */
 extern void ConvectiveFlux(const int s, const Real gamma, const Real U[restrict], Real F[restrict]);
 /*
- * Diffusive fluxes
- *
- * Function
- *      Compute Diffusive fluxes.
- */
-extern void DiffusiveFlux(const int s, const int k, const int j, const int i, 
-        const Space *, const Model *, Real Fv[restrict]);
-/*
  * Compute the values of primitive variable vector
  *
  * Parameter
  *      Uo[] -- a array stores the returned values of primitives.
  * Notice
- *      calculated values are [rho, u, v, w, p]
+ *      calculated values are [rho, u, v, w, p, T]
  */
-extern void PrimitiveByConservative(const Real gamma, const Real gasR, const Real U[], Real Uo[]);
-extern Real ComputePressure(const Real gamma, const Real U[]);
-extern Real ComputeTemperature(const Real cv, const Real U[]);
+extern void PrimitiveByConservative(const Real gamma, const Real gasR, const Real U[restrict], Real Uo[restrict]);
+extern Real ComputePressure(const Real gamma, const Real U[restrict]);
+extern Real ComputeTemperature(const Real cv, const Real U[restrict]);
 /*
  * Compute and update conservative variable vector
  *
  * Function
  *      Compute and update conservative variable vector according to primitive values.
  */
-extern void ConservativeByPrimitive(const Real gamma, const Real Uo[], Real U[]);
+extern void ConservativeByPrimitive(const Real gamma, const Real Uo[restrict], Real U[restrict]);
 /*
  * Index math
  *
@@ -91,9 +83,9 @@ extern int IndexNode(const int k, const int j, const int i, const int jMax, cons
  * Function
  *      transform coordinates between node coordinates and general coordinates.
  */
-extern int NodeSpace(const Real sMin, const Real s, const Real dds, const int ng);
-extern int ValidNodeSpace(const int ns, const int nsMin, const int nsMax);
-extern Real PointSpace(const Real sMin, const int ns, const Real ds, const int ng);
+extern int NodeSpace(const Real s, const Real sMin, const Real dds, const int ng);
+extern int ValidNodeSpace(const int n, const int nMin, const int nMax);
+extern Real PointSpace(const int n, const Real sMin, const Real ds, const int ng);
 /*
  * Common math functions
  */
@@ -102,12 +94,12 @@ extern Real MaxReal(const Real x, const Real y);
 extern int MinInt(const int x, const int y);
 extern int MaxInt(const int x, const int y);
 extern int Sign(const Real x);
-extern Real Dot(const RealVector V1, const RealVector V2);
-extern Real Norm(const RealVector V);
-extern Real Dist2(const RealVector V1, const RealVector V2);
-extern Real Dist(const RealVector V1, const RealVector V2);
-extern void Cross(const RealVector V1, const RealVector V2, RealVector V);
-extern void OrthogonalSpace(const RealVector N, RealVector Ta, RealVector Tb);
+extern Real Dot(const Real V1[], const Real V2[]);
+extern Real Norm(const Real V[]);
+extern Real Dist2(const Real V1[], const Real V2[]);
+extern Real Dist(const Real V1[], const Real V2[]);
+extern void Cross(const Real V1[restrict], const Real V2[restrict], Real V[restrict]);
+extern void OrthogonalSpace(const Real N[restrict], Real Ta[restrict], Real Tb[restrict]);
 extern void Normalize(const int dimV, const Real normalizer, Real V[]);
 #endif
 /* a good practice: end file with a newline */

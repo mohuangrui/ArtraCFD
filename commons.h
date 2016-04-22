@@ -648,7 +648,7 @@ typedef Real RealVector[DIMS]; /* real type vector */
  * int kMax, jMax, iMax, k, j, i;
  * int idxMax, idx; use long type if needed
  * idxMax = kMax * jMax * iMax;
- * idx = ((k * jMax + j) * iMax + i);
+ * idx = (k * jMax + j) * iMax + i;
  *
  * Since the array is a single large chunk of memory, sweeping through it from
  * start-to-finish creates a regular access pattern that processor prefetchers
@@ -786,10 +786,10 @@ typedef struct {
     Real gamma; /* heat capacity ratio */
     Real gasR; /* the gas constant */
     Real cv; /* specific heat capacity at constant volume */
-    Real refLength; /* characteristic length */
-    Real refDensity; /* characteristic density */
-    Real refVelocity;  /*characteristic velocity */
-    Real refTemperature; /* characteristic temperature */
+    Real refL; /* characteristic length */
+    Real refRho; /* characteristic density */
+    Real refV;  /*characteristic velocity */
+    Real refT; /* characteristic temperature */
     Material mat; /* material database */
 } Model;
 /*

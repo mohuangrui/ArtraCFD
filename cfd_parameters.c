@@ -82,14 +82,14 @@ static int InitializeCFDParameters(Space *space, Time *time, Model *model)
     /* space */
     for (int s = 0; s < DIMS; ++s) {
         space->part.d[s] = ((space->part.domain[s][MAX] - space->part.domain[s][MIN]) /
-                (Real)(space->part.m[s])) / model->refLength;
-        space->part.domain[s][MAX] = space->part.domain[s][MAX] / model->refLength;
-        space->part.domain[s][MIN] = space->part.domain[s][MIN] / model->refLength;
+                (Real)(space->part.m[s])) / model->refL;
+        space->part.domain[s][MAX] = space->part.domain[s][MAX] / model->refL;
+        space->part.domain[s][MIN] = space->part.domain[s][MIN] / model->refL;
         space->part.dd[s] = 1.0 / space->part.d[s];
     }
     space->part.tinyL = 1.0e-6 * MinReal(space->part.d[Z], MinReal(space->part.d[Y], space->part.d[X]));
     /* time */
-    time->end = time->end * model->refVelocity / model->refLength;
+    time->end = time->end * model->refV / model->refL;
     if (0 > time->stepN) {
         time->stepN = INT_MAX;
     }
@@ -100,9 +100,9 @@ static int InitializeCFDParameters(Space *space, Time *time, Model *model)
     model->gamma = 1.4;
     model->gasR = 287.058;
     /* reference Mach number */
-    model->refMa = model->refVelocity / sqrt(model->gamma * model->gasR * model->refTemperature);
+    model->refMa = model->refV / sqrt(model->gamma * model->gasR * model->refT);
     /* reference dynamic viscosity for viscosity normalization */
-    model->refMu = model->refMu / (model->refDensity * model->refVelocity * model->refLength);
+    model->refMu = model->refMu / (model->refRho * model->refV * model->refL);
     /*
      * Now replace some parameters by general forms that are valid
      * for both dimensional and nondimensional N-S equations, since
