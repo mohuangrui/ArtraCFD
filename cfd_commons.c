@@ -31,8 +31,6 @@ typedef void (*EigenvectorRComputer)(const Real, const Real, const Real, const R
         const Real, const Real, Real [restrict][DIMU]);
 typedef void (*ConvectiveFluxComputer)(const Real, const Real, const Real, const Real, 
         const Real, const Real, Real [restrict]);
-typedef void (*DiffusiveFluxComputer)(const int, const int, const int, 
-        const Space *, const Model *, Real [restrict]);
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
@@ -56,9 +54,6 @@ static void ConvectiveFluxY(const Real, const Real, const Real, const Real,
         const Real, const Real, Real [restrict]);
 static void ConvectiveFluxX(const Real, const Real, const Real, const Real, 
         const Real, const Real, Real [restrict]);
-static Real Viscosity(const Real);
-static Real PrandtlNumber(void);
-
 /****************************************************************************
  * Global Variables Definition with Private Scope
  ****************************************************************************/
@@ -84,15 +79,15 @@ void SymmetricAverage(const int averager, const Real gamma,
         const Real UL[restrict], const Real UR[restrict], Real Uo[restrict])
 {
     const Real rhoL = UL[0];
-    const Real uL = UL[1] / rhoL;
-    const Real vL = UL[2] / rhoL;
-    const Real wL = UL[3] / rhoL;
-    const Real hTL = (UL[4] / rhoL) * gamma - 0.5 * (uL * uL + vL * vL + wL * wL) * (gamma - 1.0);
+    const Real uL = UL[1] / UL[0];
+    const Real vL = UL[2] / UL[0];
+    const Real wL = UL[3] / UL[0];
+    const Real hTL = (UL[4] / UL[0]) * gamma - 0.5 * (uL * uL + vL * vL + wL * wL) * (gamma - 1.0);
     const Real rhoR = UR[0];
-    const Real uR = UR[1] / rhoR;
-    const Real vR = UR[2] / rhoR;
-    const Real wR = UR[3] / rhoR;
-    const Real hTR = (UR[4] / rhoR) * gamma - 0.5 * (uR * uR + vR * vR + wR * wR) * (gamma - 1.0);
+    const Real uR = UR[1] / UR[0];
+    const Real vR = UR[2] / UR[0];
+    const Real wR = UR[3] / UR[0];
+    const Real hTR = (UR[4] / UR[0]) * gamma - 0.5 * (uR * uR + vR * vR + wR * wR) * (gamma - 1.0);
     Real D = 1.0; /* default is arithmetic mean */
     if (1 == averager) { /* Roe average */
         D = sqrt(rhoR / rhoL);
@@ -226,11 +221,11 @@ static void EigenvectorRX(const Real u, const Real v, const Real w, const Real h
 void ConvectiveFlux(const int s, const Real gamma, const Real U[restrict], Real F[restrict])
 {
     const Real rho = U[0];
-    const Real u = U[1] / rho;
-    const Real v = U[2] / rho;
-    const Real w = U[3] / rho;
-    const Real eT = U[4] / rho;
-    const Real p = rho * (eT - 0.5 * (u * u + v * v + w * w)) * (gamma - 1.0);
+    const Real u = U[1] / U[0];
+    const Real v = U[2] / U[0];
+    const Real w = U[3] / U[0];
+    const Real eT = U[4] / U[0];
+    const Real p = ComputePressure(gamma, U);
     ComputeConvectiveFlux[s](rho, u, v, w, eT, p, F);
     return;
 }

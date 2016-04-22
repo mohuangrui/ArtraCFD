@@ -40,6 +40,9 @@ static int LL(const int, Real *, const Real *, const Space *, const Model *,
         const Partition *, const Real);
 static int NumericalConvectiveFlux(const int, Real [], const Real, const int,
         const int, const int, const Real *, const Space *, const Model *);
+static Real Viscosity(const Real);
+static Real PrandtlNumber(void);
+
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
