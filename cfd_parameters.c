@@ -65,11 +65,11 @@ static int NodeBasedMeshNumberRefine(Space *space, const Model *model)
     }
     for (int s = 0; s < DIMS; ++s) {
         /* ensure at least two inner cells per dimension */
-        space->part.m[s] = MinInt(space->part.m[s], 2);
-        /* total number of nodes need to add ghosts nodes */
+        space->part.m[s] = MaxInt(space->part.m[s], 2);
+        /* total number of nodes (including ghost nodes) */
         space->part.n[s] = space->part.m[s] + 1 + 2 * space->part.ng; 
     }
-    space->part.totalN = space->part.n[Z] * space->part.n[Y] * space->part.n[X];
+    space->part.totalN = space->part.n[X] * space->part.n[Y] * space->part.n[Z];
     return 0;
 }
 /*
