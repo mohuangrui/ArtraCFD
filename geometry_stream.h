@@ -38,7 +38,7 @@ extern int ReadGeometryData(Space *, const Time *);
  * Function
  *      Write geometry data.
  */
-extern int WriteGeometryData(const space *, const Time *);
+extern int WriteGeometryData(const Space *, const Time *);
 #endif
 /* a good practice: end file with a newline */
 

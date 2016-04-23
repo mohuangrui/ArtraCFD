@@ -721,9 +721,9 @@ typedef struct {
  * Geometry Entities
  */
 typedef struct {
-    int totalM; /* total number of geometries */
-    int sphereM; /* number of analytical spheres */
-    int stlM; /* number of triangulated polyhedrons */
+    int totalN; /* total number of geometries */
+    int sphereN; /* number of analytical spheres */
+    int stlN; /* number of triangulated polyhedrons */
     Polyhedron *list; /* geometry list */
 } Geometry;
 /*
