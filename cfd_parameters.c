@@ -93,6 +93,7 @@ static int InitializeCFDParameters(Space *space, Time *time, Model *model)
     if (0 > time->stepN) {
         time->stepN = INT_MAX;
     }
+    time->countOutput = time->restart;
     /* model */
     if (0 > model->layers) {
         model->layers = INT_MAX;

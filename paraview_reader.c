@@ -11,30 +11,32 @@
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "paraview_stream.h"
+#include "paraview.h"
 #include <stdio.h> /* standard library for input and output */
 #include <string.h> /* manipulating strings */
-#include "paraview.h"
 #include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ReadParaviewDataFile(Time *, ParaviewSet *);
-static int ReadParaviewVariableFile(Real *U, const Space *, const Model *,
-        const Partition *, ParaviewSet *);
+static int ReadCaseFile(Time *, ParaviewSet *);
+static int ReadStructuredData(Space *, const Model *, ParaviewSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int ReadComputedDataParaview(Real *U, const Space *space, Time *time,
-        const Model *model, const Partition *part)
+int ReadStructuredDataParaview(Space *space, Time *time, const Model *model)
 {
     ParaviewSet paraSet = { /* initialize ParaviewSet environment */
-        .baseName = "paraview", /* data file base name */
+        .rootName = "paraview", /* data file root name */
+        .baseName = {'\0'}, /* data file base name */
         .fileName = {'\0'}, /* data file name */
-        .floatType = "Float32", /* paraview data type */
+        .fileExt = ".vts", /* data file extension */
+        .intType = "Int32", /* paraview int type */
+        .floatType = "Float32", /* paraview float type */
         .byteOrder = "LittleEndian" /* byte order of data */
     };
+    snprintf(paraSet.baseName, sizeof(ParaviewString), "%s%05d", 
+            paraSet.rootName, time->countOutput); 
     ReadParaviewDataFile(time, &paraSet);
     ReadParaviewVariableFile(U, space, model, part, &paraSet);
     return 0;
