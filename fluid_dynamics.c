@@ -213,7 +213,7 @@ static void NumericalDiffusiveFluxX(const int tn, const int k, const int j,
     const int idxFE = IndexNode(k - 1, j, i + 1, n[Y], n[X]);
     const int idxBE = IndexNode(k + 1, j, i + 1, n[Y], n[X]);
 
-    const Real * U = node[idx].U[tn];
+    const Real *restrict U = node[idx].U[tn];
     const Real u = U[1] / U[0];
     const Real v = U[2] / U[0];
     const Real w = U[3] / U[0];
@@ -298,7 +298,7 @@ static void NumericalDiffusiveFluxY(const int tn, const int k, const int j,
     const int idxFN = IndexNode(k - 1, j + 1, i, n[Y], n[X]);
     const int idxBN = IndexNode(k + 1, j + 1, i, n[Y], n[X]);
 
-    const Real * U = node[idx].U[tn];
+    const Real *restrict U = node[idx].U[tn];
     const Real u = U[1] / U[0];
     const Real v = U[2] / U[0];
     const Real w = U[3] / U[0];
@@ -383,7 +383,7 @@ static void NumericalDiffusiveFluxZ(const int tn, const int k, const int j,
     const int idxSB = IndexNode(k + 1, j - 1, i, n[Y], n[X]);
     const int idxNB = IndexNode(k + 1, j + 1, i, n[Y], n[X]);
 
-    const Real * U = node[idx].U[tn];
+    const Real *restrict U = node[idx].U[tn];
     const Real u = U[1] / U[0];
     const Real v = U[2] / U[0];
     const Real w = U[3] / U[0];

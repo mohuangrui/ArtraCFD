@@ -32,8 +32,9 @@ typedef struct {
     ParaviewString rootName; /* data file root name */
     ParaviewString baseName; /* data file base name */
     ParaviewString fileName; /* store current open file name */
-    ParaviewString intType; /* Paraview data type */
-    ParaviewString floatType; /* Paraview data type */
+    ParaviewString fileExt; /* data file extension */
+    ParaviewString intType; /* Paraview int type */
+    ParaviewString floatType; /* Paraview float type */
     ParaviewString byteOrder; /* byte order of data */
 }ParaviewSet;
 #endif

@@ -20,35 +20,42 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int InitializeTransientParaviewDataFile(ParaviewSet *);
-static int WriteSteadyParaviewDataFile(const Time *, ParaviewSet *);
-static int WriteParaviewVariableFile(const Real *U, const Space *, const Model *,
-        const Partition *, ParaviewSet *);
+static int InitializeTransientCaseFile(ParaviewSet *);
+static int WriteSteadyCaseFile(const Time *, ParaviewSet *);
+static int WriteStructuredData(const Space *, const Model *, ParaviewSet *);
+static int WritePointPolyData(const Geometry *, ParaviewSet *);
+static int WritePolygonPolyData(const Geometry *, ParaviewSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int WriteComputedDataParaview(const Real *U, const Space *space, 
-        const Time *time, const Model *model, const Partition *part)
+int WriteStructuredDataParaview(const Space *space, const Time *time, const Model *model)
 {
     ShowInformation("  writing field data to file...");
     ParaviewSet paraSet = { /* initialize ParaviewSet environment */
-        .baseName = "paraview", /* data file base name */
+        .rootName = "paraview", /* data file root name */
+        .baseName = {'\0'}, /* data file base name */
         .fileName = {'\0'}, /* data file name */
-        .floatType = "Float32", /* paraview data type */
+        .fileExt = ".vts", /* data file extension */
+        .intType = "Int32", /* paraview int type */
+        .floatType = "Float32", /* paraview float type */
         .byteOrder = "LittleEndian" /* byte order of data */
     };
-    if (0 == time->stepCount) { /* this is the initialization step */
-        InitializeTransientParaviewDataFile(&paraSet);
+    snprintf(paraSet.baseName, sizeof(ParaviewString), "%s%05d", 
+            paraSet.rootName, time->countOutput); 
+    if (0 == time->countStep) { /* this is the initialization step */
+        InitializeTransientCaseFile(&paraSet);
     }
-    WriteSteadyParaviewDataFile(time, &paraSet);
-    WriteParaviewVariableFile(U, space, model, part, &paraSet);
+    WriteSteadyCaseFile(time, &paraSet);
+    WriteStructuredData(space, model, &paraSet);
     return 0;
 }
-static int InitializeTransientParaviewDataFile(ParaviewSet *paraSet)
+static int InitializeTransientCaseFile(ParaviewSet *paraSet)
 {
-    FILE *filePointer = fopen("paraview.pvd", "w");
+    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.pvd", 
+            paraSet->rootName); 
+    FILE *filePointer = fopen(paraSet->fileName, "w");
     if (NULL == filePointer) {
-        FatalError("failed to write data to transient case file...");
+        FatalError("failed to initialize transient case file...");
     }
     /* output information to file */
     fprintf(filePointer, "<?xml version=\"1.0\"?>\n");
@@ -60,15 +67,10 @@ static int InitializeTransientParaviewDataFile(ParaviewSet *paraSet)
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-static int WriteSteadyParaviewDataFile(const Time *time, ParaviewSet *paraSet)
+static int WriteSteadyCaseFile(const Time *time, ParaviewSet *paraSet)
 {
-    /* store updated basename in filename */
-    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s%05d", 
-            paraSet->baseName, time->outputCount); 
-    /* basename is updated here! */
-    snprintf(paraSet->baseName, sizeof(ParaviewString), "%s", paraSet->fileName); 
-    /* current filename */
-    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.pvd", paraSet->baseName); 
+    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.pvd", 
+            paraSet->baseName); 
     FILE *filePointer = fopen(paraSet->fileName, "w");
     if (NULL == filePointer) {
         FatalError("failed to write data to steady case file...");
@@ -78,24 +80,25 @@ static int WriteSteadyParaviewDataFile(const Time *time, ParaviewSet *paraSet)
     fprintf(filePointer, "<VTKFile type=\"Collection\" version=\"1.0\"\n");
     fprintf(filePointer, "         byte_order=\"%s\">\n", paraSet->byteOrder);
     fprintf(filePointer, "  <Collection>\n");
-    fprintf(filePointer, "    <DataSet timestep=\"%.6g\" group=\"\" part=\"0\"\n", 
-            time->now);
-    fprintf(filePointer, "             file=\"%s.vts\"/>\n", paraSet->baseName);
+    fprintf(filePointer, "    <DataSet timestep=\"%.6g\" group=\"\" part=\"0\"\n", time->now);
+    fprintf(filePointer, "             file=\"%s%s\"/>\n", paraSet->baseName, paraSet->fileExt);
     fprintf(filePointer, "  </Collection>\n");
-    fprintf(filePointer, "  <!-- Order %d -->\n", time->outputCount);
+    fprintf(filePointer, "  <!-- Order %d -->\n", time->countOutput);
     fprintf(filePointer, "  <!-- Time %.6g -->\n", time->now);
-    fprintf(filePointer, "  <!-- Step %d -->\n", time->stepCount);
+    fprintf(filePointer, "  <!-- Step %d -->\n", time->countStep);
     fprintf(filePointer, "</VTKFile>\n");
     fclose(filePointer); /* close current opened file */
     /*
      * Add the current export to the transient case
      */
-    filePointer = fopen("paraview.pvd", "r+");
+    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.pvd", 
+            paraSet->rootName); 
+    filePointer = fopen(paraSet->fileName, "r+");
     if (NULL == filePointer) {
-        FatalError("failed to add data to transient file...");
+        FatalError("failed to add data to transient case file...");
     }
     /* seek the target line for adding information */
-    char currentLine[200] = {'\0'}; /* store the current read line */
+    String currentLine = {'\0'}; /* store the current read line */
     int targetLine = 1;
     while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
         CommandLineProcessor(currentLine); /* process current line */
@@ -110,72 +113,66 @@ static int WriteSteadyParaviewDataFile(const Time *time, ParaviewSet *paraSet)
         fgets(currentLine, sizeof currentLine, filePointer);
     }
     /* append informatiom */
-    fprintf(filePointer, "    <DataSet timestep=\"%.6g\" group=\"\" part=\"0\"\n", 
-            time->now);
-    fprintf(filePointer, "             file=\"%s.vts\"/>\n", paraSet->baseName);
+    fprintf(filePointer, "    <DataSet timestep=\"%.6g\" group=\"\" part=\"0\"\n", time->now);
+    fprintf(filePointer, "             file=\"%s%s\"/>\n", paraSet->baseName, paraSet->fileExt);
     fprintf(filePointer, "  </Collection>\n");
     fprintf(filePointer, "</VTKFile>\n");
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-static int WriteParaviewVariableFile(const Real *U, const Space *space, const Model *model,
-        const Partition *part, ParaviewSet *paraSet)
+static int WriteStructuredData(const Space *space, const Model *model, ParaviewSet *paraSet)
 {
-    FILE *filePointer = NULL;
-    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.vts", paraSet->baseName); 
-    filePointer = fopen(paraSet->fileName, "w");
+    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s%s", paraSet->baseName, paraSet->fileExt); 
+    FILE *filePointer = fopen(paraSet->fileName, "w");
     if (NULL == filePointer) {
         FatalError("failed to write data file...");
     }
-    int idx = 0; /* linear array index math variable */
     ParaviewReal data = 0.0; /* paraview scalar data */
-    ParaviewReal vector[3] = {0.0}; /* paraview vector data elements */
-    /* the scalar values at each node in current part */
-    const char name[7][5] = {"rho", "u", "v", "w", "p", "T", "id"};
-    int iMin = 0;
-    int iMax = part->iSup[0] - 1 - part->iSub[0];
-    int jMin = 0;
-    int jMax = part->jSup[0] - 1 - part->jSub[0];
-    int kMin = 0;
-    int kMax = part->kSup[0] - 1 - part->kSub[0];
+    ParaviewReal Vec[3] = {0.0}; /* paraview vector data elements */
+    /* the scalar variables */
+    const char scalar[7][5] = {"rho", "u", "v", "w", "p", "T", "geo"};
+    int idx = 0; /* linear array index math variable */
+    const Node *node = space->node;
+    const Real *restrict U = NULL;
+    const Partition *restrict part = &(space->part);
     fprintf(filePointer, "<?xml version=\"1.0\"?>\n");
     fprintf(filePointer, "<VTKFile type=\"StructuredGrid\" version=\"0.1\"\n");
     fprintf(filePointer, "         byte_order=\"%s\">\n", paraSet->byteOrder);
     fprintf(filePointer, "  <StructuredGrid WholeExtent=\"%d %d %d %d %d %d\">\n", 
-            iMin, iMax, jMin, jMax, kMin, kMax);
+            0, part->m[X] - 2, 0, part->m[Y] - 2, 0, part->m[Z] - 2);
     fprintf(filePointer, "    <Piece Extent=\"%d %d %d %d %d %d\">\n", 
-            iMin, iMax, jMin, jMax, kMin, kMax);
+            0, part->m[X] - 2, 0, part->m[Y] - 2, 0, part->m[Z] - 2);
     fprintf(filePointer, "      <PointData Scalars=\"rho\" Vectors=\"Vel\">\n");
-    for (int dim = 0; dim < 7; ++dim) {
+    for (int count = 0; count < 7; ++count) {
         fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"%s\" format=\"ascii\">\n", 
-                paraSet->floatType, name[dim]);
+                paraSet->floatType, scalar[count]);
         fprintf(filePointer, "          ");
-        for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-            for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-                for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                    idx = IndexMath(k, j, i, space) * DIMU;
-                    switch (dim) {
+        for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
+            for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
+                for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
+                    idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
+                    U = node[idx].U[C];
+                    switch (count) {
                         case 0: /* rho */
-                            data = U[idx];
+                            data = U[0];
                             break;
                         case 1: /* u */
-                            data = U[idx+1] / U[idx];
+                            data = U[1] / U[0];
                             break;
                         case 2: /* v */
-                            data = U[idx+2] / U[idx];
+                            data = U[2] / U[0];
                             break;
                         case 3: /* w */
-                            data = U[idx+3] / U[idx];
+                            data = U[3] / U[0];
                             break;
                         case 4: /* p */
-                            data = ComputePressure(idx, U, model);
+                            data = ComputePressure(model->gamma, U);
                             break;
                         case 5: /* T */
-                            data = ComputeTemperature(idx, U, model);
+                            data = ComputeTemperature(model->cv, U);
                             break;
                         case 6: /* node flag */
-                            idx = idx / DIMU;
-                            data = space->nodeFlag[idx];
+                            data = node[idx].geoID;
                         default:
                             break;
                     }
@@ -186,16 +183,17 @@ static int WriteParaviewVariableFile(const Real *U, const Space *space, const Mo
         fprintf(filePointer, "\n        </DataArray>\n");
     }
     fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"Vel\"\n", paraSet->floatType);
-    fprintf(filePointer, "                   NumberOfComponents=\"3\" format=\"ascii\">\n");
+    fprintf(filePointer, "                   NumberOfComponents=\"%d\" format=\"ascii\">\n", DIMS);
     fprintf(filePointer, "          ");
-    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = IndexMath(k, j, i, space) * DIMU;
-                vector[0] = U[idx+1] / U[idx];
-                vector[1] = U[idx+2] / U[idx];
-                vector[2] = U[idx+3] / U[idx];
-                fprintf(filePointer, "%.6g %.6g %.6g ", vector[0], vector[1], vector[2]);
+    for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
+        for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
+            for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
+                idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
+                U = node[idx].U[C];
+                Vec[X] = U[1] / U[0];
+                Vec[Y] = U[2] / U[0];
+                Vec[Z] = U[3] / U[0];
+                fprintf(filePointer, "%.6g %.6g %.6g ", Vec[X], Vec[Y], Vec[Z]);
             }
         }
     }
@@ -205,15 +203,15 @@ static int WriteParaviewVariableFile(const Real *U, const Space *space, const Mo
     fprintf(filePointer, "      </CellData>\n");
     fprintf(filePointer, "      <Points>\n");
     fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"points\"\n", paraSet->floatType);
-    fprintf(filePointer, "                   NumberOfComponents=\"3\" format=\"ascii\">\n");
+    fprintf(filePointer, "                   NumberOfComponents=\"%d\" format=\"ascii\">\n", DIMS);
     fprintf(filePointer, "          ");
-    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                vector[0] = ComputeX(i, space);
-                vector[1] = ComputeY(j, space);
-                vector[2] = ComputeZ(k, space);
-                fprintf(filePointer, "%.6g %.6g %.6g ", vector[0], vector[1], vector[2]);
+    for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
+        for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
+            for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
+                Vec[X] = PointSpace(i, part->domain[X][MIN], part->d[X], part->ng);
+                Vec[Y] = PointSpace(j, part->domain[Y][MIN], part->d[Y], part->ng);
+                Vec[Z] = PointSpace(k, part->domain[Z][MIN], part->d[Z], part->ng);
+                fprintf(filePointer, "%.6g %.6g %.6g ", Vec[X], Vec[Y], Vec[Z]);
             }
         }
     }

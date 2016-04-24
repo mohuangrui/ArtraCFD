@@ -38,11 +38,11 @@ static int WriteParaviewVariableFile(const Geometry *, ParaviewSet *);
 int ReadGeometryData(Space *space, const Time *time)
 {
     if (0 == time->restart) {
-        NonrestartGeometryReader(&space->geo);
+        NonrestartGeometryReader(&(space->geo));
     } else {
-        RestartGeometryReader(time, &space->geo);
+        RestartGeometryReader(time, &(space->geo));
     }
-    ComputeGeometryParameters(space, &space->geo);
+    ComputeGeometryParameters(space, &(space->geo));
     return 0;
 }
 static int NonrestartGeometryReader(Geometry *geo)

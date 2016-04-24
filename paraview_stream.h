@@ -24,29 +24,19 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Paraview format data exporter
- *
- * Function
- *      Export conservative field data vector variable:
- *      U = [rho, rho_u, rho_v, rho_w, rho_eT]
- *      to primitive variables = [rho, u, v, w, p, T]
- *      to binary data files with Paraview data format.
- * Notice
- *      U is a linear array that stores all the values.
- *      These data are in sequential state 
- *      and can be accessed by linear index math.
+ * Structured data writer
  */
-extern int WriteComputedDataParaview(const Real * U, const Space *, const Time *,
-        const Model *, const Partition *);
+extern int WriteStructuredDataParaview(const Space *, const Time *, const Model *);
 /*
- * Paraview data loader
- *
- * Function
- *      Load computed data from output files which are written in Paraview
- *      format.
+ * Structured data reader
  */
-extern int ReadComputedDataParaview(Real *U, const Space *, Time *, const Model *,
-        const Partition *);
+extern int ReadStructuredDataParaview(Space *, Time *, const Model *);
+/*
+ * Point type poly data writer
+ */
+/*
+ * Polygon type poly data writer
+ */
 #endif
 /* a good practice: end file with a newline */
 

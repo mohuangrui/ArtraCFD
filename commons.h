@@ -562,6 +562,7 @@ typedef enum {
     DIMU = 5, /* conservative vector: rho, rho_u, rho_v, rho_w, rho_eT */
     DIMUo = 6, /* primitive vector: rho, u, v, w, [p, hT, h], [T, c] */
     DIMT = 3, /* number of time levels to store field data */
+    C = 1, /* the time level for current */
     /* parameters related to numerical model */
     WENO = 0, /* WENO scheme identifier */
     TVD = 1, /* TVD scheme identifier */
