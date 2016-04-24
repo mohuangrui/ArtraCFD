@@ -419,5 +419,36 @@ static int WritePolygonPolyData(const Geometry *geo, ParaviewSet *paraSet)
     fclose(filePointer); /* close current opened file */
     return 0;
 }
+int ReadPolyhedronStatusData(FILE **filePointerPointer, Polyhedron *poly)
+{
+    FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
+    String currentLine = {'\0'}; /* store the current read line */
+    /* set format specifier according to the type of Real */
+    char format[100] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %d";
+    if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
+        strncpy(format, "%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %d", sizeof format);
+    }
+    fgets(currentLine, sizeof currentLine, filePointer);
+    sscanf(currentLine, format,
+            &(poly->O[X]), &(poly->O[Y]), &(poly->O[Z]), &(poly->r),
+            &(poly->V[X]), &(poly->V[Y]), &(poly->V[Z]),
+            &(poly->F[X]), &(poly->F[Y]), &(poly->F[Z]),
+            &(poly->rho), &(poly->T), &(poly->cf),
+            &(poly->area), &(poly->volume), &(poly->matID));
+    *filePointerPointer = filePointer; /* updated file pointer */
+    return 0;
+}
+int WritePolyhedronStatusData(FILE **filePointerPointer, Polyhedron *poly)
+{
+    FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
+    fprintf(filePointer, "        %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %d\n",
+            poly->O[X], poly->O[Y], poly->O[Z], poly->r,
+            poly->V[X], poly->V[Y], poly->V[Z],
+            poly->F[X], poly->F[Y], poly->F[Z],
+            poly->rho, poly->T, poly->cf,
+            poly->area, poly->volume, poly->matID);
+    *filePointerPointer = filePointer; /* updated file pointer */
+    return 0;
+}
 /* a good practice: end file with a newline */
 

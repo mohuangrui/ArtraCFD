@@ -56,6 +56,11 @@ extern int ReadPointPolyDataParaview(Geometry *, Time *);
  */
 extern int WritePolygonPolyDataParaview(const Geometry *, const Time *);
 extern int ReadPolygonPolyDataParaview(Geometry *, Time *);
+/*
+ * Polyhedron status writer and reader
+ */
+static int WritePolyhedronStatusData(FILE **, Polyhedron *);
+static int ReadPolyhedronStatusData(FILE **, Polyhedron *);
 #endif
 /* a good practice: end file with a newline */
 

@@ -25,8 +25,6 @@
 static int NonrestartGeometryReader(Geometry *);
 static int RestartGeometryReader(const Time *, Geometry *);
 static int ReadSphereFile(const char *, Geometry *);
-static int ReadPolyhedronStatusData(FILE **, Polyhedron *);
-static int WritePolyhedronStatusData(FILE **, Polyhedron *);
 static int ReadGeometryDataParaview(const Time *, Geometry *);
 /****************************************************************************
  * Function definitions
@@ -115,37 +113,6 @@ static int ReadSphereFile(const char *fileName, Geometry *geo)
         geo->list[n].facet = NULL;
     }
     fclose(filePointer); /* close current opened file */
-    return 0;
-}
-static int ReadPolyhedronStatusData(FILE **filePointerPointer, Polyhedron *poly)
-{
-    FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
-    String currentLine = {'\0'}; /* store the current read line */
-    /* set format specifier according to the type of Real */
-    char format[100] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %d";
-    if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
-        strncpy(format, "%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %d", sizeof format);
-    }
-    fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, format,
-            &(poly->O[X]), &(poly->O[Y]), &(poly->O[Z]), &(poly->r),
-            &(poly->V[X]), &(poly->V[Y]), &(poly->V[Z]),
-            &(poly->F[X]), &(poly->F[Y]), &(poly->F[Z]),
-            &(poly->rho), &(poly->T), &(poly->cf),
-            &(poly->area), &(poly->volume), &(poly->matID));
-    *filePointerPointer = filePointer; /* updated file pointer */
-    return 0;
-}
-static int WritePolyhedronStatusData(FILE **filePointerPointer, Polyhedron *poly)
-{
-    FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
-    fprintf(filePointer, "        %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %d\n",
-            poly->O[X], poly->O[Y], poly->O[Z], poly->r,
-            poly->V[X], poly->V[Y], poly->V[Z],
-            poly->F[X], poly->F[Y], poly->F[Z],
-            poly->rho, poly->T, poly->cf,
-            poly->area, poly->volume, poly->matID);
-    *filePointerPointer = filePointer; /* updated file pointer */
     return 0;
 }
 static int RestartGeometryReader(const Time *time, Geometry *geo)
@@ -253,11 +220,6 @@ static int ReadGeometryDataParaview(const Time *time, Geometry *geo)
         fgets(currentLine, sizeof currentLine, filePointer);
     }
     fclose(filePointer); /* close current opened file */
-    return 0;
-}
-int WriteGeometryData(const Space *space, const Time *time)
-{
-    WriteGeometryDataParaview(time, &(space->geo));
     return 0;
 }
 /* a good practice: end file with a newline */
