@@ -16,6 +16,7 @@
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
+#include "commons.h"
 /****************************************************************************
  * Data Structure Declarations
  ****************************************************************************/
@@ -24,7 +25,7 @@
  */
 typedef char ParaviewString[80]; /* Paraview string data */
 typedef double ParaviewReal; /* Paraview real data */
-typedef ParaviewReal ParaviewVector[DIMS]; /* Paraview vector data */
+typedef ParaviewReal ParaviewVector[3]; /* Paraview vector data */
 /*
  * Paraview configuration structure
  */
@@ -37,6 +38,24 @@ typedef struct {
     ParaviewString floatType; /* Paraview float type */
     ParaviewString byteOrder; /* byte order of data */
 }ParaviewSet;
+/****************************************************************************
+ * Public Functions Declaration
+ ****************************************************************************/
+/*
+ * Structured data writer and reader
+ */
+extern int WriteStructuredDataParaview(const Space *, const Time *, const Model *);
+extern int ReadStructuredDataParaview(Space *, Time *, const Model *);
+/*
+ * Point type poly data writer and reader
+ */
+extern int WritePointPolyDataParaview(const Geometry *, const Time *);
+extern int ReadPointPolyDataParaview(Geometry *, Time *);
+/*
+ * Polygon type poly data writer and reader
+ */
+extern int WritePolygonPolyDataParaview(const Geometry *, const Time *);
+extern int ReadPolygonPolyDataParaview(Geometry *, Time *);
 #endif
 /* a good practice: end file with a newline */
 
