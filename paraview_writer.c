@@ -22,16 +22,17 @@
 static int InitializeTransientCaseFile(ParaviewSet *);
 static int WriteSteadyCaseFile(const Time *, ParaviewSet *);
 static int WriteStructuredData(const Space *, const Model *, ParaviewSet *);
+static int PointPolyDataWriter(const Geometry *, const Time *);
 static int WritePointPolyData(const Geometry *, ParaviewSet *);
+static int PolygonPolyDataWriter(const Geometry *, const Time *);
 static int WritePolygonPolyData(const Geometry *, ParaviewSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
 int WriteStructuredDataParaview(const Space *space, const Time *time, const Model *model)
 {
-    ShowInformation("  writing field data to file...");
     ParaviewSet paraSet = { /* initialize ParaviewSet environment */
-        .rootName = "paraview", /* data file root name */
+        .rootName = "field", /* data file root name */
         .baseName = {'\0'}, /* data file base name */
         .fileName = {'\0'}, /* data file name */
         .fileExt = ".vts", /* data file extension */
@@ -72,7 +73,7 @@ static int WriteSteadyCaseFile(const Time *time, ParaviewSet *paraSet)
             paraSet->baseName); 
     FILE *filePointer = fopen(paraSet->fileName, "w");
     if (NULL == filePointer) {
-        FatalError("failed to write data to steady case file...");
+        FatalError("failed to open steady case file...");
     }
     /* output information to file */
     fprintf(filePointer, "<?xml version=\"1.0\"?>\n");
@@ -82,7 +83,6 @@ static int WriteSteadyCaseFile(const Time *time, ParaviewSet *paraSet)
     fprintf(filePointer, "    <DataSet timestep=\"%.6g\" group=\"\" part=\"0\"\n", time->now);
     fprintf(filePointer, "             file=\"%s%s\"/>\n", paraSet->baseName, paraSet->fileExt);
     fprintf(filePointer, "  </Collection>\n");
-    fprintf(filePointer, "  <!-- Order %d -->\n", time->countOutput);
     fprintf(filePointer, "  <!-- Time %.6g -->\n", time->now);
     fprintf(filePointer, "  <!-- Step %d -->\n", time->countStep);
     fprintf(filePointer, "</VTKFile>\n");
@@ -124,7 +124,7 @@ static int WriteStructuredData(const Space *space, const Model *model, ParaviewS
     snprintf(paraSet->fileName, sizeof(ParaviewString), "%s%s", paraSet->baseName, paraSet->fileExt); 
     FILE *filePointer = fopen(paraSet->fileName, "w");
     if (NULL == filePointer) {
-        FatalError("failed to write data file...");
+        FatalError("failed to open data file...");
     }
     ParaviewReal data = 0.0; /* paraview scalar data */
     ParaviewReal Vec[3] = {0.0}; /* paraview vector data elements */
@@ -222,7 +222,12 @@ static int WriteStructuredData(const Space *space, const Model *model, ParaviewS
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-int WritePointPolyDataParaview(const Geometry *geo, const Time *time)
+int WritePolyDataParaview(const Geometry *geo, const Time *time)
+{
+    PointPolyDataWriter(geo, time);
+    PolygonPolyDataWriter(geo, time);
+}
+static int PointPolyDataWriter(const Geometry *geo, const Time *time)
 {
     ParaviewSet paraSet = { /* initialize ParaviewSet environment */
         .rootName = "geo_sph", /* data file root name */
@@ -247,7 +252,7 @@ static int WritePointPolyData(const Geometry *geo, ParaviewSet *paraSet)
     snprintf(paraSet->fileName, sizeof(ParaviewString), "%s%s", paraSet->baseName, paraSet->fileExt); 
     FILE *filePointer = fopen(paraSet->fileName, "w");
     if (NULL == filePointer) {
-        FatalError("failed to write data file...");
+        FatalError("failed to open data file...");
     }
     ParaviewReal data = 0.0; /* paraview scalar data */
     ParaviewReal Vec[3] = {0.0}; /* paraview vector data elements */
@@ -323,7 +328,7 @@ static int WritePointPolyData(const Geometry *geo, ParaviewSet *paraSet)
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-int WritePolygonPolyDataParaview(const Geometry *geo, const Time *time)
+static int PolygonPolyDataWriter(const Geometry *geo, const Time *time)
 {
     ParaviewSet paraSet = { /* initialize ParaviewSet environment */
         .rootName = "geo_stl", /* data file root name */
@@ -348,7 +353,7 @@ static int WritePolygonPolyData(const Geometry *geo, ParaviewSet *paraSet)
     snprintf(paraSet->fileName, sizeof(ParaviewString), "%s%s", paraSet->baseName, paraSet->fileExt); 
     FILE *filePointer = fopen(paraSet->fileName, "w");
     if (NULL == filePointer) {
-        FatalError("failed to write data file...");
+        FatalError("failed to open data file...");
     }
     ParaviewReal data = 0.0; /* paraview scalar data */
     ParaviewReal Vec[3] = {0.0}; /* paraview vector data elements */

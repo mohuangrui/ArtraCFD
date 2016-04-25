@@ -44,7 +44,7 @@ static int NonrestartGeometryReader(Geometry *geo)
     ShowInformation("Reading geometry data ...");
     FILE *filePointer = fopen("artracfd.geo", "r");
     if (NULL == filePointer) {
-        FatalError("failed to open geometry file: artracfd.geo...");
+        FatalError("failed to open file: artracfd.geo...");
     }
     /* read and process file line by line */
     String currentLine = {'\0'}; /* store the current read line */
@@ -105,7 +105,7 @@ static int ReadSphereFile(const char *fileName, Geometry *geo)
 {
     FILE *filePointer = fopen(fileName, "r");
     if (NULL == filePointer) {
-        FatalError("failed to read sphere geometry file ...");
+        FatalError("failed to open sphere geometry file ...");
     }
     for (int n = 0; n < geo->sphereN; ++n) {
         ReadPolyhedronStatusData(&filePointer, geo->list + n);
@@ -136,7 +136,7 @@ static int ReadGeometryDataParaview(const Time *time, Geometry *geo)
             paraSet.rootName, time->restart); 
     FILE *filePointer = fopen(paraSet.fileName, "r");
     if (NULL == filePointer) {
-        FatalError("failed to restore geometry file...");
+        FatalError("failed to open data file...");
     }
     /* get rid of redundant lines */
     String currentLine = {'\0'}; /* store current line */

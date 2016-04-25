@@ -47,15 +47,10 @@ typedef struct {
 extern int WriteStructuredDataParaview(const Space *, const Time *, const Model *);
 extern int ReadStructuredDataParaview(Space *, Time *, const Model *);
 /*
- * Point type poly data writer and reader
+ * Poly data writer and reader
  */
-extern int WritePointPolyDataParaview(const Geometry *, const Time *);
-extern int ReadPointPolyDataParaview(Geometry *, Time *);
-/*
- * Polygon type poly data writer and reader
- */
-extern int WritePolygonPolyDataParaview(const Geometry *, const Time *);
-extern int ReadPolygonPolyDataParaview(Geometry *, Time *);
+extern int WritePolyDataParaview(const Geometry *, const Time *);
+extern int ReadPolyDataParaview(Geometry *, Time *);
 /*
  * Polyhedron status writer and reader
  */

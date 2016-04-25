@@ -21,13 +21,15 @@
  ****************************************************************************/
 static int ReadCaseFile(Time *, ParaviewSet *);
 static int ReadStructuredData(Space *, const Model *, ParaviewSet *);
+static int PointPolyDataReader(Geometry *, const Time *);
+static int ReadPointPolyData(Geometry *, ParaviewSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
 int ReadStructuredDataParaview(Space *space, Time *time, const Model *model)
 {
     ParaviewSet paraSet = { /* initialize ParaviewSet environment */
-        .rootName = "paraview", /* data file root name */
+        .rootName = "field", /* data file root name */
         .baseName = {'\0'}, /* data file base name */
         .fileName = {'\0'}, /* data file name */
         .fileExt = ".vts", /* data file extension */
@@ -37,20 +39,20 @@ int ReadStructuredDataParaview(Space *space, Time *time, const Model *model)
     };
     snprintf(paraSet.baseName, sizeof(ParaviewString), "%s%05d", 
             paraSet.rootName, time->countOutput); 
-    ReadParaviewDataFile(time, &paraSet);
-    ReadParaviewVariableFile(U, space, model, part, &paraSet);
+    ReadCaseFile(time, &paraSet);
+    ReadStructuredData(space, model, &paraSet);
     return 0;
 }
-static int ReadParaviewDataFile(Time *time, ParaviewSet *paraSet)
+static int ReadCaseFile(Time *time, ParaviewSet *paraSet)
 {
-    FILE *filePointer = NULL;
-    filePointer = fopen("restart.pvd", "r");
+    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.pvd", 
+            paraSet->baseName); 
+    FILE *filePointer = fopen(paraSet->fileName, "r");
     if (NULL == filePointer) {
-        FatalError("failed to open restart file: restart.pvd...");
+        FatalError("failed to open case file...");
     }
     /* read information from file */
-    char currentLine[200] = {'\0'}; /* store current line */
-    char format[25] = {'\0'}; /* format information */
+    String currentLine = {'\0'}; /* store current line */
     /* get rid of redundant lines */
     fgets(currentLine, sizeof currentLine, filePointer);
     fgets(currentLine, sizeof currentLine, filePointer);
@@ -59,11 +61,9 @@ static int ReadParaviewDataFile(Time *time, ParaviewSet *paraSet)
     fgets(currentLine, sizeof currentLine, filePointer);
     fgets(currentLine, sizeof currentLine, filePointer);
     fgets(currentLine, sizeof currentLine, filePointer);
-    /* get restart order number */
-    fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, "%*s %*s %d", &(time->outputCount)); 
     /* get restart time */
     /* set format specifier according to the type of Real */
+    char format[25] = {'\0'}; /* format information */
     strncpy(format, "%*s %*s %lg", sizeof format); /* default is double type */
     if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
         strncpy(format, "%*s %*s %g", sizeof format); /* float type */
@@ -72,62 +72,58 @@ static int ReadParaviewDataFile(Time *time, ParaviewSet *paraSet)
     sscanf(currentLine, format, &(time->now)); 
     /* get current step number */
     fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, "%*s %*s %d", &(time->stepCount)); 
+    sscanf(currentLine, "%*s %*s %d", &(time->countStep)); 
     fclose(filePointer); /* close current opened file */
-    /* store updated basename in filename */
-    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s%05d", 
-            paraSet->baseName, time->outputCount); 
-    /* basename is updated here! */
-    snprintf(paraSet->baseName, sizeof(ParaviewString), "%s", paraSet->fileName); 
     return 0;
 }
-static int ReadParaviewVariableFile(Real *U, const Space *space, const Model *model,
-        const Partition *part, ParaviewSet *paraSet)
+static int ReadStructuredData(Space *space, const Model *model, ParaviewSet *paraSet)
 {
-    FILE *filePointer = NULL;
-    /* current filename */
-    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s.vts", paraSet->baseName); 
-    filePointer = fopen(paraSet->fileName, "r");
+    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s%s", paraSet->baseName, paraSet->fileExt); 
+    FILE *filePointer = fopen(paraSet->fileName, "r");
     if (NULL == filePointer) {
-        FatalError("failed to load data file...");
+        FatalError("failed to open data file...");
     }
-    /* get rid of redundant lines */
-    char currentLine[200] = {'\0'}; /* store current line */
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    int idx = 0; /* linear array index math variable */
-    ParaviewReal data = 0.0; /* the Paraview data format */
+    ParaviewReal data = 0.0; /* paraview scalar data */
     /* set format specifier according to the type of Real */
     char format[5] = "%lg"; /* default is double type */
     if (sizeof(ParaviewReal) == sizeof(float)) {
         strncpy(format, "%g", sizeof format); /* float type */
     }
-    for (int dim = 0; dim < DIMU; ++dim) {
+    int idx = 0; /* linear array index math variable */
+    Node *node = space->node;
+    Real *restrict U = NULL;
+    const Partition *restrict part = &(space->part);
+    /* get rid of redundant lines */
+    String currentLine = {'\0'}; /* store current line */
+    fgets(currentLine, sizeof currentLine, filePointer);
+    fgets(currentLine, sizeof currentLine, filePointer);
+    fgets(currentLine, sizeof currentLine, filePointer);
+    fgets(currentLine, sizeof currentLine, filePointer);
+    fgets(currentLine, sizeof currentLine, filePointer);
+    fgets(currentLine, sizeof currentLine, filePointer);
+    for (int count = 0; count < DIMU; ++count) {
         fgets(currentLine, sizeof currentLine, filePointer);
-        for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-            for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-                for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
+        for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
+            for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
+                for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
+                    idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
+                    U = node[idx].U[C];
                     fscanf(filePointer, format, &data);
-                    idx = IndexMath(k, j, i, space) * DIMU;
-                    switch (dim) {
+                    switch (count) {
                         case 0: /* rho */
-                            U[idx] = data;
+                            U[0] = data;
                             break;
                         case 1: /* u */
-                            U[idx+1] = U[idx] * data;
+                            U[1] = U[0] * data;
                             break;
                         case 2: /* v */
-                            U[idx+2] = U[idx] * data;
+                            U[2] = U[0] * data;
                             break;
                         case 3: /* w */
-                            U[idx+3] = U[idx] * data;
+                            U[3] = U[0] * data;
                             break;
                         case 4: /* p */
-                            U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] + data / (model->gamma - 1.0);
+                            U[4] = 0.5 * (U[1] * U[1] + U[2] * U[2] + U[3] * U[3]) / U[0] + data / (model->gamma - 1.0);
                             break;
                         default:
                             break;
@@ -140,6 +136,44 @@ static int ReadParaviewVariableFile(Real *U, const Space *space, const Model *mo
     }
     fclose(filePointer); /* close current opened file */
     return 0;
+}
+static int PointPolyDataReader(Geometry *geo, const Time *time)
+{
+    ParaviewSet paraSet = { /* initialize ParaviewSet environment */
+        .rootName = "geo_sph", /* data file root name */
+        .baseName = {'\0'}, /* data file base name */
+        .fileName = {'\0'}, /* data file name */
+        .fileExt = ".vtp", /* data file extension */
+        .intType = "Int32", /* paraview int type */
+        .floatType = "Float32", /* paraview float type */
+        .byteOrder = "LittleEndian" /* byte order of data */
+    };
+    snprintf(paraSet.baseName, sizeof(ParaviewString), "%s%05d", 
+            paraSet.rootName, time->countOutput); 
+    ReadPointPolyData(geo, &paraSet);
+    return 0;
+}
+static int ReadPointPolyData(Geometry *geo, ParaviewSet *paraSet)
+{
+    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s%s", paraSet->baseName, paraSet->fileExt); 
+    FILE *filePointer = fopen(paraSet->fileName, "r");
+    if (NULL == filePointer) {
+        FatalError("failed to open data file...");
+    }
+    ParaviewReal data = 0.0; /* paraview scalar data */
+    /* set format specifier according to the type of Real */
+    char format[5] = "%lg"; /* default is double type */
+    if (sizeof(ParaviewReal) == sizeof(float)) {
+        strncpy(format, "%g", sizeof format); /* float type */
+    }
+    /* get rid of redundant lines */
+    String currentLine = {'\0'}; /* store current line */
+    fgets(currentLine, sizeof currentLine, filePointer);
+    fgets(currentLine, sizeof currentLine, filePointer);
+    fgets(currentLine, sizeof currentLine, filePointer);
+    fgets(currentLine, sizeof currentLine, filePointer);
+    fgets(currentLine, sizeof currentLine, filePointer);
+    fgets(currentLine, sizeof currentLine, filePointer);
 }
 /* a good practice: end file with a newline */
 
