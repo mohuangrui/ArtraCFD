@@ -64,7 +64,7 @@ static int ReadCaseFile(Time *time, EnsightSet *enSet)
 static int ReadStructuredData(Space *space, const Model *model, EnsightSet *enSet)
 {
     FILE *filePointer = NULL;
-    EnsightReal data = 0.0; /* the Parasight data format */
+    EnsightReal data = 0.0; /* the Ensight data format */
     const char scalar[5][5] = {"rho", "u", "v", "w", "p"};
     int idx = 0; /* linear array index math variable */
     Node *node = space->node;
@@ -81,9 +81,9 @@ static int ReadStructuredData(Space *space, const Model *model, EnsightSet *enSe
             fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
             fread(&partNum, sizeof(int), 1, filePointer);
             fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-            for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
-                for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
-                    for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
+            for (int k = part->ns[p][Z][MIN]; k < part->ns[p][Z][MAX]; ++k) {
+                for (int j = part->ns[p][Y][MIN]; j < part->ns[p][Y][MAX]; ++j) {
+                    for (int i = part->ns[p][X][MIN]; i < part->ns[p][X][MAX]; ++i) {
                         idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
                         U = node[idx].U[C];
                         fread(&data, sizeof(EnsightReal), 1, filePointer);

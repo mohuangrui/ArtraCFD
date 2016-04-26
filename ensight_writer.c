@@ -139,7 +139,7 @@ static int WriteGeometryFile(const Space *space, EnsightSet *enSet)
     if (NULL == filePointer) {
         FatalError("failed to open data file...");
     }
-    EnsightReal data = 0.0; /* the Parasight data format */
+    EnsightReal data = 0.0; /* the Ensight data format */
     const Partition *restrict part = &(space->part);
     IntVector nodeCount = {0}; /* i, j, k node number in each part */
     /*
@@ -211,7 +211,7 @@ static int WriteGeometryFile(const Space *space, EnsightSet *enSet)
 static int WriteStructuredData(const Space *space, const Model *model, EnsightSet *enSet)
 {
     FILE *filePointer = NULL;
-    EnsightReal data = 0.0; /* the Parasight data format */
+    EnsightReal data = 0.0; /* the Ensight data format */
     const char scalar[7][5] = {"rho", "u", "v", "w", "p", "T", "gid"};
     int idx = 0; /* linear array index math variable */
     const Node *node = space->node;
