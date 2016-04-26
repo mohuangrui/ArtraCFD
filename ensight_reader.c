@@ -11,113 +11,98 @@
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "ensight_stream.h"
+#include "ensight.h"
 #include <stdio.h> /* standard library for input and output */
 #include <string.h> /* manipulating strings */
-#include "ensight.h"
 #include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ReadEnsightCaseFile(Time *, EnsightSet *);
-static int ReadEnsightVariableFile(Real *U, const Space *, const Model *,
-        const Partition *, EnsightSet *);
+static int ReadCaseFile(Time *, EnsightSet *);
+static int ReadStructuredData(Space *, const Model *, EnsightSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-/*
- * Read necessary flow information from computed data
- */
-int ReadComputedDataEnsight(Real *U, const Space *space, Time *time,
-        const Model *model, const Partition *part)
+int ReadStructuredDataEnsight(Space *space, Time *time, const Model *model)
 {
-    EnsightSet enSet = { /* initialize Ensight environment */
-        .baseName = "ensight", /* data file base name */
+    EnsightSet enSet = { /* initialize environment */
+        .rootName = "field", /* data file root name */
+        .baseName = {'\0'}, /* data file base name */
         .fileName = {'\0'}, /* data file name */
         .stringData = {'\0'}, /* string data recorder */
     };
-    ReadEnsightCaseFile(time, &enSet);
-    ReadEnsightVariableFile(U, space, model, part, &enSet);
+    snprintf(enSet.baseName, sizeof(EnsightString), "%s%05d", 
+            enSet.rootName, time->countOutput); 
+    ReadCaseFile(time, &enSet);
+    ReadStructuredData(space, model, &enSet);
     return 0;
 }
-static int ReadEnsightCaseFile(Time *time, EnsightSet *enSet)
+static int ReadCaseFile(Time *time, EnsightSet *enSet)
 {
-    FILE *filePointer = NULL;
-    filePointer = fopen("restart.case", "r");
+    snprintf(enSet->fileName, sizeof(EnsightString), "%s.case", 
+            enSet->baseName); 
+    FILE *filePointer = fopen(enSet->fileName, "r");
     if (NULL == filePointer) {
-        FatalError("failed to open restart case file: restart.case...");
+        FatalError("failed to open case file...");
     }
     /* read information from file */
-    char currentLine[200] = {'\0'}; /* store current line */
+    String currentLine = {'\0'}; /* store current line */
+    ReadInLine(&filePointer, "VARIABLE");
     /* set format specifier according to the type of Real */
     char format[25] = "%*s %*s %*s %*s %lg"; /* default is double type */
     if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
         strncpy(format, "%*s %*s %*s %*s %g", sizeof format); /* float type */
     }
-    /* get rid of redundant lines */
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    /* get restart order number */
-    fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, "%*s %*s %*s %*s %d", &(time->outputCount)); 
-    /* get restart time */
     fgets(currentLine, sizeof currentLine, filePointer);
     sscanf(currentLine, format, &(time->now)); 
-    /* get current step number */
     fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, "%*s %*s %*s %*s %d", &(time->stepCount)); 
+    sscanf(currentLine, "%*s %*s %*s %*s %d", &(time->countStep)); 
     fclose(filePointer); /* close current opened file */
-    /* store updated basename in filename */
-    snprintf(enSet->fileName, sizeof(EnsightString), "%s%05d", 
-            enSet->baseName, time->outputCount); 
-    /* basename is updated here! */
-    snprintf(enSet->baseName, sizeof(EnsightString), "%s", enSet->fileName); 
     return 0;
 }
-static int ReadEnsightVariableFile(Real *U, const Space *space, const Model *model,
-        const Partition *part, EnsightSet *enSet)
+static int ReadStructuredData(Space *space, const Model *model, EnsightSet *enSet)
 {
     FILE *filePointer = NULL;
+    EnsightReal data = 0.0; /* the Parasight data format */
+    const char scalar[5][5] = {"rho", "u", "v", "w", "p"};
     int idx = 0; /* linear array index math variable */
-    EnsightReal data = 0.0; /* the ensight data format */
-    const char nameSuffix[5][10] = {"rho", "u", "v", "w", "p"};
-    for (int dim = 0; dim < DIMU; ++dim) {
-        snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, nameSuffix[dim]);
+    Node *node = space->node;
+    Real *restrict U = NULL;
+    const Partition *restrict part = &(space->part);
+    for (int count = 0; count < DIMU; ++count) {
+        snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, scalar[count]);
         filePointer = fopen(enSet->fileName, "rb");
         if (NULL == filePointer) {
-            FatalError("failed to open restart data files...");
+            FatalError("failed to open data file...");
         }
         fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        for (int partCount = 0, partNum = 1; partCount < NSUBPART; ++partCount) {
+        for (int p = PIN, partNum = 1; p < NPARTWRITE; ++p) {
             fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
             fread(&partNum, sizeof(int), 1, filePointer);
             fread(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-            for (int k = part->kSub[partCount]; k < part->kSup[partCount]; ++k) {
-                for (int j = part->jSub[partCount]; j < part->jSup[partCount]; ++j) {
-                    for (int i = part->iSub[partCount]; i < part->iSup[partCount]; ++i) {
+            for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
+                for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
+                    for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
+                        idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
+                        U = node[idx].U[C];
                         fread(&data, sizeof(EnsightReal), 1, filePointer);
-                        idx = IndexMath(k, j, i, space) * DIMU;
-                        switch (dim) {
+                        switch (count) {
                             case 0: /* rho */
-                                U[idx] = data;
+                                U[0] = data;
                                 break;
                             case 1: /* u */
-                                U[idx+1] = U[idx] * data;
+                                U[1] = U[0] * data;
                                 break;
                             case 2: /* v */
-                                U[idx+2] = U[idx] * data;
+                                U[2] = U[0] * data;
                                 break;
                             case 3: /* w */
-                                U[idx+3] = U[idx] * data;
+                                U[3] = U[0] * data;
                                 break;
                             case 4: /* p */
-                                U[idx+4] = 0.5 * (U[idx+1] * U[idx+1] + U[idx+2] * U[idx+2] + U[idx+3] * U[idx+3]) / U[idx] + data / (model->gamma - 1.0);
+                                U[4] = 0.5 * (U[1] * U[1] + U[2] * U[2] + U[3] * U[3]) / U[0] + 
+                                    data / (model->gamma - 1.0);
                                 break;
                             default:
                                 break;

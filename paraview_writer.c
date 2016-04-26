@@ -31,7 +31,7 @@ static int WritePolygonPolyData(const int, const int, const Geometry *, Paraview
  ****************************************************************************/
 int WriteStructuredDataParaview(const Space *space, const Time *time, const Model *model)
 {
-    ParaviewSet paraSet = { /* initialize ParaviewSet environment */
+    ParaviewSet paraSet = { /* initialize environment */
         .rootName = "field", /* data file root name */
         .baseName = {'\0'}, /* data file base name */
         .fileName = {'\0'}, /* data file name */
@@ -117,8 +117,7 @@ static int WriteStructuredData(const Space *space, const Model *model, ParaviewS
     }
     ParaviewReal data = 0.0; /* paraview scalar data */
     ParaviewReal Vec[3] = {0.0}; /* paraview vector data */
-    /* the scalar variables */
-    const char scalar[7][5] = {"rho", "u", "v", "w", "p", "T", "geo"};
+    const char scalar[7][5] = {"rho", "u", "v", "w", "p", "T", "gid"};
     int idx = 0; /* linear array index math variable */
     const Node *node = space->node;
     const Real *restrict U = NULL;
@@ -223,7 +222,7 @@ int WritePolyDataParaview(const Geometry *geo, const Time *time)
 }
 static int PointPolyDataWriter(const Geometry *geo, const Time *time)
 {
-    ParaviewSet paraSet = { /* initialize ParaviewSet environment */
+    ParaviewSet paraSet = { /* initialize environment */
         .rootName = "geo_sph", /* data file root name */
         .baseName = {'\0'}, /* data file base name */
         .fileName = {'\0'}, /* data file name */
@@ -313,7 +312,7 @@ static int WritePointPolyData(const int start, const int end, const Geometry *ge
 }
 static int PolygonPolyDataWriter(const Geometry *geo, const Time *time)
 {
-    ParaviewSet paraSet = { /* initialize ParaviewSet environment */
+    ParaviewSet paraSet = { /* initialize environment */
         .rootName = "geo_stl", /* data file root name */
         .baseName = {'\0'}, /* data file base name */
         .fileName = {'\0'}, /* data file name */

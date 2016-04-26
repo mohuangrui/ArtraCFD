@@ -16,14 +16,15 @@
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
+#include "commons.h"
 /****************************************************************************
  * Data Structure Declarations
  ****************************************************************************/
 /*
  * Ensight data format and type control
  */
-typedef char EnsightString[80]; /* Ensight string data requires 80 chars */
-typedef float EnsightReal; /* Ensight requires real data to be float */
+typedef char EnsightString[80]; /* string data */
+typedef float EnsightReal; /* real data */
 /*
  * Ensight configuration structure
  */
@@ -33,6 +34,14 @@ typedef struct {
     EnsightString fileName; /* store current open file name */
     EnsightString stringData; /* Ensight string data */
 }EnsightSet;
+/****************************************************************************
+ * Public Functions Declaration
+ ****************************************************************************/
+/*
+ * Structured data writer and reader
+ */
+extern int WriteStructuredDataEnsight(const Space *, const Time *, const Model *);
+extern int ReadStructuredDataEnsight(Space *, Time *, const Model *);
 #endif
 /* a good practice: end file with a newline */
 

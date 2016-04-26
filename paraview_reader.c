@@ -30,7 +30,7 @@ static int ReadPolygonPolyData(const int, const int, Geometry *, ParaviewSet *);
  ****************************************************************************/
 int ReadStructuredDataParaview(Space *space, Time *time, const Model *model)
 {
-    ParaviewSet paraSet = { /* initialize ParaviewSet environment */
+    ParaviewSet paraSet = { /* initialize environment */
         .rootName = "field", /* data file root name */
         .baseName = {'\0'}, /* data file base name */
         .fileName = {'\0'}, /* data file name */
@@ -111,7 +111,8 @@ static int ReadStructuredData(Space *space, const Model *model, ParaviewSet *par
                             U[3] = U[0] * data;
                             break;
                         case 4: /* p */
-                            U[4] = 0.5 * (U[1] * U[1] + U[2] * U[2] + U[3] * U[3]) / U[0] + data / (model->gamma - 1.0);
+                            U[4] = 0.5 * (U[1] * U[1] + U[2] * U[2] + U[3] * U[3]) / U[0] + 
+                                data / (model->gamma - 1.0);
                             break;
                         default:
                             break;
@@ -137,7 +138,7 @@ int ReadPolyDataParaview(Geometry *geo, const Time *time)
 }
 static int PointPolyDataReader(Geometry *geo, const Time *time)
 {
-    ParaviewSet paraSet = { /* initialize ParaviewSet environment */
+    ParaviewSet paraSet = { /* initialize environment */
         .rootName = "geo_sph", /* data file root name */
         .baseName = {'\0'}, /* data file base name */
         .fileName = {'\0'}, /* data file name */
@@ -165,7 +166,7 @@ static int ReadPointPolyData(const int start, const int end, Geometry *geo, Para
 }
 static int PolygonPolyDataReader(Geometry *geo, const Time *time)
 {
-    ParaviewSet paraSet = { /* initialize ParaviewSet environment */
+    ParaviewSet paraSet = { /* initialize environment */
         .rootName = "geo_stl", /* data file root name */
         .baseName = {'\0'}, /* data file base name */
         .fileName = {'\0'}, /* data file name */

@@ -573,6 +573,7 @@ typedef enum {
     ENTRYPROBE = 7, /* x1, y1, z1, x2, y2, z2, resolution */
     /* parameters related to domain partitions */
     NPART = 13, /* inner region, [west, east, south, north, front, back] x [Boundary, Ghost] */
+    NPARTWRITE = 13,
     PIN = 0,
     PWB = 1, 
     PEB = 2, 

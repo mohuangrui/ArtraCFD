@@ -23,8 +23,8 @@
 /*
  * Paraview data format and type control
  */
-typedef char ParaviewString[80]; /* Paraview string data */
-typedef double ParaviewReal; /* Paraview real data */
+typedef char ParaviewString[80]; /* string data */
+typedef double ParaviewReal; /* real data */
 /*
  * Paraview configuration structure
  */
