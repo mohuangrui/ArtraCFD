@@ -20,7 +20,6 @@
  ****************************************************************************/
 static int CaseSettingFileGenerator(void);
 static int CaseGeometryFileGenerator(void);
-static int AnalyticalGeometryFileGenerator(void);
 static int TriangulatedGeometryFileGenerator(void);
 /****************************************************************************
  * Function definitions
@@ -271,47 +270,43 @@ static int CaseGeometryFileGenerator(void)
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#                  >> Total Number of Geometries <<\n");
+    fprintf(filePointer, "#                  >> Number of Geometries <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "count begin\n");
-    fprintf(filePointer, "2                  # integer\n");
+    fprintf(filePointer, "1                  # analytical sphere (integer)\n");
+    fprintf(filePointer, "1                  # triangulated geometry (integer)\n");
     fprintf(filePointer, "count end\n");
+    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#                   >> Geometry Information <<\n");
+    fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#State: xc, yc, zc, r, u, v, w, fx, fy, fz, rho, T, cf, area, volume, matID\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                 >> Analytical Geometry Section <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "sphere begin\n");
-    fprintf(filePointer, "1                  # number of entities (integer)\n");
-    fprintf(filePointer, "artracfd.sph       # geometry file name\n");
-    fprintf(filePointer, "sphere end\n");
+    fprintf(filePointer, "sphere state begin\n");
+    fprintf(filePointer, "0, 0, 0, 0.5, 0, 0, 0, 0, 0, 0, 1.0e250, -1, 1, 0, 0, 0\n");
+    fprintf(filePointer, "sphere state end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                 >> Triangulated Geometry Section <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "STL begin\n");
+    fprintf(filePointer, "STL geometry begin\n");
     fprintf(filePointer, "artracfd.stl       # geometry file name\n");
-    fprintf(filePointer, "0, 0, 0, 0.5, 0, 0, 0, 0, 0, 0, 1.0e250, -1, 1, 0, 0, 0 # xc, yc, zc, r, u, v, w, fx, fy, fz, rho, T, cf, area, volume, matID\n");
-    fprintf(filePointer, "STL end\n");
+    fprintf(filePointer, "STL geometry end\n");
+    fprintf(filePointer, "STL state begin\n");
+    fprintf(filePointer, "0, 0, 0, 0.5, 0, 0, 0, 0, 0, 0, 1.0e250, -1, 1, 0, 0, 0\n");
+    fprintf(filePointer, "STL state end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#/* a good practice: end file with a newline */\n");
     fprintf(filePointer, "\n");
     fclose(filePointer); /* close current opened file */
-    AnalyticalGeometryFileGenerator();
     TriangulatedGeometryFileGenerator();
-    return 0;
-}
-static int AnalyticalGeometryFileGenerator(void)
-{
-    FILE *filePointer = fopen("artracfd.sph", "w");
-    if (NULL == filePointer) {
-        FatalError("failed to write analytical geometry file: artracfd.sph...");
-    }
-    fprintf(filePointer, "0, 0, 0, 0.5, 0, 0, 0, 0, 0, 0, 1.0e250, -1, 1, 0, 0, 0 # xc, yc, zc, r, u, v, w, fx, fy, fz, rho, T, cf, area, volume, matID\n");
-    fclose(filePointer); /* close current opened file */
     return 0;
 }
 static int TriangulatedGeometryFileGenerator(void)

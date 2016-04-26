@@ -23,6 +23,9 @@ static int ReadCaseFile(Time *, ParaviewSet *);
 static int ReadStructuredData(Space *, const Model *, ParaviewSet *);
 static int PointPolyDataReader(Geometry *, const Time *);
 static int ReadPointPolyData(Geometry *, ParaviewSet *);
+static int PolygonPolyDataReader(Geometry *, const Time *);
+static int ReadPolygonPolyData(Geometry *, ParaviewSet *);
+static int ReadInLine(FILE **, const char *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -53,26 +56,17 @@ static int ReadCaseFile(Time *time, ParaviewSet *paraSet)
     }
     /* read information from file */
     String currentLine = {'\0'}; /* store current line */
-    /* get rid of redundant lines */
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    /* get restart time */
+    ReadInLine(&filePointer, "<!--");
     /* set format specifier according to the type of Real */
-    char format[25] = {'\0'}; /* format information */
-    strncpy(format, "%*s %*s %lg", sizeof format); /* default is double type */
+    char format[10] = {'\0'}; /* format information */
+    strncpy(format, "%*s %lg", sizeof format); /* default is double type */
     if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
-        strncpy(format, "%*s %*s %g", sizeof format); /* float type */
+        strncpy(format, "%*s %g", sizeof format); /* float type */
     }
     fgets(currentLine, sizeof currentLine, filePointer);
     sscanf(currentLine, format, &(time->now)); 
-    /* get current step number */
     fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, "%*s %*s %d", &(time->countStep)); 
+    sscanf(currentLine, "%*s %d", &(time->countStep)); 
     fclose(filePointer); /* close current opened file */
     return 0;
 }
@@ -137,6 +131,16 @@ static int ReadStructuredData(Space *space, const Model *model, ParaviewSet *par
     fclose(filePointer); /* close current opened file */
     return 0;
 }
+int ReadPolyDataParaview(Geometry *geo, const Time *time)
+{
+    if (0 != geo->sphereN) {
+        PointPolyDataReader(geo, time);
+    }
+    if (0 != geo->stlN) {
+        PolygonPolyDataReader(geo, time);
+    }
+    return 0;
+}
 static int PointPolyDataReader(Geometry *geo, const Time *time)
 {
     ParaviewSet paraSet = { /* initialize ParaviewSet environment */
@@ -160,6 +164,34 @@ static int ReadPointPolyData(Geometry *geo, ParaviewSet *paraSet)
     if (NULL == filePointer) {
         FatalError("failed to open data file...");
     }
+    ReadInLine(&filePointer, "<!--");
+    ReadPolyhedronStateData(&filePointer, geo, 0, geo->sphereN);
+    fclose(filePointer); /* close current opened file */
+    return 0;
+}
+static int PolygonPolyDataReader(Geometry *geo, const Time *time)
+{
+    ParaviewSet paraSet = { /* initialize ParaviewSet environment */
+        .rootName = "geo_stl", /* data file root name */
+        .baseName = {'\0'}, /* data file base name */
+        .fileName = {'\0'}, /* data file name */
+        .fileExt = ".vtp", /* data file extension */
+        .intType = "Int32", /* paraview int type */
+        .floatType = "Float32", /* paraview float type */
+        .byteOrder = "LittleEndian" /* byte order of data */
+    };
+    snprintf(paraSet.baseName, sizeof(ParaviewString), "%s%05d", 
+            paraSet.rootName, time->countOutput); 
+    ReadPolygonPolyData(geo, &paraSet);
+    return 0;
+}
+static int ReadPolygonPolyData(Geometry *geo, ParaviewSet *paraSet)
+{
+    snprintf(paraSet->fileName, sizeof(ParaviewString), "%s%s", paraSet->baseName, paraSet->fileExt); 
+    FILE *filePointer = fopen(paraSet->fileName, "r");
+    if (NULL == filePointer) {
+        FatalError("failed to open data file...");
+    }
     ParaviewReal data = 0.0; /* paraview scalar data */
     /* set format specifier according to the type of Real */
     char format[5] = "%lg"; /* default is double type */
@@ -172,8 +204,81 @@ static int ReadPointPolyData(Geometry *geo, ParaviewSet *paraSet)
     fgets(currentLine, sizeof currentLine, filePointer);
     fgets(currentLine, sizeof currentLine, filePointer);
     fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
+    for (int n = geo->sphereN; n < geo->totalN; ++n) {
+        fgets(currentLine, sizeof currentLine, filePointer);
+        sscanf(currentLine, "%*s %*s %*s NumberOfPolys=\"%d\"", &(geo->list[n].facetN)); 
+        geo->list[n].facet = AssignStorage(geo->list[n].facetN, "Facet");
+        fgets(currentLine, sizeof currentLine, filePointer);
+        fgets(currentLine, sizeof currentLine, filePointer);
+        fgets(currentLine, sizeof currentLine, filePointer);
+        fgets(currentLine, sizeof currentLine, filePointer);
+        fgets(currentLine, sizeof currentLine, filePointer);
+        fgets(currentLine, sizeof currentLine, filePointer);
+        fgets(currentLine, sizeof currentLine, filePointer);
+        for (int m = 0; m < geo->list[n].facetN; ++m) {
+            fscanf(filePointer, format, &data);
+            geo->list[n].facet[m].P1[X] = data;
+            fscanf(filePointer, format, &data);
+            geo->list[n].facet[m].P1[Y] = data;
+            fscanf(filePointer, format, &data);
+            geo->list[n].facet[m].P1[Z] = data;
+            fscanf(filePointer, format, &data);
+            geo->list[n].facet[m].P2[X] = data;
+            fscanf(filePointer, format, &data);
+            geo->list[n].facet[m].P2[Y] = data;
+            fscanf(filePointer, format, &data);
+            geo->list[n].facet[m].P2[Z] = data;
+            fscanf(filePointer, format, &data);
+            geo->list[n].facet[m].P3[X] = data;
+            fscanf(filePointer, format, &data);
+            geo->list[n].facet[m].P3[Y] = data;
+            fscanf(filePointer, format, &data);
+            geo->list[n].facet[m].P3[Z] = data;
+        }
+        ReadInLine(&filePointer, "</Piece>");
+    }
+    ReadInLine(&filePointer, "<!--");
+    ReadPolyhedronStateData(&filePointer, geo, geo->sphereN, geo->totalN);
+    fclose(filePointer); /* close current opened file */
+    return 0;
+}
+int ReadPolyhedronStateData(FILE **filePointerPointer, Geometry *geo, const int start, const int end)
+{
+    FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
+    String currentLine = {'\0'}; /* store the current read line */
+    /* set format specifier according to the type of Real */
+    char format[100] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %d";
+    if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
+        strncpy(format, "%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %d", sizeof format);
+    }
+    for (int n = start; n < end; ++n) {
+        fgets(currentLine, sizeof currentLine, filePointer);
+        sscanf(currentLine, format,
+                &(geo->list[n].O[X]), &(geo->list[n].O[Y]), &(geo->list[n].O[Z]), &(geo->list[n].r),
+                &(geo->list[n].V[X]), &(geo->list[n].V[Y]), &(geo->list[n].V[Z]),
+                &(geo->list[n].F[X]), &(geo->list[n].F[Y]), &(geo->list[n].F[Z]),
+                &(geo->list[n].rho), &(geo->list[n].T), &(geo->list[n].cf),
+                &(geo->list[n].area), &(geo->list[n].volume), &(geo->list[n].matID));
+        if (geo->sphereN > n) {
+            geo->list[n].facetN = 0; /* analytical geometry tag */
+            geo->list[n].facet = NULL;
+        }
+    }
+    *filePointerPointer = filePointer; /* updated file pointer */
+    return 0;
+}
+static int ReadInLine(FILE **filePointerPointer, const char *lineString)
+{
+    FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
+    String currentLine = {'\0'}; /* store the current read line */
+    while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
+        CommandLineProcessor(currentLine); /* process current line */
+        if (0 == strncmp(currentLine, lineString, sizeof currentLine)) {
+            break;
+        }
+    }
+    *filePointerPointer = filePointer; /* updated file pointer */
+    return 0;
 }
 /* a good practice: end file with a newline */
 

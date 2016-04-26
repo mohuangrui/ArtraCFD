@@ -25,7 +25,6 @@
  */
 typedef char ParaviewString[80]; /* Paraview string data */
 typedef double ParaviewReal; /* Paraview real data */
-typedef ParaviewReal ParaviewVector[3]; /* Paraview vector data */
 /*
  * Paraview configuration structure
  */
@@ -50,12 +49,12 @@ extern int ReadStructuredDataParaview(Space *, Time *, const Model *);
  * Poly data writer and reader
  */
 extern int WritePolyDataParaview(const Geometry *, const Time *);
-extern int ReadPolyDataParaview(Geometry *, Time *);
+extern int ReadPolyDataParaview(Geometry *, const Time *);
 /*
  * Polyhedron status writer and reader
  */
-static int WritePolyhedronStatusData(FILE **, Polyhedron *);
-static int ReadPolyhedronStatusData(FILE **, Polyhedron *);
+extern int WritePolyhedronStateData(FILE **, const Geometry *, const int start, const int end);
+extern int ReadPolyhedronStateData(FILE **, Geometry *, const int start, const int end);
 #endif
 /* a good practice: end file with a newline */
 

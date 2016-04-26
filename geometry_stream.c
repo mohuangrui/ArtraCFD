@@ -24,8 +24,6 @@
  ****************************************************************************/
 static int NonrestartGeometryReader(Geometry *);
 static int RestartGeometryReader(const Time *, Geometry *);
-static int ReadSphereFile(const char *, Geometry *);
-static int ReadGeometryDataParaview(const Time *, Geometry *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -76,8 +74,12 @@ static int NonrestartGeometryReader(Geometry *geo)
                 geo->sphereN = geo->totalN;
             }
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, "%s", fileName);
-            ReadSphereFile(fileName, geo);
+            
+            for (int n = 0; n < geo->sphereN; ++n) {
+                ReadPolyhedronStateData(&filePointer, geo->list + n);
+                geo->list[n].facetN = 0; /* analytical geometry tag */
+                geo->list[n].facet = NULL;
+            }
             if (geo->totalN == geo->sphereN) {
                 break;
             }
@@ -88,7 +90,7 @@ static int NonrestartGeometryReader(Geometry *geo)
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%s", fileName);
             ReadStlFile(fileName, geo->list + geo->sphereN + geo->stlN);
-            ReadPolyhedronStatusData(&filePointer, geo->list + geo->sphereN + geo->stlN);
+            ReadPolyhedronStateData(&filePointer, geo->list + geo->sphereN + geo->stlN);
             ++geo->stlN; /* point to the next geometry */
             continue;
         }
@@ -101,125 +103,11 @@ static int NonrestartGeometryReader(Geometry *geo)
     ShowInformation("Session End");
     return 0;
 }
-static int ReadSphereFile(const char *fileName, Geometry *geo)
-{
-    FILE *filePointer = fopen(fileName, "r");
-    if (NULL == filePointer) {
-        FatalError("failed to open sphere geometry file ...");
-    }
-    for (int n = 0; n < geo->sphereN; ++n) {
-        ReadPolyhedronStatusData(&filePointer, geo->list + n);
-        geo->list[n].facetN = 0; /* analytical geometry tag */
-        geo->list[n].facet = NULL;
-    }
-    fclose(filePointer); /* close current opened file */
-    return 0;
-}
 static int RestartGeometryReader(const Time *time, Geometry *geo)
 {
     ShowInformation("Restore geometry data ...");
     ReadGeometryDataParaview(time, geo);
     ShowInformation("Session End");
-    return 0;
-}
-static int ReadGeometryDataParaview(const Time *time, Geometry *geo)
-{
-    ParaviewSet paraSet = { /* initialize ParaviewSet environment */
-        .rootName = "geometry", /* data file root name */
-        .baseName = {'\0'}, /* data file base name */
-        .fileName = {'\0'}, /* data file name */
-        .intType = "Int32", /* paraview data type */
-        .floatType = "Float32", /* paraview data type */
-        .byteOrder = "LittleEndian" /* byte order of data */
-    };
-    snprintf(paraSet.fileName, sizeof(ParaviewString), "%s%05d.vtp", 
-            paraSet.rootName, time->restart); 
-    FILE *filePointer = fopen(paraSet.fileName, "r");
-    if (NULL == filePointer) {
-        FatalError("failed to open data file...");
-    }
-    /* get rid of redundant lines */
-    String currentLine = {'\0'}; /* store current line */
-    fgets(currentLine, sizeof currentLine, filePointer);
-    /* get number of geometries */
-    fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, "%*s %*s %d", &(geo->totalN)); 
-    fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, "%*s %*s %d", &(geo->sphereN)); 
-    fgets(currentLine, sizeof currentLine, filePointer);
-    sscanf(currentLine, "%*s %*s %d", &(geo->stlN)); 
-    if (0 == geo->totalN) {
-        fclose(filePointer);
-        return 0;
-    }
-    geo->list = AssignStorage(geo->totalN, "Polyhedron");
-    while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
-        CommandLineProcessor(currentLine); /* process current line */
-        if (0 != strncmp(currentLine, "<!-- appended data begin -->", sizeof currentLine)) {
-            continue;
-        }
-        break;
-    }
-    fgets(currentLine, sizeof currentLine, filePointer);
-    for (int m = 0; m < geo->sphereN; ++m) {
-        ReadPolyhedronStatusData(&filePointer, geo->list + m);
-        geo->list[m].facetN = 0; /* analytical geometry tag */
-        geo->list[m].facet = NULL;
-    }
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    for (int m = geo->sphereN; m < geo->totalN; ++m) {
-        fgets(currentLine, sizeof currentLine, filePointer);
-        sscanf(currentLine, "%*s %*s NumberOfPolys=\"%d\"", &(geo->list[m].facetN)); 
-        geo->list[m].facet = AssignStorage(geo->list[m].facetN, "Facet");
-        fgets(currentLine, sizeof currentLine, filePointer);
-        fgets(currentLine, sizeof currentLine, filePointer);
-        fgets(currentLine, sizeof currentLine, filePointer);
-        fgets(currentLine, sizeof currentLine, filePointer);
-        fgets(currentLine, sizeof currentLine, filePointer);
-        fgets(currentLine, sizeof currentLine, filePointer);
-        fgets(currentLine, sizeof currentLine, filePointer);
-        ParaviewReal data = 0.0; /* the Paraview data format */
-        /* set format specifier according to the type of Real */
-        char format[5] = "%lg"; /* default is double type */
-        if (sizeof(ParaviewReal) == sizeof(float)) {
-            strncpy(format, "%g", sizeof format); /* float type */
-        }
-        for (int n = 0; n < geo->list[m].facetN; ++m) {
-            fscanf(filePointer, format, &data);
-            geo->list[m].facet[n].P1[X] = data;
-            fscanf(filePointer, format, &data);
-            geo->list[m].facet[n].P1[Y] = data;
-            fscanf(filePointer, format, &data);
-            geo->list[m].facet[n].P1[Z] = data;
-            fscanf(filePointer, format, &data);
-            geo->list[m].facet[n].P2[X] = data;
-            fscanf(filePointer, format, &data);
-            geo->list[m].facet[n].P2[Y] = data;
-            fscanf(filePointer, format, &data);
-            geo->list[m].facet[n].P2[Z] = data;
-            fscanf(filePointer, format, &data);
-            geo->list[m].facet[n].P3[X] = data;
-            fscanf(filePointer, format, &data);
-            geo->list[m].facet[n].P3[Y] = data;
-            fscanf(filePointer, format, &data);
-            geo->list[m].facet[n].P3[Z] = data;
-        }
-        while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
-            CommandLineProcessor(currentLine); /* process current line */
-            if (0 != strncmp(currentLine, "<!-- appended data begin -->", sizeof currentLine)) {
-                continue;
-            }
-            break;
-        }
-        fgets(currentLine, sizeof currentLine, filePointer);
-        ReadPolyhedronStatusData(&filePointer, geo->list + m);
-        fgets(currentLine, sizeof currentLine, filePointer);
-        fgets(currentLine, sizeof currentLine, filePointer);
-        fgets(currentLine, sizeof currentLine, filePointer);
-    }
-    fclose(filePointer); /* close current opened file */
     return 0;
 }
 /* a good practice: end file with a newline */
