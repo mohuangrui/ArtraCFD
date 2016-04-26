@@ -22,10 +22,9 @@
 static int ReadCaseFile(Time *, ParaviewSet *);
 static int ReadStructuredData(Space *, const Model *, ParaviewSet *);
 static int PointPolyDataReader(Geometry *, const Time *);
-static int ReadPointPolyData(Geometry *, ParaviewSet *);
+static int ReadPointPolyData(const int, const int, Geometry *, ParaviewSet *);
 static int PolygonPolyDataReader(Geometry *, const Time *);
-static int ReadPolygonPolyData(Geometry *, ParaviewSet *);
-static int ReadInLine(FILE **, const char *);
+static int ReadPolygonPolyData(const int, const int, Geometry *, ParaviewSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -89,12 +88,7 @@ static int ReadStructuredData(Space *space, const Model *model, ParaviewSet *par
     const Partition *restrict part = &(space->part);
     /* get rid of redundant lines */
     String currentLine = {'\0'}; /* store current line */
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
+    ReadInLine(&filePointer, "<PointData>");
     for (int count = 0; count < DIMU; ++count) {
         fgets(currentLine, sizeof currentLine, filePointer);
         for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
@@ -154,10 +148,10 @@ static int PointPolyDataReader(Geometry *geo, const Time *time)
     };
     snprintf(paraSet.baseName, sizeof(ParaviewString), "%s%05d", 
             paraSet.rootName, time->countOutput); 
-    ReadPointPolyData(geo, &paraSet);
+    ReadPointPolyData(0, geo->sphereN, geo, &paraSet);
     return 0;
 }
-static int ReadPointPolyData(Geometry *geo, ParaviewSet *paraSet)
+static int ReadPointPolyData(const int start, const int end, Geometry *geo, ParaviewSet *paraSet)
 {
     snprintf(paraSet->fileName, sizeof(ParaviewString), "%s%s", paraSet->baseName, paraSet->fileExt); 
     FILE *filePointer = fopen(paraSet->fileName, "r");
@@ -165,7 +159,7 @@ static int ReadPointPolyData(Geometry *geo, ParaviewSet *paraSet)
         FatalError("failed to open data file...");
     }
     ReadInLine(&filePointer, "<!--");
-    ReadPolyhedronStateData(&filePointer, geo, 0, geo->sphereN);
+    ReadPolyhedronStateData(start, end, &filePointer, geo);
     fclose(filePointer); /* close current opened file */
     return 0;
 }
@@ -182,10 +176,10 @@ static int PolygonPolyDataReader(Geometry *geo, const Time *time)
     };
     snprintf(paraSet.baseName, sizeof(ParaviewString), "%s%05d", 
             paraSet.rootName, time->countOutput); 
-    ReadPolygonPolyData(geo, &paraSet);
+    ReadPolygonPolyData(geo->sphereN, geo->totalN, geo, &paraSet);
     return 0;
 }
-static int ReadPolygonPolyData(Geometry *geo, ParaviewSet *paraSet)
+static int ReadPolygonPolyData(const int start, const int end, Geometry *geo, ParaviewSet *paraSet)
 {
     snprintf(paraSet->fileName, sizeof(ParaviewString), "%s%s", paraSet->baseName, paraSet->fileExt); 
     FILE *filePointer = fopen(paraSet->fileName, "r");
@@ -200,11 +194,8 @@ static int ReadPolygonPolyData(Geometry *geo, ParaviewSet *paraSet)
     }
     /* get rid of redundant lines */
     String currentLine = {'\0'}; /* store current line */
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    fgets(currentLine, sizeof currentLine, filePointer);
-    for (int n = geo->sphereN; n < geo->totalN; ++n) {
+    ReadInLine(&filePointer, "<PolyData>");
+    for (int n = start; n < end; ++n) {
         fgets(currentLine, sizeof currentLine, filePointer);
         sscanf(currentLine, "%*s %*s %*s NumberOfPolys=\"%d\"", &(geo->list[n].facetN)); 
         geo->list[n].facet = AssignStorage(geo->list[n].facetN, "Facet");
@@ -238,11 +229,11 @@ static int ReadPolygonPolyData(Geometry *geo, ParaviewSet *paraSet)
         ReadInLine(&filePointer, "</Piece>");
     }
     ReadInLine(&filePointer, "<!--");
-    ReadPolyhedronStateData(&filePointer, geo, geo->sphereN, geo->totalN);
+    ReadPolyhedronStateData(start, end, &filePointer, geo);
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-int ReadPolyhedronStateData(FILE **filePointerPointer, Geometry *geo, const int start, const int end)
+int ReadPolyhedronStateData(const int start, const int end, FILE **filePointerPointer, Geometry *geo)
 {
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
     String currentLine = {'\0'}; /* store the current read line */
@@ -260,21 +251,8 @@ int ReadPolyhedronStateData(FILE **filePointerPointer, Geometry *geo, const int 
                 &(geo->list[n].rho), &(geo->list[n].T), &(geo->list[n].cf),
                 &(geo->list[n].area), &(geo->list[n].volume), &(geo->list[n].matID));
         if (geo->sphereN > n) {
-            geo->list[n].facetN = 0; /* analytical geometry tag */
+            geo->list[n].facetN = 0; /* analytical sphere tag */
             geo->list[n].facet = NULL;
-        }
-    }
-    *filePointerPointer = filePointer; /* updated file pointer */
-    return 0;
-}
-static int ReadInLine(FILE **filePointerPointer, const char *lineString)
-{
-    FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
-    String currentLine = {'\0'}; /* store the current read line */
-    while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
-        CommandLineProcessor(currentLine); /* process current line */
-        if (0 == strncmp(currentLine, lineString, sizeof currentLine)) {
-            break;
         }
     }
     *filePointerPointer = filePointer; /* updated file pointer */

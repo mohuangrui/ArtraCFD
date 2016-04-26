@@ -23,10 +23,9 @@ static int InitializeTransientCaseFile(ParaviewSet *);
 static int WriteCaseFile(const Time *, ParaviewSet *);
 static int WriteStructuredData(const Space *, const Model *, ParaviewSet *);
 static int PointPolyDataWriter(const Geometry *, const Time *);
-static int WritePointPolyData(const Geometry *, ParaviewSet *);
+static int WritePointPolyData(const int, const int, const Geometry *, ParaviewSet *);
 static int PolygonPolyDataWriter(const Geometry *, const Time *);
-static int WritePolygonPolyData(const Geometry *, ParaviewSet *);
-static int WriteToLine(FILE **, const char *);
+static int WritePolygonPolyData(const int, const int, const Geometry *, ParaviewSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -131,7 +130,7 @@ static int WriteStructuredData(const Space *space, const Model *model, ParaviewS
             0, part->m[X] - 2, 0, part->m[Y] - 2, 0, part->m[Z] - 2);
     fprintf(filePointer, "    <Piece Extent=\"%d %d %d %d %d %d\">\n", 
             0, part->m[X] - 2, 0, part->m[Y] - 2, 0, part->m[Z] - 2);
-    fprintf(filePointer, "      <PointData Scalars=\"rho\" Vectors=\"Vel\">\n");
+    fprintf(filePointer, "      <PointData>\n");
     for (int count = 0; count < 7; ++count) {
         fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"%s\" format=\"ascii\">\n", 
                 paraSet->floatType, scalar[count]);
@@ -239,10 +238,10 @@ static int PointPolyDataWriter(const Geometry *geo, const Time *time)
         InitializeTransientCaseFile(&paraSet);
     }
     WriteCaseFile(time, &paraSet);
-    WritePointPolyData(geo, &paraSet);
+    WritePointPolyData(0, geo->sphereN, geo, &paraSet);
     return 0;
 }
-static int WritePointPolyData(const Geometry *geo, ParaviewSet *paraSet)
+static int WritePointPolyData(const int start, const int end, const Geometry *geo, ParaviewSet *paraSet)
 {
     snprintf(paraSet->fileName, sizeof(ParaviewString), "%s%s", paraSet->baseName, paraSet->fileExt); 
     FILE *filePointer = fopen(paraSet->fileName, "w");
@@ -255,11 +254,11 @@ static int WritePointPolyData(const Geometry *geo, ParaviewSet *paraSet)
     fprintf(filePointer, "<VTKFile type=\"PolyData\" version=\"1.0\"\n");
     fprintf(filePointer, "         byte_order=\"%s\">\n", paraSet->byteOrder);
     fprintf(filePointer, "  <PolyData>\n");
-    fprintf(filePointer, "    <Piece NumberOfPoints=\"%d\" NumberOfVerts=\"1\" NumberOfPolys=\"0\">\n", geo->sphereN);
-    fprintf(filePointer, "      <PointData Scalars=\"r\" Vectors=\"Vel\">\n");
+    fprintf(filePointer, "    <Piece NumberOfPoints=\"%d\" NumberOfVerts=\"1\" NumberOfPolys=\"0\">\n", (end - start));
+    fprintf(filePointer, "      <PointData>\n");
     fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"r\" format=\"ascii\">\n", paraSet->floatType);
     fprintf(filePointer, "          ");
-    for (int n = 0; n < geo->sphereN; ++n) {
+    for (int n = start; n < end; ++n) {
         data = geo->list[n].r;
         fprintf(filePointer, "%.6g ", data);
     }
@@ -267,7 +266,7 @@ static int WritePointPolyData(const Geometry *geo, ParaviewSet *paraSet)
     fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"Vel\"\n", paraSet->floatType);
     fprintf(filePointer, "                   NumberOfComponents=\"3\" format=\"ascii\">\n");
     fprintf(filePointer, "          ");
-    for (int n = 0; n < geo->sphereN; ++n) {
+    for (int n = start; n < end; ++n) {
         Vec[X] = geo->list[n].V[X];
         Vec[Y] = geo->list[n].V[Y];
         Vec[Z] = geo->list[n].V[Z];
@@ -281,7 +280,7 @@ static int WritePointPolyData(const Geometry *geo, ParaviewSet *paraSet)
     fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"points\"\n", paraSet->floatType);
     fprintf(filePointer, "                   NumberOfComponents=\"3\" format=\"ascii\">\n");
     fprintf(filePointer, "          ");
-    for (int n = 0; n < geo->sphereN; ++n) {
+    for (int n = start; n < end; ++n) {
         Vec[X] = geo->list[n].O[X];
         Vec[Y] = geo->list[n].O[Y];
         Vec[Z] = geo->list[n].O[Z];
@@ -292,13 +291,13 @@ static int WritePointPolyData(const Geometry *geo, ParaviewSet *paraSet)
     fprintf(filePointer, "      <Verts>\n");
     fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"connectivity\" format=\"ascii\">\n", paraSet->intType);
     fprintf(filePointer, "          ");
-    for (int n = 0; n < geo->sphereN; ++n) {
+    for (int n = start; n < end; ++n) {
         fprintf(filePointer, "%d ", n);
     }
     fprintf(filePointer, "\n        </DataArray>\n");
     fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"offsets\" format=\"ascii\">\n", paraSet->intType);
     fprintf(filePointer, "          ");
-    fprintf(filePointer, "%d ", geo->sphereN);
+    fprintf(filePointer, "%d ", (end - start));
     fprintf(filePointer, "\n        </DataArray>\n");
     fprintf(filePointer, "      </Verts>\n");
     fprintf(filePointer, "      <Polys>\n");
@@ -307,7 +306,7 @@ static int WritePointPolyData(const Geometry *geo, ParaviewSet *paraSet)
     fprintf(filePointer, "  </PolyData>\n");
     fprintf(filePointer, "</VTKFile>\n");
     fprintf(filePointer, "<!--\n");
-    WritePolyhedronStateData(&filePointer, geo, 0, geo->sphereN);
+    WritePolyhedronStateData(start, end, &filePointer, geo);
     fprintf(filePointer, "-->\n");
     fclose(filePointer); /* close current opened file */
     return 0;
@@ -329,10 +328,10 @@ static int PolygonPolyDataWriter(const Geometry *geo, const Time *time)
         InitializeTransientCaseFile(&paraSet);
     }
     WriteCaseFile(time, &paraSet);
-    WritePolygonPolyData(geo, &paraSet);
+    WritePolygonPolyData(geo->sphereN, geo->totalN, geo, &paraSet);
     return 0;
 }
-static int WritePolygonPolyData(const Geometry *geo, ParaviewSet *paraSet)
+static int WritePolygonPolyData(const int start, const int end, const Geometry *geo, ParaviewSet *paraSet)
 {
     snprintf(paraSet->fileName, sizeof(ParaviewString), "%s%s", paraSet->baseName, paraSet->fileExt); 
     FILE *filePointer = fopen(paraSet->fileName, "w");
@@ -345,7 +344,7 @@ static int WritePolygonPolyData(const Geometry *geo, ParaviewSet *paraSet)
     fprintf(filePointer, "<VTKFile type=\"PolyData\" version=\"1.0\"\n");
     fprintf(filePointer, "         byte_order=\"%s\">\n", paraSet->byteOrder);
     fprintf(filePointer, "  <PolyData>\n");
-    for (int n = geo->sphereN; n < geo->totalN; ++n) {
+    for (int n = start; n < end; ++n) {
         fprintf(filePointer, "    <Piece NumberOfPoints=\"%d\" NumberOfVerts=\"0\" NumberOfPolys=\"%d\">\n",
                 geo->list[n].facetN * 3, geo->list[n].facetN);
         fprintf(filePointer, "      <PointData>\n");
@@ -394,12 +393,12 @@ static int WritePolygonPolyData(const Geometry *geo, ParaviewSet *paraSet)
     fprintf(filePointer, "  </PolyData>\n");
     fprintf(filePointer, "</VTKFile>\n");
     fprintf(filePointer, "<!--\n");
-    WritePolyhedronStateData(&filePointer, geo, geo->sphereN, geo->totalN);
+    WritePolyhedronStateData(start, end, &filePointer, geo);
     fprintf(filePointer, "-->\n");
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-int WritePolyhedronStateData(FILE **filePointerPointer, const Geometry *geo, const int start, const int end)
+int WritePolyhedronStateData(const int start, const int end, FILE **filePointerPointer, const Geometry *geo)
 {
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
     for (int n = start; n < end; ++n) {
@@ -409,26 +408,6 @@ int WritePolyhedronStateData(FILE **filePointerPointer, const Geometry *geo, con
                 geo->list[n].F[X], geo->list[n].F[Y], geo->list[n].F[Z],
                 geo->list[n].rho, geo->list[n].T, geo->list[n].cf,
                 geo->list[n].area, geo->list[n].volume, geo->list[n].matID);
-    }
-    *filePointerPointer = filePointer; /* updated file pointer */
-    return 0;
-}
-static int WriteToLine(FILE **filePointerPointer, const char *lineString)
-{
-    FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
-    String currentLine = {'\0'}; /* store the current read line */
-    int targetLine = 1;
-    while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
-        CommandLineProcessor(currentLine); /* process current line */
-        if (0 == strncmp(currentLine, lineString, sizeof currentLine)) {
-            break;
-        }
-        ++targetLine;
-    }
-    /* redirect to the target line */
-    filePointer = *filePointerPointer; /* reset */
-    for (int count = 1; count < targetLine; ++count) {
-        fgets(currentLine, sizeof currentLine, filePointer);
     }
     *filePointerPointer = filePointer; /* updated file pointer */
     return 0;

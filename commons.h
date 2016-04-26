@@ -871,6 +871,11 @@ extern void *AssignStorage(const int idxMax, const char *dataType);
  *      0 -- successful
  */
 extern int RetrieveStorage(void *pointer);
+/*
+ * Auxiliary Functions for File Reading and Writing
+ */
+extern int ReadInLine(FILE **filePointerPointer, const char *lineString);
+extern int WriteToLine(FILE **filePointerPointer, const char *lineString);
 #endif
 /* a good practice: end file with a newline */
 
