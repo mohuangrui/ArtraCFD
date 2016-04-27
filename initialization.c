@@ -16,195 +16,149 @@
 #include <string.h> /* manipulating strings */
 #include "boundary_treatment.h"
 #include "data_stream.h"
-#include "geometry_stream.h"
+#include "paraview.h"
+#include "stl.h"
 #include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int NonRestartInitializer(Real *U, const Space *, const Model *,
-        const Partition *, const Geometry *);
-static int ApplyRegionalInitializer(const int, Real *U, const Space *, 
-        const Model *, const Partition *);
-static int RestartInitializer(Real *U, const Space *, Time *, const Model *, 
-        const Partition *, const Geometry *);
+static int InitializeFieldData(Space *, const Model *);
+static int ApplyRegionalInitializer(const int, Space *, const Model *);
+static int InitializeGeometryData(Geometry *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-/*
- * This function initializes the entire field. Initialization will be 
- * done differently determined by the restart status.
- */
-int InitializeField(Field *field, const Space *space, Time *time, const Model *model,
-        const Partition *part, const Geometry *geometry)
+int InitializeComputationalDomain(Space *space, Time *time, const Model *model)
 {
     ShowInformation("Initializing...");
     if (0 == time->restart) { /* non restart */
-        NonRestartInitializer(field->U, space, model, part, geometry);
-        /* if this is a first run, output initial data */
-        WriteComputedData(field->U, space, time, model, part);
-        WriteGeometryData(time, geometry);
+        InitializeFieldData(space, model);
+        InitializeGeometryData(&(space->geo));
     } else {
-        RestartInitializer(field->U, space, time, model, part, geometry);
+        ReadFieldData(space, time, model);
+        ReadGeometryData(time, &(space->geo));
     }
-    /* initialize auxiliary swap field, no need for Un since it's a mirror of U */
-    for (int idx = 0; idx < (space->nMax * DIMU); ++idx) {
-        field->Uswap[idx] = 0;
+    BoundaryCondtionsAndTreatments(space, model);
+    if (0 == time->restart) { /* non restart */
+        WriteFieldData(space, time, model);
+        WriteGeometryData(time, &(space->geo));
     }
     ShowInformation("Session End");
     return 0;
 }
-/*
- * The non-restart initialization will assign values to field variables.
- */
-static int NonRestartInitializer(Real *U, const Space *space, const Model *model, 
-        const Partition *part, const Geometry *geometry)
+static int InitializeFieldData(Space *space, const Model *model)
 {
-    ShowInformation("  Non-restart run initializing...");
-    /* extract initial values */
+    int idx = 0; /* linear array index math variable */
+    Node *node = space->node;
+    Real *restrict U = NULL;
+    const Partition *restrict part = &(space->part);
+    /* extract global initial values */
     const Real Uo[DIMUo] = {
-        part->valueBC[0][0],
-        part->valueBC[0][1],
-        part->valueBC[0][2],
-        part->valueBC[0][3],
-        part->valueBC[0][4]};
+        part->valueIC[0][ENTRYIC-5],
+        part->valueIC[0][ENTRYIC-4],
+        part->valueIC[0][ENTRYIC-3],
+        part->valueIC[0][ENTRYIC-2],
+        part->valueIC[0][ENTRYIC-1]};
     /*
      * Initialize the interior field
      */
-    int idx = 0; /* linear array index math variable */
-    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = IndexMath(k, j, i, space) * DIMU;
-                ConservativeByPrimitive(U, idx, Uo, model);
+    for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
+        for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
+            for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
+                idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
+                U = node[idx].U[C];
+                ConservativeByPrimitive(model->gamma, Uo, U);
             }
         }
     }
     /*
      * Regional initializer for specific regions
      */
-    for (int n = 0; n < part->tallyIC; ++n) {
-        ApplyRegionalInitializer(n, U, space, model, part);
+    for (int n = 1; n < part->countIC; ++n) {
+        ApplyRegionalInitializer(n, space, model);
     }
-    /*
-     * Boundary conditions and treatments to obtain an entire initialized field
-     */
-    BoundaryCondtionsAndTreatments(U, space, model, part, geometry);
     return 0;
 }
 /*
  * The handling of regional initialization for specific region is achieved
  * through the cooperation of three data structures:
- * The tallyIC counts the number of initializers.
+ * The countIC counts the number of initializers.
  * The typeIC array keeps a list of the types of regional initialization.
  * The valueIC array stored the information of the corresponding IC type.
- * IC types and corresponding information entries:
- * 1: plane (x, y, z, normalX, normalY, normalZ, rho, u, v, w, p)
- * 2: sphere (x, y, z, r, rho, u, v, w, p)
- * 3: box (xmin, ymin, zmin, xmax, ymax, zmax, rho, u, v, w, p)
- * 4: cylinder (x1, y1, z1, x2, y2, z2, r, rho, u, v, w, p)
  */
-static int ApplyRegionalInitializer(const int n, Real *U, const Space *space, const Model *model,
-        const Partition *part)
+static int ApplyRegionalInitializer(const int n, Space *space, const Model *model)
 {
+    int idx = 0; /* linear array index math variable */
+    Node *node = space->node;
+    Real *restrict U = NULL;
+    const Partition *restrict part = &(space->part);
     /*
      * Acquire the specialized information data entries
      */
-    /* the fix index part */
-    const Real x1 = part->valueIC[n][0];
-    const Real y1 = part->valueIC[n][1];
-    const Real z1 = part->valueIC[n][2];
+    const RealVector p1 = {
+        part->valueIC[n][0],
+        part->valueIC[n][1],
+        part->valueIC[n][2]};
+    const RealVector p2 = {
+        part->valueIC[n][3],
+        part->valueIC[n][4],
+        part->valueIC[n][5]};
+    const Real r = part->valueIC[n][6];
     const Real Uo[DIMUo] = {
         part->valueIC[n][ENTRYIC-5],
         part->valueIC[n][ENTRYIC-4],
         part->valueIC[n][ENTRYIC-3],
         part->valueIC[n][ENTRYIC-2],
         part->valueIC[n][ENTRYIC-1]};
-    /* the vary part */
-    Real r = 0.0;
-    Real x2 = 0.0;
-    Real y2 = 0.0;
-    Real z2 = 0.0;
-    Real normalZ = 0.0;
-    Real normalY = 0.0;
-    Real normalX = 0.0;
-    switch (part->typeIC[n]) {
-        case 1: /* plane */
-            normalX = part->valueIC[n][3];
-            normalY = part->valueIC[n][4];
-            normalZ = part->valueIC[n][5];
-            break;
-        case 2: /* sphere */
-            r = part->valueIC[n][3];
-            break;
-        case 3: /* box */
-            x2 = part->valueIC[n][3];
-            y2 = part->valueIC[n][4];
-            z2 = part->valueIC[n][5];
-            break;
-        case 4: /* cylinder */
-            x2 = part->valueIC[n][3];
-            y2 = part->valueIC[n][4];
-            z2 = part->valueIC[n][5];
-            r = part->valueIC[n][6];
-            break;
-        default:
-            break;
-    }
+    const RealVector P12 = {
+        p2[X] - p1[X],
+        p2[Y] - p1[Y],
+        p2[Z] - p1[Z]};
+    const Real l2_P12 = Dot(P12, P12);
     /*
      * Apply initial values for nodes that meets condition
      */
-    int idx = 0;
     int flag = 0; /* control flag for whether current node in the region */
-    const Real xVec = x2 - x1;
-    const Real yVec = y2 - y1;
-    const Real zVec = z2 - z1;
-    const Real lVecSquare = xVec * xVec + yVec * yVec + zVec * zVec;
-    Real x = 0.0;
-    Real y = 0.0;
-    Real z = 0.0;
-    Real xh = 0.0;
-    Real yh = 0.0;
-    Real zh = 0.0;
-    Real dot = 0.0;
-    Real distSquare = 0.0;
-    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
+    RealVector pc = {0.0}; /* coordinates of current node */
+    RealVector P1c = {0.0}; /* position vector */
+    Real proj = 0.0;
+    for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
+        for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
+            for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
+                pc[X] = PointSpace(i, part->domain[X][MIN], part->d[X], part->ng);
+                pc[Y] = PointSpace(j, part->domain[Y][MIN], part->d[Y], part->ng);
+                pc[Z] = PointSpace(k, part->domain[Z][MIN], part->d[Z], part->ng);
+                P1c[X] = pc[X] - p1[X];
+                P1c[Y] = pc[Y] - p1[Y];
+                P1c[Z] = pc[Z] - p1[Z];
                 flag = 0; /* always initialize flag to zero */
-                x = ComputeX(i, space);
-                y = ComputeY(j, space);
-                z = ComputeZ(k, space);
-                xh = (x - x1);
-                yh = (y - y1);
-                zh = (z - z1);
                 switch (part->typeIC[n]) {
-                    case 1: /* plane */
-                        dot = xh * normalX + yh * normalY + zh * normalZ;
-                        if (0 <= dot) { /* on the normal direction or the plane */
+                    case ICPLANE:
+                        if (0 <= Dot(P1c, p2)) { /* on the normal direction or the plane */
                             flag = 1; /* set flag to true */
                         }
                         break;
-                    case 2: /* sphere */
-                        if (0 >= (xh * xh + yh * yh + zh * zh - r * r)) { /* in or on the sphere */
+                    case ICSPHERE:
+                        if (r * r >= Dot(P1c, P1c)) { /* in or on the sphere */
                             flag = 1; /* set flag to true */
                         }
                         break;
-                    case 3: /* box */
-                        xh = xh * (x - x2);
-                        yh = yh * (y - y2);
-                        zh = zh * (z - z2);
-                        if ((0 >= xh) && (0 >= yh) && (0 >= zh)) { /* in or on the box */
+                    case ICBOX:
+                        P1c[X] = P1c[X] * (pc[X] - p2[X]);
+                        P1c[Y] = P1c[Y] * (pc[Y] - p2[Y]);
+                        P1c[Z] = P1c[Z] * (pc[Z] - p2[Z]);
+                        if ((0 >= P1c[X]) && (0 >= P1c[Y]) && (0 >= P1c[Z])) { /* in or on the box */
                             flag = 1; /* set flag to true */
                         }
                         break;
-                    case 4: /* cylinder */
-                        dot = xh * xVec + yh * yVec + zh * zVec;
-                        if ((0 > dot) || (lVecSquare < dot)) { /* outside the two ends */
+                    case ICCYLINDER:
+                        proj = Dot(P1c, P12);
+                        if ((0 > proj) || (l2_P12 < proj)) { /* outside the two ends */
                             break;
                         }
-                        distSquare = xh * xh + yh * yh + zh * zh - dot * dot / lVecSquare;
-                        if (r * r >= distSquare) { /* in or on the cylinder */
+                        proj = Dot(P1c, P1c) - proj * proj / l2_P12;
+                        if (r * r >= proj) { /* in or on the cylinder */
                             flag = 1; /* set flag to true */
                         }
                         break;
@@ -212,30 +166,44 @@ static int ApplyRegionalInitializer(const int n, Real *U, const Space *space, co
                         break;
                 }
                 if (1 == flag) { /* current node meets the condition */
-                    idx = IndexMath(k, j, i, space) * DIMU;
-                    ConservativeByPrimitive(U, idx, Uo, model);
+                    idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
+                    U = node[idx].U[C];
+                    ConservativeByPrimitive(model->gamma, Uo, U);
                 }
             }
         }
     }
     return 0;
 }
-/*
- * If this is a restart run, then initialize field by reading field data
- * from restart files.
- */
-static int RestartInitializer(Real *U, const Space *space, Time *time,
-        const Model *model, const Partition *part, const Geometry *geometry)
+static int InitializeGeometryData(Geometry *geo)
 {
-    ShowInformation("  Restart run initializing...");
-    /*
-     * Load data from restart files.
-     */
-    ReadComputedData(U, space, time, model, part);
-    /*
-     * Boundary conditions and treatments to obtain an entire initialized field
-     */
-    BoundaryCondtionsAndTreatments(U, space, model, part, geometry);
+    FILE *filePointer = fopen("artracfd.geo", "r");
+    if (NULL == filePointer) {
+        FatalError("failed to open file: artracfd.geo...");
+    }
+    /* read and process file line by line */
+    String currentLine = {'\0'}; /* store the current read line */
+    String fileName = {'\0'}; /* store the file name */
+    while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
+        CommandLineProcessor(currentLine); /* process current line */
+        if (0 == strncmp(currentLine, "sphere state begin", sizeof currentLine)) {
+            ReadPolyhedronStateData(0, geo->sphereN, &filePointer, geo);
+            continue;
+        }
+        if (0 == strncmp(currentLine, "polyhedron geometry begin", sizeof currentLine)) {
+            for (int n = geo->sphereN; n < geo->totalN; ++n) {
+                fgets(currentLine, sizeof currentLine, filePointer);
+                sscanf(currentLine, "%s", fileName);
+                ReadStlFile(fileName, geo->list + n);
+            }
+            continue;
+        }
+        if (0 == strncmp(currentLine, "polyhedron state begin", sizeof currentLine)) {
+            ReadPolyhedronStateData(geo->sphereN, geo->totalN, &filePointer, geo);
+            continue;
+        }
+    }
+    fclose(filePointer); /* close current opened file */
     return 0;
 }
 /* a good practice: end file with a newline */

@@ -614,7 +614,7 @@ typedef enum {
     ICSPHERE = 2, /* sphere initializer */
     ICBOX = 3, /* box initializer */
     ICCYLINDER = 4, /* cylinder initializer */
-    ENTRYIC = 12, /* x1, y1, z1, [r, x2], [y2], [z2], ..., primitive variables */
+    ENTRYIC = 12, /* x1, y1, z1, [x2, nx], [y2, ny], [z2, nz], r, primitive variables */
     VARIC = 5, /* primitive variables: rho, u, v, w, p */
 } Constants;
 /*

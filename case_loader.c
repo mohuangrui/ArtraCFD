@@ -148,6 +148,7 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model)
         }
         if (0 == strncmp(currentLine, "initialization begin", sizeof currentLine)) {
             ++entryCount;
+            space->part.countIC = 0; /* enforce global initialization first */
             space->part.typeIC[space->part.countIC] = ICGLOBAL; /* IC type id */
             ReadConsecutiveRealData(&filePointer, space->part.valueIC[space->part.countIC] + ENTRYIC - VARIC, VARIC);
             ++space->part.countIC; /* initializer count and pointer */
@@ -203,7 +204,7 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model)
             sscanf(currentLine, formatIII, space->part.valueIC[space->part.countIC] + 0, 
                     space->part.valueIC[space->part.countIC] + 1, space->part.valueIC[space->part.countIC] + 2); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, space->part.valueIC[space->part.countIC] + 3); 
+            sscanf(currentLine, formatI, space->part.valueIC[space->part.countIC] + 6); 
             ReadConsecutiveRealData(&filePointer, space->part.valueIC[space->part.countIC] + ENTRYIC - VARIC, VARIC);
             ++space->part.countIC; /* initializer count and pointer */
             continue;

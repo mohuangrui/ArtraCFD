@@ -369,7 +369,7 @@ Real Norm(const Real V[])
 }
 Real Dist2(const Real V1[], const Real V2[])
 {
-    const RealVector V = {V1[X] - V2[X], V1[Y] - V2[Y], V1[Z] - V2[Z]};
+    const RealVector V = {V2[X] - V1[X], V2[Y] - V1[Y], V2[Z] - V1[Z]};
     return Dot(V, V);
 }
 Real Dist(const Real V1[], const Real V2[])
