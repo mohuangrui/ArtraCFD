@@ -19,6 +19,7 @@
  * Static Function Declarations
  ****************************************************************************/
 static int ReadCaseSettingData(Space *, Time *, Model *);
+static int ReadGeometrySettingData(Geometry *);
 static int ReadBoundaryData(FILE **, Space *, const int);
 static int ReadConsecutiveRealData(FILE **, Real *, const int);
 static int WriteBoundaryData(FILE **, const Space *, const int);
@@ -32,6 +33,7 @@ int LoadCaseSettingData(Space *space, Time *time, Model *model)
 {
     ShowInformation("Loading case setting data ...");
     ReadCaseSettingData(space, time, model);
+    ReadGeometrySettingData(&(space->geo));
     WriteVerifyData(space, time, model);
     CheckCaseSettingData(space, time, model);
     ShowInformation("Session End");
@@ -261,6 +263,40 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model)
      */
     if (12 != entryCount) {
         FatalError("missing or repeated necessary information section");
+    }
+    return 0;
+}
+static int ReadGeometrySettingData(Geometry *geo)
+{
+    FILE *filePointer = fopen("artracfd.geo", "r");
+    if (NULL == filePointer) {
+        FatalError("failed to open file: artracfd.geo...");
+    }
+    /* read and process file line by line */
+    String currentLine = {'\0'}; /* store the current read line */
+    int entryCount = 0; /* entry count */
+    while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
+        CommandLineProcessor(currentLine); /* process current line */
+        if (0 == strncmp(currentLine, "count begin", sizeof currentLine)) {
+            ++entryCount;
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, "%d", &(geo->sphereN));
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, "%d", &(geo->stlN));
+            if (0 >= geo->sphereN) {
+                geo->sphereN = 0;
+            }
+            if (0 >= geo->stlN) {
+                geo->stlN = 0;
+            }
+            geo->totalN = geo->sphereN + geo->stlN;
+            break;
+        }
+    }
+    fclose(filePointer); /* close current opened file */
+    /* Check missing information section in configuration */
+    if (1 != entryCount) {
+        FatalError("missing necessary information section");
     }
     return 0;
 }

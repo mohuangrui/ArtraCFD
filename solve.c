@@ -19,7 +19,6 @@
 #include "fluid_dynamics.h"
 #include "fluid_solid_interaction.h"
 #include "data_stream.h"
-#include "geometry_stream.h"
 #include "timer.h"
 #include "data_probe.h"
 #include "cfd_commons.h"
@@ -27,54 +26,51 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int SolutionEvolution(Field *, Space *, Time *, const Model *,
-        const Partition *, Geometry *);
-static Real ComputeTimeStep(const Real *U, const Space *, const Time *, 
-        const Model *, const Partition *, const Geometry *);
+static int SolutionEvolution(Space *, Time *, const Model *);
+static Real ComputeTimeStep(const Space *, const Time *, const Model *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int Solve(Field *field, Space *space, Time *time, const Model *model,
-        const Partition *part, Geometry *geometry)
+int Solve(Space *space, Time *time, const Model *model)
 {
-    InitializeField(field, space, time, model, part, geometry);
-    SolutionEvolution(field, space, time, model, part, geometry);
+    InitializeComputationalDomain(space, time, model);
+    SolutionEvolution(space, time, model);
     return 0;
 }
-static int SolutionEvolution(Field *field, Space *space, Time *time, 
-        const Model *model, const Partition *part, Geometry *geometry)
+static int SolutionEvolution(Space *space, Time *time, const Model *model)
 {
     ShowInformation("Time marching...");
-    /* check whether current time is equal to or larger than the total time */
-    if (0 >= (time->end - time->now)) {
-        ShowInformation("  current time is equal to or larger than total time...");
+    Real dt = time->end - time->now; /* time step size */
+    /* check whether current time is equal to or larger than the end time */
+    if (0 >= dt) {
+        ShowInformation("  current time is equal to or larger than the end time...");
         ShowInformation("Session End");
         return 1;
     }
     /* obtain the desired export time interval */
-    const Real interval = (time->end - time->now) / (Real)(MaxInt(time->outputN - time->outputCount, 1));
-    const Real probeInterval = (time->end - time->now) / (Real)(time->outputProbe);
+    const Real interval = dt / (Real)(MaxInt(time->outputN - time->countOutput, 1));
+    const Real probeInterval = dt / (Real)(time->outputNProbe);
     Real record = 0.0; /* used for control when to export data */
     Real probeRecord = 0.0; /* used for control when to export probe data */
     /* set some timers for monitoring time consuming of process */
     Timer operationTimer; /* timer for computing operations */
     Real operationTime = 0.0; /* record consuming time of operation */
-    for (time->stepCount += 1; (time->now < time->end) && (time->stepCount <= time->stepN); ++(time->stepCount)) {
+    for (time->countStep += 1; (time->now < time->end) && (time->countStep <= time->stepN); ++(time->countStep)) {
         /*
          * Calculate dt for current time step
          */
-        time->dt = ComputeTimeStep(field->U, space, time, model, part, geometry);
+        dt = ComputeTimeStep(space, time, model);
         /*
-         * Update current time stamp, if current time exceeds the total time, 
-         * recompute the value of dt to make current time equal total time.
+         * Update current time stamp, if current time exceeds the end time, 
+         * recompute the value of dt to make current time equal to the end time.
          */
-        time->now = time->now + time->dt;
-        if (time->now > time->end) { /* need to refine "dt" to reach totTime  */
-            time->dt = time->end - (time->now - time->dt);
+        time->now = time->now + dt;
+        if (time->now > time->end) {
+            dt = time->end - (time->now - dt);
             time->now = time->end;
         }
         fprintf(stdout, "\nstep=%d; time=%.6g; remain=%.6g; dt=%.6g;\n", 
-                time->stepCount, time->now, time->end - time->now, time->dt);
+                time->countStep, time->now, time->end - time->now, dt);
         /*
          * Compute field data in current time step, treat the interaction of
          * fluid and solids as two physical processes, and split these two
@@ -83,11 +79,11 @@ static int SolutionEvolution(Field *field, Space *space, Time *time,
          */
         TickTime(&operationTimer);
         if (1 == model->fsi) {
-            FluidSolidInteraction(field->U, space, model, part, geometry, 0.5 * time->dt);
+            FluidSolidInteraction(space, model, 0.5 * dt);
         }
-        FluidDynamics(field, space, model, part, geometry, time->dt);
+        FluidDynamics(space, model, dt);
         if (1 == model->fsi) {
-            FluidSolidInteraction(field->U, space, model, part, geometry, 0.5 * time->dt);
+            FluidSolidInteraction(space, model, 0.5 * dt);
         }
         operationTime = TockTime(&operationTimer);
         fprintf(stdout, "  elapsed: %.6gs\n", operationTime);
@@ -95,65 +91,68 @@ static int SolutionEvolution(Field *field, Space *space, Time *time,
          * Export computed data. If accumulated time increases to anticipated 
          * export interval, write data out. Because the accumulated time very 
          * likely can not increase to the exporting interval at the last
-         * phase, then add a extra condition that if current time is the total
+         * phase, then add an extra condition that if current time is the end
          * time, then also write data out.
          */
-        record = record + time->dt;
-        probeRecord = probeRecord + time->dt;
-        if ((record >= interval) || (0 == time->now - time->end) || (time->stepCount == time->stepN)) {
-            ++(time->outputCount); /* export count increase */
+        record = record + dt;
+        probeRecord = probeRecord + dt;
+        if ((record >= interval) || (time->end <= time->now) || (time->countStep == time->stepN)) {
+            ++(time->countOutput); /* export count increase */
             TickTime(&operationTimer);
-            WriteComputedData(field->U, space, time, model, part);
-            WriteGeometryData(time, geometry);
+            WriteFieldData(space, time, model);
+            WriteGeometryData(time, &(space->geo));
             operationTime = TockTime(&operationTimer);
-            record = 0; /* reset accumulated time */
+            record = 0.0; /* reset accumulated time */
             fprintf(stdout, "  data export time consuming: %.6gs\n", operationTime);
         }
-        if ((probeRecord >= probeInterval) || (0 == time->now - time->end) || (time->stepCount == time->stepN)) {
-            WriteComputedDataAtProbes(field->U, space, time, model, part);
-            probeRecord = 0; /* reset probe accumulated time */
+        if ((probeRecord >= probeInterval) || (time->end <= time->now) || (time->countStep == time->stepN)) {
+            WriteFieldDataAtProbes(space, time, model);
+            probeRecord = 0.0; /* reset probe accumulated time */
         }
     }
     ShowInformation("Session End");
     return 0;
 }
-static Real ComputeTimeStep(const Real *U, const Space *space, const Time *time, 
-        const Model *model, const Partition *part, const Geometry *geometry)
+static Real ComputeTimeStep(const Space *space, const Time *time, const Model *model)
 {
-    Real velocity = 0.0;
-    Real velocityMax = FLT_MIN;
+    int idx = 0; /* linear array index math variable */
+    const Node *node = space->node;
+    const Real *restrict U = NULL;
+    const Partition *restrict part = &(space->part);
+    const Geometry *restrict geo = &(space->geo);
+    Real speed = 0.0;
+    Real speedMax = FLT_MIN;
     /*
      * Incorporate solid dynamics into CFL condition.
      */
-    Real *geo = NULL;
-    for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
-        geo = IndexGeometry(geoCount, geometry);
-        velocity = MaxReal(fabs(geo[GU]), MaxReal(fabs(geo[GV]), fabs(geo[GW])));
-        if (velocityMax < velocity) {
-            velocityMax = velocity;
+    for (int n = 0; n < geo->totalN; ++n) {
+        speed = MaxReal(fabs(geo->list[n].V[X]), MaxReal(fabs(geo->list[n].V[Y]), fabs(geo->list[n].V[Z])));
+        if (speedMax < speed) {
+            speedMax = speed;
         }
     }
     /*
      * Incorporate fluid dynamics into CFL condition.
      */
-    int idx = 0; /* linear array index math variable */
     Real Uo[DIMUo] = {0.0};
-    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = IndexMath(k, j, i, space);
-                if (FLUID != space->nodeFlag[idx]) {
+    for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
+        for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
+            for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
+                idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
+                U = node[idx].U[C];
+                if (FLUID != node[idx].geoID) {
                     continue;
                 }
-                PrimitiveByConservative(Uo, idx * DIMU, U, model);
-                velocity = MaxReal(fabs(Uo[1]), MaxReal(fabs(Uo[2]), fabs(Uo[3]))) + sqrt((Uo[4] / Uo[0]) * model->gamma);
-                if (velocityMax < velocity) {
-                    velocityMax = velocity;
+                PrimitiveByConservative(model->gamma, model->gasR, U, Uo);
+                speed = MaxReal(fabs(Uo[1]), MaxReal(fabs(Uo[2]), fabs(Uo[3]))) + 
+                    sqrt(model->gamma * model->gasR * Uo[5]);
+                if (speedMax < speed) {
+                    speedMax = speed;
                 }
             }
         }
     }
-    return time->numCFL * MinReal(space->dx, MinReal(space->dy, space->dz)) / velocityMax;
+    return time->numCFL * MinReal(part->d[X], MinReal(part->d[Y], part->d[Z])) / speedMax;
 }
 /* a good practice: end file with a newline */
 

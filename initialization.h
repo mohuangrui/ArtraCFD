@@ -24,15 +24,12 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Field initializer
+ * Domain initializer
  *
  * Function
- *      Initialize the field variable.
- *      non restart -- initialize by specified data.
- *      restart -- initialize by restart data.
+ *      Initialize the computational domain.
  */
-extern int InitializeField(Field *, const Space *, Time *, const Model *model,
-        const Partition *, const Geometry *);
+extern int InitializeComputationalDomain(Space *, const Time *, const Model *model);
 #endif
 /* a good practice: end file with a newline */
 

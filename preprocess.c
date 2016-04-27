@@ -17,8 +17,6 @@
 #include "case_loader.h"
 #include "cfd_parameters.h"
 #include "domain_partition.h"
-#include "geometry_stream.h"
-#include "immersed_boundary_treatment.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
@@ -36,8 +34,6 @@ int Preprocess(Space *space, Time *time, Model *model)
     ComputeCFDParameters(space, time, model);
     DomainPartition(space);
     ProgramMemoryAllocate(space);
-    ReadGeometryData(space, time);
-    ComputeGeometryDomain(space);
     return 0;
 }
 /*
@@ -48,6 +44,9 @@ static int ProgramMemoryAllocate(Space *space)
 {
     ShowInformation("Allocating memory...");
     space->node = AssignStorage(space->part.totalN, "Node");
+    if (0 != space->geo.totalN) {
+        space->geo.list = AssignStorage(space->geo.totalN, "Polyhedron");
+    }
     ShowInformation("Session End");
     return 0;
 }

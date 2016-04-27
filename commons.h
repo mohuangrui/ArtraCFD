@@ -566,6 +566,7 @@ typedef enum {
     /* parameters related to numerical model */
     WENO = 0, /* WENO scheme identifier */
     TVD = 1, /* TVD scheme identifier */
+    FLUID = 0,
     GAS = 0, /* gas */
     WATER = 1, /* water */
     /* parameters related to probe */
@@ -769,7 +770,6 @@ typedef struct {
     int outputNProbe; /* times to write probe information */
     Real end; /* total evolution time */
     Real now; /* current time recorder */
-    Real dt; /* time step size */
     Real numCFL; /* CFL number */
     Real probe[NPROBE][ENTRYPROBE]; /* store information of probes */
 } Time;
