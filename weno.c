@@ -28,63 +28,70 @@ typedef enum {
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int CharacteristicProjection(const int, Real [][DIMU], const Real [], Real [][DIMU],
-        const int, const int, const int, const int, const int, const Real *, const Space *);
-static int NumericalFlux(Real [], Real [][DIMU]);
+static void CharacteristicProjection(const int, const int, const int, const int, const int, 
+        const int [restrict], const Node *, Real [restrict][DIMU], const Real [restrict],
+        const int , const int , Real [restrict][DIMU]);
+static void WENO5(Real [restrict][DIMU], Real [restrict]);
+static void InverseProjection(Real [restrict][DIMU], const Real [restrict], 
+        const Real [restrict], Real [restrict]);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int WENO(const int s, Real Fhat[], const Real r, const int k, const int j,
-        const int i, const Real *U, const Space *space, const Model *model)
+void WENO(const int s, const int tn, const int k, const int j, const int i, 
+        const int partn[restrict], const Node *node, const Model *model, Real Fhat[restrict])
 {
-    Real Uo[DIMUo] = {0.0}; /* Averaged rho, u, v, w, hT, c */
+    const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
+    const int idxL = IndexNode(k, j, i, partn[Y], partn[X]);
+    const int idxR = IndexNode(k + h[s][Z], j + h[s][Y], i + h[s][X], partn[Y], partn[X]);
+    /* evaluate interface values by averaging */
+    Real Uo[DIMUo] = {0.0}; /* store averaged primitives */
+    SymmetricAverage(model->averager, model->gamma, node[idxL].U[tn], node[idxR].U[tn], Uo);
+    /* decompose Jocabian matrix */
     Real lambda[DIMU] = {0.0}; /* eigenvalues */
     Real L[DIMU][DIMU] = {{0.0}}; /* vector space {Ln} */
     Real R[DIMU][DIMU] = {{0.0}}; /* vector space {Rn} */
-    Real HhatPlus[DIMU] = {0.0}; /* forward numerical flux of characteristic fields */
-    Real HhatMinus[DIMU] = {0.0}; /* backward numerical flux of characteristic fields */
-    Real HPlus[NSTENCIL][DIMU] = {{0.0}}; /* forward characteristic fields stencil */
-    Real HMinus[NSTENCIL][DIMU] = {{0.0}}; /* backward characteristic fields stencil */
-    Real lambdaPlus[DIMU] = {0.0}; /* eigenvalues */
-    Real lambdaMinus[DIMU] = {0.0}; /* eigenvalues */
-    const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
-    const int idx = IndexMath(k, j, i, space) * DIMU;
-    const int idxh = IndexMath(k + h[s][Z], j + h[s][Y], i + h[s][X], space) * DIMU;
-    SymmetricAverage(Uo, idx, idxh, U, model->gamma, model->averager);
-    EigenvalueLambda(s, lambda, Uo);
-    EigenvectorSpaceL(s, L, Uo, model->gamma);
-    EigenvectorSpaceR(s, R, Uo);
-    FluxSplitting(lambdaPlus, lambdaMinus, lambda, model->splitter);
-    CharacteristicProjection(s, HPlus, lambdaPlus, L, -2, +1, k, j, i, U, space);
-    CharacteristicProjection(s, HMinus, lambdaMinus, L, +3, -1, k, j, i, U, space);
-    NumericalFlux(HhatPlus, HPlus);
-    NumericalFlux(HhatMinus, HMinus);
-    for (int row = 0; row < DIMU; ++row) {
-        Fhat[row] = 0;
-        for (int dummy = 0; dummy < DIMU; ++dummy) {
-            Fhat[row] = Fhat[row] + R[row][dummy] * (HhatPlus[dummy] + HhatMinus[dummy]);
-        }
-    }
-    return (!r); /* to avoid unsed parameter warning */
+    Eigenvalue(s, Uo, lambda);
+    EigenvectorL(s, model->gamma, Uo, L);
+    EigenvectorR(s, Uo, R);
+    /* flux vector splitting */
+    Real lambdaP[DIMU] = {0.0}; /* eigenvalues */
+    Real lambdaN[DIMU] = {0.0}; /* eigenvalues */
+    EigenvalueSplitting(model->splitter, lambda, lambdaP, lambdaN);
+    /* construct local characteristic fluxes */
+    Real HP[NSTENCIL][DIMU] = {{0.0}}; /* forward characteristic flux stencil */
+    Real HN[NSTENCIL][DIMU] = {{0.0}}; /* backward characteristic flux stencil */
+    CharacteristicProjection(s, tn, k, j, i, partn, node, L, lambdaP, -2, +1, HP);
+    CharacteristicProjection(s, tn, k, j, i, partn, node, L, lambdaN, +3, -1, HN);
+    Real HhatP[DIMU] = {0.0}; /* forward numerical flux of characteristic fields */
+    Real HhatN[DIMU] = {0.0}; /* backward numerical flux of characteristic fields */
+    /* WENO reconstruction */
+    WENO5(HP, HhatP);
+    WENO5(HN, HhatN);
+    /* inverse projection */
+    InverseProjection(R, HhatP, HhatN, Fhat);
+    return;
 }
-static int CharacteristicProjection(const int s, Real H[][DIMU], const Real lambda[], Real L[][DIMU],
-        const int startN, const int wind, const int k, const int j, const int i, const Real *U, const Space *space)
+static void CharacteristicProjection(const int s, const int tn, const int k, const int j, const int i, 
+        const int partn[restrict], const Node *node, Real L[restrict][DIMU], const Real lambda[restrict],
+        const int startN, const int wind, Real H[restrict][DIMU])
 {
     const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
-    int idx = 0;
+    int idx = 0; /* linear array index math variable */
+    const Real *restrict U = NULL;
     for (int n = startN, count = 0; count < NSTENCIL; n = n + wind, ++count) {
-        idx = IndexMath(k + n * h[s][Z], j + n * h[s][Y], i + n * h[s][X], space) * DIMU;
+        idx = IndexNode(k + n * h[s][Z], j + n * h[s][Y], i + n * h[s][X], partn[Y], partn[X]);
+        U = node[idx].U[tn];
         for (int row = 0; row < DIMU; ++row) {
             H[count][row] = 0;
             for (int dummy = 0; dummy < DIMU; ++dummy) {
-                H[count][row] = H[count][row] + L[row][dummy] * U[idx + dummy];
+                H[count][row] = H[count][row] + L[row][dummy] * U[dummy];
             }
             H[count][row] = H[count][row] * lambda[row];
         }
     }
-    return 0;
+    return;
 }
-static int NumericalFlux(Real Fhat[], Real F[][DIMU])
+static void WENO5(Real F[restrict][DIMU], Real Fhat[restrict])
 {
     Real omega[R] = {0.0}; /* weights */
     Real q[R] = {0.0}; /* q vectors */
@@ -110,7 +117,18 @@ static int NumericalFlux(Real Fhat[], Real F[][DIMU])
         q[2] = (2.0 * F[CEN][row] + 5.0 * F[CEN+1][row] - F[CEN+2][row]) / 6.0;
         Fhat[row] = omega[0] * q[0] + omega[1] * q[1] + omega[2] * q[2];
     }
-    return 0;
+    return;
+}
+static void InverseProjection(Real R[restrict][DIMU], const Real HhatP[restrict], 
+        const Real HhatN[restrict], Real Fhat[restrict])
+{
+    for (int row = 0; row < DIMU; ++row) {
+        Fhat[row] = 0;
+        for (int dummy = 0; dummy < DIMU; ++dummy) {
+            Fhat[row] = Fhat[row] + R[row][dummy] * (HhatP[dummy] + HhatN[dummy]);
+        }
+    }
+    return;
 }
 /* a good practice: end file with a newline */
 

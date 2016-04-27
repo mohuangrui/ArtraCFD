@@ -27,8 +27,11 @@
  * functions can get rather messy. Declaring a typedef to a function pointer
  * generally clarifies the code.
  */
-typedef int (*NumericalFluxReconstructor)(const int, Real [], const Real, const int,
+typedef int (*ConvectiveFluxReconstructor)(const int, Real [], const Real, const int,
         const int, const int, const Real *, const Space *, const Model *);
+typedef void (*DiffusiveFluxReconstructor)(const int, const int, const int, 
+        const int, const int [restrict], const Real [restrict], const Node *, 
+        const Model *, Real [restrict]);
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
@@ -40,9 +43,27 @@ static int LL(const int, Real *, const Real *, const Space *, const Model *,
         const Partition *, const Real);
 static int NumericalConvectiveFlux(const int, Real [], const Real, const int,
         const int, const int, const Real *, const Space *, const Model *);
+static void NumericalDiffusiveFluxX(const int, const int, const int, 
+        const int, const int [restrict], const Real [restrict], const Node *, 
+        const Model *, Real [restrict]);
+static void NumericalDiffusiveFluxY(const int, const int, const int, 
+        const int, const int [restrict], const Real [restrict], const Node *, 
+        const Model *, Real [restrict]);
+static void NumericalDiffusiveFluxZ(const int, const int, const int, 
+        const int, const int [restrict], const Real [restrict], const Node *, 
+        const Model *, Real [restrict]);
 static Real Viscosity(const Real);
 static Real PrandtlNumber(void);
-
+/****************************************************************************
+ * Global Variables Definition with Private Scope
+ ****************************************************************************/
+static ConvectiveFluxReconstructor ReconstructConvectiveFlux[1] = {
+    WENO
+};
+static DiffusiveFluxReconstructor ReconstructDiffusiveFlux[DIMS] = {
+    NumericalDiffusiveFluxX,
+    NumericalDiffusiveFluxY,
+    NumericalDiffusiveFluxZ};
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -56,21 +77,19 @@ static Real PrandtlNumber(void);
  *       - spatial discretization (convective fluxes + diffusive fluxes)
  *   a) shows more accurate results according to tests on Riemann problems.
  */
-int FluidDynamics(Field *field, const Space *space, const Model *model, 
-        const Partition *part, const Geometry *geometry, const Real dt)
+int FluidDynamics(Space *space, const Model *model, const Real dt)
 {
-    DifferentialOperatorSplitting(field, space, model, part, geometry, dt);
+    DifferentialOperatorSplitting(space, model, dt);
     return 0;
 }
-static int DifferentialOperatorSplitting(Field *field, const Space *space, const Model *model,
-        const Partition *part, const Geometry *geometry, const Real dt)
+static int DifferentialOperatorSplitting(Space *space, const Model *model, const Real dt)
 {
-    RungeKutta(Z, field, space, model, part, geometry, 0.5 * dt);
-    RungeKutta(Y, field, space, model, part, geometry, 0.5 * dt);
-    RungeKutta(X, field, space, model, part, geometry, 0.5 * dt);
-    RungeKutta(X, field, space, model, part, geometry, 0.5 * dt);
-    RungeKutta(Y, field, space, model, part, geometry, 0.5 * dt);
-    RungeKutta(Z, field, space, model, part, geometry, 0.5 * dt);
+    RungeKutta(Z, space, model, 0.5 * dt);
+    RungeKutta(Y, space, model, 0.5 * dt);
+    RungeKutta(X, space, model, 0.5 * dt);
+    RungeKutta(X, space, model, 0.5 * dt);
+    RungeKutta(Y, space, model, 0.5 * dt);
+    RungeKutta(Z, space, model, 0.5 * dt);
     return 0;
 }
 static int RungeKutta(const int s, Field *field, const Space *space, const Model *model,
@@ -175,43 +194,35 @@ static int LL(const int s, Real *U, const Real *Un, const Space *space,
     }
     return 0;
 }
-static int NumericalConvectiveFlux(const int s, Real Fhat[], const Real r,
+static int NumericalConvectiveFlux(const int s, const Real r,
         const int k, const int j, const int i,
-        const Real *U, const Space *space, const Model *model)
+        const Real *U, const Space *space, const Model *model, Real Fhat[])
 {
-    NumericalFluxReconstructor ReconstructNumericalFlux[2] = {
-        TVD,
-        WENO
-    };
-    ReconstructNumericalFlux[model->scheme](s, Fhat, r, k, j, i, U, space, model);
+    ReconstructConvetiveFlux[model->scheme](s, Fhat, r, k, j, i, U, space, model);
     return 0;
 }
 void NumericalDiffusiveFlux(const int s, const int tn, const int k, const int j, 
-        const int i, const int n[restrict], const Real dd[restrict], const Node *node, 
+        const int i, const int partn[restrict], const Real dd[restrict], const Node *node, 
         const Model *model, Real Fvhat[restrict])
 {
-    DiffusiveFluxReconstructor ReconstructDiffusiveFlux[DIMS] = {
-        NumericalDiffusiveFluxX,
-        NumericalDiffusiveFluxY,
-        NumericalDiffusiveFluxZ};
-    ReconstructDiffusiveFlux[s](tn, k, j, i, n, dd, node, model, Fvhat);
+    ReconstructDiffusiveFlux[s](tn, k, j, i, partn, dd, node, model, Fvhat);
     return;
 }
 static void NumericalDiffusiveFluxX(const int tn, const int k, const int j, 
-        const int i, const int n[restrict], const Real dd[restrict], const Node *node, 
+        const int i, const int partn[restrict], const Real dd[restrict], const Node *node, 
         const Model *model, Real Fvhat[restrict])
 {
-    const int idx = IndexNode(k, j, i, n[Y], n[X]);
-    const int idxS = IndexNode(k, j - 1, i, n[Y], n[X]);
-    const int idxN = IndexNode(k, j + 1, i, n[Y], n[X]);
-    const int idxF = IndexNode(k - 1, j, i, n[Y], n[X]);
-    const int idxB = IndexNode(k + 1, j, i, n[Y], n[X]);
+    const int idx = IndexNode(k, j, i, partn[Y], partn[X]);
+    const int idxS = IndexNode(k, j - 1, i, partn[Y], partn[X]);
+    const int idxN = IndexNode(k, j + 1, i, partn[Y], partn[X]);
+    const int idxF = IndexNode(k - 1, j, i, partn[Y], partn[X]);
+    const int idxB = IndexNode(k + 1, j, i, partn[Y], partn[X]);
 
-    const int idxE = IndexNode(k, j, i + 1, n[Y], n[X]);
-    const int idxSE = IndexNode(k, j - 1, i + 1, n[Y], n[X]);
-    const int idxNE = IndexNode(k, j + 1, i + 1, n[Y], n[X]);
-    const int idxFE = IndexNode(k - 1, j, i + 1, n[Y], n[X]);
-    const int idxBE = IndexNode(k + 1, j, i + 1, n[Y], n[X]);
+    const int idxE = IndexNode(k, j, i + 1, partn[Y], partn[X]);
+    const int idxSE = IndexNode(k, j - 1, i + 1, partn[Y], partn[X]);
+    const int idxNE = IndexNode(k, j + 1, i + 1, partn[Y], partn[X]);
+    const int idxFE = IndexNode(k - 1, j, i + 1, partn[Y], partn[X]);
+    const int idxBE = IndexNode(k + 1, j, i + 1, partn[Y], partn[X]);
 
     const Real *restrict U = node[idx].U[tn];
     const Real u = U[1] / U[0];
@@ -283,20 +294,20 @@ static void NumericalDiffusiveFluxX(const int tn, const int k, const int j,
     return;
 }
 static void NumericalDiffusiveFluxY(const int tn, const int k, const int j, 
-        const int i, const int n[restrict], const Real dd[restrict], const Node *node, 
+        const int i, const int partn[restrict], const Real dd[restrict], const Node *node, 
         const Model *model, Real Fvhat[restrict])
 {
-    const int idx = IndexNode(k, j, i, n[Y], n[X]);
-    const int idxW = IndexNode(k, j, i - 1, n[Y], n[X]);
-    const int idxE = IndexNode(k, j, i + 1, n[Y], n[X]);
-    const int idxF = IndexNode(k - 1, j, i, n[Y], n[X]);
-    const int idxB = IndexNode(k + 1, j, i, n[Y], n[X]);
+    const int idx = IndexNode(k, j, i, partn[Y], partn[X]);
+    const int idxW = IndexNode(k, j, i - 1, partn[Y], partn[X]);
+    const int idxE = IndexNode(k, j, i + 1, partn[Y], partn[X]);
+    const int idxF = IndexNode(k - 1, j, i, partn[Y], partn[X]);
+    const int idxB = IndexNode(k + 1, j, i, partn[Y], partn[X]);
 
-    const int idxN = IndexNode(k, j + 1, i, n[Y], n[X]);
-    const int idxWN = IndexNode(k, j + 1, i - 1, n[Y], n[X]);
-    const int idxEN = IndexNode(k, j + 1, i + 1, n[Y], n[X]);
-    const int idxFN = IndexNode(k - 1, j + 1, i, n[Y], n[X]);
-    const int idxBN = IndexNode(k + 1, j + 1, i, n[Y], n[X]);
+    const int idxN = IndexNode(k, j + 1, i, partn[Y], partn[X]);
+    const int idxWN = IndexNode(k, j + 1, i - 1, partn[Y], partn[X]);
+    const int idxEN = IndexNode(k, j + 1, i + 1, partn[Y], partn[X]);
+    const int idxFN = IndexNode(k - 1, j + 1, i, partn[Y], partn[X]);
+    const int idxBN = IndexNode(k + 1, j + 1, i, partn[Y], partn[X]);
 
     const Real *restrict U = node[idx].U[tn];
     const Real u = U[1] / U[0];
@@ -368,20 +379,20 @@ static void NumericalDiffusiveFluxY(const int tn, const int k, const int j,
     return ;
 }
 static void NumericalDiffusiveFluxZ(const int tn, const int k, const int j, 
-        const int i, const int n[restrict], const Real dd[restrict], const Node *node, 
+        const int i, const int partn[restrict], const Real dd[restrict], const Node *node, 
         const Model *model, Real Fvhat[restrict])
 {
-    const int idx = IndexNode(k, j, i, n[Y], n[X]);
-    const int idxW = IndexNode(k, j, i - 1, n[Y], n[X]);
-    const int idxE = IndexNode(k, j, i + 1, n[Y], n[X]);
-    const int idxS = IndexNode(k, j - 1, i, n[Y], n[X]);
-    const int idxN = IndexNode(k, j + 1, i, n[Y], n[X]);
+    const int idx = IndexNode(k, j, i, partn[Y], partn[X]);
+    const int idxW = IndexNode(k, j, i - 1, partn[Y], partn[X]);
+    const int idxE = IndexNode(k, j, i + 1, partn[Y], partn[X]);
+    const int idxS = IndexNode(k, j - 1, i, partn[Y], partn[X]);
+    const int idxN = IndexNode(k, j + 1, i, partn[Y], partn[X]);
 
-    const int idxB = IndexNode(k + 1, j, i, n[Y], n[X]);
-    const int idxWB = IndexNode(k + 1, j, i - 1, n[Y], n[X]);
-    const int idxEB = IndexNode(k + 1, j, i + 1, n[Y], n[X]);
-    const int idxSB = IndexNode(k + 1, j - 1, i, n[Y], n[X]);
-    const int idxNB = IndexNode(k + 1, j + 1, i, n[Y], n[X]);
+    const int idxB = IndexNode(k + 1, j, i, partn[Y], partn[X]);
+    const int idxWB = IndexNode(k + 1, j, i - 1, partn[Y], partn[X]);
+    const int idxEB = IndexNode(k + 1, j, i + 1, partn[Y], partn[X]);
+    const int idxSB = IndexNode(k + 1, j - 1, i, partn[Y], partn[X]);
+    const int idxNB = IndexNode(k + 1, j + 1, i, partn[Y], partn[X]);
 
     const Real *restrict U = node[idx].U[tn];
     const Real u = U[1] / U[0];

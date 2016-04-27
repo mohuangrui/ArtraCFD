@@ -31,8 +31,8 @@
  * Parameters
  *      Fhat -- reconstructed convective fluxes.
  */
-int WENO(const int s, Real Fhat[], const Real r, const int k, const int j,
-        const int i, const Real *U, const Space *, const Model *);
+extern void WENO(const int s, const int tn, const int k, const int j, const int i, 
+        const int partn[restrict], const Node *node, const Model *model, Real Fhat[restrict]);
 #endif
 /* a good practice: end file with a newline */
 
