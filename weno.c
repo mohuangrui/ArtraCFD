@@ -58,8 +58,8 @@ void WENO(const int s, const int tn, const int k, const int j, const int i,
     Real lambdaN[DIMU] = {0.0}; /* eigenvalues */
     EigenvalueSplitting(model->splitter, lambda, lambdaP, lambdaN);
     /* construct local characteristic fluxes */
-    Real HP[NSTENCIL][DIMU] = {{0.0}}; /* forward characteristic flux stencil */
-    Real HN[NSTENCIL][DIMU] = {{0.0}}; /* backward characteristic flux stencil */
+    Real HP[DIMU][NSTENCIL] = {{0.0}}; /* forward characteristic flux stencil */
+    Real HN[DIMU][NSTENCIL] = {{0.0}}; /* backward characteristic flux stencil */
     CharacteristicProjection(s, tn, k, j, i, partn, node, L, lambdaP, -2, +1, HP);
     CharacteristicProjection(s, tn, k, j, i, partn, node, L, lambdaN, +3, -1, HN);
     Real HhatP[DIMU] = {0.0}; /* forward numerical flux of characteristic fields */
@@ -73,7 +73,7 @@ void WENO(const int s, const int tn, const int k, const int j, const int i,
 }
 static void CharacteristicProjection(const int s, const int tn, const int k, const int j, const int i, 
         const int partn[restrict], const Node *node, Real L[restrict][DIMU], const Real lambda[restrict],
-        const int startN, const int wind, Real H[restrict][DIMU])
+        const int startN, const int wind, Real H[restrict][NSTENCIL])
 {
     const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
     int idx = 0; /* linear array index math variable */
@@ -82,16 +82,16 @@ static void CharacteristicProjection(const int s, const int tn, const int k, con
         idx = IndexNode(k + n * h[s][Z], j + n * h[s][Y], i + n * h[s][X], partn[Y], partn[X]);
         U = node[idx].U[tn];
         for (int row = 0; row < DIMU; ++row) {
-            H[count][row] = 0;
+            H[row][count] = 0;
             for (int dummy = 0; dummy < DIMU; ++dummy) {
-                H[count][row] = H[count][row] + L[row][dummy] * U[dummy];
+                H[row][count] = H[row][count] + L[row][dummy] * U[dummy];
             }
-            H[count][row] = H[count][row] * lambda[row];
+            H[row][count] = H[row][count] * lambda[row];
         }
     }
     return;
 }
-static void WENO5(Real F[restrict][DIMU], Real Fhat[restrict])
+static void WENO5(Real F[restrict][NSTENCIL], Real Fhat[restrict])
 {
     Real omega[R] = {0.0}; /* weights */
     Real q[R] = {0.0}; /* q vectors */
@@ -100,21 +100,21 @@ static void WENO5(Real F[restrict][DIMU], Real Fhat[restrict])
     const Real C[R] = {0.1, 0.6, 0.3};
     const Real epsilon = 1.0e-6;
     for (int row = 0; row < DIMU; ++row) {
-        IS[0] = (13.0 / 12.0) * pow((F[CEN-2][row] - 2.0 * F[CEN-1][row] + F[CEN][row]), 2.0) + 
-            (1.0 / 4.0) * pow((F[CEN-2][row] - 4.0 * F[CEN-1][row] + 3.0 * F[CEN][row]), 2.0);
-        IS[1] = (13.0 / 12.0) * pow((F[CEN-1][row] - 2.0 * F[CEN][row] + F[CEN+1][row]), 2.0) +
-            (1.0 / 4.0) * pow((F[CEN-1][row] - F[CEN+1][row]), 2.0);
-        IS[2] = (13.0 / 12.0) * pow((F[CEN][row] - 2.0 * F[CEN+1][row] + F[CEN+2][row]), 2.0) +
-            (1.0 / 4.0) * pow((3.0 * F[CEN][row] - 4.0 * F[CEN+1][row] + F[CEN+2][row]), 2.0);
+        IS[0] = (13.0 / 12.0) * pow((F[row][CEN-2] - 2.0 * F[row][CEN-1] + F[row][CEN]), 2.0) + 
+            (1.0 / 4.0) * pow((F[row][CEN-2] - 4.0 * F[row][CEN-1] + 3.0 * F[row][CEN]), 2.0);
+        IS[1] = (13.0 / 12.0) * pow((F[row][CEN-1] - 2.0 * F[row][CEN] + F[row][CEN+1]), 2.0) +
+            (1.0 / 4.0) * pow((F[row][CEN-1] - F[row][CEN+1]), 2.0);
+        IS[2] = (13.0 / 12.0) * pow((F[row][CEN] - 2.0 * F[row][CEN+1] + F[row][CEN+2]), 2.0) +
+            (1.0 / 4.0) * pow((3.0 * F[row][CEN] - 4.0 * F[row][CEN+1] + F[row][CEN+2]), 2.0);
         alpha[0] = C[0] / pow((epsilon + IS[0]), 2.0);
         alpha[1] = C[1] / pow((epsilon + IS[1]), 2.0);
         alpha[2] = C[2] / pow((epsilon + IS[2]), 2.0);
         omega[0] = alpha[0] / (alpha[0] + alpha[1] + alpha[2]);
         omega[1] = alpha[1] / (alpha[0] + alpha[1] + alpha[2]);
         omega[2] = alpha[2] / (alpha[0] + alpha[1] + alpha[2]);
-        q[0] = (2.0 * F[CEN-2][row] - 7.0 * F[CEN-1][row] + 11.0 * F[CEN][row]) / 6.0;
-        q[1] = (-F[CEN-1][row] + 5.0 * F[CEN][row] + 2.0 * F[CEN+1][row]) / 6.0;
-        q[2] = (2.0 * F[CEN][row] + 5.0 * F[CEN+1][row] - F[CEN+2][row]) / 6.0;
+        q[0] = (2.0 * F[row][CEN-2] - 7.0 * F[row][CEN-1] + 11.0 * F[row][CEN]) / 6.0;
+        q[1] = (-F[row][CEN-1] + 5.0 * F[row][CEN] + 2.0 * F[row][CEN+1]) / 6.0;
+        q[2] = (2.0 * F[row][CEN] + 5.0 * F[row][CEN+1] - F[row][CEN+2]) / 6.0;
         Fhat[row] = omega[0] * q[0] + omega[1] * q[1] + omega[2] * q[2];
     }
     return;
