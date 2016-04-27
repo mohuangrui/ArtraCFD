@@ -31,12 +31,10 @@ static int CheckCaseSettingData(const Space *, const Time *, const Model *);
  ****************************************************************************/
 int LoadCaseSettingData(Space *space, Time *time, Model *model)
 {
-    ShowInformation("Loading case setting data ...");
     ReadCaseSettingData(space, time, model);
     ReadGeometrySettingData(&(space->geo));
     WriteVerifyData(space, time, model);
     CheckCaseSettingData(space, time, model);
-    ShowInformation("Session End");
     return 0;
 }
 /*
@@ -462,7 +460,6 @@ static int WriteInitializerData(FILE **filePointerPointer, const Space *space, c
  */
 static int WriteVerifyData(const Space *space, const Time *time, const Model *model)
 {
-    ShowInformation("  Data outputted into artracfd.verify...");
     FILE *filePointer = fopen("artracfd.verify", "w");
     if (NULL == filePointer) {
         FatalError("failed to write data to file: artracfd.verify");
@@ -590,7 +587,6 @@ static int WriteVerifyData(const Space *space, const Time *time, const Model *mo
  */
 static int CheckCaseSettingData(const Space *space, const Time *time, const Model *model)
 {
-    ShowInformation("  Preliminary case data checking ...");
     /* space */
     if ((0 >= (space->part.domain[X][MAX] - space->part.domain[X][MIN])) ||
             (0 >= (space->part.domain[Y][MAX] - space->part.domain[Y][MIN])) ||

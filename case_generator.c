@@ -70,7 +70,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "0.6                # CFL condition number\n");
     fprintf(filePointer, "-1                 # maximum computing steps (integer; -1: automatic)\n");
     fprintf(filePointer, "1                  # number of times to write computed data (integer)\n");
-    fprintf(filePointer, "2                  # data streamer (integer; 0: ParaView; 1: Ensight; 2 Parasight)\n");
+    fprintf(filePointer, "1                  # data streamer (integer; 0: ParaView; 1: Ensight)\n");
     fprintf(filePointer, "time end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");

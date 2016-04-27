@@ -29,7 +29,7 @@
  * Function
  *      Perform postprocessing for ArtraCFD program, such as memory release.
  */
-extern int Postprocess(Space *, Geometry *);
+extern int Postprocess(Space *);
 #endif
 /* a good practice: end file with a newline */
 

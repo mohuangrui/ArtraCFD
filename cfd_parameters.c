@@ -27,10 +27,8 @@ static int InitializeCFDParameters(Space *, Time *, Model *);
  ****************************************************************************/
 int ComputeCFDParameters(Space *space, Time *time, Model *model)
 {
-    ShowInformation("Computing parameters...");
     NodeBasedMeshNumberRefine(space, model);
     InitializeCFDParameters(space, time, model);
-    ShowInformation("Session End");
     return 0;
 }
 /*

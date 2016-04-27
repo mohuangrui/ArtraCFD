@@ -18,7 +18,6 @@
  ****************************************************************************/
 int DomainPartition(Space *space)
 {
-    ShowInformation("Domain partitioning...");
     Partition * part = &(space->part);
     /*
      * Outward facing surface unit normal vector values of domain boundary, the
@@ -177,7 +176,6 @@ int DomainPartition(Space *space)
     part->ns[PBG][Y][MAX] = part->n[Y] - part->ng - 1;
     part->ns[PBG][Z][MIN] = part->n[Z] - part->ng;
     part->ns[PBG][Z][MAX] = part->n[Z];
-    ShowInformation("Session End");
     return 0;
 }
 /* a good practice: end file with a newline */

@@ -13,9 +13,8 @@
  ****************************************************************************/
 #include "data_stream.h"
 #include <stdio.h> /* standard library for input and output */
-#include "paraview_stream.h"
-#include "parasight_stream.h"
-#include "ensight_stream.h"
+#include "paraview.h"
+#include "ensight.h"
 #include "commons.h"
 /****************************************************************************
  * Function Pointers
@@ -26,31 +25,48 @@
  * functions can get rather messy. Declaring a typedef to a function pointer
  * generally clarifies the code.
  */
-typedef int (*DataWriter)(const Real *, const Space *, const Time *,
-        const Model *, const Partition *);
-typedef int (*DataReader)(Real *, const Space *, Time *,
-        const Model *, const Partition *);
+typedef int (*StructuredDataWriter)(const Space *, const Time *, const Model *);
+typedef int (*StructuredDataReader)(Space *, Time *, const Model *);
+typedef int (*PolyDataWriter)(const Geometry *, const Time *);
+typedef int (*PolyDataReader)(Geometry *, const Time *);
+/****************************************************************************
+ * Global Variables Definition with Private Scope
+ ****************************************************************************/
+static StructuredDataWriter WriteStructuredData[2] = {
+    WriteStructuredDataParaview,
+    WriteStructuredDataEnsight};
+static StructuredDataReader ReadStructuredData[2] = {
+    ReadStructuredDataParaview,
+    ReadStructuredDataEnsight};
+static PolyDataWriter WritePolyData[1] = {
+    WritePolyDataParaview};
+static PolyDataReader ReadPolyData[1] = {
+    ReadPolyDataParaview};
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int WriteComputedData(const Real *U, const Space *space, const Time *time,
-        const Model *model, const Partition *part)
+int WriteFieldData(const Space *space, const Time *time, const Model *model)
 {
-    DataWriter WriteData[3] = {
-        WriteComputedDataParaview,
-        WriteComputedDataEnsight,
-        WriteComputedDataParasight};
-    WriteData[time->dataStreamer](U, space, time, model, part);
+    WriteStructuredData[time->dataStreamer](space, time, model);
     return 0;
 }
-int ReadComputedData(Real *U, const Space *space, Time *time,
-        const Model *model, const Partition *part)
+int ReadFieldData(Space *space, Time *time, const Model *model)
 {
-    DataReader ReadData[3] = {
-        ReadComputedDataParaview,
-        ReadComputedDataEnsight,
-        ReadComputedDataParasight};
-    ReadData[time->dataStreamer](U, space, time, model, part);
+    ReadStructuredData[time->dataStreamer](space, time, model);
+    return 0;
+}
+int WriteGeometryData(const Geometry * geo, const Time *time)
+{
+    if (0 != geo->totalN) {
+        WritePolyData[0](geo, time);
+    }
+    return 0;
+}
+int ReadGeometryData(Geometry * geo, const Time *time)
+{
+    if (0 != geo->totalN) {
+        ReadPolyData[0](geo, time);
+    }
     return 0;
 }
 /* a good practice: end file with a newline */

@@ -24,29 +24,21 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Export computed data
- *
- * Function
- *      Export conservative field data vector variable:
- *      U = [rho, rho_u, rho_v, rho_w, rho_eT]
- *      to primitive variables = [rho, u, v, w, p, T]
- *      to binary data files with specified data format.
- * Notice
- *      U is a linear array that stores all the values.
- *      These data are in sequential state 
- *      and can be accessed by linear index math.
+ * Export field data
  */
-extern int WriteComputedData(const Real * U, const Space *, const Time *, 
-        const Model *, const Partition *);
+extern int WriteFieldData(const Space *, const Time *, const Model *);
 /*
- * Data loader
- *
- * Function
- *      Load computed data from output files which are written in specific
- *      format.
+ * Load field data
  */
-extern int ReadComputedData(Real *U, const Space *, Time *, const Model *,
-        const Partition *);
+extern int ReadFieldData(Space *, Time *, const Model *);
+/*
+ * Export geometry data
+ */
+extern int WriteGeometryData(const Geometry *, const Time *);
+/*
+ * Load geometry data
+ */
+extern int ReadGeometryData(Geometry *, const Time *);
 #endif
 /* a good practice: end file with a newline */
 

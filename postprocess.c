@@ -18,45 +18,28 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ProgramMemoryRelease(Field *, Space *, Geometry *);
-static int FinalInformation(void);
+static int ProgramMemoryRelease(Space *);
 /****************************************************************************
  * Function Definitions
  ****************************************************************************/
-/*
- * This is the overall postprocessing function
- */
-int Postprocess(Field *field, Space *space, Geometry *geometry)
+int Postprocess(Space *space)
 {
-    ProgramMemoryRelease(field, space, geometry);
-    FinalInformation();
+    ShowInformation("Postprocessing...");
+    fprintf(stdout, "  releasing memory...\n");
+    ProgramMemoryRelease(space);
+    fprintf(stdout, "  computing finished, successfully exit!n");
+    ShowInformation("Session End");
     return 0;
 }
-/*
- * This function together with some subfuctions realize the dynamic
- * memory release for each global pointer
- */
-static int ProgramMemoryRelease(Field *field, Space *space, Geometry *geometry)
+static int ProgramMemoryRelease(Space *space)
 {
-    ShowInformation("Releasing memory back to system...");
-    /* field variable related */
-    RetrieveStorage(field->Un);
-    RetrieveStorage(field->U);
-    RetrieveStorage(field->Uswap);
-    /* space related */
-    RetrieveStorage(space->nodeFlag);
     /* geometry related */
-    RetrieveStorage(geometry->headAddress);
-    ShowInformation("Session End");
-    return 0;
-}
-/*
- * This function shows some final information
- */
-static int FinalInformation(void)
-{
-    ShowInformation("Computing finished, successfully exit!");
-    ShowInformation("Session End");
+    for (int n = space->geo.sphereN; n < space->geo.totalN; ++n) {
+        RetrieveStorage(space->geo.list[n].facet);
+    }
+    RetrieveStorage(space->geo.list);
+    /* field variable related */
+    RetrieveStorage(space->node);
     return 0;
 }
 /* a good practice: end file with a newline */

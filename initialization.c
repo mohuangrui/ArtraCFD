@@ -31,20 +31,18 @@ static int InitializeGeometryData(Geometry *);
  ****************************************************************************/
 int InitializeComputationalDomain(Space *space, Time *time, const Model *model)
 {
-    ShowInformation("Initializing...");
     if (0 == time->restart) { /* non restart */
         InitializeFieldData(space, model);
         InitializeGeometryData(&(space->geo));
     } else {
         ReadFieldData(space, time, model);
-        ReadGeometryData(time, &(space->geo));
+        ReadGeometryData(&(space->geo), time);
     }
     BoundaryCondtionsAndTreatments(space, model);
     if (0 == time->restart) { /* non restart */
         WriteFieldData(space, time, model);
-        WriteGeometryData(time, &(space->geo));
+        WriteGeometryData(&(space->geo), time);
     }
-    ShowInformation("Session End");
     return 0;
 }
 static int InitializeFieldData(Space *space, const Model *model)

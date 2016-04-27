@@ -33,18 +33,20 @@ static Real ComputeTimeStep(const Space *, const Time *, const Model *);
  ****************************************************************************/
 int Solve(Space *space, Time *time, const Model *model)
 {
+    ShowInformation("Solving...");
+    fprintf(stdout, "  initializing...\n");
     InitializeComputationalDomain(space, time, model);
+    fprintf(stdout, "  time marching...\n");
     SolutionEvolution(space, time, model);
+    ShowInformation("Session End");
     return 0;
 }
 static int SolutionEvolution(Space *space, Time *time, const Model *model)
 {
-    ShowInformation("Time marching...");
     Real dt = time->end - time->now; /* time step size */
     /* check whether current time is equal to or larger than the end time */
     if (0 >= dt) {
-        ShowInformation("  current time is equal to or larger than the end time...");
-        ShowInformation("Session End");
+        fprintf(stdout, "  current time is equal to or larger than the end time...\n");
         return 1;
     }
     /* obtain the desired export time interval */
@@ -98,19 +100,19 @@ static int SolutionEvolution(Space *space, Time *time, const Model *model)
         probeRecord = probeRecord + dt;
         if ((record >= interval) || (time->end <= time->now) || (time->countStep == time->stepN)) {
             ++(time->countOutput); /* export count increase */
+            fprintf(stdout, "  exporting data...\n");
             TickTime(&operationTimer);
             WriteFieldData(space, time, model);
-            WriteGeometryData(time, &(space->geo));
+            WriteGeometryData(&(space->geo), time);
             operationTime = TockTime(&operationTimer);
             record = 0.0; /* reset accumulated time */
-            fprintf(stdout, "  data export time consuming: %.6gs\n", operationTime);
+            fprintf(stdout, "  elapsed: %.6gs\n", operationTime);
         }
         if ((probeRecord >= probeInterval) || (time->end <= time->now) || (time->countStep == time->stepN)) {
             WriteFieldDataAtProbes(space, time, model);
             probeRecord = 0.0; /* reset probe accumulated time */
         }
     }
-    ShowInformation("Session End");
     return 0;
 }
 static Real ComputeTimeStep(const Space *space, const Time *time, const Model *model)

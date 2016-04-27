@@ -30,10 +30,16 @@ static int ProgramMemoryAllocate(Space *);
  */
 int Preprocess(Space *space, Time *time, Model *model)
 {
+    ShowInformation("Preprocessing...");
+    fprintf(stdout, "  loading case setting data...\n");
     LoadCaseSettingData(space, time, model);
+    fprintf(stdout, "  computing parameters...\n");
     ComputeCFDParameters(space, time, model);
+    fprintf(stdout, "  domain partitioning...\n");
     DomainPartition(space);
+    fprintf(stdout, "  allocating memory...\n");
     ProgramMemoryAllocate(space);
+    ShowInformation("Session End");
     return 0;
 }
 /*
@@ -42,12 +48,10 @@ int Preprocess(Space *space, Time *time, Model *model)
  */
 static int ProgramMemoryAllocate(Space *space)
 {
-    ShowInformation("Allocating memory...");
     space->node = AssignStorage(space->part.totalN, "Node");
     if (0 != space->geo.totalN) {
         space->geo.list = AssignStorage(space->geo.totalN, "Polyhedron");
     }
-    ShowInformation("Session End");
     return 0;
 }
 /* a good practice: end file with a newline */
