@@ -29,8 +29,8 @@ typedef enum {
  ****************************************************************************/
 static void CharacteristicProjection(const int, const int, const int, const int, const int, 
         const int [restrict], const Node *, Real [restrict][DIMU], const Real [restrict],
-        const int , const int , Real [restrict][DIMU]);
-static void WENO5(Real [restrict][DIMU], Real [restrict]);
+        const int, const int, Real [restrict][NSTENCIL]);
+static void WENO5(Real [restrict][NSTENCIL], Real [restrict]);
 static void InverseProjection(Real [restrict][DIMU], const Real [restrict], 
         const Real [restrict], Real [restrict]);
 static Real Square(const Real);
@@ -47,24 +47,24 @@ void WENO(const int s, const int tn, const int k, const int j, const int i,
     Real Uo[DIMUo] = {0.0}; /* store averaged primitives */
     SymmetricAverage(model->averager, model->gamma, node[idxL].U[tn], node[idxR].U[tn], Uo);
     /* decompose Jocabian matrix */
-    Real lambda[DIMU] = {0.0}; /* eigenvalues */
+    Real Lambda[DIMU] = {0.0}; /* eigenvalues */
     Real L[DIMU][DIMU] = {{0.0}}; /* vector space {Ln} */
     Real R[DIMU][DIMU] = {{0.0}}; /* vector space {Rn} */
-    Eigenvalue(s, Uo, lambda);
+    Eigenvalue(s, Uo, Lambda);
     EigenvectorL(s, model->gamma, Uo, L);
     EigenvectorR(s, Uo, R);
     /* flux vector splitting */
-    Real lambdaP[DIMU] = {0.0}; /* eigenvalues */
-    Real lambdaN[DIMU] = {0.0}; /* eigenvalues */
-    EigenvalueSplitting(model->splitter, lambda, lambdaP, lambdaN);
+    Real LambdaP[DIMU] = {0.0}; /* eigenvalues */
+    Real LambdaN[DIMU] = {0.0}; /* eigenvalues */
+    EigenvalueSplitting(model->splitter, Lambda, LambdaP, LambdaN);
     /* construct local characteristic fluxes */
     Real HP[DIMU][NSTENCIL] = {{0.0}}; /* forward characteristic flux stencil */
     Real HN[DIMU][NSTENCIL] = {{0.0}}; /* backward characteristic flux stencil */
-    CharacteristicProjection(s, tn, k, j, i, partn, node, L, lambdaP, -2, +1, HP);
-    CharacteristicProjection(s, tn, k, j, i, partn, node, L, lambdaN, +3, -1, HN);
+    CharacteristicProjection(s, tn, k, j, i, partn, node, L, LambdaP, -2, +1, HP);
+    CharacteristicProjection(s, tn, k, j, i, partn, node, L, LambdaN, +3, -1, HN);
+    /* WENO reconstruction */
     Real HhatP[DIMU] = {0.0}; /* forward numerical flux of characteristic fields */
     Real HhatN[DIMU] = {0.0}; /* backward numerical flux of characteristic fields */
-    /* WENO reconstruction */
     WENO5(HP, HhatP);
     WENO5(HN, HhatN);
     /* inverse projection */
@@ -72,7 +72,7 @@ void WENO(const int s, const int tn, const int k, const int j, const int i,
     return;
 }
 static void CharacteristicProjection(const int s, const int tn, const int k, const int j, const int i, 
-        const int partn[restrict], const Node *node, Real L[restrict][DIMU], const Real lambda[restrict],
+        const int partn[restrict], const Node *node, Real L[restrict][DIMU], const Real Lambda[restrict],
         const int startN, const int wind, Real H[restrict][NSTENCIL])
 {
     const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
@@ -86,7 +86,7 @@ static void CharacteristicProjection(const int s, const int tn, const int k, con
             for (int dummy = 0; dummy < DIMU; ++dummy) {
                 H[row][count] = H[row][count] + L[row][dummy] * U[dummy];
             }
-            H[row][count] = H[row][count] * lambda[row];
+            H[row][count] = H[row][count] * Lambda[row];
         }
     }
     return;

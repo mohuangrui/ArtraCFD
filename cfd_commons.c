@@ -408,7 +408,7 @@ void OrthogonalSpace(const Real N[restrict], Real Ta[restrict], Real Tb[restrict
         }
     }
     Normalize(DIMS, Norm(Ta), Ta);
-    Cross(Tb, N, Ta);
+    Cross(Ta, N, Tb);
     return;
 }
 void Normalize(const int dimV, const Real normalizer, Real V[])
