@@ -13,7 +13,6 @@
  ****************************************************************************/
 #include "weno.h"
 #include <stdio.h> /* standard library for input and output */
-#include <math.h> /* common mathematical functions */
 #include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
@@ -34,6 +33,7 @@ static void CharacteristicProjection(const int, const int, const int, const int,
 static void WENO5(Real [restrict][DIMU], Real [restrict]);
 static void InverseProjection(Real [restrict][DIMU], const Real [restrict], 
         const Real [restrict], Real [restrict]);
+static Real Square(const Real);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -100,15 +100,15 @@ static void WENO5(Real F[restrict][NSTENCIL], Real Fhat[restrict])
     const Real C[R] = {0.1, 0.6, 0.3};
     const Real epsilon = 1.0e-6;
     for (int row = 0; row < DIMU; ++row) {
-        IS[0] = (13.0 / 12.0) * pow((F[row][CEN-2] - 2.0 * F[row][CEN-1] + F[row][CEN]), 2.0) + 
-            (1.0 / 4.0) * pow((F[row][CEN-2] - 4.0 * F[row][CEN-1] + 3.0 * F[row][CEN]), 2.0);
-        IS[1] = (13.0 / 12.0) * pow((F[row][CEN-1] - 2.0 * F[row][CEN] + F[row][CEN+1]), 2.0) +
-            (1.0 / 4.0) * pow((F[row][CEN-1] - F[row][CEN+1]), 2.0);
-        IS[2] = (13.0 / 12.0) * pow((F[row][CEN] - 2.0 * F[row][CEN+1] + F[row][CEN+2]), 2.0) +
-            (1.0 / 4.0) * pow((3.0 * F[row][CEN] - 4.0 * F[row][CEN+1] + F[row][CEN+2]), 2.0);
-        alpha[0] = C[0] / pow((epsilon + IS[0]), 2.0);
-        alpha[1] = C[1] / pow((epsilon + IS[1]), 2.0);
-        alpha[2] = C[2] / pow((epsilon + IS[2]), 2.0);
+        IS[0] = (13.0 / 12.0) * Square(F[row][CEN-2] - 2.0 * F[row][CEN-1] + F[row][CEN]) + 
+            (1.0 / 4.0) * Square(F[row][CEN-2] - 4.0 * F[row][CEN-1] + 3.0 * F[row][CEN]);
+        IS[1] = (13.0 / 12.0) * Square(F[row][CEN-1] - 2.0 * F[row][CEN] + F[row][CEN+1]) +
+            (1.0 / 4.0) * Square(F[row][CEN-1] - F[row][CEN+1]);
+        IS[2] = (13.0 / 12.0) * Square(F[row][CEN] - 2.0 * F[row][CEN+1] + F[row][CEN+2]) +
+            (1.0 / 4.0) * Square(3.0 * F[row][CEN] - 4.0 * F[row][CEN+1] + F[row][CEN+2]);
+        alpha[0] = C[0] / Square(epsilon + IS[0]);
+        alpha[1] = C[1] / Square(epsilon + IS[1]);
+        alpha[2] = C[2] / Square(epsilon + IS[2]);
         omega[0] = alpha[0] / (alpha[0] + alpha[1] + alpha[2]);
         omega[1] = alpha[1] / (alpha[0] + alpha[1] + alpha[2]);
         omega[2] = alpha[2] / (alpha[0] + alpha[1] + alpha[2]);
@@ -129,6 +129,10 @@ static void InverseProjection(Real R[restrict][DIMU], const Real HhatP[restrict]
         }
     }
     return;
+}
+static Real Square(const Real x)
+{
+    return x * x;
 }
 /* a good practice: end file with a newline */
 
