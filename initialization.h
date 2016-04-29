@@ -29,7 +29,7 @@
  * Function
  *      Initialize the computational domain.
  */
-extern int InitializeComputationalDomain(Space *, Time *, const Model *model);
+extern int InitializeComputationalDomain(Time *, Space *, const Model *model);
 #endif
 /* a good practice: end file with a newline */
 

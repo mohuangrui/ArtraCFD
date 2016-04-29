@@ -29,7 +29,7 @@
  * Function
  *      Call a series of function to perform numerical computation.
  */
-extern int Solve(Space *, Time *, const Model *);
+extern int Solve(Time *, Space *, const Model *);
 #endif
 /* a good practice: end file with a newline */
 

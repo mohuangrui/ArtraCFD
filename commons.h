@@ -592,13 +592,7 @@ typedef enum {
     MIN = 0,
     MAX = 1,
     /* parameters related to domain boundary conditions */
-    NBC = 6, /* [west, east, south, north, front, back] x [BC] */
-    BCWEST = 0,
-    BCEAST = 1,
-    BCSOUTH = 2,
-    BCNORTH = 3,
-    BCFRONT = 4,
-    BCBACK = 5,
+    NBC = 7, /* Interior, [west, east, south, north, front, back] x [BC] */
     INFLOW = 0, /* boundary condition identifier */
     OUTFLOW = 1,
     SLIPWALL = 2,

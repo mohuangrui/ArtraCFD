@@ -22,14 +22,14 @@
 static int InitializeTransientCaseFile(ParaviewSet *);
 static int WriteCaseFile(const Time *, ParaviewSet *);
 static int WriteStructuredData(const Space *, const Model *, ParaviewSet *);
-static int PointPolyDataWriter(const Geometry *, const Time *);
+static int PointPolyDataWriter(const Time *, const Geometry *);
 static int WritePointPolyData(const int, const int, const Geometry *, ParaviewSet *);
-static int PolygonPolyDataWriter(const Geometry *, const Time *);
+static int PolygonPolyDataWriter(const Time *, const Geometry *);
 static int WritePolygonPolyData(const int, const int, const Geometry *, ParaviewSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int WriteStructuredDataParaview(const Space *space, const Time *time, const Model *model)
+int WriteStructuredDataParaview(const Time *time, const Space *space, const Model *model)
 {
     ParaviewSet paraSet = { /* initialize environment */
         .rootName = "field", /* data file root name */
@@ -118,10 +118,10 @@ static int WriteStructuredData(const Space *space, const Model *model, ParaviewS
     ParaviewReal data = 0.0; /* paraview scalar data */
     ParaviewReal Vec[3] = {0.0}; /* paraview vector data */
     const char scalar[7][5] = {"rho", "u", "v", "w", "p", "T", "gid"};
-    int idx = 0; /* linear array index math variable */
+    const Partition *restrict part = &(space->part);
     const Node *node = space->node;
     const Real *restrict U = NULL;
-    const Partition *restrict part = &(space->part);
+    int idx = 0; /* linear array index math variable */
     fprintf(filePointer, "<?xml version=\"1.0\"?>\n");
     fprintf(filePointer, "<VTKFile type=\"StructuredGrid\" version=\"1.0\"\n");
     fprintf(filePointer, "         byte_order=\"%s\">\n", paraSet->byteOrder);
@@ -210,17 +210,17 @@ static int WriteStructuredData(const Space *space, const Model *model, ParaviewS
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-int WritePolyDataParaview(const Geometry *geo, const Time *time)
+int WritePolyDataParaview(const Time *time, const Geometry *geo)
 {
     if (0 != geo->sphereN) {
-        PointPolyDataWriter(geo, time);
+        PointPolyDataWriter(time, geo);
     }
     if (0 != geo->stlN) {
-        PolygonPolyDataWriter(geo, time);
+        PolygonPolyDataWriter(time, geo);
     }
     return 0;
 }
-static int PointPolyDataWriter(const Geometry *geo, const Time *time)
+static int PointPolyDataWriter(const Time *time, const Geometry *geo)
 {
     ParaviewSet paraSet = { /* initialize environment */
         .rootName = "geo_sph", /* data file root name */
@@ -310,7 +310,7 @@ static int WritePointPolyData(const int start, const int end, const Geometry *ge
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-static int PolygonPolyDataWriter(const Geometry *geo, const Time *time)
+static int PolygonPolyDataWriter(const Time *time, const Geometry *geo)
 {
     ParaviewSet paraSet = { /* initialize environment */
         .rootName = "geo_stl", /* data file root name */

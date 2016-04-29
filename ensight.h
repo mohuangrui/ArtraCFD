@@ -40,8 +40,8 @@ typedef struct {
 /*
  * Structured data writer and reader
  */
-extern int WriteStructuredDataEnsight(const Space *, const Time *, const Model *);
-extern int ReadStructuredDataEnsight(Space *, Time *, const Model *);
+extern int WriteStructuredDataEnsight(const Time *, const Space *, const Model *);
+extern int ReadStructuredDataEnsight(Time *, Space *, const Model *);
 #endif
 /* a good practice: end file with a newline */
 

@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_GCIBM_H_ /* if this is the first definition */
-#define ARTRACFD_GCIBM_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_IMMERSED_BOUNDARY_H_ /* if this is the first definition */
+#define ARTRACFD_IMMERSED_BOUNDARY_H_ /* a unique marker for this header file */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -37,8 +37,7 @@ extern int ComputeGeometryDomain(Space *, const Partition *, const Geometry *);
  * Function
  *      Apply boundary conditions and treatments for immersed boundaries.
  */
-extern int ImmersedBoundaryTreatment(const Space *, const Model *,
-        const Partition *, const Geometry *);
+extern void ImmersedBoundaryTreatment(const tn, Space *, const Model *);
 /*
  * Reconstruct flow variables by Inverse Distance Weighting
  *

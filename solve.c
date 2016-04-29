@@ -17,7 +17,7 @@
 #include <float.h> /* size of floating point values */
 #include "initialization.h"
 #include "fluid_dynamics.h"
-#include "fluid_solid_interaction.h"
+#include "phase_interaction.h"
 #include "data_stream.h"
 #include "timer.h"
 #include "data_probe.h"
@@ -26,22 +26,22 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int SolutionEvolution(Space *, Time *, const Model *);
-static Real ComputeTimeStep(const Space *, const Time *, const Model *);
+static int SolutionEvolution(Time *, Space *, const Model *);
+static Real ComputeTimeStep(const Time *, const Space *, const Model *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int Solve(Space *space, Time *time, const Model *model)
+int Solve(Time *time, Space *space, const Model *model)
 {
     ShowInformation("Solving...");
     fprintf(stdout, "  initializing...\n");
-    InitializeComputationalDomain(space, time, model);
+    InitializeComputationalDomain(time, space, model);
     fprintf(stdout, "  time marching...\n");
-    SolutionEvolution(space, time, model);
+    SolutionEvolution(time, space, model);
     ShowInformation("Session End");
     return 0;
 }
-static int SolutionEvolution(Space *space, Time *time, const Model *model)
+static int SolutionEvolution(Time *time, Space *space, const Model *model)
 {
     Real dt = time->end - time->now; /* time step size */
     /* check whether current time is equal to or larger than the end time */
@@ -61,7 +61,7 @@ static int SolutionEvolution(Space *space, Time *time, const Model *model)
         /*
          * Calculate dt for current time step
          */
-        dt = ComputeTimeStep(space, time, model);
+        dt = ComputeTimeStep(time, space, model);
         /*
          * Update current time stamp, if current time exceeds the end time, 
          * recompute the value of dt to make current time equal to the end time.
@@ -83,7 +83,7 @@ static int SolutionEvolution(Space *space, Time *time, const Model *model)
         if (1 == model->fsi) {
             FluidSolidInteraction(space, model, 0.5 * dt);
         }
-        FluidDynamics(space, model, dt);
+        FluidDynamics(dt, space, model);
         if (1 == model->fsi) {
             FluidSolidInteraction(space, model, 0.5 * dt);
         }
@@ -102,26 +102,26 @@ static int SolutionEvolution(Space *space, Time *time, const Model *model)
             ++(time->countOutput); /* export count increase */
             fprintf(stdout, "  exporting data...\n");
             TickTime(&operationTimer);
-            WriteFieldData(space, time, model);
-            WriteGeometryData(&(space->geo), time);
+            WriteFieldData(time, space, model);
+            WriteGeometryData(time, &(space->geo));
             operationTime = TockTime(&operationTimer);
             record = 0.0; /* reset accumulated time */
             fprintf(stdout, "  elapsed: %.6gs\n", operationTime);
         }
         if ((probeRecord >= probeInterval) || (time->end <= time->now) || (time->countStep == time->stepN)) {
-            WriteFieldDataAtProbes(space, time, model);
+            WriteFieldDataAtProbes(time, space, model);
             probeRecord = 0.0; /* reset probe accumulated time */
         }
     }
     return 0;
 }
-static Real ComputeTimeStep(const Space *space, const Time *time, const Model *model)
+static Real ComputeTimeStep(const Time *time, const Space *space, const Model *model)
 {
-    int idx = 0; /* linear array index math variable */
-    const Node *node = space->node;
-    const Real *restrict U = NULL;
     const Partition *restrict part = &(space->part);
     const Geometry *restrict geo = &(space->geo);
+    const Node *node = space->node;
+    const Real *restrict U = NULL;
+    int idx = 0; /* linear array index math variable */
     Real speed = 0.0;
     Real speedMax = FLT_MIN;
     /*

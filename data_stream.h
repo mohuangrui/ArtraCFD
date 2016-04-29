@@ -26,19 +26,19 @@
 /*
  * Export field data
  */
-extern int WriteFieldData(const Space *, const Time *, const Model *);
+extern int WriteFieldData(const Time *, const Space *, const Model *);
 /*
  * Load field data
  */
-extern int ReadFieldData(Space *, Time *, const Model *);
+extern int ReadFieldData(Time *, Space *, const Model *);
 /*
  * Export geometry data
  */
-extern int WriteGeometryData(const Geometry *, const Time *);
+extern int WriteGeometryData(const Time *, const Geometry *);
 /*
  * Load geometry data
  */
-extern int ReadGeometryData(Geometry *, const Time *);
+extern int ReadGeometryData(const Time *, Geometry *);
 #endif
 /* a good practice: end file with a newline */
 

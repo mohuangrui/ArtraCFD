@@ -21,14 +21,14 @@
  ****************************************************************************/
 static int ReadCaseFile(Time *, ParaviewSet *);
 static int ReadStructuredData(Space *, const Model *, ParaviewSet *);
-static int PointPolyDataReader(Geometry *, const Time *);
+static int PointPolyDataReader(const Time *, Geometry *);
 static int ReadPointPolyData(const int, const int, Geometry *, ParaviewSet *);
-static int PolygonPolyDataReader(Geometry *, const Time *);
+static int PolygonPolyDataReader(const Time *, Geometry *);
 static int ReadPolygonPolyData(const int, const int, Geometry *, ParaviewSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int ReadStructuredDataParaview(Space *space, Time *time, const Model *model)
+int ReadStructuredDataParaview(Time *time, Space *space, const Model *model)
 {
     ParaviewSet paraSet = { /* initialize environment */
         .rootName = "field", /* data file root name */
@@ -82,10 +82,10 @@ static int ReadStructuredData(Space *space, const Model *model, ParaviewSet *par
     if (sizeof(ParaviewReal) == sizeof(float)) {
         strncpy(format, "%g", sizeof format); /* float type */
     }
-    int idx = 0; /* linear array index math variable */
+    const Partition *restrict part = &(space->part);
     Node *node = space->node;
     Real *restrict U = NULL;
-    const Partition *restrict part = &(space->part);
+    int idx = 0; /* linear array index math variable */
     /* get rid of redundant lines */
     String currentLine = {'\0'}; /* store current line */
     ReadInLine(&filePointer, "<PointData>");
@@ -126,17 +126,17 @@ static int ReadStructuredData(Space *space, const Model *model, ParaviewSet *par
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-int ReadPolyDataParaview(Geometry *geo, const Time *time)
+int ReadPolyDataParaview(const Time *time, Geometry *geo)
 {
     if (0 != geo->sphereN) {
-        PointPolyDataReader(geo, time);
+        PointPolyDataReader(time, geo);
     }
     if (0 != geo->stlN) {
-        PolygonPolyDataReader(geo, time);
+        PolygonPolyDataReader(time, geo);
     }
     return 0;
 }
-static int PointPolyDataReader(Geometry *geo, const Time *time)
+static int PointPolyDataReader(const Time *time, Geometry *geo)
 {
     ParaviewSet paraSet = { /* initialize environment */
         .rootName = "geo_sph", /* data file root name */
@@ -164,7 +164,7 @@ static int ReadPointPolyData(const int start, const int end, Geometry *geo, Para
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-static int PolygonPolyDataReader(Geometry *geo, const Time *time)
+static int PolygonPolyDataReader(const Time *time, Geometry *geo)
 {
     ParaviewSet paraSet = { /* initialize environment */
         .rootName = "geo_stl", /* data file root name */

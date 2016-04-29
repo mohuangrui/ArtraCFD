@@ -24,7 +24,7 @@ static int ReadStructuredData(Space *, const Model *, EnsightSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int ReadStructuredDataEnsight(Space *space, Time *time, const Model *model)
+int ReadStructuredDataEnsight(Time *time, Space *space, const Model *model)
 {
     EnsightSet enSet = { /* initialize environment */
         .rootName = "field", /* data file root name */
@@ -66,10 +66,10 @@ static int ReadStructuredData(Space *space, const Model *model, EnsightSet *enSe
     FILE *filePointer = NULL;
     EnsightReal data = 0.0; /* the Ensight data format */
     const char scalar[5][5] = {"rho", "u", "v", "w", "p"};
-    int idx = 0; /* linear array index math variable */
+    const Partition *restrict part = &(space->part);
     Node *node = space->node;
     Real *restrict U = NULL;
-    const Partition *restrict part = &(space->part);
+    int idx = 0; /* linear array index math variable */
     for (int count = 0; count < DIMU; ++count) {
         snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, scalar[count]);
         filePointer = fopen(enSet->fileName, "rb");

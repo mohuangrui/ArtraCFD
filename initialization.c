@@ -29,28 +29,28 @@ static int InitializeGeometryData(Geometry *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int InitializeComputationalDomain(Space *space, Time *time, const Model *model)
+int InitializeComputationalDomain(Time *time, Space *space, const Model *model)
 {
     if (0 == time->restart) { /* non restart */
         InitializeFieldData(space, model);
         InitializeGeometryData(&(space->geo));
     } else {
-        ReadFieldData(space, time, model);
-        ReadGeometryData(&(space->geo), time);
+        ReadFieldData(time, space, model);
+        ReadGeometryData(time, &(space->geo));
     }
-    BoundaryCondtionsAndTreatments(space, model);
+    BoundaryCondtionsAndTreatments(TO, space, model);
     if (0 == time->restart) { /* non restart */
-        WriteFieldData(space, time, model);
-        WriteGeometryData(&(space->geo), time);
+        WriteFieldData(time, space, model);
+        WriteGeometryData(time, &(space->geo));
     }
     return 0;
 }
 static int InitializeFieldData(Space *space, const Model *model)
 {
-    int idx = 0; /* linear array index math variable */
+    const Partition *restrict part = &(space->part);
     Node *node = space->node;
     Real *restrict U = NULL;
-    const Partition *restrict part = &(space->part);
+    int idx = 0; /* linear array index math variable */
     /* extract global initial values */
     const Real Uo[DIMUo] = {
         part->valueIC[0][ENTRYIC-5],

@@ -154,32 +154,32 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model)
         }
         if (0 == strncmp(currentLine, "west boundary begin", sizeof currentLine)) {
             ++entryCount;
-            ReadBoundaryData(&filePointer, space, BCWEST);
+            ReadBoundaryData(&filePointer, space, PWB);
             continue;
         }
         if (0 == strncmp(currentLine, "east boundary begin", sizeof currentLine)) {
             ++entryCount;
-            ReadBoundaryData(&filePointer, space, BCEAST);
+            ReadBoundaryData(&filePointer, space, PEB);
             continue;
         }
         if (0 == strncmp(currentLine, "south boundary begin", sizeof currentLine)) {
             ++entryCount;
-            ReadBoundaryData(&filePointer, space, BCSOUTH);
+            ReadBoundaryData(&filePointer, space, PSB);
             continue;
         }
         if (0 == strncmp(currentLine, "north boundary begin", sizeof currentLine)) {
             ++entryCount;
-            ReadBoundaryData(&filePointer, space, BCNORTH);
+            ReadBoundaryData(&filePointer, space, PNB);
             continue;
         }
         if (0 == strncmp(currentLine, "front boundary begin", sizeof currentLine)) {
             ++entryCount;
-            ReadBoundaryData(&filePointer, space, BCFRONT);
+            ReadBoundaryData(&filePointer, space, PFB);
             continue;
         }
         if (0 == strncmp(currentLine, "back boundary begin", sizeof currentLine)) {
             ++entryCount;
-            ReadBoundaryData(&filePointer, space, BCBACK);
+            ReadBoundaryData(&filePointer, space, PBB);
             continue;
         }
         if (0 == strncmp(currentLine, "plane initialization begin", sizeof currentLine)) {
@@ -340,7 +340,7 @@ static int ReadBoundaryData(FILE **filePointerPointer, Space *space, const int b
     if (0 == strncmp(currentLine, "periodic", sizeof currentLine)) {
         /* only need to set id and its periodic pair */
         space->part.typeBC[boundary] = PERIODIC;
-        if ((BCWEST == boundary) || (BCSOUTH == boundary) || (BCFRONT == boundary)) {
+        if ((PWB == boundary) || (PSB == boundary) || (PFB == boundary)) {
             space->part.typeBC[boundary+1] = PERIODICPAIR;
         } else {
             space->part.typeBC[boundary-1] = PERIODICPAIR;
@@ -535,22 +535,22 @@ static int WriteVerifyData(const Space *space, const Time *time, const Model *mo
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "Domian West\n"); 
-    WriteBoundaryData(&filePointer, space, BCWEST);
+    WriteBoundaryData(&filePointer, space, PWB);
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "Domian East\n"); 
-    WriteBoundaryData(&filePointer, space, BCEAST);
+    WriteBoundaryData(&filePointer, space, PEB);
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "Domian South\n"); 
-    WriteBoundaryData(&filePointer, space, BCSOUTH);
+    WriteBoundaryData(&filePointer, space, PSB);
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "Domian North\n"); 
-    WriteBoundaryData(&filePointer, space, BCNORTH);
+    WriteBoundaryData(&filePointer, space, PNB);
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "Domian Front\n"); 
-    WriteBoundaryData(&filePointer, space, BCFRONT);
+    WriteBoundaryData(&filePointer, space, PFB);
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "Domian Back\n"); 
-    WriteBoundaryData(&filePointer, space, BCBACK);
+    WriteBoundaryData(&filePointer, space, PBB);
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                  >> Regional Initialization <<\n");

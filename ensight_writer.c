@@ -26,7 +26,7 @@ static int WriteStructuredData(const Space *, const Model *, EnsightSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int WriteStructuredDataEnsight(const Space *space, const Time *time, const Model *model)
+int WriteStructuredDataEnsight(const Time *time, const Space *space, const Model *model)
 {
     EnsightSet enSet = { /* initialize environment */
         .rootName = "field", /* data file root name */
@@ -213,10 +213,10 @@ static int WriteStructuredData(const Space *space, const Model *model, EnsightSe
     FILE *filePointer = NULL;
     EnsightReal data = 0.0; /* the Ensight data format */
     const char scalar[7][5] = {"rho", "u", "v", "w", "p", "T", "gid"};
-    int idx = 0; /* linear array index math variable */
+    const Partition *restrict part = &(space->part);
     const Node *node = space->node;
     const Real *restrict U = NULL;
-    const Partition *restrict part = &(space->part);
+    int idx = 0; /* linear array index math variable */
     for (int count = 0; count < 7; ++count) {
         snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, scalar[count]);
         filePointer = fopen(enSet->fileName, "wb");

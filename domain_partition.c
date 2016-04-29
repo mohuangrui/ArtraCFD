@@ -28,29 +28,29 @@ int DomainPartition(Space *space)
      * j, k), then its neighbour node (ih, jh, kh) is more inner than current
      * node if (ih-i)*normalX + (jh-j)*normalY + (kh-k)*normalZ < 0.
      */
-    part->normal[BCWEST][X] = -1;
-    part->normal[BCWEST][Y] = 0;
-    part->normal[BCWEST][Z] = 0;
+    part->normal[PWB][X] = -1;
+    part->normal[PWB][Y] = 0;
+    part->normal[PWB][Z] = 0;
 
-    part->normal[BCEAST][X] = 1;
-    part->normal[BCEAST][Y] = 0;
-    part->normal[BCEAST][Z] = 0;
+    part->normal[PEB][X] = 1;
+    part->normal[PEB][Y] = 0;
+    part->normal[PEB][Z] = 0;
 
-    part->normal[BCSOUTH][X] = 0;
-    part->normal[BCSOUTH][Y] = -1;
-    part->normal[BCSOUTH][Z] = 0;
+    part->normal[PSB][X] = 0;
+    part->normal[PSB][Y] = -1;
+    part->normal[PSB][Z] = 0;
 
-    part->normal[BCNORTH][X] = 0;
-    part->normal[BCNORTH][Y] = 1;
-    part->normal[BCNORTH][Z] = 0;
+    part->normal[PNB][X] = 0;
+    part->normal[PNB][Y] = 1;
+    part->normal[PNB][Z] = 0;
 
-    part->normal[BCFRONT][X] = 0;
-    part->normal[BCFRONT][Y] = 0;
-    part->normal[BCFRONT][Z] = -1;
+    part->normal[PFB][X] = 0;
+    part->normal[PFB][Y] = 0;
+    part->normal[PFB][Z] = -1;
 
-    part->normal[BCBACK][X] = 0;
-    part->normal[BCBACK][Y] = 0;
-    part->normal[BCBACK][Z] = 1;
+    part->normal[PBB][X] = 0;
+    part->normal[PBB][Y] = 0;
+    part->normal[PBB][Z] = 1;
     /*
      * Assign values to each index control array of each partition.
      *

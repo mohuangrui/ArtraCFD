@@ -25,10 +25,10 @@
  * functions can get rather messy. Declaring a typedef to a function pointer
  * generally clarifies the code.
  */
-typedef int (*StructuredDataWriter)(const Space *, const Time *, const Model *);
-typedef int (*StructuredDataReader)(Space *, Time *, const Model *);
-typedef int (*PolyDataWriter)(const Geometry *, const Time *);
-typedef int (*PolyDataReader)(Geometry *, const Time *);
+typedef int (*StructuredDataWriter)(const Time *, const Space *, const Model *);
+typedef int (*StructuredDataReader)(Time *, Space *, const Model *);
+typedef int (*PolyDataWriter)(const Time *, const Geometry *);
+typedef int (*PolyDataReader)(const Time *, Geometry *);
 /****************************************************************************
  * Global Variables Definition with Private Scope
  ****************************************************************************/
@@ -45,27 +45,27 @@ static PolyDataReader ReadPolyData[1] = {
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int WriteFieldData(const Space *space, const Time *time, const Model *model)
+int WriteFieldData(const Time *time, const Space *space, const Model *model)
 {
-    WriteStructuredData[time->dataStreamer](space, time, model);
+    WriteStructuredData[time->dataStreamer](time, space, model);
     return 0;
 }
-int ReadFieldData(Space *space, Time *time, const Model *model)
+int ReadFieldData(Time *time, Space *space, const Model *model)
 {
-    ReadStructuredData[time->dataStreamer](space, time, model);
+    ReadStructuredData[time->dataStreamer](time, space, model);
     return 0;
 }
-int WriteGeometryData(const Geometry * geo, const Time *time)
+int WriteGeometryData(const Time *time, const Geometry * geo)
 {
     if (0 != geo->totalN) {
-        WritePolyData[0](geo, time);
+        WritePolyData[0](time, geo);
     }
     return 0;
 }
-int ReadGeometryData(Geometry * geo, const Time *time)
+int ReadGeometryData(const Time *time, Geometry * geo)
 {
     if (0 != geo->totalN) {
-        ReadPolyData[0](geo, time);
+        ReadPolyData[0](time, geo);
     }
     return 0;
 }

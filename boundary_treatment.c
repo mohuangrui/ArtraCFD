@@ -19,54 +19,53 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ApplyBoundaryConditions(const int, Real *, const Space *,
-        const Model *, const Partition *);
+static void ApplyBoundaryConditions(const int, const int, Space *, const Model *);
 static int ZeroGradient(Real *, const int, const int);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int BoundaryCondtionsAndTreatments(Real *U, const Space *space, const Model *model, 
-        const Partition *part, const Geometry *geometry)
+void BoundaryCondtionsAndTreatments(const int tn, Space *space, const Model *model)
 {
-    for (int partID = 1; partID < 7; ++partID) {
-        ApplyBoundaryConditions(partID, U, space, model, part);
+    for (int p = PWB; p < PWG; ++p) {
+        ApplyBoundaryConditions(p, tn, space, model);
     }
-    /* Boundary conditions and treatments for interior ghost nodes */
-    BoundaryTreatmentsGCIBM(U, space, model, part, geometry);
-    return 0;
+    ImmersedBoundaryTreatment(tn, space, model);
+    return;
 }
-static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space,
-        const Model *model, const Partition *part)
+static void ApplyBoundaryConditions(const int p, const int tn, 
+        Space *space, const Model *model)
 {
-    int idxBC = 0; /* linear array index math variable */
-    int idxh = 0; /* index at one node distance */
-    int idxGhost = 0; /* index at ghost node */
-    int idxImage = 0; /* index at image node */
+    const Partition *restrict part = &(space->part);
+    Node *node = space->node;
+    Real *restrict UG = NULL;
+    Real *restrict UI = NULL;
+    Real *restrict UO = NULL;
+    int idxG = 0; /* index at ghost node */
+    int idxI = 0; /* index at image node */
+    int idxO = 0; /* index at boundary point */
+    Real UoG[DIMUo] = {0.0};
+    Real UoI[DIMUo] = {0.0};
+    Real UoO[DIMUo] = {0.0};
     const Real UoGiven[DIMUo] = { /* specified primitive values of current boundary */
-        part->valueBC[partID][0],
-        part->valueBC[partID][1],
-        part->valueBC[partID][2],
-        part->valueBC[partID][3],
-        part->valueBC[partID][4],
-        part->valueBC[partID][5]};
-    Real UoBC[DIMUo] = {0.0};
-    Real Uoh[DIMUo] = {0.0};
-    Real UoGhost[DIMUo] = {0.0};
-    Real UoImage[DIMUo] = {0.0};
-    const int normalZ = part->normalZ[partID];
-    const int normalY = part->normalY[partID];
-    const int normalX = part->normalX[partID];
-    for (int k = part->kSub[partID]; k < part->kSup[partID]; ++k) {
-        for (int j = part->jSub[partID]; j < part->jSup[partID]; ++j) {
-            for (int i = part->iSub[partID]; i < part->iSup[partID]; ++i) {
-                idxBC = IndexMath(k, j, i, space) * DIMU;
+        part->valueBC[p][0],
+        part->valueBC[p][1],
+        part->valueBC[p][2],
+        part->valueBC[p][3],
+        part->valueBC[p][4],
+        part->valueBC[p][5]};
+    const IntVector nl = {part->normal[p][X], part->normal[p][Y], part->normal[p][Z]};
+    for (int k = part->ns[p][Z][MIN]; k < part->ns[p][Z][MAX]; ++k) {
+        for (int j = part->ns[p][Y][MIN]; j < part->ns[p][Y][MAX]; ++j) {
+            for (int i = part->ns[p][X][MIN]; i < part->ns[p][X][MAX]; ++i) {
+                idxO = IndexNode(k, j, i, part->n[Y], part->n[X]);
+                U = node[idx].U[TO];
                 /*
                  * Apply boundary conditions for current node, always remember
                  * that boundary conditions should be based on primitive
                  * variables rather than conservative variables.
                  */
-                switch (part->typeBC[partID]) {
-                    case 1: /* inflow */
+                switch (part->typeBC[p]) {
+                    case INFLOW:
                         ConservativeByPrimitive(U, idxBC, UoGiven, model);
                         break;
                     case 2: /* outflow */
@@ -121,7 +120,7 @@ static int ApplyBoundaryConditions(const int partID, Real *U, const Space *space
                  */
                 for (int ng = 1; ng <= space->ng; ++ng) { /* process layer by layer */
                     idxGhost = IndexMath(k + ng * normalZ, j + ng * normalY, i + ng * normalX, space) * DIMU;
-                    switch (part->typeBC[partID]) {
+                    switch (part->typeBC[p]) {
                         case 3: /* slip wall */
                         case 4: /* noslip wall */
                             /* 
