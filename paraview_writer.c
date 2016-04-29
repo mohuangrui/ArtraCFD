@@ -138,7 +138,7 @@ static int WriteStructuredData(const Space *space, const Model *model, ParaviewS
             for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
                 for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
                     idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
-                    U = node[idx].U[C];
+                    U = node[idx].U[TO];
                     switch (count) {
                         case 0: /* rho */
                             data = U[0];
@@ -176,7 +176,7 @@ static int WriteStructuredData(const Space *space, const Model *model, ParaviewS
         for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
             for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
                 idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
-                U = node[idx].U[C];
+                U = node[idx].U[TO];
                 Vec[X] = U[1] / U[0];
                 Vec[Y] = U[2] / U[0];
                 Vec[Z] = U[3] / U[0];

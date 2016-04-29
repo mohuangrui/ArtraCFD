@@ -29,7 +29,7 @@
  * Function
  *      Evolve fluid dynamics.
  */
-extern int FluidDynamics(Space *, const Model *, const Real dt);
+extern void FluidDynamics(const Real dt, Space *, const Model *);
 #endif
 /* a good practice: end file with a newline */
 

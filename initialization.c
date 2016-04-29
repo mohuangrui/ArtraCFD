@@ -65,7 +65,7 @@ static int InitializeFieldData(Space *space, const Model *model)
         for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
             for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
                 idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
-                U = node[idx].U[C];
+                U = node[idx].U[TO];
                 ConservativeByPrimitive(model->gamma, Uo, U);
             }
         }
@@ -165,7 +165,7 @@ static int ApplyRegionalInitializer(const int n, Space *space, const Model *mode
                 }
                 if (1 == flag) { /* current node meets the condition */
                     idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
-                    U = node[idx].U[C];
+                    U = node[idx].U[TO];
                     ConservativeByPrimitive(model->gamma, Uo, U);
                 }
             }

@@ -238,7 +238,7 @@ static int WriteStructuredData(const Space *space, const Model *model, EnsightSe
                 for (int j = part->ns[p][Y][MIN]; j < part->ns[p][Y][MAX]; ++j) {
                     for (int i = part->ns[p][X][MIN]; i < part->ns[p][X][MAX]; ++i) {
                         idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
-                        U = node[idx].U[C];
+                        U = node[idx].U[TO];
                         switch (count) {
                             case 0: /* rho */
                                 data = U[0];
@@ -289,7 +289,7 @@ static int WriteStructuredData(const Space *space, const Model *model, EnsightSe
                 for (int j = part->ns[p][Y][MIN]; j < part->ns[p][Y][MAX]; ++j) {
                     for (int i = part->ns[p][X][MIN]; i < part->ns[p][X][MAX]; ++i) {
                         idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
-                        U = node[idx].U[C];
+                        U = node[idx].U[TO];
                         data = U[count] / U[0];
                         fwrite(&data, sizeof(EnsightReal), 1, filePointer);
                     }

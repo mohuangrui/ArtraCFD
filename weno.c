@@ -37,7 +37,7 @@ static Real Square(const Real);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-void WENO(const int s, const int tn, const int k, const int j, const int i, 
+void WENO(const int tn, const int s, const int k, const int j, const int i, 
         const int partn[restrict], const Node *node, const Model *model, Real Fhat[restrict])
 {
     const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
@@ -60,8 +60,8 @@ void WENO(const int s, const int tn, const int k, const int j, const int i,
     /* construct local characteristic fluxes */
     Real HP[DIMU][NSTENCIL] = {{0.0}}; /* forward characteristic flux stencil */
     Real HN[DIMU][NSTENCIL] = {{0.0}}; /* backward characteristic flux stencil */
-    CharacteristicProjection(s, tn, k, j, i, partn, node, L, LambdaP, -2, +1, HP);
-    CharacteristicProjection(s, tn, k, j, i, partn, node, L, LambdaN, +3, -1, HN);
+    CharacteristicProjection(tn, s, k, j, i, partn, node, L, LambdaP, -2, +1, HP);
+    CharacteristicProjection(tn, s, k, j, i, partn, node, L, LambdaN, +3, -1, HN);
     /* WENO reconstruction */
     Real HhatP[DIMU] = {0.0}; /* forward numerical flux of characteristic fields */
     Real HhatN[DIMU] = {0.0}; /* backward numerical flux of characteristic fields */
@@ -71,7 +71,7 @@ void WENO(const int s, const int tn, const int k, const int j, const int i,
     InverseProjection(R, HhatP, HhatN, Fhat);
     return;
 }
-static void CharacteristicProjection(const int s, const int tn, const int k, const int j, const int i, 
+static void CharacteristicProjection(const int tn, const int s, const int k, const int j, const int i, 
         const int partn[restrict], const Node *node, Real L[restrict][DIMU], const Real Lambda[restrict],
         const int startN, const int wind, Real H[restrict][NSTENCIL])
 {
