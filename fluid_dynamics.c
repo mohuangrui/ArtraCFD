@@ -143,7 +143,7 @@ static void LLL(const Real dt, const Real coeA, const Real coeB, const int to,
                  * Note: Uo, Un, and Uc are all restricted pointers.
                  * Under the condition that Un and Uc NEVER alias each other,
                  * Uo and Un may alias safely since they only read elements
-                 * and never modifies any elements. Uo and Uc may alias safely
+                 * and never modify any elements. Uo and Uc may alias safely
                  * since Uo only fetch the single element that Uc modifies later.
                  */
                 Uo = node[idx].U[to];
