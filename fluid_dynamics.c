@@ -27,22 +27,21 @@
  * functions can get rather messy. Declaring a typedef to a function pointer
  * generally clarifies the code.
  */
-typedef int (*ConvectiveFluxReconstructor)(const int, Real [], const Real, const int,
-        const int, const int, const Real *, const Space *, const Model *);
+typedef void (*ConvectiveFluxReconstructor)(const int, const int, const int,
+        const int, const int, const int [restrict], const Node *, 
+        const Model *, Real [restrict]);
 typedef void (*DiffusiveFluxReconstructor)(const int, const int, const int, 
         const int, const int [restrict], const Real [restrict], const Node *, 
         const Model *, Real [restrict]);
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int DifferentialOperatorSplitting(Field *, const Space *, const Model *,
-        const Partition *, const Geometry *, const Real);
-static int RungeKutta(const int, Field *, const Space *, const Model *,
-        const Partition *, const Geometry *, const Real);
-static int LL(const int, Real *, const Real *, const Space *, const Model *,
-        const Partition *, const Real);
-static int NumericalConvectiveFlux(const int, Real [], const Real, const int,
-        const int, const int, const Real *, const Space *, const Model *);
+static void LL(const Real, const int, const int, const int, Space *, const Model *);
+static void NumericalConvectiveFlux(const int, const int, const int, const int,
+        const int, const int [restrict], const Node *, const Model *, Real [restrict]);
+static void NumericalDiffusiveFlux(const int, const int, const int, const int, 
+        const int, const int [restrict], const Real [restrict], const Node *, 
+        const Model *, Real [restrict]);
 static void NumericalDiffusiveFluxX(const int, const int, const int, 
         const int, const int [restrict], const Real [restrict], const Node *, 
         const Model *, Real [restrict]);
@@ -58,8 +57,7 @@ static Real PrandtlNumber(void);
  * Global Variables Definition with Private Scope
  ****************************************************************************/
 static ConvectiveFluxReconstructor ReconstructConvectiveFlux[1] = {
-    WENO
-};
+    WENO};
 static DiffusiveFluxReconstructor ReconstructDiffusiveFlux[DIMS] = {
     NumericalDiffusiveFluxX,
     NumericalDiffusiveFluxY,
@@ -92,60 +90,29 @@ static int DifferentialOperatorSplitting(Space *space, const Model *model, const
     RungeKutta(Z, space, model, 0.5 * dt);
     return 0;
 }
-static int RungeKutta(const int s, Field *field, const Space *space, const Model *model,
-        const Partition *part, const Geometry *geometry, const Real dt)
+static void RungeKutta(const Real dt, const int s, Space *space, const Model *model)
 {
-    Real *exchanger = field->U;
     /*
-     * First, save the full value of current field, since this value is required
-     * for the calculation of field data at intermediate stage as well as n+1.
-     * Operation can be achieved by a single loop since all data are stored by
-     * linear arrays.
+     * Solve the LLU = (I + dt*L)U
      */
-    for (int idx = 0; idx < (space->nMax * DIMU); ++idx) {
-        field->Un[idx] = field->U[idx];
-    }
-    /*
-     * Then solve LLU = (I + dt*L)U.
-     */
-    /*
-     * When exchange a large bunch of data between two storage space, such as
-     * arrays, if there is no new data generation but just data exchange and 
-     * update, then the rational way is to exchange the address value that
-     * their pointer point to rather than values of data entries.
-     */
-    LL(s, field->Uswap, field->U, space, model, part, dt);
-    BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
-    exchanger = field->U; /* preserve the address of U */
-    field->U = field->Uswap; /* update flow field */
-    field->Uswap = exchanger; /* regain the used space as new space */
+    LL(dt, s, C, CN, space, model);
+    BoundaryCondtionsAndTreatments(CN, space, model);
     /*
      * Now solve the LLU = (I + dt*L)U based on updated field for another time step.
      */
-    LL(s, field->Uswap, field->U, space, model, part, dt);
-    BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
-    exchanger = field->U; /* preserve the address of U */
-    field->U = field->Uswap; /* update flow field */
-    field->Uswap = exchanger; /* regain the used space as new space */
+    LL(dt, s, CN, CM, space, model);
+    BoundaryCondtionsAndTreatments(CN, space, model);
     /*
      * Calculate the intermediate stage based on the newest updated data and
-     * the original field data which is stored at first. No new storage space
-     * need to be introduced since all calculations are based on a single space
-     * and do not require neighbours.
+     * the original field data.
      */
     const Real coeA = 3.0 / 4.0; /* caution! float operation required! */
     const Real coeB = 1.0 / 4.0; /* caution! float operation required! */
-    for (int idx = 0; idx < (space->nMax * DIMU); ++idx) {
-        field->U[idx] = coeA * field->Un[idx] + coeB * field->U[idx];
-    }
     /*
      * Now solve LLU = (I + dt*L)U based on the intermediate field.
      */
     LL(s, field->Uswap, field->U, space, model, part, dt);
     BoundaryCondtionsAndTreatments(field->Uswap, space, model, part, geometry);
-    exchanger = field->U; /* preserve the address of U */
-    field->U = field->Uswap; /* update flow field */
-    field->Uswap = exchanger; /* regain the used space as new space */
     /*
      * Calculate field data at n+1
      */
@@ -154,7 +121,7 @@ static int RungeKutta(const int s, Field *field, const Space *space, const Model
     for (int idx = 0; idx < (space->nMax * DIMU); ++idx) {
         field->U[idx] = coeAA * field->Un[idx] + coeBB * field->U[idx];
     }
-    return 0;
+    return;
 }
 /*
  * Spatial operator computation.
@@ -165,43 +132,53 @@ static int RungeKutta(const int s, Field *field, const Space *space, const Model
  * difficult to do a general code, then code functions for each spatial 
  * dimension individually.
  */
-static int LL(const int s, Real *U, const Real *Un, const Space *space,
-        const Model *model, const Partition *part, const Real dt)
+static void LL(const Real dt, const int s, const int tn, const int tc, Space *space,
+        const Model *model)
 {
-    Real Fhat[DIMU] = {0.0}; /* reconstructed numerical convective flux vector */
-    Real Fhath[DIMU] = {0.0}; /* reconstructed numerical convective flux vector at neighbour */
-    Real gradG[DIMU] = {0.0}; /* spatial gradient of diffusive flux vector */
-    const int h[DIMS][DIMS] = {{-1, 0, 0}, {0, -1, 0}, {0, 0, -1}}; /* direction indicator */
-    const Real r[DIMS] = {dt * space->ddx, dt * space->ddy, dt * space->ddz};
     int idx = 0; /* linear array index math variable */
-    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = IndexMath(k, j, i, space);
-                if (FLUID != space->nodeFlag[idx]) { /* it's not a fluid */
+    Node *node = space->node;
+    const Real *restrict Un = NULL;
+    Real *restrict Uc = NULL;
+    const Partition *restrict part = &(space->part);
+    const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
+    Real FhatR[DIMU] = {0.0}; /* reconstructed numerical convective flux vector */
+    Real FhatL[DIMU] = {0.0}; /* reconstructed numerical convective flux vector */
+    Real FvhatR[DIMU] = {0.0}; /* reconstructed numerical diffusive flux vector */
+    Real FvhatL[DIMU] = {0.0}; /* reconstructed numerical diffusive flux vector */
+    const int partn[DIMS] = {part->n[X], part->n[Y], part->n[Z]};
+    const Real dd[DIMS] = {part->dd[X], part->dd[Y], part->dd[Z]};
+    const Real r[DIMS] = {dt * dd[X], dt * dd[Y], dt * dd[Z]};
+    for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
+        for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
+            for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
+                idx = IndexNode(k, j, i, partn[Y], partn[X]);
+                if (FLUID != node[idx].geoID) {
                     continue;
                 }
-                NumericalConvectiveFlux(s, Fhat, r[s], k, j, i, Un, space, model);
-                NumericalConvectiveFlux(s, Fhath, r[s], k + h[s][Z], j + h[s][Y], i + h[s][X], Un, space, model);
-                DiffusiveFluxGradient(s, gradG, k, j, i, Un, space, model);
-                idx = idx * DIMU; /* change idx to field variable */
+                Un = node[idx].U[tn];
+                Uc = node[idx].U[tc];
+                NumericalConvectiveFlux(s, tn, k, j, i, partn, node, model, FhatR);
+                NumericalConvectiveFlux(s, tn, k - h[s][Z], j - h[s][Y], i - h[s][X], partn, node, model, FhatL);
+                if (0 < model->refMu) {
+                    NumericalDiffusiveFlux(s, tn, k, j, i, partn, dd, node, model, FvhatR);
+                    NumericalDiffusiveFlux(s, tn, k - h[s][Z], j - h[s][Y], i - h[s][X], partn, dd, node, model, FvhatL);
+                }
                 for (int dim = 0; dim < DIMU; ++dim) {
-                    /* conservative discretization for convective flux */
-                    U[idx+dim] = Un[idx+dim] - r[s] * (Fhat[dim] - Fhath[dim]) + dt * gradG[dim];
+                    /* conservative discretization for fluxes */
+                    Uc[dim] = Un[dim] - r[s] * (FhatR[dim] - FhatL[dim]) + r[s] * (FvhatR[dim] - FvhatL[dim]);
                 }
             }
         }
     }
-    return 0;
+    return;
 }
-static int NumericalConvectiveFlux(const int s, const Real r,
-        const int k, const int j, const int i,
-        const Real *U, const Space *space, const Model *model, Real Fhat[])
+static void NumericalConvectiveFlux(const int s, const int tn, const int k, const int j, const int i, 
+        const int partn[restrict], const Node *node, const Model *model, Real Fhat[restrict])
 {
-    ReconstructConvetiveFlux[model->scheme](s, Fhat, r, k, j, i, U, space, model);
-    return 0;
+    ReconstructConvectiveFlux[model->scheme](s, tn, k, j, i, partn, node, model, Fhat);
+    return;
 }
-void NumericalDiffusiveFlux(const int s, const int tn, const int k, const int j, 
+static void NumericalDiffusiveFlux(const int s, const int tn, const int k, const int j, 
         const int i, const int partn[restrict], const Real dd[restrict], const Node *node, 
         const Model *model, Real Fvhat[restrict])
 {

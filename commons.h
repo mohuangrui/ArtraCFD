@@ -562,10 +562,10 @@ typedef enum {
     DIMU = 5, /* conservative vector: rho, rho_u, rho_v, rho_w, rho_eT */
     DIMUo = 6, /* primitive vector: rho, u, v, w, [p, hT, h], [T, c] */
     DIMT = 3, /* number of time levels to store field data */
-    C = 1, /* the time level for current */
+    C = 0, /* the time level for current */
+    CN = 1, /* the time level for intermediate */
+    CM = 2, /* the time level for intermediate */
     /* parameters related to numerical model */
-    WENO = 0, /* WENO scheme identifier */
-    TVD = 1, /* TVD scheme identifier */
     FLUID = 0,
     GAS = 0, /* gas */
     WATER = 1, /* water */

@@ -29,8 +29,7 @@
  * Function
  *      Apply boundary conditions and treatments for the field variable.
  */
-extern int BoundaryCondtionsAndTreatments(Real *U, const Space *, const Model *,
-        const Partition *, const Geometry *);
+extern void BoundaryCondtionsAndTreatments(const int tn, Space *, const Model *);
 #endif
 /* a good practice: end file with a newline */
 
