@@ -29,8 +29,7 @@
  * Function
  *      Write field data of probes.
  */
-extern int WriteComputedDataAtProbes(const Real *U, const Space *, const Time *,
-        const Model *, const Partition *);
+extern int WriteFieldDataAtProbes(const Time *, const Space *, const Model *);
 #endif
 /* a good practice: end file with a newline */
 

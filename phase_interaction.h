@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_FLUID_SOLID_INTERACTION_H_ /* if this is the first definition */
-#define ARTRACFD_FLUID_SOLID_INTERACTION_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_PHASE_INTERACTION_H_ /* if this is the first definition */
+#define ARTRACFD_PHASE_INTERACTION_H_ /* a unique marker for this header file */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -24,13 +24,9 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Fluid Solid Interaction
- *
- * Function
- *      Envolve fluid solid interaction.
+ * Phase Interaction
  */
-extern int FluidSolidInteraction(Real *U, Space *, const Model *, const Partition *,
-        Geometry *, const Real dt);
+extern int PhaseInteraction(const Real dt, Space *, const Model *);
 #endif
 /* a good practice: end file with a newline */
 

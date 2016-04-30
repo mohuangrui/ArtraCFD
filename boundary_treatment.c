@@ -20,7 +20,7 @@
  * Static Function Declarations
  ****************************************************************************/
 static void ApplyBoundaryConditions(const int, const int, Space *, const Model *);
-static int ZeroGradient(Real *, const int, const int);
+static void ZeroGradient(const Real [restrict], Real [restrict]);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -40,12 +40,15 @@ static void ApplyBoundaryConditions(const int p, const int tn,
     Real *restrict UG = NULL;
     Real *restrict UI = NULL;
     Real *restrict UO = NULL;
+    Real *restrict Uh = NULL;
     int idxG = 0; /* index at ghost node */
     int idxI = 0; /* index at image node */
     int idxO = 0; /* index at boundary point */
+    int idxh = 0; /* index at neighbouring point */
     Real UoG[DIMUo] = {0.0};
     Real UoI[DIMUo] = {0.0};
     Real UoO[DIMUo] = {0.0};
+    Real Uoh[DIMUo] = {0.0};
     const Real UoGiven[DIMUo] = { /* specified primitive values of current boundary */
         part->valueBC[p][0],
         part->valueBC[p][1],
@@ -53,12 +56,13 @@ static void ApplyBoundaryConditions(const int p, const int tn,
         part->valueBC[p][3],
         part->valueBC[p][4],
         part->valueBC[p][5]};
-    const IntVector nl = {part->normal[p][X], part->normal[p][Y], part->normal[p][Z]};
+    const IntVector N = {part->normal[p][X], part->normal[p][Y], part->normal[p][Z]};
+    const IntVector L = {-(part->m[X] - 1) * N[X], -(part->m[Y] - 1) * N[Y], -(part->m[Z] - 1) * N[Z]};
     for (int k = part->ns[p][Z][MIN]; k < part->ns[p][Z][MAX]; ++k) {
         for (int j = part->ns[p][Y][MIN]; j < part->ns[p][Y][MAX]; ++j) {
             for (int i = part->ns[p][X][MIN]; i < part->ns[p][X][MAX]; ++i) {
                 idxO = IndexNode(k, j, i, part->n[Y], part->n[X]);
-                U = node[idx].U[TO];
+                UO = node[idxO].U[tn];
                 /*
                  * Apply boundary conditions for current node, always remember
                  * that boundary conditions should be based on primitive
@@ -66,51 +70,50 @@ static void ApplyBoundaryConditions(const int p, const int tn,
                  */
                 switch (part->typeBC[p]) {
                     case INFLOW:
-                        ConservativeByPrimitive(U, idxBC, UoGiven, model);
+                        ConservativeByPrimitive(model->gamma, UoGiven, UO);
                         break;
-                    case 2: /* outflow */
+                    case OUTFLOW:
                         /* Calculate inner neighbour nodes according to normal vector direction. */
-                        idxh = IndexMath(k - normalZ, j - normalY, i - normalX, space) * DIMU;
-                        ZeroGradient(U, idxBC, idxh);
+                        idxh = IndexNode(k - N[Z], j - N[Y], i - N[X], part->n[Y], part->n[X]);
+                        Uh = node[idxh].U[tn];
+                        ZeroGradient(Uh, UO);
                         break;
-                    case 3: /* slip wall, zero-gradient for scalar and tangential component, zero for normal component */
-                        idxh = IndexMath(k - normalZ, j - normalY, i - normalX, space) * DIMU;
-                        PrimitiveByConservative(Uoh, idxh, U, model);
-                        UoBC[1] = (!normalX) * Uoh[1];
-                        UoBC[2] = (!normalY) * Uoh[2];
-                        UoBC[3] = (!normalZ) * Uoh[3];
-                        UoBC[4] = Uoh[4]; /* zero normal gradient of pressure */
+                    case SLIPWALL: /* zero-gradient for scalar and tangential component, zero for normal component */
+                        idxh = IndexNode(k - N[Z], j - N[Y], i - N[X], part->n[Y], part->n[X]);
+                        Uh = node[idxh].U[tn];
+                        PrimitiveByConservative(model->gamma, model->gasR, Uh, Uoh);
+                        UoO[1] = (!N[X]) * Uoh[1];
+                        UoO[2] = (!N[Y]) * Uoh[2];
+                        UoO[3] = (!N[Z]) * Uoh[3];
+                        UoO[4] = Uoh[4]; /* zero normal gradient of pressure */
                         if (0 > UoGiven[5]) { /* adiabatic, dT/dn = 0 */
-                            UoBC[5] = Uoh[5];
+                            UoO[5] = Uoh[5];
                         } else { /* otherwise, use specified constant wall temperature, T = Tw */
-                            UoBC[5] = UoGiven[5];
+                            UoO[5] = UoGiven[5];
                         }
-                        UoBC[0] = UoBC[4] / (UoBC[5] * model->gasR); /* compute density */
-                        ConservativeByPrimitive(U, idxBC, UoBC, model);
+                        UoO[0] = UoO[4] / (UoO[5] * model->gasR); /* compute density */
+                        ConservativeByPrimitive(model->gamma, UoO, UO);
                         break;
-                    case 4: /* noslip wall */
-                        idxh = IndexMath(k - normalZ, j - normalY, i - normalX, space) * DIMU;
-                        PrimitiveByConservative(Uoh, idxh, U, model);
-                        UoBC[1] = 0;
-                        UoBC[2] = 0;
-                        UoBC[3] = 0;
-                        UoBC[4] = Uoh[4]; /* zero normal gradient of pressure */
+                    case NOSLIPWALL:
+                        idxh = IndexNode(k - N[Z], j - N[Y], i - N[X], part->n[Y], part->n[X]);
+                        Uh = node[idxh].U[tn];
+                        PrimitiveByConservative(model->gamma, model->gasR, Uh, Uoh);
+                        UoO[1] = 0;
+                        UoO[2] = 0;
+                        UoO[3] = 0;
+                        UoO[4] = Uoh[4]; /* zero normal gradient of pressure */
                         if (0 > UoGiven[5]) { /* adiabatic, dT/dn = 0 */
-                            UoBC[5] = Uoh[5];
+                            UoO[5] = Uoh[5];
                         } else { /* otherwise, use specified constant wall temperature, T = Tw */
-                            UoBC[5] = UoGiven[5];
+                            UoO[5] = UoGiven[5];
                         }
-                        UoBC[0] = UoBC[4] / (UoBC[5] * model->gasR); /* compute density */
-                        ConservativeByPrimitive(U, idxBC, UoBC, model);
+                        UoO[0] = UoO[4] / (UoO[5] * model->gasR); /* compute density */
+                        ConservativeByPrimitive(model->gamma, UoO, UO);
                         break;
-                    case 5: /* primary periodic pair, apply boundary translation */
-                        idxh = IndexMath(k - (space->nz - 2) * normalZ, j - (space->ny - 2) * normalY, 
-                                i - (space->nx - 2) * normalX, space) * DIMU;
-                        ZeroGradient(U, idxBC, idxh);
-                        break;
-                    case -5: /* auxiliary periodic pair, apply zero gradient */
-                        idxh = IndexMath(k - normalZ, j - normalY, i - normalX, space) * DIMU;
-                        ZeroGradient(U, idxBC, idxh);
+                    case PERIODIC:
+                        idxh = IndexNode(k + L[Z], j + L[Y], i + L[X], part->n[Y], part->n[X]);
+                        Uh = node[idxh].U[tn];
+                        ZeroGradient(Uh, UO);
                         break;
                     default:
                         break;
@@ -118,44 +121,51 @@ static void ApplyBoundaryConditions(const int p, const int tn,
                 /*
                  * Reconstruct values for exterior ghost nodes of current node
                  */
-                for (int ng = 1; ng <= space->ng; ++ng) { /* process layer by layer */
-                    idxGhost = IndexMath(k + ng * normalZ, j + ng * normalY, i + ng * normalX, space) * DIMU;
+                for (int ng = 1; ng <= part->ng; ++ng) { /* process layer by layer */
+                    idxG = IndexNode(k + ng * N[Z], j + ng * N[Y], i + ng * N[X], part->n[Y], part->n[X]);
+                    UG = node[idxG].U[tn];
                     switch (part->typeBC[p]) {
-                        case 3: /* slip wall */
-                        case 4: /* noslip wall */
+                        case SLIPWALL:
+                        case NOSLIPWALL:
                             /* 
                              * Apply the method of image.
                              *  -- reflecting vectors over wall for both slip and noslip, stationary and
                              *     moving conditions is unified by linear interpolation.
                              *  -- scalars are symmetrically reflected between image and ghost.
                              */
-                            idxImage = IndexMath(k - ng * normalZ, j - ng * normalY, i - ng * normalX, space) * DIMU;
-                            PrimitiveByConservative(UoBC, idxBC, U, model);
-                            PrimitiveByConservative(UoImage, idxImage, U, model);
-                            UoGhost[1] = 2.0 * UoBC[1] - UoImage[1];
-                            UoGhost[2] = 2.0 * UoBC[2] - UoImage[2];
-                            UoGhost[3] = 2.0 * UoBC[3] - UoImage[3];
-                            UoGhost[4] = UoImage[4];
-                            UoGhost[5] = UoImage[5];
-                            UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
-                            ConservativeByPrimitive(U, idxGhost, UoGhost, model);
+                            idxI = IndexNode(k - ng * N[Z], j - ng * N[Y], i - ng * N[X], part->n[Y], part->n[X]);
+                            UI = node[idxI].U[tn];
+                            PrimitiveByConservative(model->gamma, model->gasR, UO, UoO);
+                            PrimitiveByConservative(model->gamma, model->gasR, UI, UoI);
+                            UoG[1] = 2.0 * UoO[1] - UoI[1];
+                            UoG[2] = 2.0 * UoO[2] - UoI[2];
+                            UoG[3] = 2.0 * UoO[3] - UoI[3];
+                            UoG[4] = UoI[4];
+                            UoG[5] = UoI[5];
+                            UoG[0] = UoG[4] / (UoG[5] * model->gasR); /* compute density */
+                            ConservativeByPrimitive(model->gamma, UoG, UG);
+                            break;
+                        case PERIODIC:
+                            idxh = IndexNode(k + ng * N[Z] + L[Z], j + ng * N[Y] + L[Y], i + ng * N[X] + L[X], part->n[Y], part->n[X]);
+                            Uh = node[idxh].U[tn];
+                            ZeroGradient(Uh, UG);
                             break;
                         default:
-                            ZeroGradient(U, idxGhost, idxBC);
+                            ZeroGradient(UO, UG);
                             break;
                     }
                 }
             }
         }
     }
-    return 0;
+    return;
 }
-static int ZeroGradient(Real *U, const int idx, const int idxh)
+static void ZeroGradient(const Real Uh[restrict], Real U[restrict])
 {
     for (int dim = 0; dim < DIMU; ++dim) {
-        U[idx+dim] = U[idxh+dim];
+        U[dim] = Uh[dim];
     }
-    return 0;
+    return;
 }
 /* a good practice: end file with a newline */
 

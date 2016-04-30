@@ -81,11 +81,11 @@ static int SolutionEvolution(Time *time, Space *space, const Model *model)
          */
         TickTime(&operationTimer);
         if (1 == model->fsi) {
-            FluidSolidInteraction(space, model, 0.5 * dt);
+            PhaseInteraction(0.5 * dt, space, model);
         }
         FluidDynamics(dt, space, model);
         if (1 == model->fsi) {
-            FluidSolidInteraction(space, model, 0.5 * dt);
+            PhaseInteraction(0.5 * dt, space, model);
         }
         operationTime = TockTime(&operationTimer);
         fprintf(stdout, "  elapsed: %.6gs\n", operationTime);

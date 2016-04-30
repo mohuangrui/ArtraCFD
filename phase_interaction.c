@@ -11,10 +11,10 @@
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "fluid_solid_interaction.h"
+#include "phase_interaction.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
-#include "gcibm.h"
+#include "immersed_boundary.h"
 #include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************

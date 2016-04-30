@@ -28,13 +28,13 @@ static int ProgramMemoryAllocate(Space *);
 /*
  * This is the overall preprocessing function
  */
-int Preprocess(Space *space, Time *time, Model *model)
+int Preprocess(Time *time, Space *space, Model *model)
 {
     ShowInformation("Preprocessing...");
     fprintf(stdout, "  loading case setting data...\n");
-    LoadCaseSettingData(space, time, model);
+    LoadCaseSettingData(time, space, model);
     fprintf(stdout, "  computing parameters...\n");
-    ComputeCFDParameters(space, time, model);
+    ComputeCFDParameters(time, space, model);
     fprintf(stdout, "  domain partitioning...\n");
     DomainPartition(space);
     fprintf(stdout, "  allocating memory...\n");

@@ -31,7 +31,7 @@
  *      operations on fluid and flow variables to unify the dimensional 
  *      form and nondimensional form of governing equations.
  */
-extern int ComputeCFDParameters(Space *, Time *, Model *);
+extern int ComputeCFDParameters(Time *, Space *, Model *);
 #endif
 /* a good practice: end file with a newline */
 

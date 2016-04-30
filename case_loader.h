@@ -25,15 +25,8 @@
  ****************************************************************************/
 /*
  * Case setting data loader
- *
- * Function
- *      Load case setting data from file artracfd.case, if file does not 
- *      exist or any illegal data exists in the file, it terminates the
- *      program.
- * Outcome
- *      Will write loaded data to file artracfd.verify for verification.
  */
-extern int LoadCaseSettingData(Space *, Time *, Model *);
+extern int LoadCaseSettingData(Time *, Space *, Model *);
 #endif
 /* a good practice: end file with a newline */
 

@@ -569,6 +569,7 @@ typedef enum {
     FLUID = 0,
     GAS = 0, /* gas */
     WATER = 1, /* water */
+    WENOFIVE = 0, /* 5th order weno */
     /* parameters related to probe */
     NPROBE = 10, /* maximum number of probes to support */
     ENTRYPROBE = 7, /* x1, y1, z1, x2, y2, z2, resolution */
@@ -598,7 +599,6 @@ typedef enum {
     SLIPWALL = 2,
     NOSLIPWALL = 3,
     PERIODIC = 4,
-    PERIODICPAIR = -4,
     ENTRYBC = 6, /* rho, u, v, w, p, T */
     VARBC = 5, /* rho, u, v, w, p */
     /* parameters related to global and regional initialization */

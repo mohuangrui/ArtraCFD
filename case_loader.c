@@ -18,23 +18,23 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ReadCaseSettingData(Space *, Time *, Model *);
+static int ReadCaseSettingData(Time *, Space *, Model *);
 static int ReadGeometrySettingData(Geometry *);
 static int ReadBoundaryData(FILE **, Space *, const int);
 static int ReadConsecutiveRealData(FILE **, Real *, const int);
 static int WriteBoundaryData(FILE **, const Space *, const int);
 static int WriteInitializerData(FILE **, const Space *, const int);
-static int WriteVerifyData(const Space *, const Time *, const Model *);
-static int CheckCaseSettingData(const Space *, const Time *, const Model *);
+static int WriteVerifyData(const Time *, const Space *, const Model *);
+static int CheckCaseSettingData(const Time *, const Space *, const Model *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int LoadCaseSettingData(Space *space, Time *time, Model *model)
+int LoadCaseSettingData(Time *time, Space *space, Model *model)
 {
-    ReadCaseSettingData(space, time, model);
+    ReadCaseSettingData(time, space, model);
     ReadGeometrySettingData(&(space->geo));
-    WriteVerifyData(space, time, model);
-    CheckCaseSettingData(space, time, model);
+    WriteVerifyData(time, space, model);
+    CheckCaseSettingData(time, space, model);
     return 0;
 }
 /*
@@ -61,7 +61,7 @@ int LoadCaseSettingData(Space *space, Time *time, Model *model)
  * you use for fprintf because the fprintf library function treats them as
  * synonymous, but it's crucial to get it right for sscanf. 
  */
-static int ReadCaseSettingData(Space *space, Time *time, Model *model)
+static int ReadCaseSettingData(Time *time, Space *space, Model *model)
 {
     FILE *filePointer = fopen("artracfd.case", "r");
     if (NULL == filePointer) {
@@ -84,11 +84,11 @@ static int ReadCaseSettingData(Space *space, Time *time, Model *model)
         if (0 == strncmp(currentLine, "space begin", sizeof currentLine)) {
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatIII, 
-                    &(space->part.domain[X][MIN]), &(space->part.domain[Y][MIN]), &(space->part.domain[Z][MIN])); 
+            sscanf(currentLine, formatIII, &(space->part.domain[X][MIN]),
+                    &(space->part.domain[Y][MIN]), &(space->part.domain[Z][MIN])); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatIII, 
-                    &(space->part.domain[X][MAX]), &(space->part.domain[Y][MAX]), &(space->part.domain[Z][MAX])); 
+            sscanf(currentLine, formatIII, &(space->part.domain[X][MAX]),
+                    &(space->part.domain[Y][MAX]), &(space->part.domain[Z][MAX])); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d, %d, %d", 
                     &(space->part.m[X]), &(space->part.m[Y]), &(space->part.m[Z])); 
@@ -301,7 +301,7 @@ static int ReadGeometrySettingData(Geometry *geo)
 }
 static int ReadBoundaryData(FILE **filePointerPointer, Space *space, const int boundary)
 {
-    if (PERIODICPAIR == space->part.typeBC[boundary]) { /* already set as periodic pair */
+    if (PERIODIC == space->part.typeBC[boundary]) { /* already set as periodic pair */
         return 0;
     }
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
@@ -341,9 +341,9 @@ static int ReadBoundaryData(FILE **filePointerPointer, Space *space, const int b
         /* only need to set id and its periodic pair */
         space->part.typeBC[boundary] = PERIODIC;
         if ((PWB == boundary) || (PSB == boundary) || (PFB == boundary)) {
-            space->part.typeBC[boundary+1] = PERIODICPAIR;
+            space->part.typeBC[boundary+1] = PERIODIC;
         } else {
-            space->part.typeBC[boundary-1] = PERIODICPAIR;
+            space->part.typeBC[boundary-1] = PERIODIC;
         }
         *filePointerPointer = filePointer;
         return 0;
@@ -401,12 +401,7 @@ static int WriteBoundaryData(FILE **filePointerPointer, const Space *space, cons
         return 0;
     }
     if (PERIODIC == space->part.typeBC[boundary]) {
-        fprintf(filePointer, "boundary type: periodic, primary pair with translation\n"); 
-        *filePointerPointer = filePointer;
-        return 0;
-    }
-    if (PERIODICPAIR == space->part.typeBC[boundary]) {
-        fprintf(filePointer, "boundary type: periodic, auxiliary pair\n"); 
+        fprintf(filePointer, "boundary type: periodic\n"); 
         *filePointerPointer = filePointer;
         return 0;
     }
@@ -458,7 +453,7 @@ static int WriteInitializerData(FILE **filePointerPointer, const Space *space, c
 /*
  * This function outputs the case setting data to a file for verification.
  */
-static int WriteVerifyData(const Space *space, const Time *time, const Model *model)
+static int WriteVerifyData(const Time *time, const Space *space, const Model *model)
 {
     FILE *filePointer = fopen("artracfd.verify", "w");
     if (NULL == filePointer) {
@@ -475,8 +470,10 @@ static int WriteVerifyData(const Space *space, const Time *time, const Model *mo
     fprintf(filePointer, "#                          >> Space Domain <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "domain xmin, ymin, zmin: %.6g, %.6g, %.6g\n", space->part.domain[X][MIN], space->part.domain[Y][MIN], space->part.domain[Z][MIN]); 
-    fprintf(filePointer, "domain xmax, ymax, zmax: %.6g, %.6g, %.6g\n", space->part.domain[X][MAX], space->part.domain[Y][MAX], space->part.domain[Z][MAX]); 
+    fprintf(filePointer, "domain xmin, ymin, zmin: %.6g, %.6g, %.6g\n", 
+            space->part.domain[X][MIN], space->part.domain[Y][MIN], space->part.domain[Z][MIN]); 
+    fprintf(filePointer, "domain xmax, ymax, zmax: %.6g, %.6g, %.6g\n", 
+            space->part.domain[X][MAX], space->part.domain[Y][MAX], space->part.domain[Z][MAX]); 
     fprintf(filePointer, "x, y, z mesh number: %d, %d, %d\n", space->part.m[X], space->part.m[Y], space->part.m[Z]); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
@@ -585,7 +582,7 @@ static int WriteVerifyData(const Space *space, const Time *time, const Model *mo
 /*
  * This function do some parameter checking
  */
-static int CheckCaseSettingData(const Space *space, const Time *time, const Model *model)
+static int CheckCaseSettingData(const Time *time, const Space *space, const Model *model)
 {
     /* space */
     if ((0 >= (space->part.domain[X][MAX] - space->part.domain[X][MIN])) ||

@@ -28,8 +28,8 @@ int main(int argc, char *argv[])
      * Declare and initialize variables. Anything in C can be initialised
      * with = 0; this initialises numeric elements to zero and pointers null
      */    
-    Space theSpace = {0};
     Time theTime = {0};
+    Space theSpace = {0};
     Model theModel = {0};
     Control theControl = {
         .runMode = 'i',
@@ -42,11 +42,11 @@ int main(int argc, char *argv[])
     /*
      * Preprocessing
      */
-    Preprocess(&theSpace, &theTime, &theModel);
+    Preprocess(&theTime, &theSpace, &theModel);
     /*
      * Solve
      */
-    Solve(&theSpace, &theTime, &theModel);
+    Solve(&theTime, &theSpace, &theModel);
     /*
      * Postprocessing
      */

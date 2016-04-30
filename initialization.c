@@ -87,10 +87,10 @@ static int InitializeFieldData(Space *space, const Model *model)
  */
 static int ApplyRegionalInitializer(const int n, Space *space, const Model *model)
 {
-    int idx = 0; /* linear array index math variable */
+    const Partition *restrict part = &(space->part);
     Node *node = space->node;
     Real *restrict U = NULL;
-    const Partition *restrict part = &(space->part);
+    int idx = 0; /* linear array index math variable */
     /*
      * Acquire the specialized information data entries
      */

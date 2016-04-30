@@ -21,14 +21,14 @@
  * Static Function Declarations
  ****************************************************************************/
 static int NodeBasedMeshNumberRefine(Space *, const Model *);
-static int InitializeCFDParameters(Space *, Time *, Model *);
+static int InitializeCFDParameters(Time *, Space *, Model *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int ComputeCFDParameters(Space *space, Time *time, Model *model)
+int ComputeCFDParameters(Time *time, Space *space, Model *model)
 {
     NodeBasedMeshNumberRefine(space, model);
-    InitializeCFDParameters(space, time, model);
+    InitializeCFDParameters(time, space, model);
     return 0;
 }
 /*
@@ -44,10 +44,7 @@ int ComputeCFDParameters(Space *space, Time *time, Model *model)
 static int NodeBasedMeshNumberRefine(Space *space, const Model *model)
 {
     /* set ghost layers according to numerical scheme */
-    if (TVD == model->scheme) {
-        space->part.ng = 1;
-    }
-    if (WENO == model->scheme) {
+    if (WENOFIVE == model->scheme) {
         space->part.ng = 2;
     }
     /* check and mark collapsed space. */
@@ -75,7 +72,7 @@ static int NodeBasedMeshNumberRefine(Space *space, const Model *model)
  * the numerical simulation environment. These parameters will be normalized
  * by reference values.
  */
-static int InitializeCFDParameters(Space *space, Time *time, Model *model)
+static int InitializeCFDParameters(Time *time, Space *space, Model *model)
 {
     /* space */
     for (int s = 0; s < DIMS; ++s) {
