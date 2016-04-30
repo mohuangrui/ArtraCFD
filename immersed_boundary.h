@@ -30,14 +30,14 @@
  *      Employ node flagging algorithm to handle complex geometry that locates in
  *      the computational domain.
  */
-extern int ComputeGeometryDomain(Space *, const Partition *, const Geometry *);
+extern void ComputeGeometryDomain(Space *);
 /*
  * Immersed boundary treatments
  *
  * Function
  *      Apply boundary conditions and treatments for immersed boundaries.
  */
-extern void ImmersedBoundaryTreatment(const tn, Space *, const Model *);
+extern void ImmersedBoundaryTreatment(const int tn, Space *, const Model *);
 /*
  * Reconstruct flow variables by Inverse Distance Weighting
  *

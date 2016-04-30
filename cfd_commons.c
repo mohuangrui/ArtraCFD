@@ -359,20 +359,20 @@ int Sign(const Real x)
     }
     return 0;
 }
-Real Dot(const Real V1[], const Real V2[])
+Real Dot(const Real V1[restrict], const Real V2[restrict])
 {
     return (V1[X] * V2[X] + V1[Y] * V2[Y] + V1[Z] * V2[Z]);
 }
-Real Norm(const Real V[])
+Real Norm(const Real V[restrict])
 {
     return sqrt(Dot(V, V));
 }
-Real Dist2(const Real V1[], const Real V2[])
+Real Dist2(const Real V1[restrict], const Real V2[restrict])
 {
-    const RealVector V = {V2[X] - V1[X], V2[Y] - V1[Y], V2[Z] - V1[Z]};
+    const RealVec V = {V2[X] - V1[X], V2[Y] - V1[Y], V2[Z] - V1[Z]};
     return Dot(V, V);
 }
-Real Dist(const Real V1[], const Real V2[])
+Real Dist(const Real V1[restrict], const Real V2[restrict])
 {
     return sqrt(Dist2(V1, V2));
 }
@@ -411,7 +411,7 @@ void OrthogonalSpace(const Real N[restrict], Real Ta[restrict], Real Tb[restrict
     Cross(Ta, N, Tb);
     return;
 }
-void Normalize(const int dimV, const Real normalizer, Real V[])
+void Normalize(const int dimV, const Real normalizer, Real V[restrict])
 {
     for (int n = 0; n < dimV; ++n) {
         V[n] = V[n] / normalizer;

@@ -45,16 +45,15 @@ int CommandLineProcessor(char *lineCommand)
             break; /* no more scan */
         }
         if ((' ' == *scanner) || ('\t' == *scanner)) { /* a space or tab */
+            *scanner = ' '; /* replace tab with space */
             if (' ' != *(scanner - 1)) { /* only check space; tabs are all replaced */
                 /* now its a first space or tab between words */
-                *scanner = ' '; /* replace tab with space */
                 *receiver = ' '; /* receive a space */
                 ++receiver; /* update the receiver address */
                 ++scanner; /* scan the next character */
                 continue;
             }
             /* otherwise, do not receive */
-            *scanner = ' '; /* replace tab with space */
             ++scanner; /* scan the next character */
             continue;
         }

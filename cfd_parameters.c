@@ -64,7 +64,6 @@ static int NodeBasedMeshNumberRefine(Space *space, const Model *model)
         /* total number of nodes (including ghost nodes) */
         space->part.n[s] = space->part.m[s] + 1 + 2 * space->part.ng; 
     }
-    space->part.totalN = space->part.n[X] * space->part.n[Y] * space->part.n[Z];
     return 0;
 }
 /*

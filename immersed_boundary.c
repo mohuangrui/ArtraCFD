@@ -11,7 +11,7 @@
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "immersed_boundary_treatment.h"
+#include "immersed_boundary.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
 #include <float.h> /* size of floating point values */
@@ -55,12 +55,12 @@ static int ApplyWeighting(Real [], Real *, Real, const Real [], const Real);
  * The rational is that don't store every information for each ghost node, but
  * only store necessary information. When need it, access and calculate it.
  */
-int ComputeGeometryDomain(Space *space, const Partition *part, const Geometry *geo)
+void ComputeGeometryDomain(Space *space)
 {
     InitializeGeometryDomain(space, part);
     IdentifySolidNodes(space, part, geo);
     IdentifyGhostNodes(space, part, geo);
-    return 0;
+    return;
 }
 static int InitializeGeometryDomain(Space *space, const Partition *part)
 {
@@ -192,8 +192,7 @@ static int SearchFluidNodes(const int k, const int j, const int i,
             space->node[idxS].type * space->node[idxN].type * 
             space->node[idxF].type * space->node[idxB].type);
 }
-int ImmersedBoundaryTreatment(const Space *space, const Model *model,
-        const Partition *part, const Geometry *geo)
+void ImmersedBoundaryTreatment(const int tn, Space *space, const Model *model)
 {
     Index idx = 0; /* linear array index math variable */
     Ghost gs = {0.0}; /* data collection for flow reconstruction */
@@ -255,7 +254,7 @@ int ImmersedBoundaryTreatment(const Space *space, const Model *model,
             }
         }
     }
-    return 0;
+    return;
 }
 int FlowReconstruction(Real Uo[], const Real z, const Real y, const Real x,
         const int k, const int j, const int i, const int h, 

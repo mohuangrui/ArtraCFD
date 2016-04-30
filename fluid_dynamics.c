@@ -118,20 +118,20 @@ static void RungeKutta(const Real dt, const int s, Space *space, const Model *mo
 static void LLL(const Real dt, const Real coeA, const Real coeB, const int to, 
         const int tn, const int tm, const int s, Space *space, const Model *model)
 {
-    int idx = 0; /* linear array index math variable */
+    const Partition *restrict part = &(space->part);
     Node *node = space->node;
     const Real *restrict Uo = NULL;
     const Real *restrict Un = NULL;
     Real *restrict Um = NULL;
-    const Partition *restrict part = &(space->part);
+    int idx = 0; /* linear array index math variable */
     const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
     Real FhatR[DIMU] = {0.0}; /* reconstructed numerical convective flux vector */
     Real FhatL[DIMU] = {0.0}; /* reconstructed numerical convective flux vector */
     Real FvhatR[DIMU] = {0.0}; /* reconstructed numerical diffusive flux vector */
     Real FvhatL[DIMU] = {0.0}; /* reconstructed numerical diffusive flux vector */
-    const IntVector partn = {part->n[X], part->n[Y], part->n[Z]};
-    const RealVector dd = {part->dd[X], part->dd[Y], part->dd[Z]};
-    const RealVector r = {dt * dd[X], dt * dd[Y], dt * dd[Z]};
+    const IntVec partn = {part->n[X], part->n[Y], part->n[Z]};
+    const RealVec dd = {part->dd[X], part->dd[Y], part->dd[Z]};
+    const RealVec r = {dt * dd[X], dt * dd[Y], dt * dd[Z]};
     for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
         for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
             for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
@@ -140,11 +140,11 @@ static void LLL(const Real dt, const Real coeA, const Real coeB, const int to,
                     continue;
                 }
                 /*
-                 * Note: Uo, Un, and Uc are all restricted pointers.
-                 * Under the condition that Un and Uc NEVER alias each other,
+                 * Note: Uo, Un, and Um are all restricted pointers.
+                 * Under the condition that Un and Um NEVER alias each other,
                  * Uo and Un may alias safely since they only read elements
-                 * and never modify any elements. Uo and Uc may alias safely
-                 * since Uo only fetch the single element that Uc modifies later.
+                 * and never modify any elements. Uo and Um may alias safely
+                 * since Uo only fetch the single element that Um modifies later.
                  */
                 Uo = node[idx].U[to];
                 Un = node[idx].U[tn];

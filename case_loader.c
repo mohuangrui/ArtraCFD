@@ -149,7 +149,7 @@ static int ReadCaseSettingData(Time *time, Space *space, Model *model)
             space->part.countIC = 0; /* enforce global initialization first */
             space->part.typeIC[space->part.countIC] = ICGLOBAL; /* IC type id */
             ReadConsecutiveRealData(&filePointer, space->part.valueIC[space->part.countIC] + ENTRYIC - VARIC, VARIC);
-            ++space->part.countIC; /* initializer count and pointer */
+            ++space->part.countIC;
             continue;
         }
         if (0 == strncmp(currentLine, "west boundary begin", sizeof currentLine)) {
@@ -192,7 +192,7 @@ static int ReadCaseSettingData(Time *time, Space *space, Model *model)
             sscanf(currentLine, formatIII, space->part.valueIC[space->part.countIC] + 3, 
                     space->part.valueIC[space->part.countIC] + 4, space->part.valueIC[space->part.countIC] + 5); 
             ReadConsecutiveRealData(&filePointer, space->part.valueIC[space->part.countIC] + ENTRYIC - VARIC, VARIC);
-            ++space->part.countIC; /* initializer count and pointer */
+            ++space->part.countIC;
             continue;
         }
         if (0 == strncmp(currentLine, "sphere initialization begin", sizeof currentLine)) {
@@ -204,7 +204,7 @@ static int ReadCaseSettingData(Time *time, Space *space, Model *model)
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatI, space->part.valueIC[space->part.countIC] + 6); 
             ReadConsecutiveRealData(&filePointer, space->part.valueIC[space->part.countIC] + ENTRYIC - VARIC, VARIC);
-            ++space->part.countIC; /* initializer count and pointer */
+            ++space->part.countIC;
             continue;
         }
         if (0 == strncmp(currentLine, "box initialization begin", sizeof currentLine)) {
@@ -217,7 +217,7 @@ static int ReadCaseSettingData(Time *time, Space *space, Model *model)
             sscanf(currentLine, formatIII, space->part.valueIC[space->part.countIC] + 3, 
                     space->part.valueIC[space->part.countIC] + 4, space->part.valueIC[space->part.countIC] + 5); 
             ReadConsecutiveRealData(&filePointer, space->part.valueIC[space->part.countIC] + ENTRYIC - VARIC, VARIC);
-            ++space->part.countIC; /* initializer count and pointer */
+            ++space->part.countIC;
             continue;
         }
         if (0 == strncmp(currentLine, "cylinder initialization begin", sizeof currentLine)) {
@@ -232,7 +232,7 @@ static int ReadCaseSettingData(Time *time, Space *space, Model *model)
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatI, space->part.valueIC[space->part.countIC] + 6); 
             ReadConsecutiveRealData(&filePointer, space->part.valueIC[space->part.countIC] + ENTRYIC - VARIC, VARIC);
-            ++space->part.countIC; /* initializer count and pointer */
+            ++space->part.countIC;
             continue;
         }
         if (0 == strncmp(currentLine, "probe control begin", sizeof currentLine)) {
@@ -425,7 +425,7 @@ static int WriteInitializerData(FILE **filePointerPointer, const Space *space, c
         fprintf(filePointer, "regional initialization: sphere\n"); 
         fprintf(filePointer, "center point x, y, z: %.6g, %.6g, %.6g\n", 
                 space->part.valueIC[n][0], space->part.valueIC[n][1], space->part.valueIC[n][2]);
-        fprintf(filePointer, "radius: %.6g\n", space->part.valueIC[n][3]);
+        fprintf(filePointer, "radius: %.6g\n", space->part.valueIC[n][6]);
     }
     if (ICBOX == space->part.typeIC[n]) {
         fprintf(filePointer, "regional initialization: box\n"); 
@@ -482,10 +482,10 @@ static int WriteVerifyData(const Time *time, const Space *space, const Model *mo
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "restart number tag: %d\n", time->restart); 
     fprintf(filePointer, "total evolution time: %.6g\n", time->end); 
-    fprintf(filePointer, "maximum number of steps: %d\n", time->stepN); 
     fprintf(filePointer, "CFL condition number: %.6g\n", time->numCFL); 
+    fprintf(filePointer, "maximum number of steps: %d\n", time->stepN); 
     fprintf(filePointer, "exporting data times: %d\n", time->outputN); 
-    fprintf(filePointer, "data streamer id: %d\n", time->dataStreamer); 
+    fprintf(filePointer, "data streamer: %d\n", time->dataStreamer); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                        >> Numerical Method <<\n");
@@ -494,8 +494,8 @@ static int WriteVerifyData(const Time *time, const Space *space, const Model *mo
     fprintf(filePointer, "spatial scheme: %d\n", model->scheme);
     fprintf(filePointer, "average method: %d\n", model->averager);
     fprintf(filePointer, "flux splitting method: %d\n", model->splitter);
-    fprintf(filePointer, "material interaction: %d\n", model->fsi);
-    fprintf(filePointer, "layers of ghost nodes using method of image: %d\n", model->layers);
+    fprintf(filePointer, "phase interaction: %d\n", model->fsi);
+    fprintf(filePointer, "interfacial layers using reconstruction: %d\n", model->layers);
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                       >> Material Properties <<\n");
@@ -599,14 +599,12 @@ static int CheckCaseSettingData(const Time *time, const Space *space, const Mode
         FatalError("wrong values in time section of case settings");
     }
     /* numerical method */
-    if ((0 > model->scheme) || (1 < model->scheme) || 
-            (0 > model->averager) || (1 < model->averager) ||
-            (0 > model->splitter) || (1 < model->splitter) ||
-            (0 > model->fsi) || (1 < model->fsi)) {
+    if ((0 > model->scheme) || (0 > model->averager) ||
+            (0 > model->splitter) || (0 > model->fsi)) {
         FatalError("wrong values in numerical method of case settings");
     }
     /* material */
-    if ((0 > model->matID) || (2 < model->matID) || (0 > model->refMu)) {
+    if ((0 > model->matID)) {
         FatalError("wrong values in material section of case settings");
     }
     /* reference */

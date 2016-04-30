@@ -94,13 +94,13 @@ extern Real MaxReal(const Real x, const Real y);
 extern int MinInt(const int x, const int y);
 extern int MaxInt(const int x, const int y);
 extern int Sign(const Real x);
-extern Real Dot(const Real V1[], const Real V2[]);
-extern Real Norm(const Real V[]);
-extern Real Dist2(const Real V1[], const Real V2[]);
-extern Real Dist(const Real V1[], const Real V2[]);
+extern Real Dot(const Real V1[restrict], const Real V2[restrict]);
+extern Real Norm(const Real V[restrict]);
+extern Real Dist2(const Real V1[restrict], const Real V2[restrict]);
+extern Real Dist(const Real V1[restrict], const Real V2[restrict]);
 extern void Cross(const Real V1[restrict], const Real V2[restrict], Real V[restrict]);
 extern void OrthogonalSpace(const Real N[restrict], Real Ta[restrict], Real Tb[restrict]);
-extern void Normalize(const int dimV, const Real normalizer, Real V[]);
+extern void Normalize(const int dimV, const Real normalizer, Real V[restrict]);
 #endif
 /* a good practice: end file with a newline */
 

@@ -23,34 +23,34 @@ int DomainPartition(Space *space)
      * Outward facing surface unit normal vector values of domain boundary, the
      * introducing of surface normal vector can provide great advantange: every
      * surface can be handled uniformly if manipulations and calculations are
-     * incorporated with surface normal vector. For example, (normalX, normalY,
-     * normalZ) is the outward facing unit normal vector at surface point (i,
-     * j, k), then its neighbour node (ih, jh, kh) is more inner than current
-     * node if (ih-i)*normalX + (jh-j)*normalY + (kh-k)*normalZ < 0.
+     * incorporated with surface normal vector. For example, (NX, NY, NZ) is the
+     * outward facing unit normal vector at surface point (i, j, k), then its
+     * neighbour node (ih, jh, kh) is more inner than current node if 
+     * (ih - i) * NX + (jh - j) * NY + (kh - k) * NZ < 0.
      */
-    part->normal[PWB][X] = -1;
-    part->normal[PWB][Y] = 0;
-    part->normal[PWB][Z] = 0;
+    part->N[PWB][X] = -1;
+    part->N[PWB][Y] = 0;
+    part->N[PWB][Z] = 0;
 
-    part->normal[PEB][X] = 1;
-    part->normal[PEB][Y] = 0;
-    part->normal[PEB][Z] = 0;
+    part->N[PEB][X] = 1;
+    part->N[PEB][Y] = 0;
+    part->N[PEB][Z] = 0;
 
-    part->normal[PSB][X] = 0;
-    part->normal[PSB][Y] = -1;
-    part->normal[PSB][Z] = 0;
+    part->N[PSB][X] = 0;
+    part->N[PSB][Y] = -1;
+    part->N[PSB][Z] = 0;
 
-    part->normal[PNB][X] = 0;
-    part->normal[PNB][Y] = 1;
-    part->normal[PNB][Z] = 0;
+    part->N[PNB][X] = 0;
+    part->N[PNB][Y] = 1;
+    part->N[PNB][Z] = 0;
 
-    part->normal[PFB][X] = 0;
-    part->normal[PFB][Y] = 0;
-    part->normal[PFB][Z] = -1;
+    part->N[PFB][X] = 0;
+    part->N[PFB][Y] = 0;
+    part->N[PFB][Z] = -1;
 
-    part->normal[PBB][X] = 0;
-    part->normal[PBB][Y] = 0;
-    part->normal[PBB][Z] = 1;
+    part->N[PBB][X] = 0;
+    part->N[PBB][Y] = 0;
+    part->N[PBB][Z] = 1;
     /*
      * Assign values to each index control array of each partition.
      *

@@ -14,6 +14,7 @@
 #include "initialization.h"
 #include <stdio.h> /* standard library for input and output */
 #include <string.h> /* manipulating strings */
+#include "immersed_boundary.h"
 #include "boundary_treatment.h"
 #include "data_stream.h"
 #include "paraview.h"
@@ -38,6 +39,7 @@ int InitializeComputationalDomain(Time *time, Space *space, const Model *model)
         ReadFieldData(time, space, model);
         ReadGeometryData(time, &(space->geo));
     }
+    ComputeGeometryDomain(space);
     BoundaryCondtionsAndTreatments(TO, space, model);
     if (0 == time->restart) { /* non restart */
         WriteFieldData(time, space, model);
@@ -94,11 +96,11 @@ static int ApplyRegionalInitializer(const int n, Space *space, const Model *mode
     /*
      * Acquire the specialized information data entries
      */
-    const RealVector p1 = {
+    const RealVec p1 = {
         part->valueIC[n][0],
         part->valueIC[n][1],
         part->valueIC[n][2]};
-    const RealVector p2 = {
+    const RealVec p2 = {
         part->valueIC[n][3],
         part->valueIC[n][4],
         part->valueIC[n][5]};
@@ -109,7 +111,7 @@ static int ApplyRegionalInitializer(const int n, Space *space, const Model *mode
         part->valueIC[n][ENTRYIC-3],
         part->valueIC[n][ENTRYIC-2],
         part->valueIC[n][ENTRYIC-1]};
-    const RealVector P12 = {
+    const RealVec P12 = {
         p2[X] - p1[X],
         p2[Y] - p1[Y],
         p2[Z] - p1[Z]};
@@ -118,8 +120,8 @@ static int ApplyRegionalInitializer(const int n, Space *space, const Model *mode
      * Apply initial values for nodes that meets condition
      */
     int flag = 0; /* control flag for whether current node in the region */
-    RealVector pc = {0.0}; /* coordinates of current node */
-    RealVector P1c = {0.0}; /* position vector */
+    RealVec pc = {0.0}; /* coordinates of current node */
+    RealVec P1c = {0.0}; /* position vector */
     Real proj = 0.0;
     for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
         for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
@@ -192,7 +194,7 @@ static int InitializeGeometryData(Geometry *geo)
             for (int n = geo->sphereN; n < geo->totalN; ++n) {
                 fgets(currentLine, sizeof currentLine, filePointer);
                 sscanf(currentLine, "%s", fileName);
-                ReadStlFile(fileName, geo->list + n);
+                ReadStlFile(fileName, geo->poly + n);
             }
             continue;
         }

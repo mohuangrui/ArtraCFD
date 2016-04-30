@@ -32,8 +32,7 @@ void BoundaryCondtionsAndTreatments(const int tn, Space *space, const Model *mod
     ImmersedBoundaryTreatment(tn, space, model);
     return;
 }
-static void ApplyBoundaryConditions(const int p, const int tn, 
-        Space *space, const Model *model)
+static void ApplyBoundaryConditions(const int p, const int tn, Space *space, const Model *model)
 {
     const Partition *restrict part = &(space->part);
     Node *node = space->node;
@@ -56,8 +55,8 @@ static void ApplyBoundaryConditions(const int p, const int tn,
         part->valueBC[p][3],
         part->valueBC[p][4],
         part->valueBC[p][5]};
-    const IntVector N = {part->normal[p][X], part->normal[p][Y], part->normal[p][Z]};
-    const IntVector L = {-(part->m[X] - 1) * N[X], -(part->m[Y] - 1) * N[Y], -(part->m[Z] - 1) * N[Z]};
+    const IntVec N = {part->N[p][X], part->N[p][Y], part->N[p][Z]};
+    const IntVec LN = {(part->m[X] - 1) * N[X], (part->m[Y] - 1) * N[Y], (part->m[Z] - 1) * N[Z]};
     for (int k = part->ns[p][Z][MIN]; k < part->ns[p][Z][MAX]; ++k) {
         for (int j = part->ns[p][Y][MIN]; j < part->ns[p][Y][MAX]; ++j) {
             for (int i = part->ns[p][X][MIN]; i < part->ns[p][X][MAX]; ++i) {
@@ -111,7 +110,7 @@ static void ApplyBoundaryConditions(const int p, const int tn,
                         ConservativeByPrimitive(model->gamma, UoO, UO);
                         break;
                     case PERIODIC:
-                        idxh = IndexNode(k + L[Z], j + L[Y], i + L[X], part->n[Y], part->n[X]);
+                        idxh = IndexNode(k - LN[Z], j - LN[Y], i - LN[X], part->n[Y], part->n[X]);
                         Uh = node[idxh].U[tn];
                         ZeroGradient(Uh, UO);
                         break;
@@ -135,7 +134,6 @@ static void ApplyBoundaryConditions(const int p, const int tn,
                              */
                             idxI = IndexNode(k - ng * N[Z], j - ng * N[Y], i - ng * N[X], part->n[Y], part->n[X]);
                             UI = node[idxI].U[tn];
-                            PrimitiveByConservative(model->gamma, model->gasR, UO, UoO);
                             PrimitiveByConservative(model->gamma, model->gasR, UI, UoI);
                             UoG[1] = 2.0 * UoO[1] - UoI[1];
                             UoG[2] = 2.0 * UoO[2] - UoI[2];
@@ -146,7 +144,8 @@ static void ApplyBoundaryConditions(const int p, const int tn,
                             ConservativeByPrimitive(model->gamma, UoG, UG);
                             break;
                         case PERIODIC:
-                            idxh = IndexNode(k + ng * N[Z] + L[Z], j + ng * N[Y] + L[Y], i + ng * N[X] + L[X], part->n[Y], part->n[X]);
+                            idxh = IndexNode(k + ng * N[Z] - LN[Z], j + ng * N[Y] - LN[Y], i + ng * N[X] - LN[X], 
+                                    part->n[Y], part->n[X]);
                             Uh = node[idxh].U[tn];
                             ZeroGradient(Uh, UG);
                             break;

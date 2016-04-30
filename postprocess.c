@@ -35,9 +35,9 @@ static int ProgramMemoryRelease(Space *space)
 {
     /* geometry related */
     for (int n = space->geo.sphereN; n < space->geo.totalN; ++n) {
-        RetrieveStorage(space->geo.list[n].facet);
+        RetrieveStorage(space->geo.poly[n].facet);
     }
-    RetrieveStorage(space->geo.list);
+    RetrieveStorage(space->geo.poly);
     /* field variable related */
     RetrieveStorage(space->node);
     return 0;

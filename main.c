@@ -25,36 +25,22 @@
 int main(int argc, char *argv[])
 {
     /*
-     * Declare and initialize variables. Anything in C can be initialised
-     * with = 0; this initialises numeric elements to zero and pointers null
+     * Declare and initialize variables
      */    
+    Control theControl = {
+        .runMode = 'i',
+        .procN = 1};
     Time theTime = {0};
     Space theSpace = {0};
     Model theModel = {0};
-    Control theControl = {
-        .runMode = 'i',
-        .procN = 1
-    };
     /*
-     * Program Entrance
+     * Perform computation
      */
     ProgramEntrance(argc, argv, &theControl);
-    /*
-     * Preprocessing
-     */
     Preprocess(&theTime, &theSpace, &theModel);
-    /*
-     * Solve
-     */
     Solve(&theTime, &theSpace, &theModel);
-    /*
-     * Postprocessing
-     */
     Postprocess(&theSpace);
-    /*
-     * Successfully return
-     */
-    exit(EXIT_SUCCESS); /* exiting program */ 
+    exit(EXIT_SUCCESS); 
 }
 /* a good practice: end file with a newline */
 

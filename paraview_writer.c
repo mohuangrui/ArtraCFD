@@ -258,7 +258,7 @@ static int WritePointPolyData(const int start, const int end, const Geometry *ge
     fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"r\" format=\"ascii\">\n", paraSet->floatType);
     fprintf(filePointer, "          ");
     for (int n = start; n < end; ++n) {
-        data = geo->list[n].r;
+        data = geo->poly[n].r;
         fprintf(filePointer, "%.6g ", data);
     }
     fprintf(filePointer, "\n        </DataArray>\n");
@@ -266,9 +266,9 @@ static int WritePointPolyData(const int start, const int end, const Geometry *ge
     fprintf(filePointer, "                   NumberOfComponents=\"3\" format=\"ascii\">\n");
     fprintf(filePointer, "          ");
     for (int n = start; n < end; ++n) {
-        Vec[X] = geo->list[n].V[X];
-        Vec[Y] = geo->list[n].V[Y];
-        Vec[Z] = geo->list[n].V[Z];
+        Vec[X] = geo->poly[n].V[X];
+        Vec[Y] = geo->poly[n].V[Y];
+        Vec[Z] = geo->poly[n].V[Z];
         fprintf(filePointer, "%.6g %.6g %.6g ", Vec[X], Vec[Y], Vec[Z]);
     }
     fprintf(filePointer, "\n        </DataArray>\n");
@@ -280,9 +280,9 @@ static int WritePointPolyData(const int start, const int end, const Geometry *ge
     fprintf(filePointer, "                   NumberOfComponents=\"3\" format=\"ascii\">\n");
     fprintf(filePointer, "          ");
     for (int n = start; n < end; ++n) {
-        Vec[X] = geo->list[n].O[X];
-        Vec[Y] = geo->list[n].O[Y];
-        Vec[Z] = geo->list[n].O[Z];
+        Vec[X] = geo->poly[n].O[X];
+        Vec[Y] = geo->poly[n].O[Y];
+        Vec[Z] = geo->poly[n].O[Z];
         fprintf(filePointer, "%.6g %.6g %.6g ", Vec[X], Vec[Y], Vec[Z]);
     }
     fprintf(filePointer, "\n        </DataArray>\n");
@@ -345,7 +345,7 @@ static int WritePolygonPolyData(const int start, const int end, const Geometry *
     fprintf(filePointer, "  <PolyData>\n");
     for (int n = start; n < end; ++n) {
         fprintf(filePointer, "    <Piece NumberOfPoints=\"%d\" NumberOfVerts=\"0\" NumberOfPolys=\"%d\">\n",
-                geo->list[n].facetN * 3, geo->list[n].facetN);
+                geo->poly[n].facetN * 3, geo->poly[n].facetN);
         fprintf(filePointer, "      <PointData>\n");
         fprintf(filePointer, "      </PointData>\n");
         fprintf(filePointer, "      <CellData>\n");
@@ -354,18 +354,18 @@ static int WritePolygonPolyData(const int start, const int end, const Geometry *
         fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"points\"\n", paraSet->floatType);
         fprintf(filePointer, "                   NumberOfComponents=\"3\" format=\"ascii\">\n");
         fprintf(filePointer, "          ");
-        for (int m = 0; m < geo->list[n].facetN; ++m) {
-            Vec[X] = geo->list[n].facet[m].P1[X];
-            Vec[Y] = geo->list[n].facet[m].P1[Y];
-            Vec[Z] = geo->list[n].facet[m].P1[Z];
+        for (int m = 0; m < geo->poly[n].facetN; ++m) {
+            Vec[X] = geo->poly[n].facet[m].P1[X];
+            Vec[Y] = geo->poly[n].facet[m].P1[Y];
+            Vec[Z] = geo->poly[n].facet[m].P1[Z];
             fprintf(filePointer, "%.6g %.6g %.6g ", Vec[X], Vec[Y], Vec[Z]);
-            Vec[X] = geo->list[n].facet[m].P2[X];
-            Vec[Y] = geo->list[n].facet[m].P2[Y];
-            Vec[Z] = geo->list[n].facet[m].P2[Z];
+            Vec[X] = geo->poly[n].facet[m].P2[X];
+            Vec[Y] = geo->poly[n].facet[m].P2[Y];
+            Vec[Z] = geo->poly[n].facet[m].P2[Z];
             fprintf(filePointer, "%.6g %.6g %.6g ", Vec[X], Vec[Y], Vec[Z]);
-            Vec[X] = geo->list[n].facet[m].P3[X];
-            Vec[Y] = geo->list[n].facet[m].P3[Y];
-            Vec[Z] = geo->list[n].facet[m].P3[Z];
+            Vec[X] = geo->poly[n].facet[m].P3[X];
+            Vec[Y] = geo->poly[n].facet[m].P3[Y];
+            Vec[Z] = geo->poly[n].facet[m].P3[Z];
             fprintf(filePointer, "%.6g %.6g %.6g ", Vec[X], Vec[Y], Vec[Z]);
         }
         fprintf(filePointer, "\n        </DataArray>\n");
@@ -376,13 +376,13 @@ static int WritePolygonPolyData(const int start, const int end, const Geometry *
         fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"connectivity\" format=\"ascii\">\n",
                 paraSet->intType);
         fprintf(filePointer, "          ");
-        for (int m = 0; m < geo->list[n].facetN; ++m) {
+        for (int m = 0; m < geo->poly[n].facetN; ++m) {
             fprintf(filePointer, "%d %d %d ", 3 * m, 3 * m + 1, 3 * m + 2);
         }
         fprintf(filePointer, "\n        </DataArray>\n");
         fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"offsets\" format=\"ascii\">\n", paraSet->intType);
         fprintf(filePointer, "          ");
-        for (int m = 0; m < geo->list[n].facetN; ++m) {
+        for (int m = 0; m < geo->poly[n].facetN; ++m) {
             fprintf(filePointer, "%d ", 3 * (m + 1));
         }
         fprintf(filePointer, "\n        </DataArray>\n");
@@ -402,11 +402,11 @@ int WritePolyhedronStateData(const int start, const int end, FILE **filePointerP
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
     for (int n = start; n < end; ++n) {
         fprintf(filePointer, "        %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %d\n",
-                geo->list[n].O[X], geo->list[n].O[Y], geo->list[n].O[Z], geo->list[n].r,
-                geo->list[n].V[X], geo->list[n].V[Y], geo->list[n].V[Z],
-                geo->list[n].F[X], geo->list[n].F[Y], geo->list[n].F[Z],
-                geo->list[n].rho, geo->list[n].T, geo->list[n].cf,
-                geo->list[n].area, geo->list[n].volume, geo->list[n].matID);
+                geo->poly[n].O[X], geo->poly[n].O[Y], geo->poly[n].O[Z], geo->poly[n].r,
+                geo->poly[n].V[X], geo->poly[n].V[Y], geo->poly[n].V[Z],
+                geo->poly[n].F[X], geo->poly[n].F[Y], geo->poly[n].F[Z],
+                geo->poly[n].rho, geo->poly[n].T, geo->poly[n].cf,
+                geo->poly[n].area, geo->poly[n].volume, geo->poly[n].matID);
     }
     *filePointerPointer = filePointer; /* updated file pointer */
     return 0;

@@ -198,8 +198,8 @@ static int ReadPolygonPolyData(const int start, const int end, Geometry *geo, Pa
     ReadInLine(&filePointer, "<PolyData>");
     for (int n = start; n < end; ++n) {
         fgets(currentLine, sizeof currentLine, filePointer);
-        sscanf(currentLine, "%*s %*s %*s NumberOfPolys=\"%d\"", &(geo->list[n].facetN)); 
-        geo->list[n].facet = AssignStorage(geo->list[n].facetN, "Facet");
+        sscanf(currentLine, "%*s %*s %*s NumberOfPolys=\"%d\"", &(geo->poly[n].facetN)); 
+        geo->poly[n].facet = AssignStorage(geo->poly[n].facetN, "Facet");
         fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);
@@ -207,25 +207,25 @@ static int ReadPolygonPolyData(const int start, const int end, Geometry *geo, Pa
         fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);
-        for (int m = 0; m < geo->list[n].facetN; ++m) {
+        for (int m = 0; m < geo->poly[n].facetN; ++m) {
             fscanf(filePointer, format, &data);
-            geo->list[n].facet[m].P1[X] = data;
+            geo->poly[n].facet[m].P1[X] = data;
             fscanf(filePointer, format, &data);
-            geo->list[n].facet[m].P1[Y] = data;
+            geo->poly[n].facet[m].P1[Y] = data;
             fscanf(filePointer, format, &data);
-            geo->list[n].facet[m].P1[Z] = data;
+            geo->poly[n].facet[m].P1[Z] = data;
             fscanf(filePointer, format, &data);
-            geo->list[n].facet[m].P2[X] = data;
+            geo->poly[n].facet[m].P2[X] = data;
             fscanf(filePointer, format, &data);
-            geo->list[n].facet[m].P2[Y] = data;
+            geo->poly[n].facet[m].P2[Y] = data;
             fscanf(filePointer, format, &data);
-            geo->list[n].facet[m].P2[Z] = data;
+            geo->poly[n].facet[m].P2[Z] = data;
             fscanf(filePointer, format, &data);
-            geo->list[n].facet[m].P3[X] = data;
+            geo->poly[n].facet[m].P3[X] = data;
             fscanf(filePointer, format, &data);
-            geo->list[n].facet[m].P3[Y] = data;
+            geo->poly[n].facet[m].P3[Y] = data;
             fscanf(filePointer, format, &data);
-            geo->list[n].facet[m].P3[Z] = data;
+            geo->poly[n].facet[m].P3[Z] = data;
         }
         ReadInLine(&filePointer, "</Piece>");
     }
@@ -246,14 +246,14 @@ int ReadPolyhedronStateData(const int start, const int end, FILE **filePointerPo
     for (int n = start; n < end; ++n) {
         fgets(currentLine, sizeof currentLine, filePointer);
         sscanf(currentLine, format,
-                &(geo->list[n].O[X]), &(geo->list[n].O[Y]), &(geo->list[n].O[Z]), &(geo->list[n].r),
-                &(geo->list[n].V[X]), &(geo->list[n].V[Y]), &(geo->list[n].V[Z]),
-                &(geo->list[n].F[X]), &(geo->list[n].F[Y]), &(geo->list[n].F[Z]),
-                &(geo->list[n].rho), &(geo->list[n].T), &(geo->list[n].cf),
-                &(geo->list[n].area), &(geo->list[n].volume), &(geo->list[n].matID));
+                &(geo->poly[n].O[X]), &(geo->poly[n].O[Y]), &(geo->poly[n].O[Z]), &(geo->poly[n].r),
+                &(geo->poly[n].V[X]), &(geo->poly[n].V[Y]), &(geo->poly[n].V[Z]),
+                &(geo->poly[n].F[X]), &(geo->poly[n].F[Y]), &(geo->poly[n].F[Z]),
+                &(geo->poly[n].rho), &(geo->poly[n].T), &(geo->poly[n].cf),
+                &(geo->poly[n].area), &(geo->poly[n].volume), &(geo->poly[n].matID));
         if (geo->sphereN > n) {
-            geo->list[n].facetN = 0; /* analytical sphere tag */
-            geo->list[n].facet = NULL;
+            geo->poly[n].facetN = 0; /* analytical sphere tag */
+            geo->poly[n].facet = NULL;
         }
     }
     *filePointerPointer = filePointer; /* updated file pointer */

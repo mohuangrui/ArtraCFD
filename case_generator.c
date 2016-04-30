@@ -79,10 +79,10 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "# <Type> means the corresponding parameter only takes effect on <Type>\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "numerical begin\n");
-    fprintf(filePointer, "0                  # spatial scheme (integer; 0: WENO; 1: TVD)\n");
+    fprintf(filePointer, "0                  # spatial scheme (integer; 0: 5th WENO;)\n");
     fprintf(filePointer, "0                  # average method (integer; 0: Arithmetic mean; 1: Roe averages)\n");
     fprintf(filePointer, "0                  # flux splitting method (integer; 0: LLF; 1: SW)\n");
-    fprintf(filePointer, "1                  # material interaction (integer; 0: Off; 1: On)\n");
+    fprintf(filePointer, "1                  # phase interaction (integer; 0: Off; 1: On)\n");
     fprintf(filePointer, "-1                 # interfacial layers using reconstruction (integer; -1: all)\n");
     fprintf(filePointer, "numerical end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");

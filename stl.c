@@ -29,7 +29,7 @@ int ReadStlFile(const char *fileName, Polyhedron *poly)
     StlReal facetData = 0.0;
     FILE *filePointer = fopen(fileName, "rb");
     if (NULL == filePointer) {
-        FatalError("failed to read STL file...");
+        FatalError("failed to open STL file...");
     }
     fread(header, sizeof(char), sizeof(StlString), filePointer);
     fread(&facetN, sizeof(StlLongInt), 1, filePointer);
@@ -73,7 +73,7 @@ int WriteStlFile(const char *fileName, const Polyhedron *poly)
     StlReal facetData = 0.0;
     FILE *filePointer = fopen(fileName, "wb");
     if (NULL == filePointer) {
-        FatalError("failed to write STL file...");
+        FatalError("failed to open STL file...");
     }
     strncpy(header, "binary stl", sizeof(StlString));
     fwrite(header, sizeof(char), sizeof(StlString), filePointer);

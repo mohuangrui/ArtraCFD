@@ -128,7 +128,7 @@ static Real ComputeTimeStep(const Time *time, const Space *space, const Model *m
      * Incorporate solid dynamics into CFL condition.
      */
     for (int n = 0; n < geo->totalN; ++n) {
-        speed = MaxReal(fabs(geo->list[n].V[X]), MaxReal(fabs(geo->list[n].V[Y]), fabs(geo->list[n].V[Z])));
+        speed = MaxReal(fabs(geo->poly[n].V[X]), MaxReal(fabs(geo->poly[n].V[Y]), fabs(geo->poly[n].V[Z])));
         if (speedMax < speed) {
             speedMax = speed;
         }

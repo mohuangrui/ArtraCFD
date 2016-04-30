@@ -141,7 +141,7 @@ static int WriteGeometryFile(const Space *space, EnsightSet *enSet)
     }
     EnsightReal data = 0.0; /* the Ensight data format */
     const Partition *restrict part = &(space->part);
-    IntVector nodeCount = {0}; /* i, j, k node number in each part */
+    IntVec nodeCount = {0}; /* i, j, k node number in each part */
     /*
      * Output information to file, need to strictly follow the Ensight data format.
      * In fwrite, the first size is the sizeof an object, which is given in the

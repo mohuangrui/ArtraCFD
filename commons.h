@@ -575,7 +575,7 @@ typedef enum {
     ENTRYPROBE = 7, /* x1, y1, z1, x2, y2, z2, resolution */
     /* parameters related to domain partitions */
     NPART = 13, /* inner region, [west, east, south, north, front, back] x [Boundary, Ghost] */
-    NPARTWRITE = 13,
+    NPARTWRITE = 13, /* number of partitions to write data out */
     PIN = 0,
     PWB = 1, 
     PEB = 2, 
@@ -593,7 +593,7 @@ typedef enum {
     MIN = 0,
     MAX = 1,
     /* parameters related to domain boundary conditions */
-    NBC = 7, /* Interior, [west, east, south, north, front, back] x [BC] */
+    NBC = 7, /* Interior, [west, east, south, north, front, back] x [Boundary] */
     INFLOW = 0, /* boundary condition identifier */
     OUTFLOW = 1,
     SLIPWALL = 2,
@@ -608,7 +608,7 @@ typedef enum {
     ICSPHERE = 2, /* sphere initializer */
     ICBOX = 3, /* box initializer */
     ICCYLINDER = 4, /* cylinder initializer */
-    ENTRYIC = 12, /* x1, y1, z1, [x2, nx], [y2, ny], [z2, nz], r, primitive variables */
+    ENTRYIC = 12, /* x1, y1, z1, [x2, Nx], [y2, Ny], [z2, Nz], r, primitive variables */
     VARIC = 5, /* primitive variables: rho, u, v, w, p */
 } Constants;
 /*
@@ -616,8 +616,8 @@ typedef enum {
  */
 typedef double Real; /* real data */
 typedef char String[200]; /* string data */
-typedef int IntVector[DIMS]; /* integer type vector */
-typedef Real RealVector[DIMS]; /* real type vector */
+typedef int IntVec[DIMS]; /* integer type vector */
+typedef Real RealVec[DIMS]; /* real type vector */
 /*
  * Define structures for packing compound data
  *
@@ -668,16 +668,15 @@ typedef struct {
  * Domain discretization and partition structure
  */
 typedef struct {
-    IntVector m; /* mesh number of each direction */
-    IntVector n; /* node number of each direction */
-    int totalN; /* total node number of domain */
+    IntVec m; /* mesh number of each direction */
+    IntVec n; /* node number of each direction */
     int ng; /* number of ghost node layers of global domain */
     int collapsed; /* space collapse flag */
-    RealVector d; /* mesh size of each direction */
-    RealVector dd; /* reciprocal of mesh sizes */
+    RealVec d; /* mesh size of each direction */
+    RealVec dd; /* reciprocal of mesh sizes */
     Real tinyL; /* smallest length scale related to grid size */
     int ns[NPART][DIMS][LIMIT]; /* decomposition node range for each partition */
-    int normal[NBC][DIMS]; /* outer surface normal of domain boundary */
+    int N[NBC][DIMS]; /* outer surface normal of domain boundary */
     int typeBC[NBC]; /* BC types recorder */
     int countIC; /* count of flow initializers */
     int typeIC[NIC]; /* record type of each initializer */
@@ -689,10 +688,10 @@ typedef struct {
  * Facet structure
  */
 typedef struct {
-    RealVector N; /* normal vector */
-    RealVector P1; /* vertical 1 */
-    RealVector P2; /* vertical 2 */
-    RealVector P3; /* vertical 3 */
+    RealVec N; /* normal vector */
+    RealVec P1; /* vertical 1 */
+    RealVec P2; /* vertical 2 */
+    RealVec P3; /* vertical 3 */
     Real area; /* area */
 } Facet;
 /*
@@ -702,11 +701,11 @@ typedef struct {
     int facetN; /* number of facets. 0 for analytical sphere */
     int nodeN; /* total 1st type interfacial node in polyhedron */
     int matID; /* material type for polyhedron domain */
-    RealVector O; /* a bounding sphere of the polyhedron */
+    RealVec O; /* a bounding sphere of the polyhedron */
     Real r;
     Real box[DIMS][LIMIT]; /* a bounding box of the polyhedron */
-    RealVector V; /* velocity */
-    RealVector F; /* force */
+    RealVec V; /* velocity */
+    RealVec F; /* force */
     Real rho; /* density */
     Real T; /* wall temperature. T <= 0, adiabatic; T > 0, constant temperature */
     Real cf; /* roughness. cf <= 0, slip wall; cf > 0, no-slip wall */
@@ -721,7 +720,7 @@ typedef struct {
     int totalN; /* total number of geometries */
     int sphereN; /* number of analytical spheres */
     int stlN; /* number of triangulated polyhedrons */
-    Polyhedron *list; /* geometry list */
+    Polyhedron *poly; /* geometry list */
 } Geometry;
 /*
  * Material properties
@@ -729,19 +728,6 @@ typedef struct {
 typedef struct {
     Real eos; /* equation of state */
 } Material;
-/*
- * Data collection for flow reconstruction
- */
-typedef struct {
-    Real ds; /* distance to surface */
-    RealVector G; /* ghost point position */
-    RealVector I; /* image point position */
-    RealVector O; /* boundary point position */
-    RealVector N; /* normal vector */
-    Real UoG[DIMUo]; /* reconstructed primitives at ghost node */
-    Real UoI[DIMUo]; /* reconstructed primitives at image point */
-    Real UoO[DIMUo]; /* physical primitives at boundary point */
-} Ghost;
 /*
  * Space domain parameters
  */
@@ -805,7 +791,7 @@ typedef struct {
  *      lineCommand -- the command to be processed
  * Function
  *      Get rid of end of line, and information after #.
- *      Get rid of before and after tabs, replace between tabs with a space.
+ *      Get rid of before and after tabs, replace tabs with a space.
  *      Get rid of before and after spaces, retain only one space in words.
  *      If no other information exists, the lineCommand turns to a NULL string.
  * Returns
@@ -867,9 +853,20 @@ extern void *AssignStorage(const int idxMax, const char *dataType);
  */
 extern int RetrieveStorage(void *pointer);
 /*
- * Auxiliary Functions for File Reading and Writing
+ * Auxiliary Functions for File Reading
+ *
+ * Function
+ *      Read in lines until a line matches the lineString.
+ *      The file pointer points to the next line of the matched line.
  */
 extern int ReadInLine(FILE **filePointerPointer, const char *lineString);
+/*
+ * Auxiliary Functions for File Writing
+ *
+ * Function
+ *      Search down the lines until a line matches the lineString.
+ *      The file pointer points to the matched line.
+ */
 extern int WriteToLine(FILE **filePointerPointer, const char *lineString);
 #endif
 /* a good practice: end file with a newline */
