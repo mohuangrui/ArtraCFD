@@ -116,33 +116,9 @@ int ShowInformation(const char *statement)
  *    a static variable or returning a pointer to dynamically allocated 
  *    memory can both be valid.
  */
-void *AssignStorage(const int idxMax, const char *dataType)
+void *AssignStorage(size_t size)
 {
-    void *pointer = NULL;
-    if (0 == strcmp(dataType, "Node")) {
-        pointer = malloc(idxMax * sizeof(Node));
-    }
-    if (0 == strcmp(dataType, "Facet")) {
-        pointer = malloc(idxMax * sizeof(Facet));
-    }
-    if (0 == strcmp(dataType, "Polyhedron")) {
-        pointer = malloc(idxMax * sizeof(Polyhedron));
-    }
-    if (0 == strcmp(dataType, "Real")) {
-        pointer = malloc(idxMax * sizeof(Real));
-    }
-    if (0 == strcmp(dataType, "double")) {
-        pointer = malloc(idxMax * sizeof(double));
-    }
-    if (0 == strcmp(dataType, "float")) {
-        pointer = malloc(idxMax * sizeof(float));
-    }
-    if (0 == strcmp(dataType, "char")) {
-        pointer = malloc(idxMax * sizeof(char));
-    }
-    if (0 == strcmp(dataType, "int")) {
-        pointer = malloc(idxMax * sizeof(int));
-    }
+    void *pointer = malloc(size);
     if (NULL == pointer) {
         FatalError("memory allocation failed");
     }

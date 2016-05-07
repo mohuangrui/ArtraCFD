@@ -21,6 +21,9 @@
  ****************************************************************************/
 int WriteFieldDataAtProbes(const Time *time, const Space *space, const Model *model)
 {
+    if (0 == time->probeN) {
+        return 0;
+    }
     FILE *filePointer = NULL;
     String fileName = {'\0'};
     const Partition *restrict part = &(space->part);

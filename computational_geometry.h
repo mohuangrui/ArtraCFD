@@ -24,34 +24,24 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Compute geometry parameters
- *
- * Function
- *
- *      Compute parameters of the geometry.
+ * Convert polyhedron representation from STL to a mixture form
+ * of face-vertex mesh and winged-edge mesh
  */
-extern int ComputeGeometryParameters(const Space *, Geometry *);
+extern void ConvertPolyhedron(Polyhedron *);
+extern void AllocatePolyhedronMemory(const int vertN, const int facetN, Polyhedron *);
+extern void AddEdge(const int v1, const int v2, const int f, Polyhedron *);
+/*
+ * Compute geometry parameters
+ */
+extern void ComputeGeometryParameters(Space *);
 /*
  * Point in polyhedron
  *
  * Function
  *      Check node whether locates in the polyhedron.
- *
- * Return
- *      0 -- in current polyhedron
- *      1 -- out of current polyhedron
  */
 extern int PointInPolyhedron(const int k, const int j, const int i,
-        const Polyhedron *, const Space *);
-/*
- * Calculate node information
- *
- * Function
- *
- *      Calculate geometry information of current node.
- */
-extern int CalculateNodeInformation(Real info[], const int k, const int j, 
-        const int i, const Geometry *geo, const int m, const Space *);
+        const Space *);
 #endif
 /* a good practice: end file with a newline */
 

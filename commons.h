@@ -692,13 +692,14 @@ typedef struct {
     RealVec P1; /* vertical 1 */
     RealVec P2; /* vertical 2 */
     RealVec P3; /* vertical 3 */
-    Real area; /* area */
 } Facet;
 /*
  * Polyhedron structure
  */
 typedef struct {
     int facetN; /* number of facets. 0 for analytical sphere */
+    int edgeN; /* number of edges */
+    int vertN; /* number of vertices */
     int nodeN; /* total 1st type interfacial node in polyhedron */
     int matID; /* material type for polyhedron domain */
     RealVec O; /* a bounding sphere of the polyhedron */
@@ -712,6 +713,12 @@ typedef struct {
     Real area; /* area */
     Real volume; /* volume */
     Facet *facet; /* facet data */
+    int (*restrict f)[3]; /* face-vertex list */
+    Real (*restrict Nf)[3]; /* face normal */
+    int (*restrict e)[4]; /* edge-vertex-face list */
+    Real (*restrict Ne)[3]; /* edge normal */
+    Real (*restrict v)[3]; /* vertex list */
+    Real (*restrict Nv)[3]; /* vertex normal */
 } Polyhedron;
 /*
  * Geometry Entities
@@ -794,8 +801,6 @@ typedef struct {
  *      Get rid of before and after tabs, replace tabs with a space.
  *      Get rid of before and after spaces, retain only one space in words.
  *      If no other information exists, the lineCommand turns to a NULL string.
- * Returns
- *      0 -- successful
  */
 extern int CommandLineProcessor(char *lineCommand);
 /*
@@ -822,9 +827,6 @@ extern int ShowInformation(const char *statement);
 /*
  * Assign Storage
  *
- * Parameters
- *      idxMax -- the maximum number of elements
- *      dataType -- the data type of elements,
  * Function
  *      Use malloc to assign a linear array of storage with specified data type.
  * Returns
@@ -832,10 +834,8 @@ extern int ShowInformation(const char *statement);
  * Notice
  *      malloc does not initialize the storage; this means that the assigned
  *      memory may contain random or unexpected values!
- * Returns
- *      0 -- successful
  */
-extern void *AssignStorage(const int idxMax, const char *dataType);
+extern void *AssignStorage(size_t size);
 /*
  * Retrieve storage from a pointer
  *
@@ -848,8 +848,6 @@ extern void *AssignStorage(const int idxMax, const char *dataType);
  *      The original pointer becomes to be a wild pointer after being freed, be
  *      aware of this situation. It's a better practice to set pointer back to NULL
  *      after calling free.
- * Returns
- *      0 -- successful
  */
 extern int RetrieveStorage(void *pointer);
 /*

@@ -21,14 +21,6 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int InitializeGeometryDomain(Space *, const Partition *);
-static int IdentifySolidNodes(Space *, const Partition *, const Geometry *);
-static int IdentifyGhostNodes(Space *, const Partition *, const Geometry *);
-static int SearchFluidNodes(const int, const int, const int, const int, const Space *);
-static int InverseDistanceWeighting(Real [], Real *, const Real, const Real, const Real,
-        const int, const int, const int, const int, const int, const Real *,
-        const Space *, const Model *, const Geometry *);
-static int ApplyWeighting(Real [], Real *, Real, const Real [], const Real);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -57,30 +49,26 @@ static int ApplyWeighting(Real [], Real *, Real, const Real [], const Real);
  */
 void ComputeGeometryDomain(Space *space)
 {
-    InitializeGeometryDomain(space, part);
-    IdentifySolidNodes(space, part, geo);
-    IdentifyGhostNodes(space, part, geo);
+    InitializeGeometryDomain(space);
+    IdentifySolidNodes(space);
+    IdentifyGhostNodes(space);
     return;
 }
-static int InitializeGeometryDomain(Space *space, const Partition *part)
+static void InitializeGeometryDomain(Space *space)
 {
-    Index idx = 0; /* linear array index math variable */
-    /* initialize inner nodes to fluid type, others to exterior nodes type. */
-    for (int k = 0; k < space->n[Z]; ++k) {
-        for (int j = 0; j < space->n[Y]; ++j) {
-            for (int i = 0; i < space->n[X]; ++i) {
-                idx = IndexNode(k, j, i, space);
-                if ((part->n[PIN][Z][MIN] <= k) && (part->n[PIN][Z][MAX] > k) &&
-                        (part->n[PIN][Y][MIN] <= j) && (part->n[PIN][Y][MAX] > j) &&
-                        (part->n[PIN][X][MIN] <= i) && (part->n[PIN][X][MAX] > i)) {
-                    space->node[idx].type = FLUID;
-                } else {
-                    space->node[idx].type = EXTERIOR;
-                }
+    const Partition *restrict part = &(space->part);
+    const Geometry *restrict geo = &(space->geo);
+    const Node *node = space->node;
+    const Real *restrict U = NULL;
+    int idx = 0; /* linear array index math variable */
+    /* , . */
+    for (int k = 0; k < part->n[Z]; ++k) {
+        for (int j = 0; j < part->n[Y]; ++j) {
+            for (int i = 0; i < part->n[X]; ++i) {
             }
         }
     }
-    return 0;
+    return;
 }
 /*
  * A bounding box and a bounding sphere are both used as bounding containers

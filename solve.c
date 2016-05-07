@@ -90,15 +90,11 @@ static int SolutionEvolution(Time *time, Space *space, const Model *model)
         operationTime = TockTime(&operationTimer);
         fprintf(stdout, "  elapsed: %.6gs\n", operationTime);
         /*
-         * Export computed data. If accumulated time increases to anticipated 
-         * export interval, write data out. Because the accumulated time very 
-         * likely can not increase to the exporting interval at the last
-         * phase, then add an extra condition that if current time is the end
-         * time, then also write data out.
+         * Export data if accumulated time increases to anticipated interval.
          */
         record = record + dt;
         probeRecord = probeRecord + dt;
-        if ((record >= interval) || (time->end <= time->now) || (time->countStep == time->stepN)) {
+        if (record > interval) {
             ++(time->countOutput); /* export count increase */
             fprintf(stdout, "  exporting data...\n");
             TickTime(&operationTimer);
@@ -108,11 +104,19 @@ static int SolutionEvolution(Time *time, Space *space, const Model *model)
             record = 0.0; /* reset accumulated time */
             fprintf(stdout, "  elapsed: %.6gs\n", operationTime);
         }
-        if ((probeRecord >= probeInterval) || (time->end <= time->now) || (time->countStep == time->stepN)) {
+        if (probeRecord > probeInterval) {
             WriteFieldDataAtProbes(time, space, model);
             probeRecord = 0.0; /* reset probe accumulated time */
         }
     }
+    /*
+     * Export final sate of data since the accumulated time normally can not 
+     * increase to the exporting interval at the last phase.
+     */
+    ++(time->countOutput); /* export count increase */
+    WriteFieldData(time, space, model);
+    WriteGeometryData(time, &(space->geo));
+    WriteFieldDataAtProbes(time, space, model);
     return 0;
 }
 static Real ComputeTimeStep(const Time *time, const Space *space, const Model *model)

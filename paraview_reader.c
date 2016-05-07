@@ -14,6 +14,7 @@
 #include "paraview.h"
 #include <stdio.h> /* standard library for input and output */
 #include <string.h> /* manipulating strings */
+#include "computational_geometry.h"
 #include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
@@ -187,19 +188,33 @@ static int ReadPolygonPolyData(const int start, const int end, Geometry *geo, Pa
     if (NULL == filePointer) {
         FatalError("failed to open data file...");
     }
-    ParaviewReal data = 0.0; /* paraview scalar data */
+    ParaviewReal Vec[3] = {0.0}; /* paraview vector data */
     /* set format specifier according to the type of Real */
-    char format[5] = "%lg"; /* default is double type */
+    char format[15] = "%lg %lg %lg"; /* default is double type */
     if (sizeof(ParaviewReal) == sizeof(float)) {
-        strncpy(format, "%g", sizeof format); /* float type */
+        strncpy(format, "%g %g %g", sizeof format); /* float type */
     }
     /* get rid of redundant lines */
     String currentLine = {'\0'}; /* store current line */
     ReadInLine(&filePointer, "<PolyData>");
     for (int n = start; n < end; ++n) {
         fgets(currentLine, sizeof currentLine, filePointer);
-        sscanf(currentLine, "%*s %*s %*s NumberOfPolys=\"%d\"", &(geo->poly[n].facetN)); 
-        geo->poly[n].facet = AssignStorage(geo->poly[n].facetN, "Facet");
+        sscanf(currentLine, "%*s NumberOfPoints=\"%d\" %*s NumberOfPolys=\"%d\"", 
+                &(geo->poly[n].vertN), &(geo->poly[n].facetN)); 
+        AllocatePolyhedronMemory(geo->poly[n].vertN, geo->poly[n].facetN, geo->poly + n);
+        fgets(currentLine, sizeof currentLine, filePointer);
+        fgets(currentLine, sizeof currentLine, filePointer);
+        fgets(currentLine, sizeof currentLine, filePointer);
+        fgets(currentLine, sizeof currentLine, filePointer);
+        fgets(currentLine, sizeof currentLine, filePointer);
+        fgets(currentLine, sizeof currentLine, filePointer);
+        fgets(currentLine, sizeof currentLine, filePointer);
+        for (int m = 0; m < geo->poly[n].vertN; ++m) {
+            fscanf(filePointer, format, &(Vec[X]), &(Vec[Y]), &(Vec[Z]));
+            geo->poly[n].v[m][X] = Vec[X];
+            geo->poly[n].v[m][Y] = Vec[Y];
+            geo->poly[n].v[m][Z] = Vec[Z];
+        }
         fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);
@@ -208,24 +223,10 @@ static int ReadPolygonPolyData(const int start, const int end, Geometry *geo, Pa
         fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);
         for (int m = 0; m < geo->poly[n].facetN; ++m) {
-            fscanf(filePointer, format, &data);
-            geo->poly[n].facet[m].P1[X] = data;
-            fscanf(filePointer, format, &data);
-            geo->poly[n].facet[m].P1[Y] = data;
-            fscanf(filePointer, format, &data);
-            geo->poly[n].facet[m].P1[Z] = data;
-            fscanf(filePointer, format, &data);
-            geo->poly[n].facet[m].P2[X] = data;
-            fscanf(filePointer, format, &data);
-            geo->poly[n].facet[m].P2[Y] = data;
-            fscanf(filePointer, format, &data);
-            geo->poly[n].facet[m].P2[Z] = data;
-            fscanf(filePointer, format, &data);
-            geo->poly[n].facet[m].P3[X] = data;
-            fscanf(filePointer, format, &data);
-            geo->poly[n].facet[m].P3[Y] = data;
-            fscanf(filePointer, format, &data);
-            geo->poly[n].facet[m].P3[Z] = data;
+            fscanf(filePointer, "%d %d %d", &(geo->poly[n].f[m][0]), &(geo->poly[n].f[m][1]), &(geo->poly[n].f[m][2]));
+            AddEdge(geo->poly[n].f[m][0], geo->poly[n].f[m][1], m, geo->poly + n); 
+            AddEdge(geo->poly[n].f[m][1], geo->poly[n].f[m][2], m, geo->poly + n); 
+            AddEdge(geo->poly[n].f[m][2], geo->poly[n].f[m][0], m, geo->poly + n); 
         }
         ReadInLine(&filePointer, "</Piece>");
     }

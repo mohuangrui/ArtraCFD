@@ -337,7 +337,6 @@ static int WritePolygonPolyData(const int start, const int end, const Geometry *
     if (NULL == filePointer) {
         FatalError("failed to open data file...");
     }
-    ParaviewReal data = 0.0; /* paraview scalar data */
     ParaviewReal Vec[3] = {0.0}; /* paraview vector data */
     fprintf(filePointer, "<?xml version=\"1.0\"?>\n");
     fprintf(filePointer, "<VTKFile type=\"PolyData\" version=\"1.0\"\n");
@@ -345,7 +344,7 @@ static int WritePolygonPolyData(const int start, const int end, const Geometry *
     fprintf(filePointer, "  <PolyData>\n");
     for (int n = start; n < end; ++n) {
         fprintf(filePointer, "    <Piece NumberOfPoints=\"%d\" NumberOfVerts=\"0\" NumberOfPolys=\"%d\">\n",
-                geo->poly[n].facetN * 3, geo->poly[n].facetN);
+                geo->poly[n].vertN, geo->poly[n].facetN);
         fprintf(filePointer, "      <PointData>\n");
         fprintf(filePointer, "      </PointData>\n");
         fprintf(filePointer, "      <CellData>\n");
@@ -354,18 +353,10 @@ static int WritePolygonPolyData(const int start, const int end, const Geometry *
         fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"points\"\n", paraSet->floatType);
         fprintf(filePointer, "                   NumberOfComponents=\"3\" format=\"ascii\">\n");
         fprintf(filePointer, "          ");
-        for (int m = 0; m < geo->poly[n].facetN; ++m) {
-            Vec[X] = geo->poly[n].facet[m].P1[X];
-            Vec[Y] = geo->poly[n].facet[m].P1[Y];
-            Vec[Z] = geo->poly[n].facet[m].P1[Z];
-            fprintf(filePointer, "%.6g %.6g %.6g ", Vec[X], Vec[Y], Vec[Z]);
-            Vec[X] = geo->poly[n].facet[m].P2[X];
-            Vec[Y] = geo->poly[n].facet[m].P2[Y];
-            Vec[Z] = geo->poly[n].facet[m].P2[Z];
-            fprintf(filePointer, "%.6g %.6g %.6g ", Vec[X], Vec[Y], Vec[Z]);
-            Vec[X] = geo->poly[n].facet[m].P3[X];
-            Vec[Y] = geo->poly[n].facet[m].P3[Y];
-            Vec[Z] = geo->poly[n].facet[m].P3[Z];
+        for (int m = 0; m < geo->poly[n].vertN; ++m) {
+            Vec[X] = geo->poly[n].v[m][X];
+            Vec[Y] = geo->poly[n].v[m][Y];
+            Vec[Z] = geo->poly[n].v[m][Z];
             fprintf(filePointer, "%.6g %.6g %.6g ", Vec[X], Vec[Y], Vec[Z]);
         }
         fprintf(filePointer, "\n        </DataArray>\n");
@@ -377,7 +368,7 @@ static int WritePolygonPolyData(const int start, const int end, const Geometry *
                 paraSet->intType);
         fprintf(filePointer, "          ");
         for (int m = 0; m < geo->poly[n].facetN; ++m) {
-            fprintf(filePointer, "%d %d %d ", 3 * m, 3 * m + 1, 3 * m + 2);
+            fprintf(filePointer, "%d %d %d ", geo->poly[n].f[m][0], geo->poly[n].f[m][1], geo->poly[n].f[m][2]);
         }
         fprintf(filePointer, "\n        </DataArray>\n");
         fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"offsets\" format=\"ascii\">\n", paraSet->intType);

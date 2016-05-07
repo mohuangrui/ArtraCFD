@@ -14,6 +14,7 @@
 #include "initialization.h"
 #include <stdio.h> /* standard library for input and output */
 #include <string.h> /* manipulating strings */
+#include "computational_geometry.h"
 #include "immersed_boundary.h"
 #include "boundary_treatment.h"
 #include "data_stream.h"
@@ -195,6 +196,7 @@ static int InitializeGeometryData(Geometry *geo)
                 fgets(currentLine, sizeof currentLine, filePointer);
                 sscanf(currentLine, "%s", fileName);
                 ReadStlFile(fileName, geo->poly + n);
+                ConvertPolyhedron(geo->poly + n);
             }
             continue;
         }

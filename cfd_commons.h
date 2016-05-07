@@ -91,6 +91,7 @@ extern Real PointSpace(const int n, const Real sMin, const Real ds, const int ng
  */
 extern Real MinReal(const Real x, const Real y);
 extern Real MaxReal(const Real x, const Real y);
+extern int EqualReal(const Real x, const Real y);
 extern int MinInt(const int x, const int y);
 extern int MaxInt(const int x, const int y);
 extern int Sign(const Real x);

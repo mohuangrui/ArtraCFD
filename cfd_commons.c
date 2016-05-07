@@ -14,6 +14,7 @@
 #include "cfd_commons.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
+#include <float.h> /* size of floating point values */
 #include "commons.h"
 /****************************************************************************
  * Function Pointers
@@ -335,6 +336,10 @@ Real MaxReal(const Real x, const Real y)
     }
     return y;
 }
+int EqualReal(const Real x, const Real y)
+{
+    return (fabs(x - y) <= DBL_EPSILON * MaxReal(fabs(x), fabs(y)));
+}
 int MinInt(const int x, const int y)
 {
     if (x < y) {
@@ -417,6 +422,12 @@ void Normalize(const int dimV, const Real normalizer, Real V[restrict])
         V[n] = V[n] / normalizer;
     }
     return;
+}
+int InBox(const int k, const int j, const int i, int box[restrict][LIMIT])
+{
+    return ((box[Z][MIN] <= k) && (box[Z][MAX] > k) &&
+            (box[Y][MIN] <= j) && (box[Y][MAX] > j) &&
+            (box[X][MIN] <= i) && (box[X][MAX] > i));
 }
 /* a good practice: end file with a newline */
 

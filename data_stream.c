@@ -57,16 +57,18 @@ int ReadFieldData(Time *time, Space *space, const Model *model)
 }
 int WriteGeometryData(const Time *time, const Geometry * geo)
 {
-    if (0 != geo->totalN) {
-        WritePolyData[0](time, geo);
+    if (0 == geo->totalN) {
+        return 0;
     }
+    WritePolyData[0](time, geo);
     return 0;
 }
 int ReadGeometryData(const Time *time, Geometry * geo)
 {
-    if (0 != geo->totalN) {
-        ReadPolyData[0](time, geo);
+    if (0 == geo->totalN) {
+        return 0;
     }
+    ReadPolyData[0](time, geo);
     return 0;
 }
 /* a good practice: end file with a newline */

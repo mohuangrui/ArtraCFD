@@ -20,12 +20,69 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ComputeParametersAnalyticalSphere(const Space *, Polyhedron *);
-static int ComputeParametersTriangulatedPolyhedron(const Space *, Polyhedron *);
+static int AddVertex(const Real [restrict], Polyhedron *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int ComputeGeometryParameters(const Space *space, Geometry *geo)
+void ConvertPolyhedron(Polyhedron *poly)
+{
+    AllocatePolyhedronMemory(poly->facetN, poly->facetN, poly);
+    for (int n = 0; n < poly->facetN; ++n) {
+        poly->f[n][0] = AddVertex(poly->facet[n].P1, poly);
+        poly->f[n][1] = AddVertex(poly->facet[n].P2, poly);
+        poly->f[n][2] = AddVertex(poly->facet[n].P3, poly);
+        AddEdge(poly->f[n][0], poly->f[n][1], n, poly); 
+        AddEdge(poly->f[n][1], poly->f[n][2], n, poly); 
+        AddEdge(poly->f[n][2], poly->f[n][0], n, poly); 
+    }
+    RetrieveStorage(poly->facet);
+    poly->facet = NULL;
+    return;
+}
+void AllocatePolyhedronMemory(const int vertN, const int facetN, Polyhedron *poly)
+{
+    /* vertN <= facetN, edgeN = facetN * 3 / 2 */
+    poly->f = AssignStorage(facetN * sizeof(*poly->f));
+    poly->Nf = AssignStorage(facetN * sizeof(*poly->Nf));
+    poly->e = AssignStorage((int)(1.5 * facetN + 0.5) * sizeof(*poly->e));
+    poly->Ne = AssignStorage((int)(1.5 * facetN + 0.5) * sizeof(*poly->Ne));
+    poly->v = AssignStorage(vertN * sizeof(*poly->v));
+    poly->Nv = AssignStorage(vertN * sizeof(*poly->Nv));
+}
+static int AddVertex(const Real v[restrict], Polyhedron *poly)
+{
+    /* search the vertex list, if already exist, return the index */
+    for (int n = 0; n < poly->vertN; ++n) {
+        if (EqualReal(v[X], poly->v[n][X]) && EqualReal(v[Y], poly->v[n][Y]) && 
+                EqualReal(v[Z], poly->v[n][Z])) {
+            return n;
+        }
+    }
+    /* otherwise, add to the vertex list */
+    poly->v[poly->vertN][X] = v[X];
+    poly->v[poly->vertN][Y] = v[Y];
+    poly->v[poly->vertN][Z] = v[Z];
+    ++(poly->vertN); /* increase pointer */
+    return (poly->vertN - 1); /* return index */
+}
+void AddEdge(const int v1, const int v2, const int f, Polyhedron *poly)
+{
+    /* search the edge list, if already exist, add the second face index */
+    for (int n = 0; n < poly->edgeN; ++n) {
+        if (((v1 == poly->e[n][0]) && (v2 == poly->e[n][1])) ||
+                ((v2 == poly->e[n][0]) && (v1 == poly->e[n][1]))) {
+            poly->e[n][3] = f;
+            return;
+        }
+    }
+    /* otherwise, add to the edge list */
+    poly->e[poly->edgeN][0] = v1;
+    poly->e[poly->edgeN][1] = v2;
+    poly->e[poly->edgeN][2] = f;
+    ++(poly->edgeN); /* increase pointer */
+    return;
+}
+void ComputeGeometryParameters(Space *space)
 {
     for (int m = 0; m < geo->totalM; ++m) {
         if (0 == geo->list[m].facetN) {
