@@ -33,8 +33,8 @@ int ReadStlFile(const char *fileName, Polyhedron *poly)
     }
     fread(header, sizeof(char), sizeof(StlString), filePointer);
     fread(&facetN, sizeof(StlLongInt), 1, filePointer);
-    poly->facetN = facetN;
-    poly->facet = AssignStorage(poly->facetN * sizeof(Facet));
+    poly->faceN = facetN;
+    poly->facet = AssignStorage(poly->faceN * sizeof(Facet));
     for (int n = 0; n < facetN; ++n) {
         fread(&facetData, sizeof(StlReal), 1, filePointer);
         poly->facet[n].N[X] = facetData;
@@ -43,23 +43,23 @@ int ReadStlFile(const char *fileName, Polyhedron *poly)
         fread(&facetData, sizeof(StlReal), 1, filePointer);
         poly->facet[n].N[Z] = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        poly->facet[n].P1[X] = facetData;
+        poly->facet[n].v0[X] = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        poly->facet[n].P1[Y] = facetData;
+        poly->facet[n].v0[Y] = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        poly->facet[n].P1[Z] = facetData;
+        poly->facet[n].v0[Z] = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        poly->facet[n].P2[X] = facetData;
+        poly->facet[n].v1[X] = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        poly->facet[n].P2[Y] = facetData;
+        poly->facet[n].v1[Y] = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        poly->facet[n].P2[Z] = facetData;
+        poly->facet[n].v1[Z] = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        poly->facet[n].P3[X] = facetData;
+        poly->facet[n].v2[X] = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        poly->facet[n].P3[Y] = facetData;
+        poly->facet[n].v2[Y] = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
-        poly->facet[n].P3[Z] = facetData;
+        poly->facet[n].v2[Z] = facetData;
         fread(&attributeCount, sizeof(StlInt), 1, filePointer);
     }
     fclose(filePointer); /* close current opened file */
@@ -77,7 +77,7 @@ int WriteStlFile(const char *fileName, const Polyhedron *poly)
     }
     strncpy(header, "binary stl", sizeof(StlString));
     fwrite(header, sizeof(char), sizeof(StlString), filePointer);
-    facetN = poly->facetN;
+    facetN = poly->faceN;
     fwrite(&facetN, sizeof(StlLongInt), 1, filePointer);
     for (int n = 0; n < facetN; ++n) {
         facetData = poly->facet[n].N[X];
@@ -86,23 +86,23 @@ int WriteStlFile(const char *fileName, const Polyhedron *poly)
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
         facetData = poly->facet[n].N[Z];
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = poly->facet[n].P1[X];
+        facetData = poly->facet[n].v0[X];
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = poly->facet[n].P1[Y];
+        facetData = poly->facet[n].v0[Y];
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = poly->facet[n].P1[Z];
+        facetData = poly->facet[n].v0[Z];
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = poly->facet[n].P2[X];
+        facetData = poly->facet[n].v1[X];
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = poly->facet[n].P2[Y];
+        facetData = poly->facet[n].v1[Y];
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = poly->facet[n].P2[Z];
+        facetData = poly->facet[n].v1[Z];
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = poly->facet[n].P3[X];
+        facetData = poly->facet[n].v2[X];
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = poly->facet[n].P3[Y];
+        facetData = poly->facet[n].v2[Y];
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
-        facetData = poly->facet[n].P3[Z];
+        facetData = poly->facet[n].v2[Z];
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
         fwrite(&attributeCount, sizeof(StlInt), 1, filePointer);
     }

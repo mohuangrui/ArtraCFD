@@ -338,13 +338,15 @@ static int WritePolygonPolyData(const int start, const int end, const Geometry *
         FatalError("failed to open data file...");
     }
     ParaviewReal Vec[3] = {0.0}; /* paraview vector data */
+    const Polyhedron *poly = NULL;
     fprintf(filePointer, "<?xml version=\"1.0\"?>\n");
     fprintf(filePointer, "<VTKFile type=\"PolyData\" version=\"1.0\"\n");
     fprintf(filePointer, "         byte_order=\"%s\">\n", paraSet->byteOrder);
     fprintf(filePointer, "  <PolyData>\n");
-    for (int n = start; n < end; ++n) {
+    for (int m = start; m < end; ++m) {
+        poly = geo->poly + m;
         fprintf(filePointer, "    <Piece NumberOfPoints=\"%d\" NumberOfVerts=\"0\" NumberOfPolys=\"%d\">\n",
-                geo->poly[n].vertN, geo->poly[n].facetN);
+                poly->vertN, poly->faceN);
         fprintf(filePointer, "      <PointData>\n");
         fprintf(filePointer, "      </PointData>\n");
         fprintf(filePointer, "      <CellData>\n");
@@ -353,10 +355,10 @@ static int WritePolygonPolyData(const int start, const int end, const Geometry *
         fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"points\"\n", paraSet->floatType);
         fprintf(filePointer, "                   NumberOfComponents=\"3\" format=\"ascii\">\n");
         fprintf(filePointer, "          ");
-        for (int m = 0; m < geo->poly[n].vertN; ++m) {
-            Vec[X] = geo->poly[n].v[m][X];
-            Vec[Y] = geo->poly[n].v[m][Y];
-            Vec[Z] = geo->poly[n].v[m][Z];
+        for (int n = 0; n < poly->vertN; ++n) {
+            Vec[X] = poly->v[n][X];
+            Vec[Y] = poly->v[n][Y];
+            Vec[Z] = poly->v[n][Z];
             fprintf(filePointer, "%.6g %.6g %.6g ", Vec[X], Vec[Y], Vec[Z]);
         }
         fprintf(filePointer, "\n        </DataArray>\n");
@@ -367,14 +369,14 @@ static int WritePolygonPolyData(const int start, const int end, const Geometry *
         fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"connectivity\" format=\"ascii\">\n",
                 paraSet->intType);
         fprintf(filePointer, "          ");
-        for (int m = 0; m < geo->poly[n].facetN; ++m) {
-            fprintf(filePointer, "%d %d %d ", geo->poly[n].f[m][0], geo->poly[n].f[m][1], geo->poly[n].f[m][2]);
+        for (int n = 0; n < poly->faceN; ++n) {
+            fprintf(filePointer, "%d %d %d ", poly->f[n][0], poly->f[n][1], poly->f[n][2]);
         }
         fprintf(filePointer, "\n        </DataArray>\n");
         fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"offsets\" format=\"ascii\">\n", paraSet->intType);
         fprintf(filePointer, "          ");
-        for (int m = 0; m < geo->poly[n].facetN; ++m) {
-            fprintf(filePointer, "%d ", 3 * (m + 1));
+        for (int n = 0; n < poly->faceN; ++n) {
+            fprintf(filePointer, "%d ", 3 * (n + 1));
         }
         fprintf(filePointer, "\n        </DataArray>\n");
         fprintf(filePointer, "      </Polys>\n");
@@ -391,13 +393,15 @@ static int WritePolygonPolyData(const int start, const int end, const Geometry *
 int WritePolyhedronStateData(const int start, const int end, FILE **filePointerPointer, const Geometry *geo)
 {
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
+    const Polyhedron *poly = NULL;
     for (int n = start; n < end; ++n) {
+        poly = geo->poly + n;
         fprintf(filePointer, "        %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %d\n",
-                geo->poly[n].O[X], geo->poly[n].O[Y], geo->poly[n].O[Z], geo->poly[n].r,
-                geo->poly[n].V[X], geo->poly[n].V[Y], geo->poly[n].V[Z],
-                geo->poly[n].F[X], geo->poly[n].F[Y], geo->poly[n].F[Z],
-                geo->poly[n].rho, geo->poly[n].T, geo->poly[n].cf,
-                geo->poly[n].area, geo->poly[n].volume, geo->poly[n].matID);
+                poly->O[X], poly->O[Y], poly->O[Z], poly->r,
+                poly->V[X], poly->V[Y], poly->V[Z],
+                poly->F[X], poly->F[Y], poly->F[Z],
+                poly->rho, poly->T, poly->cf,
+                poly->area, poly->volume, poly->matID);
     }
     *filePointerPointer = filePointer; /* updated file pointer */
     return 0;

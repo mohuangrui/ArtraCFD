@@ -346,7 +346,7 @@ static int TriangulatedGeometryFileGenerator(void)
             8.660254e-001, 5.000000e-001, 5.000000e-001}
     };
     Polyhedron wedge = {
-        .facetN = 8,
+        .faceN = 8,
         .facet = facetData
     };
     WriteStlFile("artracfd.stl", &wedge);

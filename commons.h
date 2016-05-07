@@ -567,8 +567,8 @@ typedef enum {
     TM = 2, /* the time level for intermediate */
     /* parameters related to numerical model */
     FLUID = 0,
-    GAS = 0, /* gas */
-    WATER = 1, /* water */
+    GAS = 0,
+    WATER = 1,
     WENOFIVE = 0, /* 5th order weno */
     /* parameters related to probe */
     NPROBE = 10, /* maximum number of probes to support */
@@ -660,7 +660,7 @@ typedef Real RealVec[DIMS]; /* real type vector */
  */
 typedef struct {
     int geoID; /* geometry identifier */
-    int facetID; /* closest facet identifier */
+    int faceID; /* closest face identifier */
     int layerID; /* interfacial layer identifier */
     Real U[DIMT][DIMU]; /* field data at each time level */
 } Node;
@@ -689,15 +689,15 @@ typedef struct {
  */
 typedef struct {
     RealVec N; /* normal vector */
-    RealVec P1; /* vertical 1 */
-    RealVec P2; /* vertical 2 */
-    RealVec P3; /* vertical 3 */
+    RealVec v0; /* vertex 1 */
+    RealVec v1; /* vertex 2 */
+    RealVec v2; /* vertex 3 */
 } Facet;
 /*
  * Polyhedron structure
  */
 typedef struct {
-    int facetN; /* number of facets. 0 for analytical sphere */
+    int faceN; /* number of faces. 0 for analytical sphere */
     int edgeN; /* number of edges */
     int vertN; /* number of vertices */
     int nodeN; /* total 1st type interfacial node in polyhedron */
@@ -712,13 +712,13 @@ typedef struct {
     Real cf; /* roughness. cf <= 0, slip wall; cf > 0, no-slip wall */
     Real area; /* area */
     Real volume; /* volume */
-    Facet *facet; /* facet data */
     int (*restrict f)[3]; /* face-vertex list */
     Real (*restrict Nf)[3]; /* face normal */
     int (*restrict e)[4]; /* edge-vertex-face list */
     Real (*restrict Ne)[3]; /* edge normal */
     Real (*restrict v)[3]; /* vertex list */
     Real (*restrict Nv)[3]; /* vertex normal */
+    Facet *facet; /* facet data */
 } Polyhedron;
 /*
  * Geometry Entities
@@ -769,7 +769,6 @@ typedef struct {
     int splitter; /* flux vector splitting method */
     int fsi; /* material interaction trigger */
     int layers; /* number of interfacial layers using flow reconstruction */
-    int matID; /* material type */
     Real refMa; /* reference Mach number */
     Real refMu; /* reference dynamic viscosity */
     Real gamma; /* heat capacity ratio */

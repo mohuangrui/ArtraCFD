@@ -21,16 +21,17 @@
  * Static Function Declarations
  ****************************************************************************/
 static int AddVertex(const Real [restrict], Polyhedron *);
+static void ComputeParametersSphere(const int, Polyhedron *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
 void ConvertPolyhedron(Polyhedron *poly)
 {
-    AllocatePolyhedronMemory(poly->facetN, poly->facetN, poly);
-    for (int n = 0; n < poly->facetN; ++n) {
-        poly->f[n][0] = AddVertex(poly->facet[n].P1, poly);
-        poly->f[n][1] = AddVertex(poly->facet[n].P2, poly);
-        poly->f[n][2] = AddVertex(poly->facet[n].P3, poly);
+    AllocatePolyhedronMemory(poly->faceN, poly->faceN, poly);
+    for (int n = 0; n < poly->faceN; ++n) {
+        poly->f[n][0] = AddVertex(poly->facet[n].v0, poly);
+        poly->f[n][1] = AddVertex(poly->facet[n].v1, poly);
+        poly->f[n][2] = AddVertex(poly->facet[n].v2, poly);
         AddEdge(poly->f[n][0], poly->f[n][1], n, poly); 
         AddEdge(poly->f[n][1], poly->f[n][2], n, poly); 
         AddEdge(poly->f[n][2], poly->f[n][0], n, poly); 
@@ -39,13 +40,13 @@ void ConvertPolyhedron(Polyhedron *poly)
     poly->facet = NULL;
     return;
 }
-void AllocatePolyhedronMemory(const int vertN, const int facetN, Polyhedron *poly)
+void AllocatePolyhedronMemory(const int vertN, const int faceN, Polyhedron *poly)
 {
-    /* vertN <= facetN, edgeN = facetN * 3 / 2 */
-    poly->f = AssignStorage(facetN * sizeof(*poly->f));
-    poly->Nf = AssignStorage(facetN * sizeof(*poly->Nf));
-    poly->e = AssignStorage((int)(1.5 * facetN + 0.5) * sizeof(*poly->e));
-    poly->Ne = AssignStorage((int)(1.5 * facetN + 0.5) * sizeof(*poly->Ne));
+    /* vertN <= faceN, edgeN = faceN * 3 / 2 */
+    poly->f = AssignStorage(faceN * sizeof(*poly->f));
+    poly->Nf = AssignStorage(faceN * sizeof(*poly->Nf));
+    poly->e = AssignStorage((int)(1.5 * faceN + 0.5) * sizeof(*poly->e));
+    poly->Ne = AssignStorage((int)(1.5 * faceN + 0.5) * sizeof(*poly->Ne));
     poly->v = AssignStorage(vertN * sizeof(*poly->v));
     poly->Nv = AssignStorage(vertN * sizeof(*poly->Nv));
 }
@@ -82,34 +83,33 @@ void AddEdge(const int v1, const int v2, const int f, Polyhedron *poly)
     ++(poly->edgeN); /* increase pointer */
     return;
 }
-void ComputeGeometryParameters(Space *space)
+void ComputeGeometryParameters(const int collapse, Geometry *geo)
 {
-    for (int m = 0; m < geo->totalM; ++m) {
-        if (0 == geo->list[m].facetN) {
-            ComputeParametersAnalyticalSphere(space, geo->list + m);
-            continue;
-        }
-        ComputeParametersTriangulatedPolyhedron(space, geo->list + m);
+    for (int n = 0; n < geo->sphereN; ++n) {
+        ComputeParametersSphere(collapse, geo->poly + n);
     }
-    return 0;
+    for (int n = geo->sphereN; n < geo->totalN; ++n) {
+        ComputeParametersPolyhedron(collapse, geo->poly + n);
+    }
+    return;
 }
-static int ComputeParametersAnalyticalSphere(const Space *space, Polyhedron *poly)
+static void ComputeParametersSphere(const int collapse, Polyhedron *poly)
 {
-    const Real pi = acos(-1);
+    const Real pi = 3.14159265359;
     for (int s = 0; s < DIMS; ++s) {
         poly->box[s][MIN] = poly->O[s] - poly->r;
         poly->box[s][MAX] = poly->O[s] + poly->r;
     }
-    if (COLLAPSEN != space->collapsed) { /* space dimension collapsed */
-        poly->area = 2.0 * pi * poly->r; /* side area of a unit thickness cylinder */
-        poly->volume = pi * poly->r * poly->r; /* volume of a unit thickness cylinder */
-    } else {
+    if (COLLAPSEN == collapse) { /* no space dimension collapsed */
         poly->area = 4.0 * pi * poly->r * poly->r; /* area of a sphere */
         poly->volume = 4.0 * pi * poly->r * poly->r * poly->r / 3.0; /* volume of a sphere */
+    } else {
+        poly->area = 2.0 * pi * poly->r; /* side area of a unit thickness cylinder */
+        poly->volume = pi * poly->r * poly->r; /* volume of a unit thickness cylinder */
     }
-    return 0;
+    return;
 }
-static int ComputeParametersTriangulatedPolyhedron(const Space *space, Polyhedron *poly)
+static int ComputeParametersTriangulatedPolyhedron(const int collapse, const Space *space, Polyhedron *poly)
 {
     /* initialize parameters */
     RealVector P1P2 = {0.0};
@@ -126,7 +126,7 @@ static int ComputeParametersTriangulatedPolyhedron(const Space *space, Polyhedro
      * Robert Nurnberg, (2013). Calculating the area and centroid of a
      * polygon and polyhedron. Imperial College London.
      */
-    for (int n = 0; n < poly->facetN; ++n) {
+    for (int n = 0; n < poly->faceN; ++n) {
         for (int s = 0; s < DIMS; ++s) {
             /* bounding box */
             poly->box[s][MIN] = MinReal(poly->box[s][MIN], MinReal(poly->facet[n].P1[s], MinReal(poly->facet[n].P2[s], poly->facet[n].P3[s])));
@@ -160,7 +160,7 @@ static int ComputeParametersTriangulatedPolyhedron(const Space *space, Polyhedro
 int PointInPolyhedron(const int k, const int j, const int i, const Polyhedron *poly, const Space *space)
 {
     const RealVector Pc = {PointSpace(i, X, space), PointSpace(j, Y, space), PointSpace(k, Z, space)};
-    if (0 == poly->facetN) {
+    if (0 == poly->faceN) {
         if (0 > (Dist2(Pc, poly->O) - poly->r * poly->r)) {
             return 0;
         }
@@ -193,7 +193,7 @@ int PointInPolyhedron(const int k, const int j, const int i, const Polyhedron *p
     Real normN3 = 0.0;
     Real sign = 0.0;
     Real area = 0.0;
-    for (int n = 0; n < poly->facetN; ++n) {
+    for (int n = 0; n < poly->faceN; ++n) {
         for (int s = 0; s < DIMS; ++s) {
             PcP1[s] = poly->facet[n].P1[s] - Pc[s];
             PcP2[s] = poly->facet[n].P2[s] - Pc[s];

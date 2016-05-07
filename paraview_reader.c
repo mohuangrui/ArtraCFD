@@ -189,6 +189,7 @@ static int ReadPolygonPolyData(const int start, const int end, Geometry *geo, Pa
         FatalError("failed to open data file...");
     }
     ParaviewReal Vec[3] = {0.0}; /* paraview vector data */
+    Polyhedron *poly  = NULL;
     /* set format specifier according to the type of Real */
     char format[15] = "%lg %lg %lg"; /* default is double type */
     if (sizeof(ParaviewReal) == sizeof(float)) {
@@ -197,11 +198,12 @@ static int ReadPolygonPolyData(const int start, const int end, Geometry *geo, Pa
     /* get rid of redundant lines */
     String currentLine = {'\0'}; /* store current line */
     ReadInLine(&filePointer, "<PolyData>");
-    for (int n = start; n < end; ++n) {
+    for (int m = start; m < end; ++m) {
+        poly = geo->poly + m;
         fgets(currentLine, sizeof currentLine, filePointer);
         sscanf(currentLine, "%*s NumberOfPoints=\"%d\" %*s NumberOfPolys=\"%d\"", 
-                &(geo->poly[n].vertN), &(geo->poly[n].facetN)); 
-        AllocatePolyhedronMemory(geo->poly[n].vertN, geo->poly[n].facetN, geo->poly + n);
+                &(poly->vertN), &(poly->faceN)); 
+        AllocatePolyhedronMemory(poly->vertN, poly->faceN, poly);
         fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);
@@ -209,11 +211,11 @@ static int ReadPolygonPolyData(const int start, const int end, Geometry *geo, Pa
         fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);
-        for (int m = 0; m < geo->poly[n].vertN; ++m) {
+        for (int n = 0; n < poly->vertN; ++n) {
             fscanf(filePointer, format, &(Vec[X]), &(Vec[Y]), &(Vec[Z]));
-            geo->poly[n].v[m][X] = Vec[X];
-            geo->poly[n].v[m][Y] = Vec[Y];
-            geo->poly[n].v[m][Z] = Vec[Z];
+            poly->v[n][X] = Vec[X];
+            poly->v[n][Y] = Vec[Y];
+            poly->v[n][Z] = Vec[Z];
         }
         fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);
@@ -222,11 +224,12 @@ static int ReadPolygonPolyData(const int start, const int end, Geometry *geo, Pa
         fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);
         fgets(currentLine, sizeof currentLine, filePointer);
-        for (int m = 0; m < geo->poly[n].facetN; ++m) {
-            fscanf(filePointer, "%d %d %d", &(geo->poly[n].f[m][0]), &(geo->poly[n].f[m][1]), &(geo->poly[n].f[m][2]));
-            AddEdge(geo->poly[n].f[m][0], geo->poly[n].f[m][1], m, geo->poly + n); 
-            AddEdge(geo->poly[n].f[m][1], geo->poly[n].f[m][2], m, geo->poly + n); 
-            AddEdge(geo->poly[n].f[m][2], geo->poly[n].f[m][0], m, geo->poly + n); 
+        for (int n = 0; n < poly->faceN; ++n) {
+            fscanf(filePointer, "%d %d %d", &(poly->f[n][0]), 
+                    &(poly->f[n][1]), &(poly->f[n][2]));
+            AddEdge(poly->f[n][0], poly->f[n][1], n, poly); 
+            AddEdge(poly->f[n][1], poly->f[n][2], n, poly); 
+            AddEdge(poly->f[n][2], poly->f[n][0], n, poly); 
         }
         ReadInLine(&filePointer, "</Piece>");
     }
@@ -244,17 +247,19 @@ int ReadPolyhedronStateData(const int start, const int end, FILE **filePointerPo
     if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
         strncpy(format, "%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %d", sizeof format);
     }
+    Polyhedron *poly  = NULL;
     for (int n = start; n < end; ++n) {
+        poly = geo->poly + n;
         fgets(currentLine, sizeof currentLine, filePointer);
         sscanf(currentLine, format,
-                &(geo->poly[n].O[X]), &(geo->poly[n].O[Y]), &(geo->poly[n].O[Z]), &(geo->poly[n].r),
-                &(geo->poly[n].V[X]), &(geo->poly[n].V[Y]), &(geo->poly[n].V[Z]),
-                &(geo->poly[n].F[X]), &(geo->poly[n].F[Y]), &(geo->poly[n].F[Z]),
-                &(geo->poly[n].rho), &(geo->poly[n].T), &(geo->poly[n].cf),
-                &(geo->poly[n].area), &(geo->poly[n].volume), &(geo->poly[n].matID));
+                &(poly->O[X]), &(poly->O[Y]), &(poly->O[Z]), &(poly->r),
+                &(poly->V[X]), &(poly->V[Y]), &(poly->V[Z]),
+                &(poly->F[X]), &(poly->F[Y]), &(poly->F[Z]),
+                &(poly->rho), &(poly->T), &(poly->cf),
+                &(poly->area), &(poly->volume), &(poly->matID));
         if (geo->sphereN > n) {
-            geo->poly[n].facetN = 0; /* analytical sphere tag */
-            geo->poly[n].facet = NULL;
+            poly->faceN = 0; /* analytical sphere tag */
+            poly->facet = NULL;
         }
     }
     *filePointerPointer = filePointer; /* updated file pointer */

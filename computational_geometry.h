@@ -28,12 +28,12 @@
  * of face-vertex mesh and winged-edge mesh
  */
 extern void ConvertPolyhedron(Polyhedron *);
-extern void AllocatePolyhedronMemory(const int vertN, const int facetN, Polyhedron *);
+extern void AllocatePolyhedronMemory(const int vertN, const int faceN, Polyhedron *);
 extern void AddEdge(const int v1, const int v2, const int f, Polyhedron *);
 /*
  * Compute geometry parameters
  */
-extern void ComputeGeometryParameters(Space *);
+extern void ComputeGeometryParameters(const int collapse, Geometry *);
 /*
  * Point in polyhedron
  *
