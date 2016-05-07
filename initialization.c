@@ -112,17 +112,17 @@ static int ApplyRegionalInitializer(const int n, Space *space, const Model *mode
         part->valueIC[n][ENTRYIC-3],
         part->valueIC[n][ENTRYIC-2],
         part->valueIC[n][ENTRYIC-1]};
-    const RealVec P12 = {
+    const RealVec P1P2 = {
         p2[X] - p1[X],
         p2[Y] - p1[Y],
         p2[Z] - p1[Z]};
-    const Real l2_P12 = Dot(P12, P12);
+    const Real l2_P1P2 = Dot(P1P2, P1P2);
     /*
      * Apply initial values for nodes that meets condition
      */
     int flag = 0; /* control flag for whether current node in the region */
     RealVec pc = {0.0}; /* coordinates of current node */
-    RealVec P1c = {0.0}; /* position vector */
+    RealVec P1Pc = {0.0}; /* position vector */
     Real proj = 0.0;
     for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
         for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
@@ -130,35 +130,35 @@ static int ApplyRegionalInitializer(const int n, Space *space, const Model *mode
                 pc[X] = PointSpace(i, part->domain[X][MIN], part->d[X], part->ng);
                 pc[Y] = PointSpace(j, part->domain[Y][MIN], part->d[Y], part->ng);
                 pc[Z] = PointSpace(k, part->domain[Z][MIN], part->d[Z], part->ng);
-                P1c[X] = pc[X] - p1[X];
-                P1c[Y] = pc[Y] - p1[Y];
-                P1c[Z] = pc[Z] - p1[Z];
+                P1Pc[X] = pc[X] - p1[X];
+                P1Pc[Y] = pc[Y] - p1[Y];
+                P1Pc[Z] = pc[Z] - p1[Z];
                 flag = 0; /* always initialize flag to zero */
                 switch (part->typeIC[n]) {
                     case ICPLANE:
-                        if (0 <= Dot(P1c, p2)) { /* on the normal direction or the plane */
+                        if (0 <= Dot(P1Pc, p2)) { /* on the normal direction or the plane */
                             flag = 1; /* set flag to true */
                         }
                         break;
                     case ICSPHERE:
-                        if (r * r >= Dot(P1c, P1c)) { /* in or on the sphere */
+                        if (r * r >= Dot(P1Pc, P1Pc)) { /* in or on the sphere */
                             flag = 1; /* set flag to true */
                         }
                         break;
                     case ICBOX:
-                        P1c[X] = P1c[X] * (pc[X] - p2[X]);
-                        P1c[Y] = P1c[Y] * (pc[Y] - p2[Y]);
-                        P1c[Z] = P1c[Z] * (pc[Z] - p2[Z]);
-                        if ((0 >= P1c[X]) && (0 >= P1c[Y]) && (0 >= P1c[Z])) { /* in or on the box */
+                        P1Pc[X] = P1Pc[X] * (pc[X] - p2[X]);
+                        P1Pc[Y] = P1Pc[Y] * (pc[Y] - p2[Y]);
+                        P1Pc[Z] = P1Pc[Z] * (pc[Z] - p2[Z]);
+                        if ((0 >= P1Pc[X]) && (0 >= P1Pc[Y]) && (0 >= P1Pc[Z])) { /* in or on the box */
                             flag = 1; /* set flag to true */
                         }
                         break;
                     case ICCYLINDER:
-                        proj = Dot(P1c, P12);
-                        if ((0 > proj) || (l2_P12 < proj)) { /* outside the two ends */
+                        proj = Dot(P1Pc, P1P2);
+                        if ((0 > proj) || (l2_P1P2 < proj)) { /* outside the two ends */
                             break;
                         }
-                        proj = Dot(P1c, P1c) - proj * proj / l2_P12;
+                        proj = Dot(P1Pc, P1Pc) - proj * proj / l2_P1P2;
                         if (r * r >= proj) { /* in or on the cylinder */
                             flag = 1; /* set flag to true */
                         }

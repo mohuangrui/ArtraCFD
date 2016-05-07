@@ -22,6 +22,7 @@
  ****************************************************************************/
 static int AddVertex(const Real [restrict], Polyhedron *);
 static void ComputeParametersSphere(const int, Polyhedron *);
+static void ComputeParametersPolyhedron(const int, Polyhedron *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -109,11 +110,11 @@ static void ComputeParametersSphere(const int collapse, Polyhedron *poly)
     }
     return;
 }
-static int ComputeParametersTriangulatedPolyhedron(const int collapse, const Space *space, Polyhedron *poly)
+static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
 {
     /* initialize parameters */
-    RealVector P1P2 = {0.0};
-    RealVector P1P3 = {0.0};
+    RealVec P1P2 = {0.0};
+    RealVec P1P3 = {0.0};
     poly->area = 0.0;
     poly->volume = 0.0;
     for (int s = 0; s < DIMS; ++s) {
@@ -159,7 +160,7 @@ static int ComputeParametersTriangulatedPolyhedron(const int collapse, const Spa
 }
 int PointInPolyhedron(const int k, const int j, const int i, const Polyhedron *poly, const Space *space)
 {
-    const RealVector Pc = {PointSpace(i, X, space), PointSpace(j, Y, space), PointSpace(k, Z, space)};
+    const RealVec Pc = {PointSpace(i, X, space), PointSpace(j, Y, space), PointSpace(k, Z, space)};
     if (0 == poly->faceN) {
         if (0 > (Dist2(Pc, poly->O) - poly->r * poly->r)) {
             return 0;
@@ -182,12 +183,12 @@ int PointInPolyhedron(const int k, const int j, const int i, const Polyhedron *p
      * Spherical Triangle, http://mathworld.wolfram.com/SphericalTriangle.html
      */
     const Real pi = acos(-1);
-    RealVector PcP1 = {0.0};
-    RealVector PcP2 = {0.0};
-    RealVector PcP3 = {0.0};
-    RealVector N1 = {0.0};
-    RealVector N2 = {0.0};
-    RealVector N3 = {0.0};
+    RealVec PcP1 = {0.0};
+    RealVec PcP2 = {0.0};
+    RealVec PcP3 = {0.0};
+    RealVec N1 = {0.0};
+    RealVec N2 = {0.0};
+    RealVec N3 = {0.0};
     Real normN1 = 0.0;
     Real normN2 = 0.0;
     Real normN3 = 0.0;
