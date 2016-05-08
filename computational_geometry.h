@@ -24,14 +24,20 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Convert polyhedron representation from STL to a mixture form
- * of face-vertex mesh and winged-edge mesh
+ * Polyhedron representation
+ *
+ * Function
+ *      Convert polyhedron representation from STL to a mixture form
+ *      of face-vertex mesh and winged-edge mesh.
  */
 extern void ConvertPolyhedron(Polyhedron *);
 extern void AllocatePolyhedronMemory(const int vertN, const int faceN, Polyhedron *);
 extern void AddEdge(const int v1, const int v2, const int f, Polyhedron *);
 /*
  * Compute geometry parameters
+ *
+ * Function
+ *      Compute the geometric properties of each polyhedron.
  */
 extern void ComputeGeometryParameters(const int collapse, Geometry *);
 /*

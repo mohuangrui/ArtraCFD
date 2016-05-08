@@ -13,6 +13,7 @@
  ****************************************************************************/
 #include "computational_geometry.h"
 #include <stdio.h> /* standard library for input and output */
+#include <stdlib.h> /* dynamic memory allocation and exit */
 #include <math.h> /* common mathematical functions */
 #include <float.h> /* size of floating point values */
 #include "cfd_commons.h"
@@ -28,7 +29,9 @@ static void ComputeParametersPolyhedron(const int, Polyhedron *);
  ****************************************************************************/
 void ConvertPolyhedron(Polyhedron *poly)
 {
+    /* allocate memory, assume vertN = faceN */
     AllocatePolyhedronMemory(poly->faceN, poly->faceN, poly);
+    /* convert representation */
     for (int n = 0; n < poly->faceN; ++n) {
         poly->f[n][0] = AddVertex(poly->facet[n].v0, poly);
         poly->f[n][1] = AddVertex(poly->facet[n].v1, poly);
@@ -37,13 +40,16 @@ void ConvertPolyhedron(Polyhedron *poly)
         AddEdge(poly->f[n][1], poly->f[n][2], n, poly); 
         AddEdge(poly->f[n][2], poly->f[n][0], n, poly); 
     }
+    /* adjust the memory allocation */
     RetrieveStorage(poly->facet);
     poly->facet = NULL;
+    poly->v = realloc(poly->v, poly->vertN * sizeof(*poly->v));
+    poly->Nv = realloc(poly->Nv, poly->vertN * sizeof(*poly->Nv));
     return;
 }
 void AllocatePolyhedronMemory(const int vertN, const int faceN, Polyhedron *poly)
 {
-    /* vertN <= faceN, edgeN = faceN * 3 / 2 */
+    /* edgeN = faceN * 3 / 2 */
     poly->f = AssignStorage(faceN * sizeof(*poly->f));
     poly->Nf = AssignStorage(faceN * sizeof(*poly->Nf));
     poly->e = AssignStorage((int)(1.5 * faceN + 0.5) * sizeof(*poly->e));
@@ -97,10 +103,12 @@ void ComputeGeometryParameters(const int collapse, Geometry *geo)
 static void ComputeParametersSphere(const int collapse, Polyhedron *poly)
 {
     const Real pi = 3.14159265359;
+    /* bounding box */
     for (int s = 0; s < DIMS; ++s) {
         poly->box[s][MIN] = poly->O[s] - poly->r;
         poly->box[s][MAX] = poly->O[s] + poly->r;
     }
+    /* geometric property */
     if (COLLAPSEN == collapse) { /* no space dimension collapsed */
         poly->area = 4.0 * pi * poly->r * poly->r; /* area of a sphere */
         poly->volume = 4.0 * pi * poly->r * poly->r * poly->r / 3.0; /* volume of a sphere */
@@ -115,11 +123,31 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
     /* initialize parameters */
     RealVec P1P2 = {0.0};
     RealVec P1P3 = {0.0};
+    RealVec P2P3 = {0.0};
+    RealVec Angle = {0.0};
+    Real box[DIMS][LIMIT] = {{0.0}};
+    for (int s = 0; s < DIMS; ++s) {
+        box[s][MIN] = FLT_MAX;
+        box[s][MAX] = FLT_MIN;
+    }
     poly->area = 0.0;
     poly->volume = 0.0;
+    /* initialize vertices normal */
+    for (int n = 0; n < poly->vertN; ++n) {
+        for (int s = 0; s < DIMS; ++s) {
+            poly->Nv[n][s] = 0.0;
+        }
+    }
+    /* bounding box */
+    for (int n = 0; n < poly->vertN; ++n) {
+        for (int s = 0; s < DIMS; ++s) {
+            box[s][MIN] = MinReal(box[s][MIN], poly->v[n][s]);
+            box[s][MAX] = MaxReal(box[s][MAX], poly->v[n][s]);
+        }
+    }
     for (int s = 0; s < DIMS; ++s) {
-        poly->box[s][MIN] = FLT_MAX;
-        poly->box[s][MAX] = FLT_MIN;
+        poly->box[s][MIN] = box[s][MIN];
+        poly->box[s][MAX] = box[s][MAX];
     }
     /*
      * Gelder, A. V. (1995). Efficient computation of polygon area and
@@ -129,34 +157,52 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
      */
     for (int n = 0; n < poly->faceN; ++n) {
         for (int s = 0; s < DIMS; ++s) {
-            /* bounding box */
-            poly->box[s][MIN] = MinReal(poly->box[s][MIN], MinReal(poly->facet[n].P1[s], MinReal(poly->facet[n].P2[s], poly->facet[n].P3[s])));
-            poly->box[s][MAX] = MaxReal(poly->box[s][MAX], MaxReal(poly->facet[n].P1[s], MaxReal(poly->facet[n].P2[s], poly->facet[n].P3[s])));
             /* edge vectors */
-            P1P2[s] = poly->facet[n].P2[s] - poly->facet[n].P1[s];
-            P1P3[s] = poly->facet[n].P3[s] - poly->facet[n].P1[s];
+            P1P2[s] = poly->v[poly->f[n][1]][s] - poly->v[poly->f[n][0]][s];
+            P1P3[s] = poly->v[poly->f[n][2]][s] - poly->v[poly->f[n][0]][s];
+            P2P3[s] = poly->v[poly->f[n][2]][s] - poly->v[poly->f[n][1]][s];
         }
         /* normal vector */
-        Cross(poly->facet[n].N, P1P2, P1P3);
-        poly->facet[n].s = 0.5 * Norm(poly->facet[n].N);
+        Cross(P1P2, P1P3, poly->Nf[n]);
         /* accumulate area and volume */
-        poly->area = poly->area + poly->facet[n].s;
-        poly->volume = poly->volume + Dot(poly->facet[n].P1, poly->facet[n].N);
+        poly->area = poly->area + 0.5 * Norm(poly->Nf[n]);
+        poly->volume = poly->volume + Dot(poly->v[poly->f[n][0]], poly->Nf[n]);
         /* unit normal */
-        Normalize(poly->facet[n].N, DIMS, 2.0 * poly->facet[n].s);
+        Normalize(DIMS, Norm(poly->Nf[n]), poly->Nf[n]);
+        /* calculate internal angles by the law of cosines */
+        Angle[0] = acos((Dot(P1P2, P1P2) + Dot(P1P3, P1P3) - Dot(P2P3, P2P3)) / 
+                (2 * sqrt(Dot(P1P2, P1P2) * Dot(P1P3, P1P3))));
+        Angle[1] = acos((Dot(P1P2, P1P2) + Dot(P2P3, P2P3) - Dot(P1P3, P1P3)) / 
+                (2 * sqrt(Dot(P1P2, P1P2) * Dot(P2P3, P2P3))));
+        Angle[2] = 3.14159265359 - Angle[0] - Angle[1];
+        /*
+         * Refine vertices normal by corresponding angles
+         */
+        for (int s = 0; s < DIMS; ++s) {
+            poly->Nv[poly->f[n][0]][s] = poly->Nv[poly->f[n][0]][s] + Angle[0] * poly->Nf[n][s];
+            poly->Nv[poly->f[n][1]][s] = poly->Nv[poly->f[n][1]][s] + Angle[1] * poly->Nf[n][s];
+            poly->Nv[poly->f[n][2]][s] = poly->Nv[poly->f[n][2]][s] + Angle[2] * poly->Nf[n][s];
+        }
     }
     poly->volume = poly->volume / 6.0; /* final volume of the polyhedron */
-    if (COLLAPSEN != space->collapsed) { /* space dimension collapsed */
+    if (COLLAPSEN != collapse) { /* space dimension collapsed */
         poly->area = poly->area - 2.0 * poly->volume; /* change to side area of a unit thickness polygon */
     }
-    /* bounding sphere */
-    for (int s = 0; s < DIMS; ++s) {
-        poly->O[s] = 0.5 * (poly->box[s][MIN] + poly->box[s][MAX]);
-        P1P2[s] = poly->box[s][MIN];
-        P1P3[s] = poly->box[s][MAX];
+    /* normalize vertices normal */
+    for (int n = 0; n < poly->vertN; ++n) {
+        Normalize(DIMS, Norm(poly->Nv[n]), poly->Nv[n]);
     }
-    poly->r = 0.5 * Dist(P1P2, P1P3);
-    return 0;
+    /* compute edge normal */
+    for (int n = 0; n < poly->edgeN; ++n) {
+        for (int s = 0; s < DIMS; ++s) {
+            poly->Ne[n][s] = poly->Nf[poly->e[n][2]][s] + poly->Nf[poly->e[n][3]][s];
+        }
+    }
+    /* normalize edge normal */
+    for (int n = 0; n < poly->edgeN; ++n) {
+        Normalize(DIMS, Norm(poly->Ne[n]), poly->Ne[n]);
+    }
+    return;
 }
 int PointInPolyhedron(const int k, const int j, const int i, const Polyhedron *poly, const Space *space)
 {

@@ -109,7 +109,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                             >> NOTE <<\n");
     fprintf(filePointer, "#\n");
-    fprintf(filePointer, "# Values in following parts are relative to reference values. Hence, they need\n");
+    fprintf(filePointer, "# Values in following parts are relative to reference values. Quantities should\n");
     fprintf(filePointer, "# to be normalized by the given reference values. Like pressure should be\n");
     fprintf(filePointer, "# normalized by reference density times reference velocity square.\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
@@ -257,13 +257,12 @@ static int CaseGeometryFileGenerator(void)
     }
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#                                                                             -\n");
-    fprintf(filePointer, "#                   Interior Geometry Configuration                           -\n");
+    fprintf(filePointer, "#                            Geometry Configuration                           -\n");
     fprintf(filePointer, "#                                                                             -\n");
     fprintf(filePointer, "# - Coordinate system: Right-handed Cartesian system. X-Y plane is the screen -\n");
     fprintf(filePointer, "#   plane; X is horizontal from west to east; Y is vertical from south to     -\n");
     fprintf(filePointer, "#   north; Z axis is perpendicular to screen and points from front to back.   -\n");
-    fprintf(filePointer, "# - All coordinate values and velocity values here are relative values, they  -\n");
-    fprintf(filePointer, "#   should be normalized by the reference length and velocity respectively.   -\n");
+    fprintf(filePointer, "# - Coordinates and physical quantities should be normalized to dimensionless.-\n");
     fprintf(filePointer, "# - In each 'begin end' environment, there should NOT be any empty or comment -\n");
     fprintf(filePointer, "#   lines. Please double check your input!                                    -\n");
     fprintf(filePointer, "#                                                                             -\n");
@@ -294,6 +293,9 @@ static int CaseGeometryFileGenerator(void)
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                 >> Triangulated Polyhedron Section <<\n");
     fprintf(filePointer, "#\n");
+    fprintf(filePointer, "#Polyhedron representation is consistently employed for describing irregular   \n");
+    fprintf(filePointer, "#objects. For problems with a collapsed dimension, polyhedron is generated via \n");
+    fprintf(filePointer, "#extending the polygon on the collapsed dimension with unit thickness.         \n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "polyhedron geometry begin\n");
     fprintf(filePointer, "artracfd.stl       # geometry file name\n");
