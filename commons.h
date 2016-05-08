@@ -702,8 +702,9 @@ typedef struct {
     int vertN; /* number of vertices */
     int nodeN; /* total 1st type interfacial node in polyhedron */
     int matID; /* material type for polyhedron domain */
-    RealVec O; /* a bounding sphere of the polyhedron */
-    Real r;
+    Real r; /* radius of sphere */
+    RealVec O; /* the centroid of the polyhedron */
+    RealVec I; /* moment of inertia of the polyhedron */
     Real box[DIMS][LIMIT]; /* a bounding box of the polyhedron */
     RealVec V; /* velocity */
     RealVec F; /* force */

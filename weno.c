@@ -33,7 +33,6 @@ static void CharacteristicProjection(const int, const int, const int, const int,
 static void WENO5(Real [restrict][NSTENCIL], Real [restrict]);
 static void InverseProjection(Real [restrict][DIMU], const Real [restrict], 
         const Real [restrict], Real [restrict]);
-static Real Square(const Real);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -129,10 +128,6 @@ static void InverseProjection(Real R[restrict][DIMU], const Real HhatP[restrict]
         }
     }
     return;
-}
-static Real Square(const Real x)
-{
-    return x * x;
 }
 /* a good practice: end file with a newline */
 

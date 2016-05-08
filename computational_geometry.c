@@ -121,6 +121,9 @@ static void ComputeParametersSphere(const int collapse, Polyhedron *poly)
 static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
 {
     /* initialize parameters */
+    RealVec p1 = {0.0};
+    RealVec p2 = {0.0};
+    RealVec p3 = {0.0};
     RealVec P1P2 = {0.0};
     RealVec P1P3 = {0.0};
     RealVec P2P3 = {0.0};
@@ -129,6 +132,8 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
     for (int s = 0; s < DIMS; ++s) {
         box[s][MIN] = FLT_MAX;
         box[s][MAX] = FLT_MIN;
+        poly->O[s] = 0.0;
+        poly->I[s] = 0.0;
     }
     poly->area = 0.0;
     poly->volume = 0.0;
@@ -157,16 +162,25 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
      */
     for (int n = 0; n < poly->faceN; ++n) {
         for (int s = 0; s < DIMS; ++s) {
+            /* vertices */
+            p1[s] = poly->v[poly->f[n][0]][s];
+            p2[s] = poly->v[poly->f[n][1]][s];
+            p3[s] = poly->v[poly->f[n][2]][s];
             /* edge vectors */
-            P1P2[s] = poly->v[poly->f[n][1]][s] - poly->v[poly->f[n][0]][s];
-            P1P3[s] = poly->v[poly->f[n][2]][s] - poly->v[poly->f[n][0]][s];
-            P2P3[s] = poly->v[poly->f[n][2]][s] - poly->v[poly->f[n][1]][s];
+            P1P2[s] = p2[s] - p1[s];
+            P1P3[s] = p3[s] - p1[s];
+            P2P3[s] = p3[s] - p2[s];
         }
         /* normal vector */
         Cross(P1P2, P1P3, poly->Nf[n]);
         /* accumulate area and volume */
         poly->area = poly->area + 0.5 * Norm(poly->Nf[n]);
-        poly->volume = poly->volume + Dot(poly->v[poly->f[n][0]], poly->Nf[n]);
+        poly->volume = poly->volume + Dot(p1, poly->Nf[n]);
+        /* centroid */
+        for (int s = 0; s < DIMS; ++s) {
+            poly->O[s] = poly->O[s] + poly->Nf[n][s] * 
+                (Square(p1[s] + p2[s]) + Square(p2[s] + p3[s]) + Square(p3[s] + p1[s]));
+        }
         /* unit normal */
         Normalize(DIMS, Norm(poly->Nf[n]), poly->Nf[n]);
         /* calculate internal angles by the law of cosines */
@@ -177,6 +191,9 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
         Angle[2] = 3.14159265359 - Angle[0] - Angle[1];
         /*
          * Refine vertices normal by corresponding angles
+         * Baerentzen, J. A., & Aanaes, H. (2005). Signed distance computation
+         * using the angle weighted pseudonormal. Visualization and Computer
+         * Graphics, IEEE Transactions on, 11(3), 243-253.
          */
         for (int s = 0; s < DIMS; ++s) {
             poly->Nv[poly->f[n][0]][s] = poly->Nv[poly->f[n][0]][s] + Angle[0] * poly->Nf[n][s];
@@ -188,6 +205,9 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
     if (COLLAPSEN != collapse) { /* space dimension collapsed */
         poly->area = poly->area - 2.0 * poly->volume; /* change to side area of a unit thickness polygon */
     }
+    for (int s = 0; s < DIMS; ++s) { /* final centroid */
+        poly->O[s] = poly->O[s] / (48.0 * poly->volume);
+    }
     /* normalize vertices normal */
     for (int n = 0; n < poly->vertN; ++n) {
         Normalize(DIMS, Norm(poly->Nv[n]), poly->Nv[n]);
@@ -197,9 +217,6 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
         for (int s = 0; s < DIMS; ++s) {
             poly->Ne[n][s] = poly->Nf[poly->e[n][2]][s] + poly->Nf[poly->e[n][3]][s];
         }
-    }
-    /* normalize edge normal */
-    for (int n = 0; n < poly->edgeN; ++n) {
         Normalize(DIMS, Norm(poly->Ne[n]), poly->Ne[n]);
     }
     return;

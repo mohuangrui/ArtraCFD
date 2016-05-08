@@ -95,6 +95,7 @@ extern int EqualReal(const Real x, const Real y);
 extern int MinInt(const int x, const int y);
 extern int MaxInt(const int x, const int y);
 extern int Sign(const Real x);
+extern Real Square(const Real x);
 extern Real Dot(const Real V1[restrict], const Real V2[restrict]);
 extern Real Norm(const Real V[restrict]);
 extern Real Dist2(const Real V1[restrict], const Real V2[restrict]);
