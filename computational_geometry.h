@@ -44,10 +44,9 @@ extern void ComputeGeometryParameters(const int collapse, Geometry *);
  * Point in polyhedron
  *
  * Function
- *      Check node whether locates in the polyhedron.
+ *      Solve point-in-polyhedron problem for triangulated polyhedron.
  */
-extern int PointInPolyhedron(const int k, const int j, const int i,
-        const Space *);
+extern int PointInPolyhedron(const Real pc[restrict], const Polyhedron *);
 #endif
 /* a good practice: end file with a newline */
 

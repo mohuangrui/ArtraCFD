@@ -121,22 +121,22 @@ static void ComputeParametersSphere(const int collapse, Polyhedron *poly)
 static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
 {
     /* initialize parameters */
-    RealVec p1 = {0.0};
+    RealVec p1 = {0.0}; /* vertices */
     RealVec p2 = {0.0};
     RealVec p3 = {0.0};
-    RealVec P1P2 = {0.0};
+    RealVec P1P2 = {0.0}; /* edges */
     RealVec P1P3 = {0.0};
     RealVec P2P3 = {0.0};
-    RealVec Angle = {0.0};
-    Real box[DIMS][LIMIT] = {{0.0}};
+    RealVec Nf = {0.0}; /* outward normal */
+    RealVec Angle = {0.0}; /* internal angle */
+    RealVec O = {0.0}; /* centroid */
+    Real area = 0.0; /* area */
+    Real volume = 0.0; /* volume */
+    Real box[DIMS][LIMIT] = {{0.0}}; /* bounding box */
     for (int s = 0; s < DIMS; ++s) {
         box[s][MIN] = FLT_MAX;
         box[s][MAX] = FLT_MIN;
-        poly->O[s] = 0.0;
-        poly->I[s] = 0.0;
     }
-    poly->area = 0.0;
-    poly->volume = 0.0;
     /* initialize vertices normal */
     for (int n = 0; n < poly->vertN; ++n) {
         for (int s = 0; s < DIMS; ++s) {
@@ -149,10 +149,6 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
             box[s][MIN] = MinReal(box[s][MIN], poly->v[n][s]);
             box[s][MAX] = MaxReal(box[s][MAX], poly->v[n][s]);
         }
-    }
-    for (int s = 0; s < DIMS; ++s) {
-        poly->box[s][MIN] = box[s][MIN];
-        poly->box[s][MAX] = box[s][MAX];
     }
     /*
      * Gelder, A. V. (1995). Efficient computation of polygon area and
@@ -171,42 +167,50 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
             P1P3[s] = p3[s] - p1[s];
             P2P3[s] = p3[s] - p2[s];
         }
-        /* normal vector */
-        Cross(P1P2, P1P3, poly->Nf[n]);
+        /* outward normal vector */
+        Cross(P1P2, P1P3, Nf);
         /* accumulate area and volume */
-        poly->area = poly->area + 0.5 * Norm(poly->Nf[n]);
-        poly->volume = poly->volume + Dot(p1, poly->Nf[n]);
+        area = area + 0.5 * Norm(Nf);
+        volume = volume + Dot(p1, Nf);
         /* centroid */
         for (int s = 0; s < DIMS; ++s) {
-            poly->O[s] = poly->O[s] + poly->Nf[n][s] * 
-                (Square(p1[s] + p2[s]) + Square(p2[s] + p3[s]) + Square(p3[s] + p1[s]));
+            O[s] = O[s] + Nf[s] * (Square(p1[s] + p2[s]) + Square(p2[s] + p3[s]) + Square(p3[s] + p1[s]));
         }
         /* unit normal */
-        Normalize(DIMS, Norm(poly->Nf[n]), poly->Nf[n]);
-        /* calculate internal angles by the law of cosines */
-        Angle[0] = acos((Dot(P1P2, P1P2) + Dot(P1P3, P1P3) - Dot(P2P3, P2P3)) / 
-                (2 * sqrt(Dot(P1P2, P1P2) * Dot(P1P3, P1P3))));
-        Angle[1] = acos((Dot(P1P2, P1P2) + Dot(P2P3, P2P3) - Dot(P1P3, P1P3)) / 
-                (2 * sqrt(Dot(P1P2, P1P2) * Dot(P2P3, P2P3))));
-        Angle[2] = 3.14159265359 - Angle[0] - Angle[1];
+        Normalize(DIMS, Norm(Nf), Nf);
         /*
          * Refine vertices normal by corresponding angles
          * Baerentzen, J. A., & Aanaes, H. (2005). Signed distance computation
          * using the angle weighted pseudonormal. Visualization and Computer
          * Graphics, IEEE Transactions on, 11(3), 243-253.
          */
+        /* calculate internal angles by the law of cosines */
+        Angle[0] = acos((Dot(P1P2, P1P2) + Dot(P1P3, P1P3) - Dot(P2P3, P2P3)) / 
+                (2 * sqrt(Dot(P1P2, P1P2) * Dot(P1P3, P1P3))));
+        Angle[1] = acos((Dot(P1P2, P1P2) + Dot(P2P3, P2P3) - Dot(P1P3, P1P3)) / 
+                (2 * sqrt(Dot(P1P2, P1P2) * Dot(P2P3, P2P3))));
+        Angle[2] = 3.14159265359 - Angle[0] - Angle[1];
         for (int s = 0; s < DIMS; ++s) {
-            poly->Nv[poly->f[n][0]][s] = poly->Nv[poly->f[n][0]][s] + Angle[0] * poly->Nf[n][s];
-            poly->Nv[poly->f[n][1]][s] = poly->Nv[poly->f[n][1]][s] + Angle[1] * poly->Nf[n][s];
-            poly->Nv[poly->f[n][2]][s] = poly->Nv[poly->f[n][2]][s] + Angle[2] * poly->Nf[n][s];
+            poly->Nv[poly->f[n][0]][s] = poly->Nv[poly->f[n][0]][s] + Angle[0] * Nf[s];
+            poly->Nv[poly->f[n][1]][s] = poly->Nv[poly->f[n][1]][s] + Angle[1] * Nf[s];
+            poly->Nv[poly->f[n][2]][s] = poly->Nv[poly->f[n][2]][s] + Angle[2] * Nf[s];
+        }
+        /* assign face normal */
+        for (int s = 0; s < DIMS; ++s) {
+            poly->Nf[n][s] = Nf[s];
         }
     }
-    poly->volume = poly->volume / 6.0; /* final volume of the polyhedron */
-    if (COLLAPSEN != collapse) { /* space dimension collapsed */
-        poly->area = poly->area - 2.0 * poly->volume; /* change to side area of a unit thickness polygon */
+    volume = volume / 6.0; /* final volume of the polyhedron */
+    if (COLLAPSEN == collapse) { /* no space dimension collapsed */
+        poly->area = area;
+    } else {
+        poly->area = area - 2.0 * volume; /* change to side area of a unit thickness polygon */
     }
-    for (int s = 0; s < DIMS; ++s) { /* final centroid */
-        poly->O[s] = poly->O[s] / (48.0 * poly->volume);
+    poly->volume = volume;
+    for (int s = 0; s < DIMS; ++s) { /* assign final centroid and bounding box */
+        poly->O[s] = O[s] / (48.0 * volume);
+        poly->box[s][MIN] = box[s][MIN];
+        poly->box[s][MAX] = box[s][MAX];
     }
     /* normalize vertices normal */
     for (int n = 0; n < poly->vertN; ++n) {
@@ -221,59 +225,27 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
     }
     return;
 }
-int PointInPolyhedron(const int k, const int j, const int i, const Polyhedron *poly, const Space *space)
+int PointInPolyhedron(const Real pc[restrict], const Polyhedron *poly)
 {
-    const RealVec Pc = {PointSpace(i, X, space), PointSpace(j, Y, space), PointSpace(k, Z, space)};
-    if (0 == poly->faceN) {
-        if (0 > (Dist2(Pc, poly->O) - poly->r * poly->r)) {
-            return 0;
-        }
-        return 1;
-    }
     /*
-     * Solve point-in-polyhedron problem for triangulated polyhedrons.
-     *
-     * Haines, E. (1994). Point in polygon strategies. Graphics gems IV.
-     * Intersections of rays and triangles (3D), http://geomalgorithms.com/a06-_intersect-2.html
-     * Inclusion of a point in a polygon, http://geomalgorithms.com/a03-_inclusion.html
-     * 
-     * Angle summation test is used instead of ray crossing test due
-     * to the simplicity and robustness, although more expensive.
-     * Carvalho, P. C. P., Cavalcanti, P. R. (1995). Point in polyhedron
-     * testing using spherical polygons. Graphics Gems V.
-     * Note: the correct formula for the area of a spherical triangle is
-     *             Delta = R * R * [(A + B + C) - pi]
-     * Spherical Triangle, http://mathworld.wolfram.com/SphericalTriangle.html
-     */
-    const Real pi = acos(-1);
-    RealVec PcP1 = {0.0};
-    RealVec PcP2 = {0.0};
-    RealVec PcP3 = {0.0};
-    RealVec N1 = {0.0};
-    RealVec N2 = {0.0};
-    RealVec N3 = {0.0};
-    Real normN1 = 0.0;
-    Real normN2 = 0.0;
-    Real normN3 = 0.0;
-    Real sign = 0.0;
-    Real area = 0.0;
+    */
+    RealVec p1 = {0.0};
+    RealVec p2 = {0.0};
+    RealVec p3 = {0.0};
+    RealVec P1P2 = {0.0};
+    RealVec P1P3 = {0.0};
+    RealVec P2P3 = {0.0};
     for (int n = 0; n < poly->faceN; ++n) {
         for (int s = 0; s < DIMS; ++s) {
-            PcP1[s] = poly->facet[n].P1[s] - Pc[s];
-            PcP2[s] = poly->facet[n].P2[s] - Pc[s];
-            PcP3[s] = poly->facet[n].P3[s] - Pc[s];
+            /* vertices */
+            p1[s] = poly->v[poly->f[n][0]][s];
+            p2[s] = poly->v[poly->f[n][1]][s];
+            p3[s] = poly->v[poly->f[n][2]][s];
+            /* edge vectors */
+            P1P2[s] = p2[s] - p1[s];
+            P1P3[s] = p3[s] - p1[s];
+            P2P3[s] = p3[s] - p2[s];
         }
-        Cross(N1, PcP1, PcP2);
-        Cross(N2, PcP2, PcP3);
-        Cross(N3, PcP3, PcP1);
-        normN1 = Norm(N1);
-        normN2 = Norm(N2);
-        normN3 = Norm(N3);
-        sign = Sign(Dot(PcP1, poly->facet[n].N));
-        area = area + sign * (2 * pi - acos(Dot(N1, N2) / (normN1 * normN2)) - acos(Dot(N2, N3) / (normN2 * normN3)) - acos(Dot(N3, N1) / (normN3 * normN1)));
-    }
-    if ((2 * pi < area) || (-2 * pi > area)) {
-        return 0;
     }
     return 1;
 }
