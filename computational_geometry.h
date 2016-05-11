@@ -32,7 +32,7 @@
  */
 extern void ConvertPolyhedron(Polyhedron *);
 extern void AllocatePolyhedronMemory(const int vertN, const int faceN, Polyhedron *);
-extern void AddEdge(const int v1, const int v2, const int f, Polyhedron *);
+extern void AddEdge(const int v0, const int v1, const int f, Polyhedron *);
 /*
  * Compute geometry parameters
  *

@@ -73,19 +73,19 @@ static int AddVertex(const Real v[restrict], Polyhedron *poly)
     ++(poly->vertN); /* increase pointer */
     return (poly->vertN - 1); /* return index */
 }
-void AddEdge(const int v1, const int v2, const int f, Polyhedron *poly)
+void AddEdge(const int v0, const int v1, const int f, Polyhedron *poly)
 {
     /* search the edge list, if already exist, add the second face index */
     for (int n = 0; n < poly->edgeN; ++n) {
-        if (((v1 == poly->e[n][0]) && (v2 == poly->e[n][1])) ||
-                ((v2 == poly->e[n][0]) && (v1 == poly->e[n][1]))) {
+        if (((v0 == poly->e[n][0]) && (v1 == poly->e[n][1])) ||
+                ((v1 == poly->e[n][0]) && (v0 == poly->e[n][1]))) {
             poly->e[n][3] = f;
             return;
         }
     }
     /* otherwise, add to the edge list */
-    poly->e[poly->edgeN][0] = v1;
-    poly->e[poly->edgeN][1] = v2;
+    poly->e[poly->edgeN][0] = v0;
+    poly->e[poly->edgeN][1] = v1;
     poly->e[poly->edgeN][2] = f;
     ++(poly->edgeN); /* increase pointer */
     return;
@@ -121,12 +121,12 @@ static void ComputeParametersSphere(const int collapse, Polyhedron *poly)
 static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
 {
     /* initialize parameters */
-    RealVec p1 = {0.0}; /* vertices */
-    RealVec p2 = {0.0};
-    RealVec p3 = {0.0};
-    RealVec P1P2 = {0.0}; /* edges */
-    RealVec P1P3 = {0.0};
-    RealVec P2P3 = {0.0};
+    RealVec v0 = {0.0}; /* vertices */
+    RealVec v1 = {0.0};
+    RealVec v2 = {0.0};
+    RealVec e01 = {0.0}; /* edges */
+    RealVec e02 = {0.0};
+    RealVec e12 = {0.0};
     RealVec Nf = {0.0}; /* outward normal */
     RealVec Angle = {0.0}; /* internal angle */
     RealVec O = {0.0}; /* centroid */
@@ -159,22 +159,22 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
     for (int n = 0; n < poly->faceN; ++n) {
         for (int s = 0; s < DIMS; ++s) {
             /* vertices */
-            p1[s] = poly->v[poly->f[n][0]][s];
-            p2[s] = poly->v[poly->f[n][1]][s];
-            p3[s] = poly->v[poly->f[n][2]][s];
+            v0[s] = poly->v[poly->f[n][0]][s];
+            v1[s] = poly->v[poly->f[n][1]][s];
+            v2[s] = poly->v[poly->f[n][2]][s];
             /* edge vectors */
-            P1P2[s] = p2[s] - p1[s];
-            P1P3[s] = p3[s] - p1[s];
-            P2P3[s] = p3[s] - p2[s];
+            e01[s] = v1[s] - v0[s];
+            e02[s] = v2[s] - v0[s];
+            e12[s] = v2[s] - v1[s];
         }
         /* outward normal vector */
-        Cross(P1P2, P1P3, Nf);
+        Cross(e01, e02, Nf);
         /* accumulate area and volume */
-        area = area + 0.5 * Norm(Nf);
-        volume = volume + Dot(p1, Nf);
+        area = area + Norm(Nf);
+        volume = volume + Dot(v0, Nf);
         /* centroid */
         for (int s = 0; s < DIMS; ++s) {
-            O[s] = O[s] + Nf[s] * (Square(p1[s] + p2[s]) + Square(p2[s] + p3[s]) + Square(p3[s] + p1[s]));
+            O[s] = O[s] + Nf[s] * (Square(v0[s] + v1[s]) + Square(v1[s] + v2[s]) + Square(v2[s] + v0[s]));
         }
         /* unit normal */
         Normalize(DIMS, Norm(Nf), Nf);
@@ -185,10 +185,10 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
          * Graphics, IEEE Transactions on, 11(3), 243-253.
          */
         /* calculate internal angles by the law of cosines */
-        Angle[0] = acos((Dot(P1P2, P1P2) + Dot(P1P3, P1P3) - Dot(P2P3, P2P3)) / 
-                (2 * sqrt(Dot(P1P2, P1P2) * Dot(P1P3, P1P3))));
-        Angle[1] = acos((Dot(P1P2, P1P2) + Dot(P2P3, P2P3) - Dot(P1P3, P1P3)) / 
-                (2 * sqrt(Dot(P1P2, P1P2) * Dot(P2P3, P2P3))));
+        Angle[0] = acos((Dot(e01, e01) + Dot(e02, e02) - Dot(e12, e12)) / 
+                (2 * sqrt(Dot(e01, e01) * Dot(e02, e02))));
+        Angle[1] = acos((Dot(e01, e01) + Dot(e12, e12) - Dot(e02, e02)) / 
+                (2 * sqrt(Dot(e01, e01) * Dot(e12, e12))));
         Angle[2] = 3.14159265359 - Angle[0] - Angle[1];
         for (int s = 0; s < DIMS; ++s) {
             poly->Nv[poly->f[n][0]][s] = poly->Nv[poly->f[n][0]][s] + Angle[0] * Nf[s];
@@ -200,6 +200,7 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
             poly->Nf[n][s] = Nf[s];
         }
     }
+    area = 0.5 * area; /* final area of the polyhedron */
     volume = volume / 6.0; /* final volume of the polyhedron */
     if (COLLAPSEN == collapse) { /* no space dimension collapsed */
         poly->area = area;
@@ -227,27 +228,89 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
 }
 int PointInPolyhedron(const Real pc[restrict], const Polyhedron *poly)
 {
-    /*
-    */
-    RealVec p1 = {0.0};
-    RealVec p2 = {0.0};
-    RealVec p3 = {0.0};
-    RealVec P1P2 = {0.0};
-    RealVec P1P3 = {0.0};
-    RealVec P2P3 = {0.0};
+    RealVec v0 = {0.0}; /* vertices */
+    RealVec v1 = {0.0};
+    RealVec v2 = {0.0};
+    RealVec e01 = {0.0}; /* edges */
+    RealVec e02 = {0.0};
+    RealVec N = {0.0}; /* normal of the closet point */
+    Real s = 0.0; /* parametric coordinates of triangle T(s,t) = v0 + s(v1-v0) + t(v2-v0) */
     for (int n = 0; n < poly->faceN; ++n) {
         for (int s = 0; s < DIMS; ++s) {
             /* vertices */
-            p1[s] = poly->v[poly->f[n][0]][s];
-            p2[s] = poly->v[poly->f[n][1]][s];
-            p3[s] = poly->v[poly->f[n][2]][s];
+            v0[s] = poly->v[poly->f[n][0]][s];
+            v1[s] = poly->v[poly->f[n][1]][s];
+            v2[s] = poly->v[poly->f[n][2]][s];
             /* edge vectors */
-            P1P2[s] = p2[s] - p1[s];
-            P1P3[s] = p3[s] - p1[s];
-            P2P3[s] = p3[s] - p2[s];
+            e01[s] = v1[s] - v0[s];
+            e02[s] = v2[s] - v0[s];
+            /* normal */
+            N[s] = poly->Nf[n][s];
         }
     }
     return 1;
+}
+/*
+ * Eberly, D. (1999). Distance between point and triangle in 3D.
+ * http://www.geometrictools.com/Documentation/DistancePoint3Triangle3.pdf
+ */
+Real PointTriangleDistance(const Real B[restrict], const Real E0[restrict], const Real E1[restrict], 
+        const Real P[restrict])
+{
+    const RealVec D = {B[X] - P[X], B[Y] - P[Y], B[Z] - P[Z]};
+    const Real a = Dot(E0, E0);
+    const Real b = Dot(E0, E1);
+    const Real c = Dot(E1, E1);
+    const Real d = Dot(E0, D);
+    const Real e = Dot(E1, D);
+    const Real f = Dot(D, D);
+    const Real det = a * c - b * b;
+    Real s = b * e - c * d;
+    Real t = b * d - a * e;
+    if (s + t <= det) {
+        if (s < 0) {
+            if (t < 0) {
+                /* region 4 */;
+            } else {
+                s = 0;
+                t = (e >= 0 ? 0 : (-e >= c ? 1 : -e / c));
+            }        
+        } else {
+            if (t < 0) {
+                /* region 5 */;
+            } else {
+                s = s / det;
+                t = t / det;
+            }
+        }
+    } else {
+        if (s < 0) {
+            const Real tmp0 = b + d;
+            const Real tmp1 = c + e;
+            if (tmp1 > tmp0) {
+                const Real numer = tmp1 - tmp0;
+                const Real denom = a - 2 * b + c;
+                s = (numer >= denom ? 1 : numer / denom);
+                t = 1 - s;
+            } else {
+                s = 0;
+                t = (tmp1 <= 0 ? 1 : (e >= 0 ? 0 : -e/c));
+            }
+        } else {
+            if (t < 0) {
+                /* region 6 */;
+            } else {
+                const Real numer = c + e - b - d;
+                if (numer <= 0) {
+                    s = 0;
+                } else {
+                    const Real denom = a - 2 * b + c;
+                    s = (numer >= denom ? 1 : numer / denom);
+                }
+                t = 1 - s;
+            }
+        }
+    }
 }
 /* a good practice: end file with a newline */
 
