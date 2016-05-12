@@ -243,8 +243,7 @@ int PointInPolyhedron(const Real p[restrict], const Polyhedron *poly)
      * s+t=1 is true with each condition corresponds to one edge. Each 
      * s=0, t=0; s=1, t=0; s=0, t=1 corresponds to v0, v1, and v2.
      */
-    Real s = 0.0; /* parametric coordinates */
-    Real t = 0.0; /* parametric coordinates */
+    RealVec para = {0.0}; /* parametric coordinates */
     Real distSquareMin = FLT_MAX; /* store minimum squared distance */
     Real distSquare = 0.0; /* store computed squared distance */
     int faceID = 0; /* cloest face identifier */
@@ -258,7 +257,7 @@ int PointInPolyhedron(const Real p[restrict], const Polyhedron *poly)
             e01[s] = v1[s] - v0[s];
             e02[s] = v2[s] - v0[s];
         }
-        dist = PointTriangleDistance(p, v0, e01, e02, &s, &t);
+        dist = PointTriangleDistance(p, v0, e01, e02, para);
         if (distSquareMin > dist) {
             distSquareMin = dist;
             faceID = n;
@@ -271,7 +270,7 @@ int PointInPolyhedron(const Real p[restrict], const Polyhedron *poly)
  * http://www.geometrictools.com/Documentation/DistancePoint3Triangle3.pdf
  */
 Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], const Real e01[restrict], 
-        const Real e02[restrict], Real sPara[restrict], Real tPara[restrict])
+        const Real e02[restrict], Real para[restrict])
 {
     const RealVec D = {v0[X] - p[X], v0[Y] - p[Y], v0[Z] - p[Z]};
     const Real a = Dot(e01, e01);
@@ -281,26 +280,28 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
     const Real e = Dot(e02, D);
     const Real f = Dot(D, D);
     const Real det = a * c - b * b;
+    const Real zero = 0.0;
+    const Real one = 1.0;
     Real s = b * e - c * d;
     Real t = b * d - a * e;
     if (s + t <= det) {
-        if (s < 0.0) {
-            if (t < 0.0) {
+        if (s < zero) {
+            if (t < zero) {
                 /* region 4 */;
-                if (d < 0.0) {
-                    t = 0.0;
+                if (d < zero) {
+                    t = zero;
                     if (-d >= a) {
-                        s = 1.0;
+                        s = one;
                     } else {
                         s = -d / a;
                     }
                 } else {
-                    s = 0.0;
-                    if (e >= 0.0) {
-                        t = 0.0;
+                    s = zero;
+                    if (e >= zero) {
+                        t = zero;
                     } else {
                         if (-e >= c) {
-                            t = 1.0;
+                            t = one;
                         } else {
                             t = -e / c;
                         }
@@ -308,26 +309,26 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
                 }
             } else {
                 /* region 3 */
-                s = 0.0;
-                if (e >= 0.0) {
-                    t = 0.0;
+                s = zero;
+                if (e >= zero) {
+                    t = zero;
                 } else {
                     if (-e >= c) {
-                        t = 1.0;
+                        t = one;
                     } else {
                         t = -e / c;
                     }
                 }
             }        
         } else {
-            if (t < 0.0) {
+            if (t < zero) {
                 /* region 5 */;
-                t = 0.0;
-                if (d >= 0.0) {
-                    s = 0.0;
+                t = zero;
+                if (d >= zero) {
+                    s = zero;
                 } else {
                     if (-d >= a) {
-                        s = 1.0;
+                        s = one;
                     } else {
                         s = -d / a;
                     }
@@ -339,7 +340,7 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
             }
         }
     } else {
-        if (s < 0.0) {
+        if (s < zero) {
             /* region 2 */
             const Real tmp0 = b + d;
             const Real tmp1 = c + e;
@@ -347,26 +348,26 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
                 const Real numer = tmp1 - tmp0;
                 const Real denom = a - 2.0 * b + c;
                 if (numer >= denom) {
-                    s = 1.0;
-                    t = 0.0;
+                    s = one;
+                    t = zero;
                 } else {
                     s = numer / denom;
-                    t = 1.0 - s;
+                    t = one - s;
                 }
             } else {
-                s = 0.0;
-                if (tmp1 <= 0.0) {
-                    t = 1.0;
+                s = zero;
+                if (tmp1 <= zero) {
+                    t = one;
                 } else {
-                    if (e >= 0.0) {
-                        t = 0.0;
+                    if (e >= zero) {
+                        t = zero;
                     } else {
                         t = -e / c;
                     }
                 }
             }
         } else {
-            if (t < 0.0) {
+            if (t < zero) {
                 /* region 6 */;
                 const Real tmp0 = b + e;
                 const Real tmp1 = a + d;
@@ -374,19 +375,19 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
                     const Real numer = tmp1 - tmp0;
                     const Real denom = a - 2.0 * b + c;
                     if (numer >= denom) {
-                        t = 1.0;
-                        s = 0.0;
+                        t = one;
+                        s = zero;
                     } else {
                         t = numer / denom;
-                        s = 1.0 - t;
+                        s = one - t;
                     }
                 } else {
-                    t = 0.0;
-                    if (tmp1 <= 0.0) {
-                        s = 1.0;
+                    t = zero;
+                    if (tmp1 <= zero) {
+                        s = one;
                     } else {
-                        if (d >= 0.0) {
-                            s = 0.0;
+                        if (d >= zero) {
+                            s = zero;
                         } else {
                             s = -d / a;
                         }
@@ -395,25 +396,25 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
             } else {
                 /* region 1 */
                 const Real numer = c + e - b - d;
-                if (numer <= 0.0) {
-                    s = 0.0;
-                    t = 1.0;
+                if (numer <= zero) {
+                    s = zero;
+                    t = one;
                 } else {
                     const Real denom = a - 2.0 * b + c;
                     if (numer >= denom) {
-                        s = 1.0;
-                        t = 0.0;
+                        s = one;
+                        t = zero;
                     } else {
                         s = numer / denom;
-                        t = 1.0 - s;
+                        t = one - s;
                     }
-                    s = (numer >= denom ? 1.0 : numer / denom);
                 }
             }
         }
     }
-    *sPara = s;
-    *tPara = t;
+    para[0] = one - s - t;
+    para[1] = s;
+    para[2] = t;
 }
 /* a good practice: end file with a newline */
 
