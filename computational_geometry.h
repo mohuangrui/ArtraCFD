@@ -47,6 +47,15 @@ extern void ComputeGeometryParameters(const int collapse, Geometry *);
  *      Solve point-in-polyhedron problem for triangulated polyhedron.
  */
 extern int PointInPolyhedron(const Real pc[restrict], const Polyhedron *);
+/*
+ * Point triangle distance
+ *
+ * Function
+ *     Returns the squared minimum distance from a point to a triangle, 
+ *     also finds the barycentric coordnates of the intersection point.
+ */
+extern Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], 
+        const Real e01[restrict], const Real e02[restrict], Real para[restrict]);
 #endif
 /* a good practice: end file with a newline */
 

@@ -257,9 +257,9 @@ int PointInPolyhedron(const Real p[restrict], const Polyhedron *poly)
             e01[s] = v1[s] - v0[s];
             e02[s] = v2[s] - v0[s];
         }
-        dist = PointTriangleDistance(p, v0, e01, e02, para);
-        if (distSquareMin > dist) {
-            distSquareMin = dist;
+        distSquare = PointTriangleDistance(p, v0, e01, e02, para);
+        if (distSquareMin > distSquare) {
+            distSquareMin = distSquare;
             faceID = n;
         }
     }
@@ -284,6 +284,7 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
     const Real one = 1.0;
     Real s = b * e - c * d;
     Real t = b * d - a * e;
+    Real distSquare = 0.0;
     if (s + t <= det) {
         if (s < zero) {
             if (t < zero) {
@@ -292,18 +293,23 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
                     t = zero;
                     if (-d >= a) {
                         s = one;
+                        distSquare = a + 2.0 * d + f;
                     } else {
                         s = -d / a;
+                        distSquare = d * s + f;
                     }
                 } else {
                     s = zero;
                     if (e >= zero) {
                         t = zero;
+                        distSquare = f;
                     } else {
                         if (-e >= c) {
                             t = one;
+                            distSquare = c + 2.0 * e + f;
                         } else {
                             t = -e / c;
+                            distSquare = e * t + f;
                         }
                     }
                 }
@@ -312,11 +318,14 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
                 s = zero;
                 if (e >= zero) {
                     t = zero;
+                    distSquare = f;
                 } else {
                     if (-e >= c) {
                         t = one;
+                        distSquare = c + 2.0 * e + f;
                     } else {
                         t = -e / c;
+                        distSquare = e * t + f;
                     }
                 }
             }        
@@ -326,17 +335,21 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
                 t = zero;
                 if (d >= zero) {
                     s = zero;
+                    distSquare = f;
                 } else {
                     if (-d >= a) {
                         s = one;
+                        distSquare = a + 2.0 * d + f;
                     } else {
                         s = -d / a;
+                        distSquare = d * s + f;
                     }
                 }
             } else {
                 /* region 0 */
                 s = s / det;
                 t = t / det;
+                distSquare = s * (a * s + b * t + 2.0 * d) + t * (b * s + c * t + 2.0 * e) + f;
             }
         }
     } else {
@@ -350,19 +363,24 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
                 if (numer >= denom) {
                     s = one;
                     t = zero;
+                    distSquare = a + 2.0 * d + f;
                 } else {
                     s = numer / denom;
                     t = one - s;
+                    distSquare = s * (a * s + b * t + 2.0 * d) + t * (b * s + c * t + 2.0 * e) + f;
                 }
             } else {
                 s = zero;
                 if (tmp1 <= zero) {
                     t = one;
+                    distSquare = c + 2.0 * e + f;
                 } else {
                     if (e >= zero) {
                         t = zero;
+                        distSquare = f;
                     } else {
                         t = -e / c;
+                        distSquare = e * t + f;
                     }
                 }
             }
@@ -377,19 +395,24 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
                     if (numer >= denom) {
                         t = one;
                         s = zero;
+                        distSquare = c + 2.0 * e + f;
                     } else {
                         t = numer / denom;
                         s = one - t;
+                        distSquare = s * (a * s + b * t + 2.0 * d) + t * (b * s + c * t + 2.0 * e) + f;
                     }
                 } else {
                     t = zero;
                     if (tmp1 <= zero) {
                         s = one;
+                        distSquare = a + 2.0 * d + f;
                     } else {
                         if (d >= zero) {
                             s = zero;
+                            distSquare = f;
                         } else {
                             s = -d / a;
+                            distSquare = d * s + f;
                         }
                     }
                 }
@@ -399,14 +422,17 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
                 if (numer <= zero) {
                     s = zero;
                     t = one;
+                    distSquare = c + 2.0 * e + f;
                 } else {
                     const Real denom = a - 2.0 * b + c;
                     if (numer >= denom) {
                         s = one;
                         t = zero;
+                        distSquare = a + 2.0 * d + f;
                     } else {
                         s = numer / denom;
                         t = one - s;
+                        distSquare = s * (a * s + b * t + 2.0 * d) + t * (b * s + c * t + 2.0 * e) + f;
                     }
                 }
             }
@@ -415,6 +441,11 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
     para[0] = one - s - t;
     para[1] = s;
     para[2] = t;
+    /* account for numerical round-off error */
+    if (zero > distSquare) {
+        distSquare = zero;
+    }
+    return distSquare;
 }
 /* a good practice: end file with a newline */
 
