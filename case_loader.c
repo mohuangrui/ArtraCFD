@@ -585,17 +585,17 @@ static int WriteVerifyData(const Time *time, const Space *space, const Model *mo
 static int CheckCaseSettingData(const Time *time, const Space *space, const Model *model)
 {
     /* space */
-    if ((0 >= (space->part.domain[X][MAX] - space->part.domain[X][MIN])) ||
-            (0 >= (space->part.domain[Y][MAX] - space->part.domain[Y][MIN])) ||
-            (0 >= (space->part.domain[Z][MAX] - space->part.domain[Z][MIN]))) {
+    if ((0.0 >= (space->part.domain[X][MAX] - space->part.domain[X][MIN])) ||
+            (0.0 >= (space->part.domain[Y][MAX] - space->part.domain[Y][MIN])) ||
+            (0.0 >= (space->part.domain[Z][MAX] - space->part.domain[Z][MIN]))) {
         FatalError("wrong domian region values in case settings");
     }
     if ((1 > space->part.m[X]) || (1 > space->part.m[Y]) || (1 > space->part.m[Z])) {
         FatalError("too small mesh values in case settings");
     }
     /* time */
-    if ((0 > time->restart) || (0 >= time->end)
-            || (0 >= time->numCFL) || (1 > time->outputN)) {
+    if ((0 > time->restart) || (0.0 >= time->end)
+            || (0.0 >= time->numCFL) || (1 > time->outputN)) {
         FatalError("wrong values in time section of case settings");
     }
     /* numerical method */
@@ -608,8 +608,8 @@ static int CheckCaseSettingData(const Time *time, const Space *space, const Mode
         FatalError("wrong values in material section of case settings");
     }
     /* reference */
-    if ((0 >= model->refL) || (0 >= model->refRho) || 
-            (0 >= model->refV) || (0 >= model->refT)) {
+    if ((0.0 >= model->refL) || (0.0 >= model->refRho) || 
+            (0.0 >= model->refV) || (0.0 >= model->refT)) {
         FatalError("wrong values in reference section of case settings");
     }
     return 0;

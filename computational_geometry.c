@@ -186,9 +186,9 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
          */
         /* calculate internal angles by the law of cosines */
         Angle[0] = acos((Dot(e01, e01) + Dot(e02, e02) - Dot(e12, e12)) / 
-                (2 * sqrt(Dot(e01, e01) * Dot(e02, e02))));
+                (2.0 * sqrt(Dot(e01, e01) * Dot(e02, e02))));
         Angle[1] = acos((Dot(e01, e01) + Dot(e12, e12) - Dot(e02, e02)) / 
-                (2 * sqrt(Dot(e01, e01) * Dot(e12, e12))));
+                (2.0 * sqrt(Dot(e01, e01) * Dot(e12, e12))));
         Angle[2] = 3.14159265359 - Angle[0] - Angle[1];
         for (int s = 0; s < DIMS; ++s) {
             poly->Nv[poly->f[n][0]][s] = poly->Nv[poly->f[n][0]][s] + Angle[0] * Nf[s];
@@ -226,7 +226,7 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
     }
     return;
 }
-int PointInPolyhedron(const Real pc[restrict], const Polyhedron *poly)
+int PointInPolyhedron(const Real p[restrict], const Polyhedron *poly)
 {
     RealVec v0 = {0.0}; /* vertices */
     RealVec v1 = {0.0};
@@ -234,7 +234,20 @@ int PointInPolyhedron(const Real pc[restrict], const Polyhedron *poly)
     RealVec e01 = {0.0}; /* edges */
     RealVec e02 = {0.0};
     RealVec N = {0.0}; /* normal of the closet point */
-    Real s = 0.0; /* parametric coordinates of triangle T(s,t) = v0 + s(v1-v0) + t(v2-v0) */
+    /*
+     * Parametric equation of triangle defined plane 
+     * T(s,t) = v0 + s(v1-v0) + t(v2-v0) = v0 + s*e01 + s*e02
+     * s, t: real numbers. v0, v1, v2: vertices. e01, e02: edge vertices. 
+     * A point pi = T(s,t) is in the triangle T when s>=0, t>=0, and s+t<=1.
+     * Further, pi is on an edge of T if one of the conditions s=0; t=0; 
+     * s+t=1 is true with each condition corresponds to one edge. Each 
+     * s=0, t=0; s=1, t=0; s=0, t=1 corresponds to v0, v1, and v2.
+     */
+    Real s = 0.0; /* parametric coordinates */
+    Real t = 0.0; /* parametric coordinates */
+    Real distSquareMin = FLT_MAX; /* store minimum squared distance */
+    Real distSquare = 0.0; /* store computed squared distance */
+    int faceID = 0; /* cloest face identifier */
     for (int n = 0; n < poly->faceN; ++n) {
         for (int s = 0; s < DIMS; ++s) {
             /* vertices */
@@ -244,73 +257,163 @@ int PointInPolyhedron(const Real pc[restrict], const Polyhedron *poly)
             /* edge vectors */
             e01[s] = v1[s] - v0[s];
             e02[s] = v2[s] - v0[s];
-            /* normal */
-            N[s] = poly->Nf[n][s];
+        }
+        dist = PointTriangleDistance(p, v0, e01, e02, &s, &t);
+        if (distSquareMin > dist) {
+            distSquareMin = dist;
+            faceID = n;
         }
     }
-    return 1;
+    return faceID;
 }
 /*
  * Eberly, D. (1999). Distance between point and triangle in 3D.
  * http://www.geometrictools.com/Documentation/DistancePoint3Triangle3.pdf
  */
-Real PointTriangleDistance(const Real B[restrict], const Real E0[restrict], const Real E1[restrict], 
-        const Real P[restrict])
+Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], const Real e01[restrict], 
+        const Real e02[restrict], Real sPara[restrict], Real tPara[restrict])
 {
-    const RealVec D = {B[X] - P[X], B[Y] - P[Y], B[Z] - P[Z]};
-    const Real a = Dot(E0, E0);
-    const Real b = Dot(E0, E1);
-    const Real c = Dot(E1, E1);
-    const Real d = Dot(E0, D);
-    const Real e = Dot(E1, D);
+    const RealVec D = {v0[X] - p[X], v0[Y] - p[Y], v0[Z] - p[Z]};
+    const Real a = Dot(e01, e01);
+    const Real b = Dot(e01, e02);
+    const Real c = Dot(e02, e02);
+    const Real d = Dot(e01, D);
+    const Real e = Dot(e02, D);
     const Real f = Dot(D, D);
     const Real det = a * c - b * b;
     Real s = b * e - c * d;
     Real t = b * d - a * e;
     if (s + t <= det) {
-        if (s < 0) {
-            if (t < 0) {
+        if (s < 0.0) {
+            if (t < 0.0) {
                 /* region 4 */;
+                if (d < 0.0) {
+                    t = 0.0;
+                    if (-d >= a) {
+                        s = 1.0;
+                    } else {
+                        s = -d / a;
+                    }
+                } else {
+                    s = 0.0;
+                    if (e >= 0.0) {
+                        t = 0.0;
+                    } else {
+                        if (-e >= c) {
+                            t = 1.0;
+                        } else {
+                            t = -e / c;
+                        }
+                    }
+                }
             } else {
-                s = 0;
-                t = (e >= 0 ? 0 : (-e >= c ? 1 : -e / c));
+                /* region 3 */
+                s = 0.0;
+                if (e >= 0.0) {
+                    t = 0.0;
+                } else {
+                    if (-e >= c) {
+                        t = 1.0;
+                    } else {
+                        t = -e / c;
+                    }
+                }
             }        
         } else {
-            if (t < 0) {
+            if (t < 0.0) {
                 /* region 5 */;
+                t = 0.0;
+                if (d >= 0.0) {
+                    s = 0.0;
+                } else {
+                    if (-d >= a) {
+                        s = 1.0;
+                    } else {
+                        s = -d / a;
+                    }
+                }
             } else {
+                /* region 0 */
                 s = s / det;
                 t = t / det;
             }
         }
     } else {
-        if (s < 0) {
+        if (s < 0.0) {
+            /* region 2 */
             const Real tmp0 = b + d;
             const Real tmp1 = c + e;
             if (tmp1 > tmp0) {
                 const Real numer = tmp1 - tmp0;
-                const Real denom = a - 2 * b + c;
-                s = (numer >= denom ? 1 : numer / denom);
-                t = 1 - s;
+                const Real denom = a - 2.0 * b + c;
+                if (numer >= denom) {
+                    s = 1.0;
+                    t = 0.0;
+                } else {
+                    s = numer / denom;
+                    t = 1.0 - s;
+                }
             } else {
-                s = 0;
-                t = (tmp1 <= 0 ? 1 : (e >= 0 ? 0 : -e/c));
+                s = 0.0;
+                if (tmp1 <= 0.0) {
+                    t = 1.0;
+                } else {
+                    if (e >= 0.0) {
+                        t = 0.0;
+                    } else {
+                        t = -e / c;
+                    }
+                }
             }
         } else {
-            if (t < 0) {
+            if (t < 0.0) {
                 /* region 6 */;
-            } else {
-                const Real numer = c + e - b - d;
-                if (numer <= 0) {
-                    s = 0;
+                const Real tmp0 = b + e;
+                const Real tmp1 = a + d;
+                if (tmp1 > tmp0) {
+                    const Real numer = tmp1 - tmp0;
+                    const Real denom = a - 2.0 * b + c;
+                    if (numer >= denom) {
+                        t = 1.0;
+                        s = 0.0;
+                    } else {
+                        t = numer / denom;
+                        s = 1.0 - t;
+                    }
                 } else {
-                    const Real denom = a - 2 * b + c;
-                    s = (numer >= denom ? 1 : numer / denom);
+                    t = 0.0;
+                    if (tmp1 <= 0.0) {
+                        s = 1.0;
+                    } else {
+                        if (d >= 0.0) {
+                            s = 0.0;
+                        } else {
+                            s = -d / a;
+                        }
+                    }
                 }
-                t = 1 - s;
+            } else {
+                /* region 1 */
+                const Real numer = c + e - b - d;
+                if (numer <= 0.0) {
+                    s = 0.0;
+                    t = 1.0;
+                } else {
+                    const Real denom = a - 2.0 * b + c;
+                    if (numer >= denom) {
+                        s = 1.0;
+                        t = 0.0;
+                    } else {
+                        s = numer / denom;
+                        t = 1.0 - s;
+                    }
+                    s = (numer >= denom ? 1.0 : numer / denom);
+                }
             }
         }
     }
+    *sPara = s;
+    *tPara = t;
 }
 /* a good practice: end file with a newline */
 

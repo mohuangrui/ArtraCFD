@@ -770,6 +770,7 @@ typedef struct {
     int splitter; /* flux vector splitting method */
     int fsi; /* material interaction trigger */
     int layers; /* number of interfacial layers using flow reconstruction */
+    int matID; /* material identifier */
     Real refMa; /* reference Mach number */
     Real refMu; /* reference dynamic viscosity */
     Real gamma; /* heat capacity ratio */

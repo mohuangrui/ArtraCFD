@@ -151,7 +151,7 @@ static void LLL(const Real dt, const Real coeA, const Real coeB, const int to,
                 Um = node[idx].U[tm];
                 NumericalConvectiveFlux(tn, s, k, j, i, partn, node, model, FhatR);
                 NumericalConvectiveFlux(tn, s, k - h[s][Z], j - h[s][Y], i - h[s][X], partn, node, model, FhatL);
-                if (0 < model->refMu) {
+                if (0.0 < model->refMu) {
                     NumericalDiffusiveFlux(tn, s, k, j, i, partn, dd, node, model, FvhatR);
                     NumericalDiffusiveFlux(tn, s, k - h[s][Z], j - h[s][Y], i - h[s][X], partn, dd, node, model, FvhatL);
                 }
@@ -255,7 +255,7 @@ static void NumericalDiffusiveFluxX(const int tn, const int k, const int j,
     const Real heatK = model->gamma * model->cv * mu / PrandtlNumber();
     const Real divV = du_dx + dv_dy + dw_dz;
 
-    Fvhat[0] = 0;
+    Fvhat[0] = 0.0;
     Fvhat[1] = mu * (2.0 * du_dx - (2.0/3.0) * divV);
     Fvhat[2] = mu * (du_dy + dv_dx);
     Fvhat[3] = mu * (du_dz + dw_dx);
@@ -340,7 +340,7 @@ static void NumericalDiffusiveFluxY(const int tn, const int k, const int j,
     const Real heatK = model->gamma * model->cv * mu / PrandtlNumber();
     const Real divV = du_dx + dv_dy + dw_dz;
 
-    Fvhat[0] = 0;
+    Fvhat[0] = 0.0;
     Fvhat[1] = mu * (dv_dx + du_dy);
     Fvhat[2] = mu * (2.0 * dv_dy - (2.0/3.0) * divV);
     Fvhat[3] = mu * (dv_dz + dw_dy);
@@ -425,7 +425,7 @@ static void NumericalDiffusiveFluxZ(const int tn, const int k, const int j,
     const Real heatK = model->gamma * model->cv * mu / PrandtlNumber();
     const Real divV = du_dx + dv_dy + dw_dz;
 
-    Fvhat[0] = 0;
+    Fvhat[0] = 0.0;
     Fvhat[1] = mu * (dw_dx + du_dz);
     Fvhat[2] = mu * (dw_dy + dv_dz);
     Fvhat[3] = mu * (2.0 * dw_dz - (2.0/3.0) * divV);

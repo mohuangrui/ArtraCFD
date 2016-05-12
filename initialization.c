@@ -136,7 +136,7 @@ static int ApplyRegionalInitializer(const int n, Space *space, const Model *mode
                 flag = 0; /* always initialize flag to zero */
                 switch (part->typeIC[n]) {
                     case ICPLANE:
-                        if (0 <= Dot(P1Pc, p2)) { /* on the normal direction or the plane */
+                        if (0.0 <= Dot(P1Pc, p2)) { /* on the normal direction or the plane */
                             flag = 1; /* set flag to true */
                         }
                         break;
@@ -149,13 +149,13 @@ static int ApplyRegionalInitializer(const int n, Space *space, const Model *mode
                         P1Pc[X] = P1Pc[X] * (pc[X] - p2[X]);
                         P1Pc[Y] = P1Pc[Y] * (pc[Y] - p2[Y]);
                         P1Pc[Z] = P1Pc[Z] * (pc[Z] - p2[Z]);
-                        if ((0 >= P1Pc[X]) && (0 >= P1Pc[Y]) && (0 >= P1Pc[Z])) { /* in or on the box */
+                        if ((0.0 >= P1Pc[X]) && (0.0 >= P1Pc[Y]) && (0.0 >= P1Pc[Z])) { /* in or on the box */
                             flag = 1; /* set flag to true */
                         }
                         break;
                     case ICCYLINDER:
                         proj = Dot(P1Pc, P1P2);
-                        if ((0 > proj) || (l2_P1P2 < proj)) { /* outside the two ends */
+                        if ((0.0 > proj) || (l2_P1P2 < proj)) { /* outside the two ends */
                             break;
                         }
                         proj = Dot(P1Pc, P1Pc) - proj * proj / l2_P1P2;

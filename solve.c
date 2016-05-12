@@ -45,7 +45,7 @@ static int SolutionEvolution(Time *time, Space *space, const Model *model)
 {
     Real dt = time->end - time->now; /* time step size */
     /* check whether current time is equal to or larger than the end time */
-    if (0 >= dt) {
+    if (0.0 >= dt) {
         fprintf(stdout, "  current time is equal to or larger than the end time...\n");
         return 1;
     }

@@ -81,7 +81,7 @@ static void CharacteristicProjection(const int tn, const int s, const int k, con
         idx = IndexNode(k + n * h[s][Z], j + n * h[s][Y], i + n * h[s][X], partn[Y], partn[X]);
         U = node[idx].U[tn];
         for (int row = 0; row < DIMU; ++row) {
-            H[row][count] = 0;
+            H[row][count] = 0.0;
             for (int dummy = 0; dummy < DIMU; ++dummy) {
                 H[row][count] = H[row][count] + L[row][dummy] * U[dummy];
             }
@@ -122,7 +122,7 @@ static void InverseProjection(Real R[restrict][DIMU], const Real HhatP[restrict]
         const Real HhatN[restrict], Real Fhat[restrict])
 {
     for (int row = 0; row < DIMU; ++row) {
-        Fhat[row] = 0;
+        Fhat[row] = 0.0;
         for (int dummy = 0; dummy < DIMU; ++dummy) {
             Fhat[row] = Fhat[row] + R[row][dummy] * (HhatP[dummy] + HhatN[dummy]);
         }
