@@ -22,6 +22,7 @@
  * Static Function Declarations
  ****************************************************************************/
 static int AddVertex(const Real [restrict], Polyhedron *);
+static int FindEdge(const int, const int, const Polyhedron *);
 static void ComputeParametersSphere(const int, Polyhedron *);
 static void ComputeParametersPolyhedron(const int, Polyhedron *);
 /****************************************************************************
@@ -90,6 +91,18 @@ void AddEdge(const int v0, const int v1, const int f, Polyhedron *poly)
     ++(poly->edgeN); /* increase pointer */
     return;
 }
+static int FindEdge(const int v0, const int v1, const Polyhedron *poly)
+{
+    /* search the edge list and return the edge index */
+    for (int n = 0; n < poly->edgeN; ++n) {
+        if (((v0 == poly->e[n][0]) && (v1 == poly->e[n][1])) ||
+                ((v1 == poly->e[n][0]) && (v0 == poly->e[n][1]))) {
+            return n;
+        }
+    }
+    /* otherwise, something is wrong */
+    return 0;
+}
 void ComputeGeometryParameters(const int collapse, Geometry *geo)
 {
     for (int n = 0; n < geo->sphereN; ++n) {
@@ -126,7 +139,6 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
     RealVec v2 = {0.0};
     RealVec e01 = {0.0}; /* edges */
     RealVec e02 = {0.0};
-    RealVec e12 = {0.0};
     RealVec Nf = {0.0}; /* outward normal */
     RealVec Angle = {0.0}; /* internal angle */
     RealVec O = {0.0}; /* centroid */
@@ -157,16 +169,7 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
      * polygon and polyhedron. Imperial College London.
      */
     for (int n = 0; n < poly->faceN; ++n) {
-        for (int s = 0; s < DIMS; ++s) {
-            /* vertices */
-            v0[s] = poly->v[poly->f[n][0]][s];
-            v1[s] = poly->v[poly->f[n][1]][s];
-            v2[s] = poly->v[poly->f[n][2]][s];
-            /* edge vectors */
-            e01[s] = v1[s] - v0[s];
-            e02[s] = v2[s] - v0[s];
-            e12[s] = v2[s] - v1[s];
-        }
+        BuildTriangle(n, poly, v0, v1, v2, e01, e02);
         /* outward normal vector */
         Cross(e01, e02, Nf);
         /* accumulate area and volume */
@@ -185,6 +188,7 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
          * Graphics, IEEE Transactions on, 11(3), 243-253.
          */
         /* calculate internal angles by the law of cosines */
+        const RealVec e12 = {v2[X] - v1[X], v2[Y] - v1[Y], v2[Z] - v1[Z]};
         Angle[0] = acos((Dot(e01, e01) + Dot(e02, e02) - Dot(e12, e12)) / 
                 (2.0 * sqrt(Dot(e01, e01) * Dot(e02, e02))));
         Angle[1] = acos((Dot(e01, e01) + Dot(e12, e12) - Dot(e02, e02)) / 
@@ -226,14 +230,28 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
     }
     return;
 }
-int PointInPolyhedron(const Real p[restrict], const Polyhedron *poly)
+void BuildTriangle(const int faceID, const Polyhedron *poly, Real v0[restrict], 
+        Real v1[restrict], Real v2[restrict], Real e01[restrict], Real e02[restrict])
+{
+    for (int s = 0; s < DIMS; ++s) {
+        /* vertices */
+        v0[s] = poly->v[poly->f[faceID][0]][s];
+        v1[s] = poly->v[poly->f[faceID][1]][s];
+        v2[s] = poly->v[poly->f[faceID][2]][s];
+        /* edge vectors */
+        e01[s] = v1[s] - v0[s];
+        e02[s] = v2[s] - v0[s];
+    }
+}
+int PointInPolyhedron(const Real p[restrict], const Polyhedron *poly, Real faceID[restrict])
 {
     RealVec v0 = {0.0}; /* vertices */
     RealVec v1 = {0.0};
     RealVec v2 = {0.0};
     RealVec e01 = {0.0}; /* edges */
     RealVec e02 = {0.0};
-    RealVec N = {0.0}; /* normal of the closet point */
+    RealVec pi = {0.0}; /* closest point */
+    RealVec N = {0.0}; /* normal of the closest point */
     /*
      * Parametric equation of triangle defined plane 
      * T(s,t) = v0 + s(v1-v0) + t(v2-v0) = v0 + s*e01 + s*e02
@@ -244,26 +262,29 @@ int PointInPolyhedron(const Real p[restrict], const Polyhedron *poly)
      * s=0, t=0; s=1, t=0; s=0, t=1 corresponds to v0, v1, and v2.
      */
     RealVec para = {0.0}; /* parametric coordinates */
-    Real distSquareMin = FLT_MAX; /* store minimum squared distance */
     Real distSquare = 0.0; /* store computed squared distance */
-    int faceID = 0; /* cloest face identifier */
+    Real distSquareMin = FLT_MAX; /* store minimum squared distance */
+    int fid = 0; /* closest face identifier */
     for (int n = 0; n < poly->faceN; ++n) {
-        for (int s = 0; s < DIMS; ++s) {
-            /* vertices */
-            v0[s] = poly->v[poly->f[n][0]][s];
-            v1[s] = poly->v[poly->f[n][1]][s];
-            v2[s] = poly->v[poly->f[n][2]][s];
-            /* edge vectors */
-            e01[s] = v1[s] - v0[s];
-            e02[s] = v2[s] - v0[s];
-        }
+        BuildTriangle(n, poly, v0, v1, v2, e01, e02);
         distSquare = PointTriangleDistance(p, v0, e01, e02, para);
         if (distSquareMin > distSquare) {
             distSquareMin = distSquare;
-            faceID = n;
+            fid = n;
         }
     }
-    return faceID;
+    *faceID = fid;
+    ComputeIntersection(p, fid, poly, pi, N);
+    pi[X] = p[X] - pi[X];
+    pi[Y] = p[Y] - pi[Y];
+    pi[Z] = p[Z] - pi[Z];
+    if (0.0 < Dot(pi, N)) {
+        /* outside polyhedron */
+        return 0;
+    } else {
+        /* inside or on polyhedron */
+        return 1;
+    }
 }
 /*
  * Eberly, D. (1999). Distance between point and triangle in 3D.
@@ -446,6 +467,78 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
         distSquare = zero;
     }
     return distSquare;
+}
+void ComputeIntersection(const Real p[restrict], const int faceID, const Polyhedron *poly,
+        Real pi[restrict], Real N[restrict])
+{
+    RealVec v0 = {0.0}; /* vertices */
+    RealVec v1 = {0.0};
+    RealVec v2 = {0.0};
+    RealVec e01 = {0.0}; /* edges */
+    RealVec e02 = {0.0};
+    RealVec para = {0.0}; /* parametric coordinates */
+    const Real zero = 0.0;
+    const Real one = 1.0;
+    const IntVec v = {poly->f[faceID][0], poly->f[faceID][1], poly->f[faceID][2]}; /* vertex index in vertex list */
+    int e = 0; /* edge index in edge list */
+    BuildTriangle(faceID, poly, v0, v1, v2, e01, e02);
+    PointTriangleDistance(p, v0, e01, e02, para);
+    if (EqualReal(para[1], zero)) {
+        if (EqualReal(para[2], zero)) {
+            /* vertex 0 */
+            for (int s = 0; s < DIMS; ++s) {
+                pi[s] = v0[s];
+                N[s] = poly->Nv[v[0]][s];
+            }
+        } else {
+            if (EqualReal(para[2], one)) {
+                /* vertex 2 */
+                for (int s = 0; s < DIMS; ++s) {
+                    pi[s] = v2[s];
+                    N[s] = poly->Nv[v[2]][s];
+                }
+            } else {
+                /* edge e02 */
+                e = FindEdge(v[0], v[2], poly);
+                for (int s = 0; s < DIMS; ++s) {
+                    pi[s] = v0[s] + para[2] * e02[s];
+                    N[s] = poly->Ne[e][s];
+                }
+            }
+        }
+    } else {
+        if (EqualReal(para[1], one)) {
+            /* vertex 1 */
+            for (int s = 0; s < DIMS; ++s) {
+                pi[s] = v1[s];
+                N[s] = poly->Nv[v[1]][s];
+            }
+        } else {
+            if (EqualReal(para[2], zero)) {
+                /* edge e01 */
+                e = FindEdge(v[0], v[1], poly);
+                for (int s = 0; s < DIMS; ++s) {
+                    pi[s] = v0[s] + para[1] * e01[s];
+                    N[s] = poly->Ne[e][s];
+                }
+            } else {
+                if (EqualReal(para[0], zero)) {
+                    /* edge e12 */
+                    e = FindEdge(v[1], v[2], poly);
+                    for (int s = 0; s < DIMS; ++s) {
+                        pi[s] = v0[s] + para[1] * e01[s] + para[2] * e02[s];
+                        N[s] = poly->Ne[e][s];
+                    }
+                } else {
+                    /* complete in the triangle */
+                    for (int s = 0; s < DIMS; ++s) {
+                        pi[s] = v0[s] + para[1] * e01[s] + para[2] * e02[s];
+                        N[s] = poly->Nf[faceID][s];
+                    }
+                }
+            }
+        }
+    }
 }
 /* a good practice: end file with a newline */
 

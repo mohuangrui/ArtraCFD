@@ -33,6 +33,8 @@
 extern void ConvertPolyhedron(Polyhedron *);
 extern void AllocatePolyhedronMemory(const int vertN, const int faceN, Polyhedron *);
 extern void AddEdge(const int v0, const int v1, const int f, Polyhedron *);
+extern void BuildTriangle(const int faceID, const Polyhedron *, Real v0[restrict], 
+        Real v1[restrict], Real v2[restrict], Real e01[restrict], Real e02[restrict]);
 /*
  * Compute geometry parameters
  *
@@ -44,9 +46,10 @@ extern void ComputeGeometryParameters(const int collapse, Geometry *);
  * Point in polyhedron
  *
  * Function
- *      Solve point-in-polyhedron problem for triangulated polyhedron.
+ *      Solve point-in-polyhedron problem for triangulated polyhedron,
+ *      also find the cloest face.
  */
-extern int PointInPolyhedron(const Real pc[restrict], const Polyhedron *);
+extern int PointInPolyhedron(const Real p[restrict], const Polyhedron *, Real faceID[restrict]);
 /*
  * Point triangle distance
  *
@@ -56,6 +59,14 @@ extern int PointInPolyhedron(const Real pc[restrict], const Polyhedron *);
  */
 extern Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], 
         const Real e01[restrict], const Real e02[restrict], Real para[restrict]);
+/*
+ * Point triangle intersection point
+ *
+ * Function
+ *      Obtain the coordinates and normal of the intersection point.
+ */
+extern void ComputeIntersection(const Real p[restrict], const int faceID, const Polyhedron *poly,
+        Real pi[restrict], Real N[restrict]);
 #endif
 /* a good practice: end file with a newline */
 
