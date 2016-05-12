@@ -151,31 +151,46 @@ void EigenvectorL(const int s, const Real gamma, const Real Uo[restrict], Real L
 static void EigenvectorLX(const Real u, const Real v, const Real w, const Real c, 
         const Real q, const Real b, const Real d, Real L[restrict][DIMU])
 {
-    L[0][0] = b * q + d * u;   L[0][1] = -b * u - d;     L[0][2] = -b * v;             L[0][3] = -b * w;             L[0][4] = b;
-    L[1][0] = -2.0 * b * q + 1.0;  L[1][1] = 2.0 * b * u;      L[1][2] = 2.0 * b * v;          L[1][3] = 2.0 * b * w;          L[1][4] = -2.0 * b;
-    L[2][0] = -2.0 * b * q * v;  L[2][1] = 2.0 * b * v * u;  L[2][2] = 2.0 * b * v * v + 1.0;  L[2][3] = 2.0 * b * w * v;      L[2][4] = -2.0 * b * v;
-    L[3][0] = -2.0 * b * q * w;  L[3][1] = 2.0 * b * w * u;  L[3][2] = 2.0 * b * w * v;      L[3][3] = 2.0 * b * w * w + 1.0;  L[3][4] = -2.0 * b * w;
-    L[4][0] = b * q - d * u;   L[4][1] = -b * u + d;     L[4][2] = -b * v;             L[4][3] = -b * w;             L[4][4] = b;
+    L[0][0] = b * q + d * u;          L[0][1] = -b * u - d;             L[0][2] = -b * v;
+    L[0][3] = -b * w;                 L[0][4] = b;
+    L[1][0] = -2.0 * b * q + 1.0;     L[1][1] = 2.0 * b * u;            L[1][2] = 2.0 * b * v;
+    L[1][3] = 2.0 * b * w;            L[1][4] = -2.0 * b;
+    L[2][0] = -2.0 * b * q * v;       L[2][1] = 2.0 * b * v * u;        L[2][2] = 2.0 * b * v * v + 1.0;
+    L[2][3] = 2.0 * b * w * v;        L[2][4] = -2.0 * b * v;
+    L[3][0] = -2.0 * b * q * w;       L[3][1] = 2.0 * b * w * u;        L[3][2] = 2.0 * b * w * v;
+    L[3][3] = 2.0 * b * w * w + 1.0;  L[3][4] = -2.0 * b * w;
+    L[4][0] = b * q - d * u;          L[4][1] = -b * u + d;             L[4][2] = -b * v;
+    L[4][3] = -b * w;                 L[4][4] = b;
     return;
 }
 static void EigenvectorLY(const Real u, const Real v, const Real w, const Real c, 
         const Real q, const Real b, const Real d, Real L[restrict][DIMU])
 {
-    L[0][0] = b * q + d * v;    L[0][1] = -b * u;             L[0][2] = -b * v - d;     L[0][3] = -b * w;             L[0][4] = b;
-    L[1][0] = -2.0 * b * q * u;   L[1][1] = 2.0 * b * u * u + 1.0;  L[1][2] = 2.0 * b * v * u;  L[1][3] = 2.0 * b * w * u;      L[1][4] = -2.0 * b * u;
-    L[2][0] = -2.0 * b * q + 1.0;   L[2][1] = 2.0 * b * u;          L[2][2] = 2.0 * b * v;      L[2][3] = 2.0 * b * w;          L[2][4] = -2.0 * b;
-    L[3][0] = -2.0 * b * q * w;   L[3][1] = 2.0 * b * w * u;      L[3][2] = 2.0 * b * w * v;  L[3][3] = 2.0 * b * w * w + 1.0;  L[3][4] = -2.0 * b * w;
-    L[4][0] = b * q - d * v;    L[4][1] = -b * u;             L[4][2] = -b * v + d;     L[4][3] = -b * w;             L[4][4] = b;
+    L[0][0] = b * q + d * v;          L[0][1] = -b * u;                 L[0][2] = -b * v - d;
+    L[0][3] = -b * w;                 L[0][4] = b;
+    L[1][0] = -2.0 * b * q * u;       L[1][1] = 2.0 * b * u * u + 1.0;  L[1][2] = 2.0 * b * v * u;
+    L[1][3] = 2.0 * b * w * u;        L[1][4] = -2.0 * b * u;
+    L[2][0] = -2.0 * b * q + 1.0;     L[2][1] = 2.0 * b * u;            L[2][2] = 2.0 * b * v;
+    L[2][3] = 2.0 * b * w;            L[2][4] = -2.0 * b;
+    L[3][0] = -2.0 * b * q * w;       L[3][1] = 2.0 * b * w * u;        L[3][2] = 2.0 * b * w * v;
+    L[3][3] = 2.0 * b * w * w + 1.0;  L[3][4] = -2.0 * b * w;
+    L[4][0] = b * q - d * v;          L[4][1] = -b * u;                 L[4][2] = -b * v + d;
+    L[4][3] = -b * w;                 L[4][4] = b;
     return;
 }
 static void EigenvectorLZ(const Real u, const Real v, const Real w, const Real c, 
         const Real q, const Real b, const Real d, Real L[restrict][DIMU])
 {
-    L[0][0] = b * q + d * w;   L[0][1] = -b * u;             L[0][2] = -b * v;             L[0][3] = -b * w - d;     L[0][4] = b;
-    L[1][0] = -2.0 * b * q * u;  L[1][1] = 2.0 * b * u * u + 1.0;  L[1][2] = 2.0 * b * v * u;      L[1][3] = 2.0 * b * w * u;  L[1][4] = -2.0 * b * u;
-    L[2][0] = -2.0 * b * q * v;  L[2][1] = 2.0 * b * v * u;      L[2][2] = 2.0 * b * v * v + 1.0;  L[2][3] = 2.0 * b * w * v;  L[2][4] = -2.0 * b * v;
-    L[3][0] = -2.0 * b * q + 1.0;  L[3][1] = 2.0 * b * u;          L[3][2] = 2.0 * b * v;          L[3][3] = 2.0 * b * w;      L[3][4] = -2.0 * b;
-    L[4][0] = b * q - d * w;   L[4][1] = -b * u;             L[4][2] = -b * v;             L[4][3] = -b * w + d;     L[4][4] = b;
+    L[0][0] = b * q + d * w;          L[0][1] = -b * u;                 L[0][2] = -b * v;
+    L[0][3] = -b * w - d;             L[0][4] = b;
+    L[1][0] = -2.0 * b * q * u;       L[1][1] = 2.0 * b * u * u + 1.0;  L[1][2] = 2.0 * b * v * u;
+    L[1][3] = 2.0 * b * w * u;        L[1][4] = -2.0 * b * u;
+    L[2][0] = -2.0 * b * q * v;       L[2][1] = 2.0 * b * v * u;        L[2][2] = 2.0 * b * v * v + 1.0;
+    L[2][3] = 2.0 * b * w * v;        L[2][4] = -2.0 * b * v;
+    L[3][0] = -2.0 * b * q + 1.0;     L[3][1] = 2.0 * b * u;            L[3][2] = 2.0 * b * v;
+    L[3][3] = 2.0 * b * w;            L[3][4] = -2.0 * b;
+    L[4][0] = b * q - d * w;          L[4][1] = -b * u;                 L[4][2] = -b * v;
+    L[4][3] = -b * w + d;             L[4][4] = b;
     return;
 }
 void EigenvectorR(const int s, const Real Uo[restrict], Real R[restrict][DIMU])
@@ -192,31 +207,31 @@ void EigenvectorR(const int s, const Real Uo[restrict], Real R[restrict][DIMU])
 static void EigenvectorRX(const Real u, const Real v, const Real w, const Real hT,
         const Real c, const Real q, Real R[restrict][DIMU])
 {
-    R[0][0] = 1.0;           R[0][1] = 1.0;          R[0][2] = 0.0;  R[0][3] = 0.0;  R[0][4] = 1.0;
+    R[0][0] = 1.0;         R[0][1] = 1.0;        R[0][2] = 0.0;  R[0][3] = 0.0;  R[0][4] = 1.0;
     R[1][0] = u - c;       R[1][1] = u;          R[1][2] = 0.0;  R[1][3] = 0.0;  R[1][4] = u + c;
-    R[2][0] = v;           R[2][1] = 0.0;          R[2][2] = 1.0;  R[2][3] = 0.0;  R[2][4] = v;
-    R[3][0] = w;           R[3][1] = 0.0;          R[3][2] = 0.0;  R[3][3] = 1.0;  R[3][4] = w;
-    R[4][0] = hT - u * c;  R[4][1] = u * u - q;  R[4][2] = v;  R[4][3] = w;  R[4][4] = hT + u * c;
+    R[2][0] = v;           R[2][1] = 0.0;        R[2][2] = 1.0;  R[2][3] = 0.0;  R[2][4] = v;
+    R[3][0] = w;           R[3][1] = 0.0;        R[3][2] = 0.0;  R[3][3] = 1.0;  R[3][4] = w;
+    R[4][0] = hT - u * c;  R[4][1] = u * u - q;  R[4][2] = v;    R[4][3] = w;    R[4][4] = hT + u * c;
     return;
 }
 static void EigenvectorRY(const Real u, const Real v, const Real w, const Real hT,
         const Real c, const Real q, Real R[restrict][DIMU])
 {
-    R[0][0] = 1.0;           R[0][1] = 0.0;  R[0][2] = 1.0;          R[0][3] = 0.0;  R[0][4] = 1.0;
-    R[1][0] = u;           R[1][1] = 1.0;  R[1][2] = 0.0;          R[1][3] = 0.0;  R[1][4] = u;
+    R[0][0] = 1.0;         R[0][1] = 0.0;  R[0][2] = 1.0;        R[0][3] = 0.0;  R[0][4] = 1.0;
+    R[1][0] = u;           R[1][1] = 1.0;  R[1][2] = 0.0;        R[1][3] = 0.0;  R[1][4] = u;
     R[2][0] = v - c;       R[2][1] = 0.0;  R[2][2] = v;          R[2][3] = 0.0;  R[2][4] = v + c;
-    R[3][0] = w;           R[3][1] = 0.0;  R[3][2] = 0.0;          R[3][3] = 1.0;  R[3][4] = w;
-    R[4][0] = hT - v * c;  R[4][1] = u;  R[4][2] = v * v - q;  R[4][3] = w;  R[4][4] = hT + v * c;
+    R[3][0] = w;           R[3][1] = 0.0;  R[3][2] = 0.0;        R[3][3] = 1.0;  R[3][4] = w;
+    R[4][0] = hT - v * c;  R[4][1] = u;    R[4][2] = v * v - q;  R[4][3] = w;    R[4][4] = hT + v * c;
     return;
 }
 static void EigenvectorRZ(const Real u, const Real v, const Real w, const Real hT,
         const Real c, const Real q, Real R[restrict][DIMU])
 {
-    R[0][0] = 1.0;           R[0][1] = 0.0;  R[0][2] = 0.0;  R[0][3] = 1.0;          R[0][4] = 1.0;
-    R[1][0] = u;           R[1][1] = 1.0;  R[1][2] = 0.0;  R[1][3] = 0.0;          R[1][4] = u;
-    R[2][0] = v;           R[2][1] = 0.0;  R[2][2] = 1.0;  R[2][3] = 0.0;          R[2][4] = v;
+    R[0][0] = 1.0;         R[0][1] = 0.0;  R[0][2] = 0.0;  R[0][3] = 1.0;        R[0][4] = 1.0;
+    R[1][0] = u;           R[1][1] = 1.0;  R[1][2] = 0.0;  R[1][3] = 0.0;        R[1][4] = u;
+    R[2][0] = v;           R[2][1] = 0.0;  R[2][2] = 1.0;  R[2][3] = 0.0;        R[2][4] = v;
     R[3][0] = w - c;       R[3][1] = 0.0;  R[3][2] = 0.0;  R[3][3] = w;          R[3][4] = w + c;
-    R[4][0] = hT - w * c;  R[4][1] = u;  R[4][2] = v;  R[4][3] = w * w - q;  R[4][4] = hT + w * c;
+    R[4][0] = hT - w * c;  R[4][1] = u;    R[4][2] = v;    R[4][3] = w * w - q;  R[4][4] = hT + w * c;
     return;
 }
 void ConvectiveFlux(const int s, const Real gamma, const Real U[restrict], Real F[restrict])
