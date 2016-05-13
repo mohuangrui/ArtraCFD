@@ -113,6 +113,14 @@ void ComputeGeometryParameters(const int collapse, Geometry *geo)
     }
     return;
 }
+/*
+ * A bounding box and a bounding sphere are both used as bounding containers
+ * to enclose a finite geometric object. Meanwhile, triangulated polyhedrons
+ * and analytical spheres are unified by the using of bounding container,
+ * since an analytical sphere is the bounding sphere of itself. Moreover,
+ * a polyhedron with a unit length thickness is used to represent a polygon
+ * with the same cross-section shape.
+ */
 static void ComputeParametersSphere(const int collapse, Polyhedron *poly)
 {
     const Real pi = 3.14159265359;
@@ -244,7 +252,7 @@ void BuildTriangle(const int faceID, const Polyhedron *poly, Real v0[restrict],
     }
     return;
 }
-int PointInPolyhedron(const Real p[restrict], const Polyhedron *poly, Real faceID[restrict])
+int PointInPolyhedron(const Real p[restrict], const Polyhedron *poly, int faceID[restrict])
 {
     RealVec v0 = {0.0}; /* vertices */
     RealVec v1 = {0.0};

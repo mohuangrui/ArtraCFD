@@ -442,11 +442,5 @@ void Normalize(const int dimV, const Real normalizer, Real V[restrict])
     }
     return;
 }
-int InBox(const int k, const int j, const int i, int box[restrict][LIMIT])
-{
-    return ((box[Z][MIN] <= k) && (box[Z][MAX] > k) &&
-            (box[Y][MIN] <= j) && (box[Y][MAX] > j) &&
-            (box[X][MIN] <= i) && (box[X][MAX] > i));
-}
 /* a good practice: end file with a newline */
 

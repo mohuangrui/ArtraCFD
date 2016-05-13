@@ -49,7 +49,7 @@ extern void ComputeGeometryParameters(const int collapse, Geometry *);
  *      Solve point-in-polyhedron problem for triangulated polyhedron,
  *      also find the cloest face.
  */
-extern int PointInPolyhedron(const Real p[restrict], const Polyhedron *, Real faceID[restrict]);
+extern int PointInPolyhedron(const Real p[restrict], const Polyhedron *, int faceID[restrict]);
 /*
  * Point triangle distance
  *

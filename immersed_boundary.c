@@ -21,6 +21,9 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
+static void InitializeGeometryDomain(Space *);
+static void IdentifyGeometryNode(Space *);
+static void IdentifyInterfacialNode(Space *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -28,65 +31,58 @@
  * This function identify the type of each node: 
  *
  * Procedures are:
- * -- initialize node flag of global boundary and exterior nodes to exterior
- *    type, and inner nodes to fluid type;
- * -- identify all inner nodes that are in geometry as solid node;
- * -- identify ghost nodes by the node type of neighbours of solid nodes;
+ * -- initialize node flag of global boundary and global ghost nodes to -1, 
+ *    and interior computational nodes to 0;
+ * -- identify nodes that are in or on the nth geometry as n;
+ * -- identify interfacial nodes by the node type of neighbours;
  *
- * Ghost nodes are solid nodes that locate on numerical boundaries.
- * It's necessary to differ global boundary nodes and inner nodes to avoid 
- * incorrect mark of ghost nodes nearby global domain boundaries.
+ * Interior ghost nodes are computational nodes that locate on numerical 
+ * boundaries. They form a subset of interfacial nodes. It's necessary to
+ * differentiate exterior nodes and interior nodes to avoid incorrect mark
+ * of interfacial nodes near global domain boundaries.
  *
  * The identification process should proceed step by step to correctly handle
  * all these relationships and avoid interference between each step,
  * interference may happen if identification processes are crunched together.
  *
- * Moreover, whenever identifying a solid node or ghost node, store its
- * corresponding geometry information by linking the node flag to the
- * geometry ID, which will be accessed to calculate other informations. 
- * The rational is that don't store every information for each ghost node, but
+ * Moreover, whenever identifying a node, link the node to geometry, which 
+ * can be used to access the geometric data for computing required data. 
+ * The rational is that don't store every information for each node, but
  * only store necessary information. When need it, access and calculate it.
  */
 void ComputeGeometryDomain(Space *space)
 {
+    ComputeGeometryParameters(space->part.collapsed, &(space->geo));
     InitializeGeometryDomain(space);
-    IdentifySolidNodes(space);
-    IdentifyGhostNodes(space);
+    IdentifyGeometryNode(space);
+    IdentifyInterfacialNode(space);
     return;
 }
 static void InitializeGeometryDomain(Space *space)
 {
-    const Partition *restrict part = &(space->part);
-    const Geometry *restrict geo = &(space->geo);
-    const Node *node = space->node;
-    const Real *restrict U = NULL;
+    Partition *restrict part = &(space->part);
+    Node *node = space->node;
     int idx = 0; /* linear array index math variable */
-    /* , . */
     for (int k = 0; k < part->n[Z]; ++k) {
         for (int j = 0; j < part->n[Y]; ++j) {
             for (int i = 0; i < part->n[X]; ++i) {
+                idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
+                if ((part->ns[PIN][Z][MIN] <= k) && (part->ns[PIN][Z][MAX] > k) &&
+                        (part->ns[PIN][Y][MIN] <= j) && (part->ns[PIN][Y][MAX] > j) &&
+                        (part->ns[PIN][X][MIN] <= i) && (part->ns[PIN][X][MAX] > i)) {
+                    node[idx].geoID = 0;
+                } else {
+                    node[idx].geoID = 0;
+                }
+                node[idx].faceID = 0;
+                node[idx].layerID = 0;
             }
         }
     }
     return;
 }
 /*
- * A bounding box and a bounding sphere are both used as bounding containers
- * to enclose a finite geometric object. Meanwhile, triangulated polyhedrons
- * and analytical spheres are unified by the using of bounding container,
- * since an analytical sphere is the bounding sphere of itself. Moreover,
- * a polyhedron with a unit length thickness is used to represent a polygon
- * with the same cross-section shape.
- *
- * Computational geometry algorithms often benefit from bounding containers.
- * Before conducting computationally expensive intersection or containment
- * algorithms for a complicated object, using simple bounding containers as
- * a preprocessing test can often exclude the possibility of intersection
- * or containment and significantly speed up software for ray tracing,
- * collision detection, hidden object detection, etc.
- * Bounding containers for point sets, http://geomalgorithms.com/a08-_containers.html
- *
- * When locate solid nodes, there are two approaches available. One is search
+ * When locate geometry nodes, there are two approaches available. One is search
  * over each node and verify each node regarding to all the geometries; another
  * is search each geometry and find all the nodes inside current geometry.
  * The second method is adopted here for performance reason.
@@ -100,35 +96,54 @@ static void InitializeGeometryDomain(Space *space)
  * is required to ensure minimal test in addition to the bounding container
  * method. Spatial subdivision is to provide internal resolution for the
  * polyhedron for fast inclusion determination.
- * Horvat, D., & Zalik, B. (2012). Ray-casting point-in-polyhedron test. In
- * Proceedings of the CESCG.
- * Ooms, K., De Maeyer, P., & Neutens, T. (2010). A 3D inclusion test on large
- * dataset. In Developments in 3D Geo-Information Sciences.
  */
-static int IdentifySolidNodes(Space *space, const Partition *part, const Geometry *geo)
+static void IdentifyGeometryNode(Space *space)
 {
-    Index idx = 0; /* linear array index math variable */
-    int box[DIMS][LIMIT] = {{0}}; /* range box in node space */
-    for (int m = 0; m < geo->totalM; ++m) {
+    const Partition *restrict part = &(space->part);
+    Geometry *geo = &(space->geo);
+    Node *node = space->node;
+    Polyhedron *poly = NULL;
+    const IntVec nMin = {part->ns[PIN][X][MIN], part->ns[PIN][Y][MIN], part->ns[PIN][Z][MIN]};
+    const IntVec nMax = {part->ns[PIN][X][MAX], part->ns[PIN][Y][MAX], part->ns[PIN][Z][MAX]};
+    const RealVec sMin = {part->domain[X][MIN], part->domain[Y][MIN], part->domain[Z][MIN]};
+    const RealVec d = {part->d[X], part->d[Y], part->d[Z]};
+    const RealVec dd = {part->dd[X], part->dd[Y], part->dd[Z]};
+    const int ng = part->ng;
+    int idx = 0; /* linear array index math variable */
+    int box[DIMS][LIMIT] = {{0}}; /* bounding box in node space */
+    RealVec p = {0.0}; /* node point */
+    for (int n = 0; n < geo->totalN; ++n) {
+        poly = geo->poly + n;
         /* determine search range according to bounding box of polyhedron and valid node space */
         for (int s = 0; s < DIMS; ++s) {
-            box[s][MIN] = ValidNodeSpace(NodeSpace(geo->list[m].box[s][MIN], s, space), s, part);
-            box[s][MAX] = ValidNodeSpace(NodeSpace(geo->list[m].box[s][MAX], s, space), s, part) + 1;
+            box[s][MIN] = ValidNodeSpace(NodeSpace(poly->box[s][MIN], sMin[s], dd[s], ng), nMin[s], nMax[s]);
+            box[s][MAX] = ValidNodeSpace(NodeSpace(poly->box[s][MAX], sMin[s], dd[s], ng), nMin[s], nMax[s]) + 1;
         }
-        /* find nodes in geometry, then flag as solid and link to geometry. */
+        /* find nodes in geometry, then flag and link to geometry. */
         for (int k = box[Z][MIN]; k < box[Z][MAX]; ++k) {
             for (int j = box[Y][MIN]; j < box[Y][MAX]; ++j) {
                 for (int i = box[X][MIN]; i < box[X][MAX]; ++i) {
-                    if (0 == PointInPolyhedron(k, j, i, geo->list + m, space)) {
-                        idx = IndexNode(k, j, i, space);
-                        space->node[idx].type = SOLID;
-                        space->node[idx].geoID = m;
+                    idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
+                    if (0 != node[idx].geoID) { /* already identified by others */
+                        continue;
+                    }
+                    p[X] = PointSpace(i, sMin[X], d[X], ng);
+                    p[Y] = PointSpace(j, sMin[Y], d[Y], ng);
+                    p[Z] = PointSpace(k, sMin[Z], d[Z], ng);
+                    if (geo->sphereN > n) { /* analytical sphere */
+                        if (poly->r * poly->r >= Dist2(poly->O, p)) {
+                            node[idx].geoID = n + 1;
+                        }
+                    } else { /* triangulated polyhedron */
+                        if (PointInPolyhedron(p, poly, &(node[idx].faceID))) {
+                            node[idx].geoID = n + 1;
+                        }
                     }
                 }
             }
         }
     }
-    return 0;
+    return;
 }
 static int IdentifyGhostNodes(Space *space, const Partition *part, const Geometry *geo)
 {
@@ -162,14 +177,14 @@ static int SearchFluidNodes(const int k, const int j, const int i,
      * Search around the specified node and return the information of whether 
      * current node has fluid neighbours at the specified coordinate range.
      */
-/*
- * Convective terms only have first order derivatives, discretization
- * stencils of each computational nodes are cross types.
- * Diffusive tems have second order mixed derivatives, discretization
- * stencils of each computational nodes are plane squares with coner
- * nodes. Therefore, for interfacial computational nodes, neighbouring
- * nodes at corner directions require to be identified as ghost nodes.
- */
+    /*
+     * Convective terms only have first order derivatives, discretization
+     * stencils of each computational nodes are cross types.
+     * Diffusive tems have second order mixed derivatives, discretization
+     * stencils of each computational nodes are plane squares with coner
+     * nodes. Therefore, for interfacial computational nodes, neighbouring
+     * nodes at corner directions require to be identified as ghost nodes.
+     */
     const Index idxW = IndexNode(k, j, i - h, space);
     const Index idxE = IndexNode(k, j, i + h, space);
     const Index idxS = IndexNode(k, j - h, i, space);
