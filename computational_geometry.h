@@ -63,9 +63,10 @@ extern Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict
  * Point triangle intersection point
  *
  * Function
- *      Obtain the coordinates and normal of the intersection point.
+ *      Obtain the coordinates and normal of the intersection point,
+ *      also return the distance.
  */
-extern void ComputeIntersection(const Real p[restrict], const int faceID, const Polyhedron *poly,
+extern Real ComputeIntersection(const Real p[restrict], const int faceID, const Polyhedron *poly,
         Real pi[restrict], Real N[restrict]);
 #endif
 /* a good practice: end file with a newline */

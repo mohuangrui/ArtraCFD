@@ -242,6 +242,7 @@ void BuildTriangle(const int faceID, const Polyhedron *poly, Real v0[restrict],
         e01[s] = v1[s] - v0[s];
         e02[s] = v2[s] - v0[s];
     }
+    return;
 }
 int PointInPolyhedron(const Real p[restrict], const Polyhedron *poly, Real faceID[restrict])
 {
@@ -254,8 +255,8 @@ int PointInPolyhedron(const Real p[restrict], const Polyhedron *poly, Real faceI
     RealVec N = {0.0}; /* normal of the closest point */
     /*
      * Parametric equation of triangle defined plane 
-     * T(s,t) = v0 + s(v1-v0) + t(v2-v0) = v0 + s*e01 + s*e02
-     * s, t: real numbers. v0, v1, v2: vertices. e01, e02: edge vertices. 
+     * T(s,t) = v0 + s(v1-v0) + t(v2-v0) = v0 + s*e01 + t*e02
+     * s, t: real numbers. v0, v1, v2: vertices. e01, e02: edge vectors. 
      * A point pi = T(s,t) is in the triangle T when s>=0, t>=0, and s+t<=1.
      * Further, pi is on an edge of T if one of the conditions s=0; t=0; 
      * s+t=1 is true with each condition corresponds to one edge. Each 
@@ -468,7 +469,7 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
     }
     return distSquare;
 }
-void ComputeIntersection(const Real p[restrict], const int faceID, const Polyhedron *poly,
+Real ComputeIntersection(const Real p[restrict], const int faceID, const Polyhedron *poly,
         Real pi[restrict], Real N[restrict])
 {
     RealVec v0 = {0.0}; /* vertices */
@@ -482,7 +483,7 @@ void ComputeIntersection(const Real p[restrict], const int faceID, const Polyhed
     const IntVec v = {poly->f[faceID][0], poly->f[faceID][1], poly->f[faceID][2]}; /* vertex index in vertex list */
     int e = 0; /* edge index in edge list */
     BuildTriangle(faceID, poly, v0, v1, v2, e01, e02);
-    PointTriangleDistance(p, v0, e01, e02, para);
+    const Real distSquare = PointTriangleDistance(p, v0, e01, e02, para);
     if (EqualReal(para[1], zero)) {
         if (EqualReal(para[2], zero)) {
             /* vertex 0 */
@@ -539,6 +540,7 @@ void ComputeIntersection(const Real p[restrict], const int faceID, const Polyhed
             }
         }
     }
+    return distSquare;
 }
 /* a good practice: end file with a newline */
 
