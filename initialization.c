@@ -25,6 +25,7 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
+static int GlobalInitialization(Space *);
 static int InitializeFieldData(Space *, const Model *);
 static int ApplyRegionalInitializer(const int, Space *, const Model *);
 static int InitializeGeometryData(Geometry *);
@@ -33,6 +34,7 @@ static int InitializeGeometryData(Geometry *);
  ****************************************************************************/
 int InitializeComputationalDomain(Time *time, Space *space, const Model *model)
 {
+    GlobalInitialization(space);
     if (0 == time->restart) { /* non restart */
         InitializeFieldData(space, model);
         InitializeGeometryData(&(space->geo));
@@ -47,6 +49,21 @@ int InitializeComputationalDomain(Time *time, Space *space, const Model *model)
         WriteGeometryData(time, &(space->geo));
     }
     return 0;
+}
+/*
+ * Initialize exterior region by initializing the global domain.
+ * After this global initialization, future computation only need
+ * to focus on the interior computational domain.
+ */
+static int GlobalInitialization(Space *space)
+{
+    const Partition *restrict part = &(space->part);
+    Node *node = space->node;
+    const int idxMax = part->n[X] * part->n[Y] * part->n[Z];
+    for (int idx = 0; idx < idxMax; ++idx) {
+        node[idx].geoID = NONE;
+        node[idx].faceID = NONE;
+    }
 }
 static int InitializeFieldData(Space *space, const Model *model)
 {

@@ -176,6 +176,20 @@ int DomainPartition(Space *space)
     part->ns[PBG][Y][MAX] = part->n[Y] - part->ng - 1;
     part->ns[PBG][Z][MIN] = part->n[Z] - part->ng;
     part->ns[PBG][Z][MAX] = part->n[Z];
+
+    const int path[PATHN][DIMS] = { /* searching path */
+        {-1, 0, 0}, {1, 0, 0}, {0, -1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 0, 1},
+        {-1, -1, 0}, {1, -1, 0}, {-1, 1, 0}, {1, 1, 0},
+        {-1, 0, -1}, {1, 0, -1}, {-1, 0, 1}, {1, 0, 1},
+        {0, -1, -1}, {0, 1, -1}, {0, -1, 1}, {0, 1, 1},
+        {-2, 0, 0}, {2, 0, 0}, {0, -2, 0}, {0, 2, 0}, {0, 0, -2}, {0, 0, 2},
+        {-3, 0, 0}, {3, 0, 0}, {0, -3, 0}, {0, 3, 0}, {0, 0, -3}, {0, 0, 3}
+    };
+    for (int n = 0; n < PATHN; ++n) {
+        for (int s = 0; s < DIMS; ++s) {
+            part->path[n][s] = path[n][s];
+        }
+    }
     return 0;
 }
 /* a good practice: end file with a newline */

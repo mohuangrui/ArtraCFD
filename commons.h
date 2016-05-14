@@ -566,9 +566,8 @@ typedef enum {
     TN = 1, /* the time level for intermediate */
     TM = 2, /* the time level for intermediate */
     /* parameters related to numerical model */
-    FLUID = 0,
-    GAS = 0,
-    WATER = 1,
+    PATHN = 30, /* neighbour searching path */
+    NONE = -1, /* invalid flag */
     WENOFIVE = 0, /* 5th order weno */
     /* parameters related to probe */
     NPROBE = 10, /* maximum number of probes to support */
@@ -662,6 +661,7 @@ typedef struct {
     int geoID; /* geometry identifier */
     int faceID; /* closest face identifier */
     int layerID; /* interfacial layer identifier */
+    int ghostID; /* ghost layer identifer */
     Real U[DIMT][DIMU]; /* field data at each time level */
 } Node;
 /*
@@ -676,6 +676,7 @@ typedef struct {
     RealVec dd; /* reciprocal of mesh sizes */
     Real tinyL; /* smallest length scale related to grid size */
     int ns[NPART][DIMS][LIMIT]; /* decomposition node range for each partition */
+    int path[PATHN][DIMS]; /* neighbour searching path */
     int N[NBC][DIMS]; /* outer surface normal of domain boundary */
     int typeBC[NBC]; /* BC types recorder */
     int countIC; /* count of flow initializers */
