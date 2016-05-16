@@ -126,20 +126,10 @@ static void ApplyBoundaryConditions(const int p, const int tn, Space *space, con
                     switch (part->typeBC[p]) {
                         case SLIPWALL:
                         case NOSLIPWALL:
-                            /* 
-                             * Apply the method of image.
-                             *  -- reflecting vectors over wall for both slip and noslip, stationary and
-                             *     moving conditions is unified by linear interpolation.
-                             *  -- scalars are symmetrically reflected between image and ghost.
-                             */
                             idxI = IndexNode(k - ng * N[Z], j - ng * N[Y], i - ng * N[X], part->n[Y], part->n[X]);
                             UI = node[idxI].U[tn];
                             PrimitiveByConservative(model->gamma, model->gasR, UI, UoI);
-                            UoG[1] = 2.0 * UoO[1] - UoI[1];
-                            UoG[2] = 2.0 * UoO[2] - UoI[2];
-                            UoG[3] = 2.0 * UoO[3] - UoI[3];
-                            UoG[4] = UoI[4];
-                            UoG[5] = UoI[5];
+                            MethodOfImage(UoI, UoO, UoG);
                             UoG[0] = UoG[4] / (UoG[5] * model->gasR); /* compute density */
                             ConservativeByPrimitive(model->gamma, UoG, UG);
                             break;

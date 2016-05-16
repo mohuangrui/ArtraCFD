@@ -42,7 +42,7 @@ int InitializeComputationalDomain(Time *time, Space *space, const Model *model)
         ReadFieldData(time, space, model);
         ReadGeometryData(time, &(space->geo));
     }
-    ComputeGeometryDomain(space);
+    ComputeGeometryDomain(space, model);
     BoundaryCondtionsAndTreatments(TO, space, model);
     if (0 == time->restart) { /* non restart */
         WriteFieldData(time, space, model);

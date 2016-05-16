@@ -87,6 +87,9 @@ void FluidDynamics(const Real dt, Space *space, const Model *model)
     RungeKutta(0.5 * dt, Z, space, model);
     return;
 }
+/*
+ * Computation must start from TO data space and end with TO data space.
+ */
 static void RungeKutta(const Real dt, const int s, Space *space, const Model *model)
 {
     /*
@@ -136,7 +139,7 @@ static void LLL(const Real dt, const Real coeA, const Real coeB, const int to,
         for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
             for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
                 idx = IndexNode(k, j, i, partn[Y], partn[X]);
-                if (FLUID != node[idx].geoID) {
+                if (0 != node[idx].geoID) {
                     continue;
                 }
                 /*

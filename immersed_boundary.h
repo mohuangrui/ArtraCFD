@@ -30,7 +30,12 @@
  *      Employ node flagging algorithm to handle complex geometry that locates in
  *      the computational domain.
  */
-extern void ComputeGeometryDomain(Space *);
+extern void ComputeGeometryDomain(Space *, const Model *);
+/*
+ * Compute geometric data
+ */
+Real ComputeGeometricData(const int faceID, const Polyhedron *, const Real pG[restrict],
+        Real pO[restrict], Real pI[restrict], Real N[restrict]);
 /*
  * Immersed boundary treatments
  *
@@ -38,40 +43,7 @@ extern void ComputeGeometryDomain(Space *);
  *      Apply boundary conditions and treatments for immersed boundaries.
  */
 extern void ImmersedBoundaryTreatment(const int tn, Space *, const Model *);
-/*
- * Reconstruct flow variables by Inverse Distance Weighting
- *
- * Function
- *      Reconstruction of the values of primitive vector Uo for a spatial
- *      point (z, y, x) based on the neighbours around node (k, j, i) in
- *      index range h and a nearby boundary point by inversed distance weighting.
- */
-extern int FlowReconstruction(Real Uo[], const Real z, const Real y, const Real x,
-        const int k, const int j, const int i, const int h, 
-        Real UoBC[], const Real info[], const Real *geo, const Real *U,
-        const Space *space, const Model *model, const Geometry *geometry);
-/*
- * In geometry criteria
- *
- * Function
- *      Check node whether locates in the geometry pointed by the geometry
- *      pointer.
- *
- * Return
- *      negative -- in current geometry
- *      zero     -- on current geometry
- *      positive -- out of current geometry
- */
-extern Real InGeometry(const int k, const int j, const int i, const Real *geo, const Space *);
-/*
- * Calculate geometry information
- *
- * Function
- *
- *      Calculate geometry information of current node.
- */
-extern int CalculateGeometryInformation(Real info[], const int k, const int j, 
-        const int i, const Real *geo, const Space *);
+extern void MethodOfImage(const Real UoI[restrict], const Real UoO[restrict], Real UoG[restrict]);
 #endif
 /* a good practice: end file with a newline */
 

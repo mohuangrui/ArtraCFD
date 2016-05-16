@@ -31,11 +31,18 @@ typedef enum {
  ****************************************************************************/
 static void InitializeGeometryDomain(Space *);
 static void IdentifyGeometryNode(Space *);
-static void IdentifyInterfacialNode(Space *);
+static void IdentifyInterfacialNode(Space *, const Model *);
 static int InterfacialState(const int, const int, const int, const int, const int,
         const int [restrict][DIMS], const Node *, const Partition *);
 static int GhostState(const int, const int, const int, const int, const int,
         const int [restrict][DIMS], const Node *, const Partition *);
+static void ApplyWeighting(const Real [restrict], const Real, Real, 
+        Real [restrict], Real [restrict]);
+static Real InverseDistanceWeighting(const int, const int [restrict], const Real [restrict],
+        const int, const int, const Partition *, const Node *, const Model *, Real [restrict]);
+static void FlowReconstruction(const int, const int [restrict], const Real [restrict], const int,
+        const int, const Polyhedron *, const Partition *, const Node *, const Model *, const Real,
+        const Real [restrict], Real [restrict], Real [restrict]);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -52,12 +59,12 @@ static int GhostState(const int, const int, const int, const int, const int,
  * The rational is that don't store every information for each node, but
  * only store necessary information. When need it, access and calculate it.
  */
-void ComputeGeometryDomain(Space *space)
+void ComputeGeometryDomain(Space *space, const Model *model)
 {
     ComputeGeometryParameters(space->part.collapsed, &(space->geo));
     InitializeGeometryDomain(space);
     IdentifyGeometryNode(space);
-    IdentifyInterfacialNode(space);
+    IdentifyInterfacialNode(space, model);
     return;
 }
 static void InitializeGeometryDomain(Space *space)
@@ -182,7 +189,7 @@ static void IdentifyGeometryNode(Space *space)
  * that copy the geometry identifier shall be used rather than simply reusing
  * the face identifier to play this dual role.
  */
-static void IdentifyInterfacialNode(Space *space)
+static void IdentifyInterfacialNode(Space *space, const Model *model)
 {
     const Partition *restrict part = &(space->part);
     Node *node = space->node;
@@ -194,8 +201,18 @@ static void IdentifyInterfacialNode(Space *space)
                 idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
                 if ((NONE != node[idx].faceID) && (0 == node[idx].geoID)) {
                     /* a newly joined node */
-                    FlowReconstruction();
-                    node[idx].faceID = NONE; /* reset */
+                    const IntVec n = {i, j, k};
+                    RealVec p = {0.0};
+                    RealVec Uo = {0.0};
+                    p[X] = PointSpace(i, part->domain[X][MIN], part->d[X], part->ng);
+                    p[Y] = PointSpace(j, part->domain[Y][MIN], part->d[Y], part->ng);
+                    p[Z] = PointSpace(k, part->domain[Z][MIN], part->d[Z], part->ng);
+                    const Real weightSum = InverseDistanceWeighting(TO, n, p, 2, 0, part, node, model, Uo);
+                    /* Normalize the weighted values */
+                    Normalize(DIMUo, weightSum, Uo);
+                    Uo[0] = Uo[4] / (Uo[5] * model->gasR); /* compute density */
+                    ConservativeByPrimitive(model->gamma, Uo, node[idx].U[TO]);
+                    node[idx].faceID = NONE; /* reset after correct reconstruction */
                 }
                 //if (0 == node[idx].geoID) { /* skip interfacial nodes for main domain */
                 //    continue;
@@ -267,26 +284,40 @@ static int GhostState(const int k, const int j, const int i, const int geoID, co
 }
 void ImmersedBoundaryTreatment(const int tn, Space *space, const Model *model)
 {
-    Index idx = 0; /* linear array index math variable */
-    Ghost gs = {0.0}; /* data collection for flow reconstruction */
+    const Partition *restrict part = &(space->part);
+    Node *node = space->node;
+    int idx = 0; /* linear array index math variable */
+    const RealVec sMin = {part->domain[X][MIN], part->domain[Y][MIN], part->domain[Z][MIN]};
+    const RealVec d = {part->d[X], part->d[Y], part->d[Z]};
+    const RealVec dd = {part->dd[X], part->dd[Y], part->dd[Z]};
+    const int ng = part->ng;
+    RealVec pG = {0.0}; /* ghost point */
+    RealVec pO = {0.0}; /* boundary point */
+    RealVec pI = {0.0}; /* image point */
+    IntVec nI = {0}; /* image node */
+    RealVec N = {0.0}; /* normal */
     Real weightSum = 0.0; /* store the sum of weights */
-    for (int r = 1; r < space->ng + 2; ++r) {
-        for (int k = part->n[PIN][Z][MIN]; k < part->n[PIN][Z][MAX]; ++k) {
-            for (int j = part->n[PIN][Y][MIN]; j < part->n[PIN][Y][MAX]; ++j) {
-                for (int i = part->n[PIN][X][MIN]; i < part->n[PIN][X][MAX]; ++i) {
-                    idx = IndexNode(k, j, i, space);
-                    if (GHOST != space->node[idx].type) {
+    Real distSquare = 0.0;
+    Real UoG[DIMUo] = {0.0};
+    Real UoO[DIMUo] = {0.0};
+    Real UoI[DIMUo] = {0.0};
+    for (int r = 1; r < ng + 2; ++r) {
+        for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
+            for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
+                for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
+                    idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
+                    if (r != node[idx].ghostID) { /* not a ghost node in current layer */
                         continue;
                     }
-                    if (r != space->node[idx].layerID) { /* not a ghost node in current layer */
-                        continue;
-                    }
-                    if (model->layers >= r) { /* using the method of image */
-                        CalculateGeometryInformation(&gs, k, j, i, geo, space);
-                        /* obtain the spatial coordinates of the image point */
-                        imageX = info[GSX] + 2 * info[GSDS] * info[GSNX];
-                        imageY = info[GSY] + 2 * info[GSDS] * info[GSNY];
-                        imageZ = info[GSZ] + 2 * info[GSDS] * info[GSNZ];
+                    pG[X] = PointSpace(i, sMin[X], d[X], ng);
+                    pG[Y] = PointSpace(j, sMin[Y], d[Y], ng);
+                    pG[Z] = PointSpace(k, sMin[Z], d[Z], ng);
+                    if (model->layers >= r) { /* immersed boundary treatment */
+                        const Polyhedron *poly = space->geo.poly + node[idx].geoID - 1;
+                        distSquare = ComputeGeometricData(node[idx].faceID, poly, pG, pO, pI, N);
+                        nI[X] = NodeSpace(pI[X], sMin[X], dd[X], ng);
+                        nI[Y] = NodeSpace(pI[Y], sMin[Y], dd[Y], ng);
+                        nI[Z] = NodeSpace(pI[Z], sMin[Z], dd[Z], ng);
                         /*
                          * When extremely strong discontinuities exist in the
                          * domain of dependence of inverse distance weighting,
@@ -297,141 +328,163 @@ void ImmersedBoundaryTreatment(const int tn, Space *space, const Model *model)
                          * stencils and to only use smooth stencils. However,
                          * this will make the algorithm much more complex.
                          */
-                        FlowReconstruction(UoImage, imageZ, imageY, imageX, 
-                                ComputeK(imageZ, space), ComputeJ(imageY, space), ComputeI(imageX, space),
-                                type, UoBC, info, geo, U, space, model, geometry);
-                        /* 
-                         * Apply the method of image.
-                         *  -- reflecting vectors over wall for both slip and noslip, stationary and
-                         *     moving conditions is unified by linear interpolation.
-                         *  -- scalars are symmetrically reflected between image and ghost.
-                         */
-                        UoGhost[1] = 2 * UoBC[1] - UoImage[1];
-                        UoGhost[2] = 2 * UoBC[2] - UoImage[2];
-                        UoGhost[3] = 2 * UoBC[3] - UoImage[3];
-                        UoGhost[4] = UoImage[4];
-                        UoGhost[5] = UoImage[5];
-                    } else { /* using inverse distance weighting instead of method of image */
-                        InverseDistanceWeighting(UoGhost, &weightSum, ComputeZ(k, space), ComputeY(j, space), ComputeX(i, space), 
-                                k, j, i, 1, type - 1, U, space, model, geometry);
+                        FlowReconstruction(tn, nI, pI, 2, 0, poly, part, node, model, distSquare, N, UoO, UoI);
+                        MethodOfImage(UoI, UoO, UoG);
+                    } else { /* inverse distance weighting */
+                        const IntVec nG = {i, j, k};
+                        weightSum = InverseDistanceWeighting(tn, nG, pG, 1, r - 1, part, node, model, UoG);
                         /* Normalize the weighted values */
-                        NormalizeWeightedValues(UoGhost, weightSum);
+                        Normalize(DIMUo, weightSum, UoG);
                     }
-                    UoGhost[0] = UoGhost[4] / (UoGhost[5] * model->gasR); /* compute density */
-                    if (!((0 < UoGhost[0]) && (FLT_MAX > UoGhost[0]))) {
-                        fprintf(stderr, "rho=%.6g\n", UoGhost[0]);
-                        FatalError("illegal density reconstructed, solution diverges...");
-                    }
-                    ConservativeByPrimitive(U, idx * DIMU, UoGhost, model);
+                    UoG[0] = UoG[4] / (UoG[5] * model->gasR); /* compute density */
+                    ConservativeByPrimitive(model->gamma, UoG, node[idx].U[tn]);
                 }
             }
         }
     }
     return;
 }
-int FlowReconstruction(Real Uo[], const Real z, const Real y, const Real x,
-        const int k, const int j, const int i, const int h, 
-        Real UoBC[], const Real info[], const Real *geo, const Real *U,
-        const Space *space, const Model *model, const Geometry *geometry)
+void MethodOfImage(const Real UoI[restrict], const Real UoO[restrict], Real UoG[restrict])
+{
+    /* 
+     * Apply the method of image.
+     *  -- reflecting vectors over wall for both slip and noslip, stationary and
+     *     moving conditions is unified by linear interpolation.
+     *  -- scalars are symmetrically reflected between image and ghost.
+     */
+    UoG[1] = 2.0 * UoO[1] - UoI[1];
+    UoG[2] = 2.0 * UoO[2] - UoI[2];
+    UoG[3] = 2.0 * UoO[3] - UoI[3];
+    UoG[4] = UoI[4];
+    UoG[5] = UoI[5];
+    return;
+}
+Real ComputeGeometricData(const int faceID, const Polyhedron *poly, const Real pG[restrict],
+        Real pO[restrict], Real pI[restrict], Real N[restrict])
+{
+    Real dist = 0.0;
+    if (0 == poly->faceN) { /* analytical sphere */
+        N[X] = pG[X] - poly->O[X];
+        N[Y] = pG[Y] - poly->O[Y];
+        N[Z] = pG[Z] - poly->O[Z];
+        dist = Norm(N);
+        Normalize(DIMS, dist, N);
+        dist = poly->r - dist;
+        pO[X] = pG[X] + dist * N[X];
+        pO[Y] = pG[Y] + dist * N[Y];
+        pO[Z] = pG[Z] + dist * N[Z];
+        dist = Square(dist);
+    } else { /* triangulated polyhedron */
+        dist = ComputeIntersection(pG, faceID, poly, pO, N);
+    }
+    pI[X] = pO[X] + pO[X] - pG[X];
+    pI[Y] = pO[Y] + pO[Y] - pG[Y];
+    pI[Z] = pO[Z] + pO[Z] - pG[Z];
+    return dist;
+}
+static void FlowReconstruction(const int tn, const int n[restrict], const Real p[restrict], const int h,
+        const int type, const Polyhedron *poly, const Partition *part, const Node *node, 
+        const Model *model, const Real weightO, const Real N[restrict], Real UoO[restrict], Real UoI[restrict])
 {
     Real weightSum = 0.0; /* store the sum of weights */
     /* pre-estimate step */
-    InverseDistanceWeighting(Uo, &weightSum, z, y, x, k, j, i, h, FLUID, U, space, model, geometry);
+    weightSum = InverseDistanceWeighting(tn, n, p, h, type, part, node, model, UoI);
     /* physical boundary condition enforcement step */
-    if (0 < geo[GROUGH]) { /* noslip wall */
-        UoBC[1] = geo[GU];
-        UoBC[2] = geo[GV];
-        UoBC[3] = geo[GW];
+    const RealVec Vs = {poly->V[X], poly->V[Y], poly->V[Z]};
+    if (0 < poly->cf) { /* noslip wall */
+        UoO[1] = Vs[X];
+        UoO[2] = Vs[Y];
+        UoO[3] = Vs[Z];
     } else { /* slip wall */
-        Real nVec[DIMS] = {0.0}; /* normal vector */
-        Real taVec[DIMS] = {0.0}; /* tangential vector */
-        Real tbVec[DIMS] = {0.0}; /* tangential vector */
-        Real rhs[DIMS] = {0.0}; /* right hand side vector */
-        OrthogonalSpace(nVec, taVec, tbVec, info);
-        rhs[X] = geo[GU] * nVec[X] + geo[GV] * nVec[Y] + geo[GW] * nVec[Z];
-        rhs[Y] = (Uo[1] * taVec[X] + Uo[2] * taVec[Y] + Uo[3] * taVec[Z]) / weightSum;
-        rhs[Z] = (Uo[1] * tbVec[X] + Uo[2] * tbVec[Y] + Uo[3] * tbVec[Z]) / weightSum;
-        UoBC[1] = nVec[X] * rhs[X] + taVec[X] * rhs[Y] + tbVec[X] * rhs[Z];
-        UoBC[2] = nVec[Y] * rhs[X] + taVec[Y] * rhs[Y] + tbVec[Y] * rhs[Z];
-        UoBC[3] = nVec[Z] * rhs[X] + taVec[Z] * rhs[Y] + tbVec[Z] * rhs[Z];
+        RealVec Ta = {0.0}; /* tangential vector */
+        RealVec Tb = {0.0}; /* tangential vector */
+        Real RHS[DIMS] = {0.0}; /* right hand side vector */
+        OrthogonalSpace(N, Ta, Tb);
+        RHS[X] = Dot(Vs, N);
+        RHS[Y] = Dot(UoI + 1, Ta) / weightSum;
+        RHS[Z] = Dot(UoI + 1, Tb) / weightSum;
+        UoO[1] = N[X] * RHS[X] + Ta[X] * RHS[Y] + Tb[X] * RHS[Z];
+        UoO[2] = N[Y] * RHS[X] + Ta[Y] * RHS[Y] + Tb[Y] * RHS[Z];
+        UoO[3] = N[Z] * RHS[X] + Ta[Z] * RHS[Y] + Tb[Z] * RHS[Z];
     }
-    UoBC[4] = Uo[4] / weightSum; /* zero gradient pressure */
-    if (0 > geo[GT]) { /* adiabatic, dT/dn = 0 */
-        UoBC[5] = Uo[5] / weightSum;
+    UoO[4] = UoI[4] / weightSum; /* zero gradient pressure */
+    if (0.0 > poly->T) { /* adiabatic, dT/dn = 0 */
+        UoO[5] = UoI[5] / weightSum;
     } else { /* otherwise, use specified constant wall temperature, T = Tw */
-        UoBC[5] = geo[GT];
+        UoO[5] = poly->T;
     }
-    UoBC[0] = UoBC[4] / (UoBC[5] * model->gasR); /* compute density */
+    UoO[0] = UoO[4] / (UoO[5] * model->gasR); /* compute density */
     /* correction step by adding the boundary point as a stencil */
-    ApplyWeighting(Uo, &weightSum, info[GSDS] * info[GSDS], UoBC, space->tinyL);
+    ApplyWeighting(UoO, part->tinyL, weightO, &weightSum, UoI);
     /* Normalize the weighted values */
-    NormalizeWeightedValues(Uo, weightSum);
-    return 0;
+    Normalize(DIMUo, weightSum, UoI);
+    return;
 }
-static int InverseDistanceWeighting(Real Uo[], Real *weightSum, const Real z, const Real y, const Real x,
-        const int k, const int j, const int i, const int h, const int nodeType, const Real *U,
-        const Space *space, const Model *model, const Geometry *geometry)
+static Real InverseDistanceWeighting(const int tn, const int n[restrict], const Real p[restrict], const int h, 
+        const int type, const Partition *part, const Node *node, const Model *model, Real Uo[restrict])
 {
-    int idxh = 0; /* linear array index math variable */
+    int idx = 0; /* linear array index math variable */
+    const int idxMax = part->n[X] * part->n[Y] * part->n[Z];
+    const RealVec sMin = {part->domain[X][MIN], part->domain[Y][MIN], part->domain[Z][MIN]};
+    const RealVec d = {part->d[X], part->d[Y], part->d[Z]};
+    const int ng = part->ng;
     int tally = 0; /* stencil count and zero stencil detector */
-    int geoID = 0;
-    Real Uoh[DIMUo] = {0.0}; /* primitive at target node */
-    Real distZ = 0.0;
-    Real distY = 0.0;
-    Real distX = 0.0;
-    Real distance = 0.0;
+    Real Uoh[DIMUo] = {0.0}; /* primitive at neighbouring node */
+    RealVec ph = {0.0}; /* neighbouring point */
+    Real dist = 0.0;
+    Real weightSum = 0.0;
     for (int dim = 0; dim < DIMUo; ++dim) {
         Uo[dim] = 0.0; /* reset */
     }
-    *weightSum = 0.0; /* reset */
     /* 
-     * Search around the specified node to find required target nodes as interpolation stencil.
+     * Search nodes with required "type" in the domain specified by the center node
+     * "n" and range "h" as interpolation stencils for the interpolated point "p".
      */
     for (int kh = -h; kh <= h; ++kh) {
         for (int jh = -h; jh <= h; ++jh) {
             for (int ih = -h; ih <= h; ++ih) {
-                idxh = IndexMath(k + kh, j + jh, i + ih, space);
-                if ((0 > idxh) || (space->nMax <= idxh)) {
+                idx = IndexNode(n[Z] + kh, n[Y] + jh, n[X] + ih, part->n[Y], part->n[X]);
+                if ((0 > idx) || (idxMax <= idx)) {
                     continue; /* illegal index */
                 }
-                if (FLUID == nodeType) { /* require fluid nodes */
-                    if (FLUID != space->nodeFlag[idxh]) {
+                if (0 == type) { /* require normal node type */
+                    if ((0 != node[idx].geoID) || (NONE != node[idx].faceID)) {
                         continue;
                     }
                 } else { /* require specified ghost node type */
-                    geoID = space->nodeFlag[idxh] - OFFSET - (nodeType - 1) * geometry->totalN;
-                    if ((0 > geoID) || (geometry->totalN <= geoID)) { /* not a ghost node with current type */
+                    if (type != node[idx].ghostID) { /* not a ghost node with current type */
                         continue;
                     }
                 }
                 ++tally;
-                distZ = ComputeZ(k + kh, space) - z;
-                distY = ComputeY(j + jh, space) - y;
-                distX = ComputeX(i + ih, space) - x;
+                ph[X] = PointSpace(n[X] + ih, sMin[X], d[X], ng);
+                ph[Y] = PointSpace(n[Y] + jh, sMin[Y], d[Y], ng);
+                ph[Z] = PointSpace(n[Z] + kh, sMin[Z], d[Z], ng);
                 /* use distance square to avoid expensive sqrt */
-                distance = distX * distX + distY * distY + distZ * distZ;
-                PrimitiveByConservative(Uoh, idxh * DIMU, U, model);
-                ApplyWeighting(Uo, weightSum, distance, Uoh, space->tinyL);
+                dist = Dist2(p, ph);
+                PrimitiveByConservative(model->gamma, model->gasR, node[idx].U[tn], Uoh);
+                ApplyWeighting(Uoh, part->tinyL, dist, &weightSum, Uo);
             }
         }
     }
     if (0 == tally) {
-        fprintf(stderr, "k=%d, j=%d, i=%d\n", k, j, i);
+        fprintf(stderr, "k=%d, j=%d, i=%d\n", n[Z], n[Y], n[X]);
         FatalError("zero stencil encountered...");
     }
-    return 0;
+    return weightSum;
 }
-static int ApplyWeighting(Real Uo[], Real *weightSum, Real distance, const Real Uoh[], const Real tiny)
+static void ApplyWeighting(const Real Uoh[restrict], const Real tiny, Real weight, 
+        Real weightSum[restrict], Real Uo[restrict])
 {
-    if (tiny > distance) { /* avoid overflow of too small distance */
-        distance = tiny;
+    if (tiny > weight) { /* avoid overflow of too small weight */
+        weight = tiny;
     }
-    distance = 1 / distance; /* compute weight */
+    weight = 1 / weight; /* compute weight */
     for (int n = 0; n < DIMUo; ++n) {
-        Uo[n] = Uo[n] + Uoh[n] * distance;
+        Uo[n] = Uo[n] + Uoh[n] * weight;
     }
-    *weightSum = *weightSum + distance; /* accumulate normalizer */
-    return 0;
+    *weightSum = *weightSum + weight; /* accumulate normalizer */
+    return;
 }
 /* a good practice: end file with a newline */
 
