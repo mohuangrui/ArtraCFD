@@ -41,8 +41,8 @@ static void ApplyWeighting(const Real [restrict], const Real, Real,
 static Real InverseDistanceWeighting(const int, const int [restrict], const Real [restrict],
         const int, const int, const Partition *, const Node *, const Model *, Real [restrict]);
 static void FlowReconstruction(const int, const int [restrict], const Real [restrict], const int,
-        const int, const Polyhedron *, const Partition *, const Node *, const Model *, const Real,
-        const Real [restrict], Real [restrict], Real [restrict]);
+        const int, const Polyhedron *, const Partition *, const Node *, const Model *,
+        const Real [restrict], const Real [restrict], Real [restrict], Real [restrict]);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -296,8 +296,6 @@ void ImmersedBoundaryTreatment(const int tn, Space *space, const Model *model)
     RealVec pI = {0.0}; /* image point */
     IntVec nI = {0}; /* image node */
     RealVec N = {0.0}; /* normal */
-    Real weightSum = 0.0; /* store the sum of weights */
-    Real distSquare = 0.0;
     Real UoG[DIMUo] = {0.0};
     Real UoO[DIMUo] = {0.0};
     Real UoI[DIMUo] = {0.0};
@@ -314,7 +312,7 @@ void ImmersedBoundaryTreatment(const int tn, Space *space, const Model *model)
                     pG[Z] = PointSpace(k, sMin[Z], d[Z], ng);
                     if (model->layers >= r) { /* immersed boundary treatment */
                         const Polyhedron *poly = space->geo.poly + node[idx].geoID - 1;
-                        distSquare = ComputeGeometricData(node[idx].faceID, poly, pG, pO, pI, N);
+                        ComputeGeometricData(node[idx].faceID, poly, pG, pO, pI, N);
                         nI[X] = NodeSpace(pI[X], sMin[X], dd[X], ng);
                         nI[Y] = NodeSpace(pI[Y], sMin[Y], dd[Y], ng);
                         nI[Z] = NodeSpace(pI[Z], sMin[Z], dd[Z], ng);
@@ -328,11 +326,11 @@ void ImmersedBoundaryTreatment(const int tn, Space *space, const Model *model)
                          * stencils and to only use smooth stencils. However,
                          * this will make the algorithm much more complex.
                          */
-                        FlowReconstruction(tn, nI, pI, 2, 0, poly, part, node, model, distSquare, N, UoO, UoI);
+                        FlowReconstruction(tn, nI, pI, 2, 0, poly, part, node, model, pO, N, UoO, UoI);
                         MethodOfImage(UoI, UoO, UoG);
                     } else { /* inverse distance weighting */
                         const IntVec nG = {i, j, k};
-                        weightSum = InverseDistanceWeighting(tn, nG, pG, 1, r - 1, part, node, model, UoG);
+                        const Real weightSum = InverseDistanceWeighting(tn, nG, pG, 1, r - 1, part, node, model, UoG);
                         /* Normalize the weighted values */
                         Normalize(DIMUo, weightSum, UoG);
                     }
@@ -359,11 +357,11 @@ void MethodOfImage(const Real UoI[restrict], const Real UoO[restrict], Real UoG[
     UoG[5] = UoI[5];
     return;
 }
-Real ComputeGeometricData(const int faceID, const Polyhedron *poly, const Real pG[restrict],
+void ComputeGeometricData(const int faceID, const Polyhedron *poly, const Real pG[restrict],
         Real pO[restrict], Real pI[restrict], Real N[restrict])
 {
-    Real dist = 0.0;
     if (0 == poly->faceN) { /* analytical sphere */
+        Real dist = 0.0;
         N[X] = pG[X] - poly->O[X];
         N[Y] = pG[Y] - poly->O[Y];
         N[Z] = pG[Z] - poly->O[Z];
@@ -373,24 +371,28 @@ Real ComputeGeometricData(const int faceID, const Polyhedron *poly, const Real p
         pO[X] = pG[X] + dist * N[X];
         pO[Y] = pG[Y] + dist * N[Y];
         pO[Z] = pG[Z] + dist * N[Z];
-        dist = Square(dist);
     } else { /* triangulated polyhedron */
-        dist = ComputeIntersection(pG, faceID, poly, pO, N);
+        ComputeIntersection(pG, faceID, poly, pO, N);
     }
     pI[X] = pO[X] + pO[X] - pG[X];
     pI[Y] = pO[Y] + pO[Y] - pG[Y];
     pI[Z] = pO[Z] + pO[Z] - pG[Z];
-    return dist;
+    return;
 }
 static void FlowReconstruction(const int tn, const int n[restrict], const Real p[restrict], const int h,
-        const int type, const Polyhedron *poly, const Partition *part, const Node *node, 
-        const Model *model, const Real weightO, const Real N[restrict], Real UoO[restrict], Real UoI[restrict])
+        const int type, const Polyhedron *poly, const Partition *part, const Node *node, const Model *model,
+        const Real pO[restrict], const Real N[restrict], Real UoO[restrict], Real UoI[restrict])
 {
     Real weightSum = 0.0; /* store the sum of weights */
     /* pre-estimate step */
     weightSum = InverseDistanceWeighting(tn, n, p, h, type, part, node, model, UoI);
     /* physical boundary condition enforcement step */
-    const RealVec Vs = {poly->V[X], poly->V[Y], poly->V[Z]};
+    RealVec Vs = {0.0}; /* general motion of boundary point */
+    const RealVec r = {pO[X] - poly->O[X], pO[Y] - poly->O[Y], pO[Z] - poly->O[Z]};
+    Cross(poly->W, r, Vs); /* relative motion in translating coordinate system */
+    Vs[X] = poly->V[X] + Vs[X];
+    Vs[Y] = poly->V[Y] + Vs[Y];
+    Vs[Z] = poly->V[Z] + Vs[Z];
     if (0 < poly->cf) { /* noslip wall */
         UoO[1] = Vs[X];
         UoO[2] = Vs[Y];
@@ -415,7 +417,7 @@ static void FlowReconstruction(const int tn, const int n[restrict], const Real p
     }
     UoO[0] = UoO[4] / (UoO[5] * model->gasR); /* compute density */
     /* correction step by adding the boundary point as a stencil */
-    ApplyWeighting(UoO, part->tinyL, weightO, &weightSum, UoI);
+    ApplyWeighting(UoO, part->tinyL, Dist2(p, pO), &weightSum, UoI);
     /* Normalize the weighted values */
     Normalize(DIMUo, weightSum, UoI);
     return;
@@ -431,7 +433,6 @@ static Real InverseDistanceWeighting(const int tn, const int n[restrict], const 
     int tally = 0; /* stencil count and zero stencil detector */
     Real Uoh[DIMUo] = {0.0}; /* primitive at neighbouring node */
     RealVec ph = {0.0}; /* neighbouring point */
-    Real dist = 0.0;
     Real weightSum = 0.0;
     for (int dim = 0; dim < DIMUo; ++dim) {
         Uo[dim] = 0.0; /* reset */
@@ -460,10 +461,9 @@ static Real InverseDistanceWeighting(const int tn, const int n[restrict], const 
                 ph[X] = PointSpace(n[X] + ih, sMin[X], d[X], ng);
                 ph[Y] = PointSpace(n[Y] + jh, sMin[Y], d[Y], ng);
                 ph[Z] = PointSpace(n[Z] + kh, sMin[Z], d[Z], ng);
-                /* use distance square to avoid expensive sqrt */
-                dist = Dist2(p, ph);
                 PrimitiveByConservative(model->gamma, model->gasR, node[idx].U[tn], Uoh);
-                ApplyWeighting(Uoh, part->tinyL, dist, &weightSum, Uo);
+                /* use distance square to avoid expensive sqrt */
+                ApplyWeighting(Uoh, part->tinyL, Dist2(p, ph), &weightSum, Uo);
             }
         }
     }

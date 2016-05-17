@@ -53,6 +53,8 @@ static void NumericalDiffusiveFluxY(const int, const int, const int,
 static void NumericalDiffusiveFluxZ(const int, const int, const int, 
         const int, const int [restrict], const Real [restrict], const Node *, 
         const Model *, Real [restrict]);
+static void SourceVector(const int, const int, const int, const int,
+        const int [restrict], const Node *, const Model *, Real [restrict]);
 static Real Viscosity(const Real);
 static Real PrandtlNumber(void);
 /****************************************************************************
@@ -132,6 +134,7 @@ static void LLL(const Real dt, const Real coeA, const Real coeB, const int to,
     Real FhatL[DIMU] = {0.0}; /* reconstructed numerical convective flux vector */
     Real FvhatR[DIMU] = {0.0}; /* reconstructed numerical diffusive flux vector */
     Real FvhatL[DIMU] = {0.0}; /* reconstructed numerical diffusive flux vector */
+    Real Phi[DIMU] = {0.0}; /* source vector */
     const IntVec partn = {part->n[X], part->n[Y], part->n[Z]};
     const RealVec dd = {part->dd[X], part->dd[Y], part->dd[Z]};
     const RealVec r = {dt * dd[X], dt * dd[Y], dt * dd[Z]};
@@ -158,9 +161,12 @@ static void LLL(const Real dt, const Real coeA, const Real coeB, const int to,
                     NumericalDiffusiveFlux(tn, s, k, j, i, partn, dd, node, model, FvhatR);
                     NumericalDiffusiveFlux(tn, s, k - h[s][Z], j - h[s][Y], i - h[s][X], partn, dd, node, model, FvhatL);
                 }
+                if (1 == model->sState) {
+                    SourceVector(tn, k, j, i, partn, node, model, Phi);
+                }
                 for (int dim = 0; dim < DIMU; ++dim) {
                     /* conservative discretization for fluxes */
-                    Um[dim] = coeA * Uo[dim] + coeB * (Un[dim] - r[s] * (FhatR[dim] - FhatL[dim]) + r[s] * (FvhatR[dim] - FvhatL[dim]));
+                    Um[dim] = coeA * Uo[dim] + coeB * (Un[dim] - r[s] * (FhatR[dim] - FhatL[dim]) + r[s] * (FvhatR[dim] - FvhatL[dim]) + dt * Phi[dim]);
                 }
             }
         }
@@ -433,6 +439,24 @@ static void NumericalDiffusiveFluxZ(const int tn, const int k, const int j,
     Fvhat[2] = mu * (dw_dy + dv_dz);
     Fvhat[3] = mu * (2.0 * dw_dz - (2.0/3.0) * divV);
     Fvhat[4] = heatK * dT_dz + Fvhat[1] * uhat + Fvhat[2] * vhat + Fvhat[3] * what;
+    return;
+}
+/*
+ * Source vector is splitted into three identical entities to ensure
+ * consistency with spatial splitting.
+ */
+static void SourceVector(const int tn, const int k, const int j, const int i,
+        const int partn[restrict], const Node *node, const Model *model, Real Phi[restrict])
+{
+    const Real coe = 1.0 / 3.0;
+    const int idx = IndexNode(k, j, i, partn[Y], partn[X]);
+    const Real *restrict U = node[idx].U[tn];
+    const RealVec V = {U[1] / U[0], U[2] / U[0], U[3] / U[0]};
+    Phi[0] = coe * 0.0;
+    Phi[1] = coe * model->g[X];
+    Phi[2] = coe * model->g[Y];
+    Phi[3] = coe * model->g[Z];
+    Phi[4] = coe * Dot(model->g, V);
     return;
 }
 static Real Viscosity(const Real T)

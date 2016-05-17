@@ -243,9 +243,9 @@ int ReadPolyhedronStateData(const int start, const int end, FILE **filePointerPo
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
     String currentLine = {'\0'}; /* store the current read line */
     /* set format specifier according to the type of Real */
-    char format[100] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %d";
+    char format[100] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %d, %lg";
     if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
-        strncpy(format, "%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %d", sizeof format);
+        strncpy(format, "%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %d, %g", sizeof format);
     }
     Polyhedron *poly  = NULL;
     for (int n = start; n < end; ++n) {
@@ -254,9 +254,9 @@ int ReadPolyhedronStateData(const int start, const int end, FILE **filePointerPo
         sscanf(currentLine, format,
                 &(poly->O[X]), &(poly->O[Y]), &(poly->O[Z]), &(poly->r),
                 &(poly->V[X]), &(poly->V[Y]), &(poly->V[Z]),
-                &(poly->F[X]), &(poly->F[Y]), &(poly->F[Z]),
+                &(poly->W[X]), &(poly->W[Y]), &(poly->W[Z]),
                 &(poly->rho), &(poly->T), &(poly->cf),
-                &(poly->area), &(poly->volume), &(poly->matID));
+                &(poly->area), &(poly->volume), &(poly->matID), &(poly->gState));
         if (geo->sphereN > n) {
             poly->faceN = 0; /* analytical sphere tag */
             poly->facet = NULL;

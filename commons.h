@@ -706,14 +706,16 @@ typedef struct {
     Real r; /* radius of sphere */
     RealVec O; /* the centroid of the polyhedron */
     RealVec I; /* moment of inertia of the polyhedron */
-    Real box[DIMS][LIMIT]; /* a bounding box of the polyhedron */
     RealVec V; /* velocity */
+    RealVec W; /* angular velocity */
     RealVec F; /* force */
     Real rho; /* density */
     Real T; /* wall temperature. T < 0, adiabatic; T >= 0, constant temperature */
     Real cf; /* roughness. cf <= 0, slip wall; cf > 0, no-slip wall */
     Real area; /* area */
     Real volume; /* volume */
+    Real gState; /* gravity state */
+    Real box[DIMS][LIMIT]; /* a bounding box of the polyhedron */
     int (*restrict f)[3]; /* face-vertex list */
     Real (*restrict Nf)[3]; /* face normal */
     int (*restrict e)[4]; /* edge-vertex-face list */
@@ -772,6 +774,8 @@ typedef struct {
     int fsi; /* material interaction trigger */
     int layers; /* number of interfacial layers using flow reconstruction */
     int matID; /* material identifier */
+    int gState; /* gravity state */
+    int sState; /* source state */
     Real refMa; /* reference Mach number */
     Real refMu; /* reference dynamic viscosity */
     Real gamma; /* heat capacity ratio */
@@ -781,6 +785,7 @@ typedef struct {
     Real refRho; /* characteristic density */
     Real refV;  /*characteristic velocity */
     Real refT; /* characteristic temperature */
+    RealVec g; /* gravity vector */
     Material mat; /* material database */
 } Model;
 /*

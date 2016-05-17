@@ -396,12 +396,12 @@ int WritePolyhedronStateData(const int start, const int end, FILE **filePointerP
     const Polyhedron *poly = NULL;
     for (int n = start; n < end; ++n) {
         poly = geo->poly + n;
-        fprintf(filePointer, "        %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %d\n",
+        fprintf(filePointer, "        %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %d, %.6g\n",
                 poly->O[X], poly->O[Y], poly->O[Z], poly->r,
                 poly->V[X], poly->V[Y], poly->V[Z],
-                poly->F[X], poly->F[Y], poly->F[Z],
+                poly->W[X], poly->W[Y], poly->W[Z],
                 poly->rho, poly->T, poly->cf,
-                poly->area, poly->volume, poly->matID);
+                poly->area, poly->volume, poly->matID, poly->gState);
     }
     *filePointerPointer = filePointer; /* updated file pointer */
     return 0;

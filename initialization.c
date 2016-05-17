@@ -199,6 +199,10 @@ static int InitializeGeometryData(Geometry *geo)
     if (NULL == filePointer) {
         FatalError("failed to open file: artracfd.geo...");
     }
+    char formatVI[30] = "%lg, %lg, %lg, %lg, %lg, %lg"; /* default is double type */
+    if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
+        strncpy(formatVI, "%g, %g, %g, %g, %g, %g", sizeof formatVI); /* float type */
+    }
     /* read and process file line by line */
     String currentLine = {'\0'}; /* store the current read line */
     String fileName = {'\0'}; /* store the file name */
@@ -219,6 +223,19 @@ static int InitializeGeometryData(Geometry *geo)
         }
         if (0 == strncmp(currentLine, "polyhedron state begin", sizeof currentLine)) {
             ReadPolyhedronStateData(geo->sphereN, geo->totalN, &filePointer, geo);
+            continue;
+        }
+        if (0 == strncmp(currentLine, "polyhedron transform begin", sizeof currentLine)) {
+            RealVec O = {0.0};
+            RealVec scale = {0.0};
+            RealVec angle = {0.0};
+            RealVec offset = {0.0};
+            for (int n = geo->sphereN; n < geo->totalN; ++n) {
+                fgets(currentLine, sizeof currentLine, filePointer);
+                sscanf(currentLine, formatVI, scale + X, scale + Y, scale + Z, 
+                        angle + X, angle + Y, angle + Z, offset + X, offset + Y, offset + Z);
+                Transformation(O, scale, angle, offset, geo->poly + n);
+            }
             continue;
         }
     }

@@ -20,32 +20,34 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int SurfaceForceIntegration(const Real *, const Space *,
-        const Model *, const Partition *, Geometry *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int FluidSolidInteraction(Real *U, Space *space, const Model *model, const Partition *part,
-        Geometry *geometry, const Real dt)
+int PhaseInteraction(const Real dt, Space *space, const Model *model)
 {
+    Geometry *geo = &(space->geo);
+    Node *node = space->node;
+    Polyhedron *poly = NULL;
     /*
      * Compute the forces acting on particles.
      */
-    SurfaceForceIntegration(U, space, model, part, geometry);
+    SurfaceForceIntegration(dt, space, model);
     /*
      * Update particle velocity and position
      */
-    Real *geo = NULL;
-    for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
-        geo = IndexGeometry(geoCount, geometry);
-        /* velocity: v(t[n+1]) = v(t[n]) + f * (1/m) * dt */
-        geo[GU] = geo[GU] + geo[GFX] * (1/geo[GMASS]) * dt;
-        geo[GV] = geo[GV] + geo[GFY] * (1/geo[GMASS]) * dt;
-        geo[GW] = geo[GW] + geo[GFZ] * (1/geo[GMASS]) * dt;
-        /* spatial position: x(t[n+1]) = x(t[n]) + v(t[n+1]) * dt - 1/2 * f * (1/m) * dt^2 */
-        geo[GX] = geo[GX] + geo[GU] * dt - 0.5 * geo[GFX] * (1/geo[GMASS]) * dt * dt;
-        geo[GY] = geo[GY] + geo[GV] * dt - 0.5 * geo[GFY] * (1/geo[GMASS]) * dt * dt;
-        geo[GZ] = geo[GZ] + geo[GW] * dt - 0.5 * geo[GFZ] * (1/geo[GMASS]) * dt * dt;
+    RealVec a = {0.0}; /* acceleration */
+    RealVec l = {0.0}; /* translation */
+    for (int n = 0; n < geo->totalN; ++n) {
+        poly = geo->poly + n;
+        for (int s = 0; s < DIMS; ++s) {
+            /* acceleration from surface force and body force */
+            a[s] = poly->F[s] / (poly->rho * poly->volume) + poly->gState * model->g[s];
+            /* velocity integration */
+            poly->V[s] = poly->V[s] + a[s] * dt;
+            /* position integration */
+            l[s] = poly->V[s] * dt - 0.5 * a[s] * dt * dt;
+            poly->O[s] = poly->O[s] + l[s];
+        }
     }
     /*
      * After the spatial positions of particles updated, some inner nodes fall

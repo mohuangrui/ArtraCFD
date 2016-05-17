@@ -43,6 +43,11 @@ extern void BuildTriangle(const int faceID, const Polyhedron *, Real v0[restrict
  */
 extern void ComputeGeometryParameters(const int collapse, Geometry *);
 /*
+ * Polyhedron transformation
+ */
+extern void Transformation(const Real O[restrict], const Real scale[restrict], 
+        const Real angle[restrict], const Real offset[restrict], Polyhedron *);
+/*
  * Point in polyhedron
  *
  * Function

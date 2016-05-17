@@ -130,6 +130,11 @@ static int ReadCaseSettingData(Time *time, Space *space, Model *model)
             sscanf(currentLine, "%d", &(model->matID)); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, formatI, &(model->refMu)); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, "%d", &(model->gState)); 
+            fgets(currentLine, sizeof currentLine, filePointer);
+            sscanf(currentLine, formatIII, &(model->g[X]),
+                    &(model->g[Y]), &(model->g[Z])); 
             continue;
         }
         if (0 == strncmp(currentLine, "reference begin", sizeof currentLine)) {
@@ -502,6 +507,9 @@ static int WriteVerifyData(const Time *time, const Space *space, const Model *mo
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "material: %d\n", model->matID); 
+    fprintf(filePointer, "viscous level: %.6g\n", model->refMu); 
+    fprintf(filePointer, "gravity state: %d\n", model->gState); 
+    fprintf(filePointer, "gravity vector: %.6g, %.6g, %.6g\n", model->g[X], model->g[Y], model->g[Z]); 
     fprintf(filePointer, "viscous level: %.6g\n", model->refMu); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");

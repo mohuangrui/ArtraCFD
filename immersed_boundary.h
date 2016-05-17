@@ -34,7 +34,7 @@ extern void ComputeGeometryDomain(Space *, const Model *);
 /*
  * Compute geometric data
  */
-Real ComputeGeometricData(const int faceID, const Polyhedron *, const Real pG[restrict],
+extern void ComputeGeometricData(const int faceID, const Polyhedron *, const Real pG[restrict],
         Real pO[restrict], Real pI[restrict], Real N[restrict]);
 /*
  * Immersed boundary treatments

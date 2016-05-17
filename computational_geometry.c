@@ -103,6 +103,36 @@ static int FindEdge(const int v0, const int v1, const Polyhedron *poly)
     /* otherwise, something is wrong */
     return 0;
 }
+void Transformation(const Real O[restrict], const Real scale[restrict], const Real angle[restrict],
+        const Real offset[restrict], Polyhedron *poly)
+{
+    const RealVec Sin = {sin(angle[X]), sin(angle[Y]), sin(angle[Z])};
+    const RealVec Cos = {cos(angle[X]), cos(angle[Y]), cos(angle[Z])};
+    const Real rotate[DIMS][DIMS] = {
+        {Cos[Y]*Cos[Z], Cos[X]*Sin[Z]+Sin[X]*Sin[Y]*Cos[Z], Sin[X]*Sin[Z]-Cos[X]*Sin[Y]*Cos[Z]},
+        {-Cos[Y]*Sin[Z], Cos[X]*Cos[Z]-Sin[X]*Sin[Y]*Sin[Z], Sin[X]*Cos[Z]+Cos[X]*Sin[Y]*Sin[Z]},
+        {Sin[Y], -Sin[X]*Cos[Y], Cos[X]*Cos[Y]}};
+    RealVec tmp = {0.0};
+    for (int n = 0; n < poly->vertN; ++n) {
+        /* move to relative origin */
+        poly->v[n][X] = poly->v[n][X] - O[X];
+        poly->v[n][Y] = poly->v[n][Y] - O[Y];
+        poly->v[n][Z] = poly->v[n][Z] - O[Z];
+        /* scale */
+        poly->v[n][X] = poly->v[n][X] * scale[X];
+        poly->v[n][Y] = poly->v[n][Y] * scale[Y];
+        poly->v[n][Z] = poly->v[n][Z] * scale[Z];
+        /* rotate */
+        tmp[X] = Dot(rotate[X], poly->v[n]);
+        tmp[Y] = Dot(rotate[Y], poly->v[n]);
+        tmp[Z] = Dot(rotate[Z], poly->v[n]);
+        /* translate */
+        poly->v[n][X] = tmp[X] + offset[X] + O[X];
+        poly->v[n][Y] = tmp[Y] + offset[Y] + O[Y];
+        poly->v[n][Z] = tmp[Z] + offset[Z] + O[Z];
+    }
+    return;
+}
 void ComputeGeometryParameters(const int collapse, Geometry *geo)
 {
     for (int n = 0; n < geo->sphereN; ++n) {

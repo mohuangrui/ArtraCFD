@@ -94,6 +94,10 @@ static int InitializeCFDParameters(Time *time, Space *space, Model *model)
     }
     model->gamma = 1.4;
     model->gasR = 287.058;
+    for (int s = 0; s < DIMS; ++s) {
+        model->g[s] = model->g[s] * model->refL / (model->refV * model->refV);
+    }
+    model->sState = model->gState; /* source state on if gravity on */
     /* reference Mach number */
     model->refMa = model->refV / sqrt(model->gamma * model->gasR * model->refT);
     /* reference dynamic viscosity for viscosity normalization */
