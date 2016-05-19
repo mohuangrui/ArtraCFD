@@ -39,14 +39,17 @@ extern void BuildTriangle(const int faceID, const Polyhedron *, Real v0[restrict
  * Compute geometry parameters
  *
  * Function
- *      Compute the geometric properties of each polyhedron.
+ *      Compute the geometric properties of each polyhedron, including bounding
+ *      volume, area, volume, centroid, inertia tensor, normal. Note that the
+ *      inertia tensor is relative to the body coordinates located at centroid
+ *      and is computed by assuming that the density is a constant with value 1.      
  */
 extern void ComputeGeometryParameters(const int collapse, Geometry *);
 /*
  * Polyhedron transformation
  */
-extern void Transformation(const Real O[restrict], const Real scale[restrict], 
-        const Real angle[restrict], const Real offset[restrict], Polyhedron *);
+extern void Transformation(const Real scale[restrict], const Real angle[restrict],
+        const Real offset[restrict], Polyhedron *);
 /*
  * Point in polyhedron
  *

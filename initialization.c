@@ -42,6 +42,7 @@ int InitializeComputationalDomain(Time *time, Space *space, const Model *model)
         ReadFieldData(time, space, model);
         ReadGeometryData(time, &(space->geo));
     }
+    ComputeGeometryParameters(space->part.collapsed, &(space->geo));
     ComputeGeometryDomain(space, model);
     BoundaryCondtionsAndTreatments(TO, space, model);
     if (0 == time->restart) { /* non restart */
@@ -226,15 +227,14 @@ static int InitializeGeometryData(Geometry *geo)
             continue;
         }
         if (0 == strncmp(currentLine, "polyhedron transform begin", sizeof currentLine)) {
-            RealVec O = {0.0};
-            RealVec scale = {0.0};
+            RealVec scale = {1.0};
             RealVec angle = {0.0};
             RealVec offset = {0.0};
             for (int n = geo->sphereN; n < geo->totalN; ++n) {
                 fgets(currentLine, sizeof currentLine, filePointer);
                 sscanf(currentLine, formatVI, scale + X, scale + Y, scale + Z, 
                         angle + X, angle + Y, angle + Z, offset + X, offset + Y, offset + Z);
-                Transformation(O, scale, angle, offset, geo->poly + n);
+                Transformation(scale, angle, offset, geo->poly + n);
             }
             continue;
         }

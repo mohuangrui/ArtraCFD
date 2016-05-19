@@ -705,10 +705,11 @@ typedef struct {
     int matID; /* material type for polyhedron domain */
     Real r; /* radius of sphere */
     RealVec O; /* the centroid of the polyhedron */
-    RealVec I; /* moment of inertia of the polyhedron */
+    Real I[DIMS][DIMS]; /* inertia tensor of the polyhedron */
     RealVec V; /* velocity */
     RealVec W; /* angular velocity */
     RealVec F; /* force */
+    RealVec Tau; /* torque */
     Real rho; /* density */
     Real T; /* wall temperature. T < 0, adiabatic; T >= 0, constant temperature */
     Real cf; /* roughness. cf <= 0, slip wall; cf > 0, no-slip wall */

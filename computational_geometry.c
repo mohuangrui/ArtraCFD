@@ -25,6 +25,10 @@ static int AddVertex(const Real [restrict], Polyhedron *);
 static int FindEdge(const int, const int, const Polyhedron *);
 static void ComputeParametersSphere(const int, Polyhedron *);
 static void ComputeParametersPolyhedron(const int, Polyhedron *);
+static void TransformVertex(const Real [restrict], const Real [restrict], 
+        const Real [restrict][DIMS], const Real [restrict], Real [restrict]);
+static void TransformNormal(const Real [restrict][DIMS], Real [restrict]);
+static Real TransformInertia(Real [restrict][DIMS], const Real [restrict]);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -103,35 +107,97 @@ static int FindEdge(const int v0, const int v1, const Polyhedron *poly)
     /* otherwise, something is wrong */
     return 0;
 }
-void Transformation(const Real O[restrict], const Real scale[restrict], const Real angle[restrict],
+void Transformation(const Real scale[restrict], const Real angle[restrict],
         const Real offset[restrict], Polyhedron *poly)
 {
     const RealVec Sin = {sin(angle[X]), sin(angle[Y]), sin(angle[Z])};
     const RealVec Cos = {cos(angle[X]), cos(angle[Y]), cos(angle[Z])};
-    const Real rotate[DIMS][DIMS] = {
+    const Real rotate[DIMS][DIMS] = { /* rotation matrix */
         {Cos[Y]*Cos[Z], Cos[X]*Sin[Z]+Sin[X]*Sin[Y]*Cos[Z], Sin[X]*Sin[Z]-Cos[X]*Sin[Y]*Cos[Z]},
         {-Cos[Y]*Sin[Z], Cos[X]*Cos[Z]-Sin[X]*Sin[Y]*Sin[Z], Sin[X]*Cos[Z]+Cos[X]*Sin[Y]*Sin[Z]},
         {Sin[Y], -Sin[X]*Cos[Y], Cos[X]*Cos[Y]}};
-    RealVec tmp = {0.0};
+    const Real invrot[DIMS][DIMS] = { /* inverse rotation matrix */
+        {rotate[0][0], rotate[1][0], rotate[2][0]},
+        {rotate[0][1], rotate[1][1], rotate[2][1]},
+        {rotate[0][2], rotate[1][2], rotate[2][2]}};
+    const Real num = 1.0 / sqrt(2.0);
+    const Real axis[6][DIMS] = { /* direction vector of axis xx, yy, zz, xy, yz, zx */
+        {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}, 
+        {num, num, 0.0}, {0.0, num, num}, {num, 0.0, num}};
+    RealVec axe = {0.0}; /* direction vector of axis in rotated frame */
+    Real Inew[6] = {0.0}; /* inertia tensor after rotation */
+    /* transforming vertex */
     for (int n = 0; n < poly->vertN; ++n) {
-        /* move to relative origin */
-        poly->v[n][X] = poly->v[n][X] - O[X];
-        poly->v[n][Y] = poly->v[n][Y] - O[Y];
-        poly->v[n][Z] = poly->v[n][Z] - O[Z];
-        /* scale */
-        poly->v[n][X] = poly->v[n][X] * scale[X];
-        poly->v[n][Y] = poly->v[n][Y] * scale[Y];
-        poly->v[n][Z] = poly->v[n][Z] * scale[Z];
-        /* rotate */
-        tmp[X] = Dot(rotate[X], poly->v[n]);
-        tmp[Y] = Dot(rotate[Y], poly->v[n]);
-        tmp[Z] = Dot(rotate[Z], poly->v[n]);
-        /* translate */
-        poly->v[n][X] = tmp[X] + offset[X] + O[X];
-        poly->v[n][Y] = tmp[Y] + offset[Y] + O[Y];
-        poly->v[n][Z] = tmp[Z] + offset[Z] + O[Z];
+        TransformVertex(poly->O, scale, rotate, offset, poly->v[n]);
     }
+    /* transforming bounding box */
+    for (int n = 0; n < LIMIT; ++n) {
+        RealVec p = {poly->box[X][n], poly->box[Y][n], poly->box[Z][n]};
+        TransformVertex(poly->O, scale, rotate, offset, p);
+        poly->box[X][n] = p[X];
+        poly->box[Y][n] = p[Y];
+        poly->box[Z][n] = p[Z];
+    }
+    /* transforming normal assuming pure rotation and translation */
+    for (int n = 0; n < poly->faceN; ++n) {
+        TransformNormal(rotate, poly->Nf[n]);
+    }
+    for (int n = 0; n < poly->edgeN; ++n) {
+        TransformNormal(rotate, poly->Ne[n]);
+    }
+    for (int n = 0; n < poly->vertN; ++n) {
+        TransformNormal(rotate, poly->Nv[n]);
+    }
+    /* transform inertial tensor */
+    for (int n = 0; n < 6; ++n) {
+        axe[X] = Dot(invrot[X], axis[n]);
+        axe[Y] = Dot(invrot[Y], axis[n]);
+        axe[Z] = Dot(invrot[Z], axis[n]);
+        Inew[n] = TransformInertia(poly->I, axe);
+    }
+    poly->I[X][X] = Inew[0];  poly->I[X][Y] = -Inew[3]; poly->I[X][Z] = -Inew[5];
+    poly->I[Y][X] = -Inew[3]; poly->I[Y][Y] = Inew[1];  poly->I[Y][Z] = -Inew[4];
+    poly->I[Z][X] = -Inew[5]; poly->I[Z][Y] = -Inew[4]; poly->I[Z][Z] = Inew[2];
+    /* centroid should be transformed at last */
+    poly->O[X] = poly->O[X] + offset[X];
+    poly->O[Y] = poly->O[Y] + offset[Y];
+    poly->O[Z] = poly->O[Z] + offset[Z];
     return;
+}
+static void TransformVertex(const Real O[restrict], const Real scale[restrict], 
+        const Real rotate[restrict][DIMS], const Real offset[restrict], Real v[restrict])
+{
+    RealVec tmp = {0.0};
+    /* translate reference frame to a parallel frame at centroid */
+    v[X] = v[X] - O[X];
+    v[Y] = v[Y] - O[Y];
+    v[Z] = v[Z] - O[Z];
+    /* scale */
+    v[X] = v[X] * scale[X];
+    v[Y] = v[Y] * scale[Y];
+    v[Z] = v[Z] * scale[Z];
+    /* rotate */
+    tmp[X] = Dot(rotate[X], v);
+    tmp[Y] = Dot(rotate[Y], v);
+    tmp[Z] = Dot(rotate[Z], v);
+    /* translate with offset and then translate reference back to origin */
+    v[X] = tmp[X] + offset[X] + O[X];
+    v[Y] = tmp[Y] + offset[Y] + O[Y];
+    v[Z] = tmp[Z] + offset[Z] + O[Z];
+    return;
+}
+static void TransformNormal(const Real matrix[restrict][DIMS], Real N[restrict])
+{
+    N[X] = Dot(matrix[X], N);
+    N[Y] = Dot(matrix[Y], N);
+    N[Z] = Dot(matrix[Z], N);
+    /* normalization is needed if anisotropic transformation happens */
+    return;
+}
+static Real TransformInertia(Real I[restrict][DIMS], const Real axe[restrict])
+{
+    return I[X][X] * axe[X] * axe[X] + I[Y][Y] * axe[Y] * axe[Y] + I[Z][Z] * axe[Z] * axe[Z] +
+        2.0 * I[X][Y] * axe[X] * axe[Y] + 2.0 * I[Y][Z] * axe[Y] * axe[Z] + 2.0 * I[Z][X] * axe[Z] * axe[X];
 }
 void ComputeGeometryParameters(const int collapse, Geometry *geo)
 {
@@ -160,13 +226,19 @@ static void ComputeParametersSphere(const int collapse, Polyhedron *poly)
         poly->box[s][MAX] = poly->O[s] + poly->r;
     }
     /* geometric property */
+    Real num = 0.4 * poly->r * poly->r;
     if (COLLAPSEN == collapse) { /* no space dimension collapsed */
         poly->area = 4.0 * pi * poly->r * poly->r; /* area of a sphere */
         poly->volume = 4.0 * pi * poly->r * poly->r * poly->r / 3.0; /* volume of a sphere */
     } else {
         poly->area = 2.0 * pi * poly->r; /* side area of a unit thickness cylinder */
         poly->volume = pi * poly->r * poly->r; /* volume of a unit thickness cylinder */
+        num = 0.5 * poly->r * poly->r;
     }
+    num = num * poly->volume;
+    poly->I[X][X] = num;  poly->I[X][Y] = 0;    poly->I[X][Z] = 0;
+    poly->I[Y][X] = 0;    poly->I[Y][Y] = num;  poly->I[Y][Z] = 0;
+    poly->I[Z][X] = 0;    poly->I[Z][Y] = 0;    poly->I[Z][Z] = num;
     return;
 }
 static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
@@ -182,6 +254,10 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
     RealVec O = {0.0}; /* centroid */
     Real area = 0.0; /* area */
     Real volume = 0.0; /* volume */
+    Real I[6] = {0.0}; /* inertia integration xx, yy, zz, xy, yz, zx */
+    RealVec tmp = {0.0}; /* temporary */
+    Real f[DIMS][DIMS] = {{0.0}}; /* temporary */
+    Real g[DIMS][DIMS] = {{0.0}}; /* temporary */
     Real box[DIMS][LIMIT] = {{0.0}}; /* bounding box */
     for (int s = 0; s < DIMS; ++s) {
         box[s][MIN] = FLT_MAX;
@@ -210,13 +286,30 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
         BuildTriangle(n, poly, v0, v1, v2, e01, e02);
         /* outward normal vector */
         Cross(e01, e02, Nf);
-        /* accumulate area and volume */
-        area = area + Norm(Nf);
-        volume = volume + Dot(v0, Nf);
-        /* centroid */
+        /* temporary values */
         for (int s = 0; s < DIMS; ++s) {
-            O[s] = O[s] + Nf[s] * (Square(v0[s] + v1[s]) + Square(v1[s] + v2[s]) + Square(v2[s] + v0[s]));
+            tmp[0] = v0[s] + v1[s];
+            f[0][s] = tmp[0] + v2[s];
+            tmp[1] = v0[s] * v0[s];
+            tmp[2] = tmp[1] + v1[s] * tmp[0];
+            f[1][s] = tmp[2] + v2[s] * f[0][s];
+            f[2][s] = v0[s] * tmp[1] + v1[s] * tmp[2] + v2[s] * f[1][s];
+            g[0][s] = f[1][s] + v0[s] * (f[0][s] + v0[s]);
+            g[1][s] = f[1][s] + v1[s] * (f[0][s] + v1[s]);
+            g[2][s] = f[1][s] + v2[s] * (f[0][s] + v2[s]);
         }
+        /* integration */
+        area = area + Norm(Nf);
+        volume = volume + Nf[X] * f[0][X];
+        O[X] = O[X] + Nf[X] * f[1][X];
+        O[Y] = O[Y] + Nf[Y] * f[1][Y];
+        O[Z] = O[Z] + Nf[Z] * f[1][Z];
+        I[0] = I[0] + Nf[X] * f[2][X];
+        I[1] = I[1] + Nf[Y] * f[2][Y];
+        I[2] = I[2] + Nf[Z] * f[2][Z];
+        I[3] = I[3] + Nf[X] * (v0[Y] * g[0][X] + v1[Y] * g[1][X] + v2[Y] * g[2][X]);
+        I[4] = I[4] + Nf[Y] * (v0[Z] * g[0][Y] + v1[Z] * g[1][Y] + v2[Z] * g[2][Y]);
+        I[5] = I[5] + Nf[Z] * (v0[X] * g[0][Z] + v1[X] * g[1][Z] + v2[X] * g[2][Z]);
         /* unit normal */
         Normalize(DIMS, Norm(Nf), Nf);
         /*
@@ -242,16 +335,39 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
             poly->Nf[n][s] = Nf[s];
         }
     }
-    area = 0.5 * area; /* final area of the polyhedron */
-    volume = volume / 6.0; /* final volume of the polyhedron */
+    /* rectify final integration */
+    area = 0.5 * area;
+    volume = volume / 6.0;
+    O[X] = O[X] / 24.0;
+    O[Y] = O[Y] / 24.0;
+    O[Z] = O[Z] / 24.0;
+    I[0] = I[0] / 60.0;
+    I[1] = I[1] / 60.0;
+    I[2] = I[2] / 60.0;
+    I[3] = I[3] / 120.0;
+    I[4] = I[4] / 120.0;
+    I[5] = I[5] / 120.0;
+    /* assign to polyhedron */
     if (COLLAPSEN == collapse) { /* no space dimension collapsed */
         poly->area = area;
     } else {
         poly->area = area - 2.0 * volume; /* change to side area of a unit thickness polygon */
     }
     poly->volume = volume;
-    for (int s = 0; s < DIMS; ++s) { /* assign final centroid and bounding box */
-        poly->O[s] = O[s] / (48.0 * volume);
+    poly->O[X] = O[X];
+    poly->O[Y] = O[Y];
+    poly->O[Z] = O[Z];
+    /* inertia relative to centroid */
+    poly->I[X][X] = I[1] + I[2] - volume * (O[Y] * O[Y] + O[Z] * O[Z]);
+    poly->I[X][Y] = -I[3] + volume * O[X] * O[Y];
+    poly->I[X][Z] = -I[5] + volume * O[Z] * O[X];
+    poly->I[Y][X] = poly->I[X][Y];
+    poly->I[Y][Y] = I[0] + I[2] - volume * (O[Z] * O[Z] + O[X] * O[X]);
+    poly->I[Y][Z] = -I[4] + volume * O[Y] * O[Z];
+    poly->I[Z][X] = poly->I[X][Z];
+    poly->I[Z][Y] = poly->I[Y][Z];
+    poly->I[Z][Z] = I[0] + I[1] - volume * (O[X] * O[X] + O[Y] * O[Y]);
+    for (int s = 0; s < DIMS; ++s) {
         poly->box[s][MIN] = box[s][MIN];
         poly->box[s][MAX] = box[s][MAX];
     }

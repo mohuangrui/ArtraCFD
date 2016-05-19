@@ -510,7 +510,6 @@ static int WriteVerifyData(const Time *time, const Space *space, const Model *mo
     fprintf(filePointer, "viscous level: %.6g\n", model->refMu); 
     fprintf(filePointer, "gravity state: %d\n", model->gState); 
     fprintf(filePointer, "gravity vector: %.6g, %.6g, %.6g\n", model->g[X], model->g[Y], model->g[Z]); 
-    fprintf(filePointer, "viscous level: %.6g\n", model->refMu); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                        >> Reference Values  <<\n");

@@ -122,7 +122,7 @@ static int SolutionEvolution(Time *time, Space *space, const Model *model)
 static Real ComputeTimeStep(const Time *time, const Space *space, const Model *model)
 {
     const Partition *restrict part = &(space->part);
-    const Geometry *restrict geo = &(space->geo);
+    const Geometry *geo = &(space->geo);
     const Node *node = space->node;
     const Real *restrict U = NULL;
     int idx = 0; /* linear array index math variable */
@@ -146,7 +146,7 @@ static Real ComputeTimeStep(const Time *time, const Space *space, const Model *m
             for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
                 idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
                 U = node[idx].U[TO];
-                if (FLUID != node[idx].geoID) {
+                if (0 != node[idx].geoID) {
                     continue;
                 }
                 PrimitiveByConservative(model->gamma, model->gasR, U, Uo);

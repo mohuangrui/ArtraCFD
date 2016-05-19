@@ -61,7 +61,6 @@ static void FlowReconstruction(const int, const int [restrict], const Real [rest
  */
 void ComputeGeometryDomain(Space *space, const Model *model)
 {
-    ComputeGeometryParameters(space->part.collapsed, &(space->geo));
     InitializeGeometryDomain(space);
     IdentifyGeometryNode(space);
     IdentifyInterfacialNode(space, model);
