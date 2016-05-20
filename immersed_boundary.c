@@ -284,6 +284,8 @@ static int GhostState(const int k, const int j, const int i, const int geoID, co
 void ImmersedBoundaryTreatment(const int tn, Space *space, const Model *model)
 {
     const Partition *restrict part = &(space->part);
+    Geometry *geo = &(space->geo);
+    Polyhedron *poly = NULL;
     Node *node = space->node;
     int idx = 0; /* linear array index math variable */
     const RealVec sMin = {part->domain[X][MIN], part->domain[Y][MIN], part->domain[Z][MIN]};
@@ -310,7 +312,7 @@ void ImmersedBoundaryTreatment(const int tn, Space *space, const Model *model)
                     pG[Y] = PointSpace(j, sMin[Y], d[Y], ng);
                     pG[Z] = PointSpace(k, sMin[Z], d[Z], ng);
                     if (model->layers >= r) { /* immersed boundary treatment */
-                        const Polyhedron *poly = space->geo.poly + node[idx].geoID - 1;
+                        poly = geo->poly + node[idx].geoID - 1;
                         ComputeGeometricData(node[idx].faceID, poly, pG, pO, pI, N);
                         nI[X] = NodeSpace(pI[X], sMin[X], dd[X], ng);
                         nI[Y] = NodeSpace(pI[Y], sMin[Y], dd[Y], ng);

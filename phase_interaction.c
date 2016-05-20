@@ -79,9 +79,15 @@ static void SurfaceForceIntegration(Space *space, const Model *model)
     Geometry *geo = &(space->geo);
     Polyhedron *poly = NULL;
     const Node *node = space->node;
-    const Real *restrict U = NULL;
     int idx = 0; /* linear array index math variable */
-    Real p = 0.0;
+    RealVec pG = {0.0}; /* ghost point */
+    RealVec pO = {0.0}; /* boundary point */
+    RealVec pI = {0.0}; /* image point */
+    RealVec N = {0.0}; /* normal */
+    Real p = {0.0};
+    RealVec r = {0.0}; /* position vector */
+    RealVec F = {0.0}; /* force */
+    RealVec Tau = {0.0}; /* touque */
     /* reset some non accumulative information of particles to zero */
     for (int n = 0; n < geo->totalN; ++n) {
         poly = geo->poly + n;
@@ -93,35 +99,47 @@ static void SurfaceForceIntegration(Space *space, const Model *model)
         poly->Tau[Z] = 0; /* torque z */
         poly->nodeN = 0; /* tally */
     }
-    for (int k = part->kSub[0]; k < part->kSup[0]; ++k) {
-        for (int j = part->jSub[0]; j < part->jSup[0]; ++j) {
-            for (int i = part->iSub[0]; i < part->iSup[0]; ++i) {
-                idx = IndexMath(k, j, i, space);
-                if (OFFSET > space->nodeFlag[idx]) { /* it's not a ghost */
+    for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
+        for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
+            for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
+                idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
+                if (0 == node[idx].geoID) {
                     continue;
                 }
-                geoID = space->nodeFlag[idx] - OFFSET;
-                if ((0 > geoID) || (geometry->totalN <= geoID)) { /* not a first type ghost node */
+                if (1 != node[idx].ghostID) {
                     continue;
                 }
-                geo = IndexGeometry(geoID, geometry);
-                CalculateGeometryInformation(info, k, j, i, geo, space);
-                p = ComputePressure(idx * DIMU, U, model);
-                geo[GFX] = geo[GFX] - p * info[GSNX]; /* integrate fx */
-                geo[GFY] = geo[GFY] - p * info[GSNY]; /* integrate fy */
-                geo[GFZ] = geo[GFZ] - p * info[GSNZ]; /* integrate fz */
-                geo[GTALLY] = geo[GTALLY] + 1; /* count number of ghosts */
+                poly = geo->poly + node[idx].geoID - 1;
+                ComputeGeometricData(node[idx].faceID, poly, pG, pO, pI, N);
+                p = ComputePressure(model->gamma, node[idx].U[TO]);
+                r[X] = pO[X] - poly->O[X];
+                r[Y] = pO[Y] - poly->O[Y];
+                r[Z] = pO[Z] - poly->O[Z];
+                F[X] = -p * N[X];
+                F[Y] = -p * N[Y];
+                F[Z] = -p * N[Z];
+                Cross(r, F, Tau);
+                poly->F[X] = poly->F[X] + F[X]; /* integrate fx */
+                poly->F[Y] = poly->F[Y] + F[Y]; /* integrate fy */
+                poly->F[Z] = poly->F[Z] + F[Z]; /* integrate fz */
+                poly->Tau[X] = poly->Tau[X] + Tau[X]; /* integrate torque x */
+                poly->Tau[Y] = poly->Tau[Y] + Tau[Y]; /* integrate torque y */
+                poly->Tau[Z] = poly->Tau[Z] + Tau[Z]; /* integrate torque z */
+                ++(poly->nodeN); /* count number of ghosts */
             }
         }
     }
     /* calibrate the sum of discrete forces into integration */
-    for (int geoCount = 0; geoCount < geometry->totalN; ++geoCount) {
-        geo = IndexGeometry(geoCount, geometry);
-        geo[GFX] = geo[GFX] * geo[GAREA] / geo[GTALLY];
-        geo[GFY] = geo[GFY] * geo[GAREA] / geo[GTALLY];
-        geo[GFZ] = geo[GFZ] * geo[GAREA] / geo[GTALLY];
+    for (int n = 0; n < geo->totalN; ++n) {
+        poly = geo->poly + n;
+        poly->F[X] = poly->F[X] * poly->area / poly->nodeN;
+        poly->F[Y] = poly->F[Y] * poly->area / poly->nodeN;
+        poly->F[Z] = poly->F[Z] * poly->area / poly->nodeN;
+        poly->Tau[X] = poly->Tau[X] * poly->area / poly->nodeN;
+        poly->Tau[Y] = poly->Tau[Y] * poly->area / poly->nodeN;
+        poly->Tau[Z] = poly->Tau[Z] * poly->area / poly->nodeN;
     }
-    return 0;
+    return;
 }
 /* a good practice: end file with a newline */
 
