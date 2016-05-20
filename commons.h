@@ -291,7 +291,7 @@
  *   external object to access it, a declaration is needed to connect the 
  *   occurrences of the object, which is greatly facilitated by header files
  *   to ensure that all the declarations used are consistent with each other
- *   and with the definition. To simply the declaration of external objects 
+ *   and with the definition. To simplify the declaration of external objects 
  *   for modules, the usual practice is to collect extern declarations of 
  *   objects in a separate file called a header, which is included by 
  *   #include at the front of each source file. The normal methodology is 
@@ -690,9 +690,9 @@ typedef struct {
  */
 typedef struct {
     RealVec N; /* normal vector */
-    RealVec v0; /* vertex 1 */
-    RealVec v1; /* vertex 2 */
-    RealVec v2; /* vertex 3 */
+    RealVec v0; /* vertex */
+    RealVec v1; /* vertex */
+    RealVec v2; /* vertex */
 } Facet;
 /*
  * Polyhedron structure
@@ -701,11 +701,11 @@ typedef struct {
     int faceN; /* number of faces. 0 for analytical sphere */
     int edgeN; /* number of edges */
     int vertN; /* number of vertices */
-    int nodeN; /* total 1st type interfacial node in polyhedron */
-    int matID; /* material type for polyhedron domain */
+    int nodeN; /* total 1st type interfacial node */
+    int matID; /* material type */
     Real r; /* radius of sphere */
-    RealVec O; /* the centroid of the polyhedron */
-    Real I[DIMS][DIMS]; /* inertia tensor of the polyhedron */
+    RealVec O; /* centroid */
+    Real I[DIMS][DIMS]; /* inertia tensor */
     RealVec V; /* velocity */
     RealVec W; /* angular velocity */
     RealVec F; /* force */
@@ -718,11 +718,11 @@ typedef struct {
     Real gState; /* gravity state */
     Real box[DIMS][LIMIT]; /* a bounding box of the polyhedron */
     int (*restrict f)[3]; /* face-vertex list */
-    Real (*restrict Nf)[3]; /* face normal */
+    Real (*restrict Nf)[DIMS]; /* face normal */
     int (*restrict e)[4]; /* edge-vertex-face list */
-    Real (*restrict Ne)[3]; /* edge normal */
-    Real (*restrict v)[3]; /* vertex list */
-    Real (*restrict Nv)[3]; /* vertex normal */
+    Real (*restrict Ne)[DIMS]; /* edge normal */
+    Real (*restrict v)[DIMS]; /* vertex list */
+    Real (*restrict Nv)[DIMS]; /* vertex normal */
     Facet *facet; /* facet data */
 } Polyhedron;
 /*
@@ -802,8 +802,6 @@ typedef struct {
 /*
  * Command line processor
  *
- * Parameters
- *      lineCommand -- the command to be processed
  * Function
  *      Get rid of end of line, and information after #.
  *      Get rid of before and after tabs, replace tabs with a space.
@@ -814,8 +812,6 @@ extern int CommandLineProcessor(char *lineCommand);
 /*
  * Fatal error control
  *
- * Parameters
- *      statement -- the information to show
  * Function
  *      Print information and then exit. Once the process exits, the operating
  *      system is able to free all dynamically allocated memory associated with
@@ -825,11 +821,9 @@ extern void FatalError(const char *statement);
 /*
  * Show information to terminal
  *
- * Parameters
- *      statement -- the information to show. If statement is "Session End",
- *      it prints a line asterisks.
  * Function
- *      Print information to standard out.
+ *      Print information to standard out. Statement is the information to show. 
+ *      If statement is "Session End", it prints a line asterisks.
  */
 extern int ShowInformation(const char *statement);
 /*
@@ -837,25 +831,22 @@ extern int ShowInformation(const char *statement);
  *
  * Function
  *      Use malloc to assign a linear array of storage with specified data type.
- * Returns
- *      The head address of the assigned storage.
+ *      Returns the head address of the assigned storage.
  * Notice
  *      malloc does not initialize the storage; this means that the assigned
- *      memory may contain random or unexpected values!
+ *      memory may contain random or unexpected values.
  */
 extern void *AssignStorage(size_t size);
 /*
- * Retrieve storage from a pointer
+ * Retrieve storage
  *
- * Parameter
- *      pointer -- the pointer that contains the storage address
  * Function
  *      Use free to free the storage space of the pointer.
  * Notice
  *      Don't free pointer of storage that not allocated by dynamic allocation.
  *      The original pointer becomes to be a wild pointer after being freed, be
- *      aware of this situation. It's a better practice to set pointer back to NULL
- *      after calling free.
+ *      aware of this situation. It's a better practice to set pointer back to 
+ *      NULL after calling free.
  */
 extern int RetrieveStorage(void *pointer);
 /*
