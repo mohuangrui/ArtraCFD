@@ -18,7 +18,6 @@
 #include "postprocess.h"
 #include <stdio.h> /* standard library for input and output */
 #include <stdlib.h> /* dynamic memory allocation and exit */
-#include <string.h> /* manipulating strings */
 /****************************************************************************
  * The Main Function
  ****************************************************************************/

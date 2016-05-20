@@ -26,13 +26,9 @@
 /*
  * Preprocessor
  *
- * Parameter
- *      data structures
  * Function
  *      Call a series of functions to perform the preprocessing of
- *      computational fluid dynamics.
- * Returns
- *      0 -- successful
+ *      numerical computation.
  */
 extern int Preprocess(Time *, Space *, Model *);
 #endif
