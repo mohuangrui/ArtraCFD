@@ -16,6 +16,16 @@
 #include <string.h> /* manipulating strings */
 #include "commons.h"
 /****************************************************************************
+ * Data Structure Declarations
+ ****************************************************************************/
+/*
+ * STL data format and type control
+ */
+typedef char StlString[80]; /* STL string data requires 80 chars */
+typedef unsigned long StlLongInt; /* STL unsigned long integer */
+typedef unsigned int StlInt; /* STL unsigned integer */
+typedef float StlReal; /* STL requires real data to be float */
+/****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
 /****************************************************************************
@@ -34,7 +44,7 @@ int ReadStlFile(const char *fileName, Polyhedron *poly)
     fread(header, sizeof(char), sizeof(StlString), filePointer);
     fread(&facetN, sizeof(StlLongInt), 1, filePointer);
     poly->faceN = facetN;
-    poly->facet = AssignStorage(poly->faceN * sizeof(Facet));
+    poly->facet = AssignStorage(poly->faceN * sizeof(*poly->facet));
     for (int n = 0; n < facetN; ++n) {
         fread(&facetData, sizeof(StlReal), 1, filePointer);
         poly->facet[n].N[X] = facetData;

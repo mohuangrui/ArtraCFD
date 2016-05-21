@@ -18,16 +18,6 @@
  ****************************************************************************/
 #include "commons.h"
 /****************************************************************************
- * Data Structure Declarations
- ****************************************************************************/
-/*
- * STL data format and type control
- */
-typedef char StlString[80]; /* STL string data requires 80 chars */
-typedef unsigned long StlLongInt; /* STL unsigned long integer */
-typedef unsigned int StlInt; /* STL unsigned integer */
-typedef float StlReal; /* STL requires real data to be float */
-/****************************************************************************
  * Public Functions Declaration
  ****************************************************************************/
 /*
