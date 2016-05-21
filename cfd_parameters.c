@@ -43,7 +43,7 @@ int ComputeCFDParameters(Time *time, Space *space, Model *model)
  */
 static int NodeBasedMeshNumberRefine(Space *space, const Model *model)
 {
-    Partition * part = &(space->part);
+    Partition *part = &(space->part);
     /* set ghost layers according to numerical scheme */
     if (WENOFIVE == model->scheme) {
         part->ng = 2;
@@ -74,7 +74,7 @@ static int NodeBasedMeshNumberRefine(Space *space, const Model *model)
  */
 static int InitializeCFDParameters(Time *time, Space *space, Model *model)
 {
-    Partition * part = &(space->part);
+    Partition *part = &(space->part);
     /* space */
     for (int s = 0; s < DIMS; ++s) {
         part->d[s] = ((part->domain[s][MAX] - part->domain[s][MIN]) /

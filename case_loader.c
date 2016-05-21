@@ -63,7 +63,7 @@ int LoadCaseSettingData(Time *time, Space *space, Model *model)
  */
 static int ReadCaseSettingData(Time *time, Space *space, Model *model)
 {
-    Partition * part = &(space->part);
+    Partition *part = &(space->part);
     FILE *filePointer = fopen("artracfd.case", "r");
     if (NULL == filePointer) {
         FatalError("failed to open case data file: artracfd.case...");
@@ -307,7 +307,7 @@ static int ReadGeometrySettingData(Geometry *geo)
 }
 static int ReadBoundaryData(FILE **filePointerPointer, Space *space, const int boundary)
 {
-    Partition * part = &(space->part);
+    Partition *part = &(space->part);
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
     String currentLine = {'\0'}; /* store the current read line */
     char formatI[5] = "%lg"; /* default is double type */
@@ -370,7 +370,7 @@ static int ReadConsecutiveRealData(FILE **filePointerPointer, Real *address, con
 }
 static int WriteBoundaryData(FILE **filePointerPointer, const Space *space, const int boundary)
 {
-    const Partition * part = &(space->part);
+    const Partition *part = &(space->part);
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
     if (INFLOW == part->typeBC[boundary]) {
         fprintf(filePointer, "boundary type: inflow\n"); 
@@ -409,7 +409,7 @@ static int WriteBoundaryData(FILE **filePointerPointer, const Space *space, cons
 }
 static int WriteInitializerData(FILE **filePointerPointer, const Space *space, const int n)
 {
-    const Partition * part = &(space->part);
+    const Partition *part = &(space->part);
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
     if (ICGLOBAL == part->typeIC[n]) {
         ; /* no extra information */
@@ -455,7 +455,7 @@ static int WriteInitializerData(FILE **filePointerPointer, const Space *space, c
  */
 static int WriteVerifyData(const Time *time, const Space *space, const Model *model)
 {
-    const Partition * part = &(space->part);
+    const Partition *part = &(space->part);
     FILE *filePointer = fopen("artracfd.verify", "w");
     if (NULL == filePointer) {
         FatalError("failed to write data to file: artracfd.verify");
@@ -587,7 +587,7 @@ static int WriteVerifyData(const Time *time, const Space *space, const Model *mo
  */
 static int CheckCaseSettingData(const Time *time, const Space *space, const Model *model)
 {
-    const Partition * part = &(space->part);
+    const Partition *part = &(space->part);
     /* space */
     if ((0.0 >= (part->domain[X][MAX] - part->domain[X][MIN])) ||
             (0.0 >= (part->domain[Y][MAX] - part->domain[Y][MIN])) ||

@@ -18,7 +18,7 @@
  ****************************************************************************/
 int DomainPartition(Space *space)
 {
-    Partition * part = &(space->part);
+    Partition *part = &(space->part);
     /*
      * Outward facing surface unit normal vector values of domain boundary, the
      * introducing of surface normal vector can provide great advantange: every
