@@ -74,10 +74,9 @@ static int SolutionEvolution(Time *time, Space *space, const Model *model)
         fprintf(stdout, "\nstep=%d; time=%.6g; remain=%.6g; dt=%.6g;\n", 
                 time->countStep, time->now, time->end - time->now, dt);
         /*
-         * Compute field data in current time step, treat the interaction of
-         * fluid and solids as two physical processes, and split these two
-         * processes in time space use a technique similar to Strang's
-         * splitting method.
+         * Compute field data in current time step, treat phase interaction
+         * as two physical processes, and split these two processes in time
+         * space use a technique similar to Strang's splitting method.
          */
         TickTime(&operationTimer);
         if (1 == model->fsi) {
@@ -97,12 +96,9 @@ static int SolutionEvolution(Time *time, Space *space, const Model *model)
         if (record > interval) {
             ++(time->countOutput); /* export count increase */
             fprintf(stdout, "  exporting data...\n");
-            TickTime(&operationTimer);
             WriteFieldData(time, space, model);
             WriteGeometryData(time, &(space->geo));
-            operationTime = TockTime(&operationTimer);
             record = 0.0; /* reset accumulated time */
-            fprintf(stdout, "  elapsed: %.6gs\n", operationTime);
         }
         if (probeRecord > probeInterval) {
             WriteFieldDataAtProbes(time, space, model);
@@ -123,6 +119,7 @@ static Real ComputeTimeStep(const Time *time, const Space *space, const Model *m
 {
     const Partition *restrict part = &(space->part);
     const Geometry *geo = &(space->geo);
+    const Polyhedron *poly = NULL;
     const Node *node = space->node;
     const Real *restrict U = NULL;
     int idx = 0; /* linear array index math variable */
@@ -132,7 +129,10 @@ static Real ComputeTimeStep(const Time *time, const Space *space, const Model *m
      * Incorporate solid dynamics into CFL condition.
      */
     for (int n = 0; n < geo->totalN; ++n) {
-        speed = MaxReal(fabs(geo->poly[n].V[X]), MaxReal(fabs(geo->poly[n].V[Y]), fabs(geo->poly[n].V[Z])));
+        poly = geo->poly + n;
+        speed = MaxReal(fabs(poly->V[X]) + poly->r * fabs(poly->W[X]), 
+                MaxReal(fabs(poly->V[Y]) + poly->r * fabs(poly->W[Y]), 
+                    fabs(poly->V[Z]) + poly->r * fabs(poly->W[Z])));
         if (speedMax < speed) {
             speedMax = speed;
         }

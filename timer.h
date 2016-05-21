@@ -27,8 +27,6 @@ typedef struct timeval Timer;
 /*
  * Tick current time
  *
- * Parameter
- *      timer -- stores the time moment at calling
  * Function
  *      Records the time moment at calling into the input argument. This 
  *      function can be called before blocks of code to record current time
@@ -39,8 +37,6 @@ extern void TickTime(Timer *timer);
 /*
  * Tock the timer
  *
- * Parameter
- *      timer -- a timer which stores a past time moment.
  * Function
  *      Return the time interval between the time recorded by the timer and the
  *      moment at "now" (the calling time of this function) in the form of

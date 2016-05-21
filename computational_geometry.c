@@ -258,10 +258,10 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
     RealVec tmp = {0.0}; /* temporary */
     Real f[DIMS][DIMS] = {{0.0}}; /* temporary */
     Real g[DIMS][DIMS] = {{0.0}}; /* temporary */
-    Real box[DIMS][LIMIT] = {{0.0}}; /* bounding box */
+    Real box[LIMIT][DIMS] = {{0.0}}; /* bounding box */
     for (int s = 0; s < DIMS; ++s) {
-        box[s][MIN] = FLT_MAX;
-        box[s][MAX] = FLT_MIN;
+        box[MIN][s] = FLT_MAX;
+        box[MAX][s] = FLT_MIN;
     }
     /* initialize vertices normal */
     for (int n = 0; n < poly->vertN; ++n) {
@@ -272,8 +272,8 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
     /* bounding box */
     for (int n = 0; n < poly->vertN; ++n) {
         for (int s = 0; s < DIMS; ++s) {
-            box[s][MIN] = MinReal(box[s][MIN], poly->v[n][s]);
-            box[s][MAX] = MaxReal(box[s][MAX], poly->v[n][s]);
+            box[MIN][s] = MinReal(box[MIN][s], poly->v[n][s]);
+            box[MAX][s] = MaxReal(box[MAX][s], poly->v[n][s]);
         }
     }
     /*
@@ -368,9 +368,11 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
     poly->I[Z][Y] = poly->I[Y][Z];
     poly->I[Z][Z] = I[0] + I[1] - volume * (O[X] * O[X] + O[Y] * O[Y]);
     for (int s = 0; s < DIMS; ++s) {
-        poly->box[s][MIN] = box[s][MIN];
-        poly->box[s][MAX] = box[s][MAX];
+        poly->box[s][MIN] = box[MIN][s];
+        poly->box[s][MAX] = box[MAX][s];
     }
+    /* a radius for estimating maximum velocity */
+    poly->r = Dist(box[MIN], box[MAX]);
     /* normalize vertices normal */
     for (int n = 0; n < poly->vertN; ++n) {
         Normalize(DIMS, Norm(poly->Nv[n]), poly->Nv[n]);

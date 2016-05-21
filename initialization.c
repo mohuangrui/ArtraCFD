@@ -52,9 +52,11 @@ int InitializeComputationalDomain(Time *time, Space *space, const Model *model)
     return 0;
 }
 /*
- * Initialize exterior region by initializing the global domain.
+ * Initialize the global domain.
  * After this global initialization, future computation only need
- * to focus on the interior computational domain.
+ * to focus on the interior computational domain. Physical quantities
+ * are initialized into unphysical values to avoid hiding potential
+ * mistakes in mesh generation and boundary treatment.
  */
 static int GlobalInitialization(Space *space)
 {
@@ -64,6 +66,13 @@ static int GlobalInitialization(Space *space)
     for (int idx = 0; idx < idxMax; ++idx) {
         node[idx].geoID = NONE;
         node[idx].faceID = NONE;
+        node[idx].layerID = NONE;
+        node[idx].ghostID = NONE;
+        for (int dimT = 0; dimT < DIMT; ++dimT) {
+            for (int dimU = 0; dimU < DIMU; ++dimU) {
+                node[idx].U[dimT][dimU] = 0.0;
+            }
+        }
     }
 }
 static int InitializeFieldData(Space *space, const Model *model)
