@@ -11,13 +11,13 @@
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
+#include <stdio.h> /* standard library for input and output */
+#include <stdlib.h> /* dynamic memory allocation and exit */
 #include "commons.h"
 #include "program_entrance.h"
 #include "preprocess.h"
 #include "solve.h"
 #include "postprocess.h"
-#include <stdio.h> /* standard library for input and output */
-#include <stdlib.h> /* dynamic memory allocation and exit */
 /****************************************************************************
  * The Main Function
  ****************************************************************************/

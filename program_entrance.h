@@ -26,13 +26,8 @@
 /*
  * Program entrance
  *
- * Parameter
- *      argc -- main arguments
- *      argv -- main arguments
  * Function
  *      Call a series of functions to handle the entering of the program.
- * Returns
- *      0 -- successful
  */
 extern int ProgramEntrance(int argc, char *argv[], Control *);
 #endif

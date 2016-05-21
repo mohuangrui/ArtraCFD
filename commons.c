@@ -161,17 +161,17 @@ int WriteToLine(FILE **filePointerPointer, const char *lineString)
 {
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
     String currentLine = {'\0'}; /* store the current read line */
-    int targetLine = 1;
+    int offset = 0; /* offset to target line */
     while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
         CommandLineProcessor(currentLine); /* process current line */
         if (0 == strncmp(currentLine, lineString, sizeof currentLine)) {
             break;
         }
-        ++targetLine;
+        ++offset;
     }
     /* redirect to the target line */
     filePointer = *filePointerPointer; /* reset */
-    for (int count = 1; count < targetLine; ++count) {
+    for (int count = 0; count < offset; ++count) {
         fgets(currentLine, sizeof currentLine, filePointer);
     }
     *filePointerPointer = filePointer; /* updated file pointer */

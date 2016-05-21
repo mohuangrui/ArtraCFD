@@ -63,6 +63,7 @@ int LoadCaseSettingData(Time *time, Space *space, Model *model)
  */
 static int ReadCaseSettingData(Time *time, Space *space, Model *model)
 {
+    Partition * part = &(space->part);
     FILE *filePointer = fopen("artracfd.case", "r");
     if (NULL == filePointer) {
         FatalError("failed to open case data file: artracfd.case...");
@@ -84,14 +85,14 @@ static int ReadCaseSettingData(Time *time, Space *space, Model *model)
         if (0 == strncmp(currentLine, "space begin", sizeof currentLine)) {
             ++entryCount;
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatIII, &(space->part.domain[X][MIN]),
-                    &(space->part.domain[Y][MIN]), &(space->part.domain[Z][MIN])); 
+            sscanf(currentLine, formatIII, &(part->domain[X][MIN]),
+                    &(part->domain[Y][MIN]), &(part->domain[Z][MIN])); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatIII, &(space->part.domain[X][MAX]),
-                    &(space->part.domain[Y][MAX]), &(space->part.domain[Z][MAX])); 
+            sscanf(currentLine, formatIII, &(part->domain[X][MAX]),
+                    &(part->domain[Y][MAX]), &(part->domain[Z][MAX])); 
             fgets(currentLine, sizeof currentLine, filePointer);
             sscanf(currentLine, "%d, %d, %d", 
-                    &(space->part.m[X]), &(space->part.m[Y]), &(space->part.m[Z])); 
+                    &(part->m[X]), &(part->m[Y]), &(part->m[Z])); 
             continue;
         }
         if (0 == strncmp(currentLine, "time begin", sizeof currentLine)) {
@@ -151,10 +152,10 @@ static int ReadCaseSettingData(Time *time, Space *space, Model *model)
         }
         if (0 == strncmp(currentLine, "initialization begin", sizeof currentLine)) {
             ++entryCount;
-            space->part.countIC = 0; /* enforce global initialization first */
-            space->part.typeIC[space->part.countIC] = ICGLOBAL; /* IC type id */
-            ReadConsecutiveRealData(&filePointer, space->part.valueIC[space->part.countIC] + ENTRYIC - VARIC, VARIC);
-            ++space->part.countIC;
+            part->countIC = 0; /* enforce global initialization first */
+            part->typeIC[part->countIC] = ICGLOBAL; /* IC type id */
+            ReadConsecutiveRealData(&filePointer, part->valueIC[part->countIC] + ENTRYIC - VARIC, VARIC);
+            ++part->countIC;
             continue;
         }
         if (0 == strncmp(currentLine, "west boundary begin", sizeof currentLine)) {
@@ -189,55 +190,55 @@ static int ReadCaseSettingData(Time *time, Space *space, Model *model)
         }
         if (0 == strncmp(currentLine, "plane initialization begin", sizeof currentLine)) {
             /* optional entry do not increase entry count */
-            space->part.typeIC[space->part.countIC] = ICPLANE; /* IC type id */
+            part->typeIC[part->countIC] = ICPLANE; /* IC type id */
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatIII, space->part.valueIC[space->part.countIC] + 0, 
-                    space->part.valueIC[space->part.countIC] + 1, space->part.valueIC[space->part.countIC] + 2); 
+            sscanf(currentLine, formatIII, part->valueIC[part->countIC] + 0, 
+                    part->valueIC[part->countIC] + 1, part->valueIC[part->countIC] + 2); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatIII, space->part.valueIC[space->part.countIC] + 3, 
-                    space->part.valueIC[space->part.countIC] + 4, space->part.valueIC[space->part.countIC] + 5); 
-            ReadConsecutiveRealData(&filePointer, space->part.valueIC[space->part.countIC] + ENTRYIC - VARIC, VARIC);
-            ++space->part.countIC;
+            sscanf(currentLine, formatIII, part->valueIC[part->countIC] + 3, 
+                    part->valueIC[part->countIC] + 4, part->valueIC[part->countIC] + 5); 
+            ReadConsecutiveRealData(&filePointer, part->valueIC[part->countIC] + ENTRYIC - VARIC, VARIC);
+            ++part->countIC;
             continue;
         }
         if (0 == strncmp(currentLine, "sphere initialization begin", sizeof currentLine)) {
             /* optional entry do not increase entry count */
-            space->part.typeIC[space->part.countIC] = ICSPHERE; /* IC type id */
+            part->typeIC[part->countIC] = ICSPHERE; /* IC type id */
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatIII, space->part.valueIC[space->part.countIC] + 0, 
-                    space->part.valueIC[space->part.countIC] + 1, space->part.valueIC[space->part.countIC] + 2); 
+            sscanf(currentLine, formatIII, part->valueIC[part->countIC] + 0, 
+                    part->valueIC[part->countIC] + 1, part->valueIC[part->countIC] + 2); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, space->part.valueIC[space->part.countIC] + 6); 
-            ReadConsecutiveRealData(&filePointer, space->part.valueIC[space->part.countIC] + ENTRYIC - VARIC, VARIC);
-            ++space->part.countIC;
+            sscanf(currentLine, formatI, part->valueIC[part->countIC] + 6); 
+            ReadConsecutiveRealData(&filePointer, part->valueIC[part->countIC] + ENTRYIC - VARIC, VARIC);
+            ++part->countIC;
             continue;
         }
         if (0 == strncmp(currentLine, "box initialization begin", sizeof currentLine)) {
             /* optional entry do not increase entry count */
-            space->part.typeIC[space->part.countIC] = ICBOX; /* IC type id */
+            part->typeIC[part->countIC] = ICBOX; /* IC type id */
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatIII, space->part.valueIC[space->part.countIC] + 0, 
-                    space->part.valueIC[space->part.countIC] + 1, space->part.valueIC[space->part.countIC] + 2); 
+            sscanf(currentLine, formatIII, part->valueIC[part->countIC] + 0, 
+                    part->valueIC[part->countIC] + 1, part->valueIC[part->countIC] + 2); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatIII, space->part.valueIC[space->part.countIC] + 3, 
-                    space->part.valueIC[space->part.countIC] + 4, space->part.valueIC[space->part.countIC] + 5); 
-            ReadConsecutiveRealData(&filePointer, space->part.valueIC[space->part.countIC] + ENTRYIC - VARIC, VARIC);
-            ++space->part.countIC;
+            sscanf(currentLine, formatIII, part->valueIC[part->countIC] + 3, 
+                    part->valueIC[part->countIC] + 4, part->valueIC[part->countIC] + 5); 
+            ReadConsecutiveRealData(&filePointer, part->valueIC[part->countIC] + ENTRYIC - VARIC, VARIC);
+            ++part->countIC;
             continue;
         }
         if (0 == strncmp(currentLine, "cylinder initialization begin", sizeof currentLine)) {
             /* optional entry do not increase entry count */
-            space->part.typeIC[space->part.countIC] = ICCYLINDER; /* IC type id */
+            part->typeIC[part->countIC] = ICCYLINDER; /* IC type id */
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatIII, space->part.valueIC[space->part.countIC] + 0, 
-                    space->part.valueIC[space->part.countIC] + 1, space->part.valueIC[space->part.countIC] + 2); 
+            sscanf(currentLine, formatIII, part->valueIC[part->countIC] + 0, 
+                    part->valueIC[part->countIC] + 1, part->valueIC[part->countIC] + 2); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatIII, space->part.valueIC[space->part.countIC] + 3, 
-                    space->part.valueIC[space->part.countIC] + 4, space->part.valueIC[space->part.countIC] + 5); 
+            sscanf(currentLine, formatIII, part->valueIC[part->countIC] + 3, 
+                    part->valueIC[part->countIC] + 4, part->valueIC[part->countIC] + 5); 
             fgets(currentLine, sizeof currentLine, filePointer);
-            sscanf(currentLine, formatI, space->part.valueIC[space->part.countIC] + 6); 
-            ReadConsecutiveRealData(&filePointer, space->part.valueIC[space->part.countIC] + ENTRYIC - VARIC, VARIC);
-            ++space->part.countIC;
+            sscanf(currentLine, formatI, part->valueIC[part->countIC] + 6); 
+            ReadConsecutiveRealData(&filePointer, part->valueIC[part->countIC] + ENTRYIC - VARIC, VARIC);
+            ++part->countIC;
             continue;
         }
         if (0 == strncmp(currentLine, "probe control begin", sizeof currentLine)) {
@@ -306,9 +307,7 @@ static int ReadGeometrySettingData(Geometry *geo)
 }
 static int ReadBoundaryData(FILE **filePointerPointer, Space *space, const int boundary)
 {
-    if (PERIODIC == space->part.typeBC[boundary]) { /* already set as periodic pair */
-        return 0;
-    }
+    Partition * part = &(space->part);
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
     String currentLine = {'\0'}; /* store the current read line */
     char formatI[5] = "%lg"; /* default is double type */
@@ -318,38 +317,32 @@ static int ReadBoundaryData(FILE **filePointerPointer, Space *space, const int b
     fgets(currentLine, sizeof currentLine, filePointer);
     CommandLineProcessor(currentLine); /* process current line */
     if (0 == strncmp(currentLine, "inflow", sizeof currentLine)) {
-        space->part.typeBC[boundary] = INFLOW;
-        ReadConsecutiveRealData(&filePointer, space->part.valueBC[boundary], VARBC);
+        part->typeBC[boundary] = INFLOW;
+        ReadConsecutiveRealData(&filePointer, part->valueBC[boundary], VARBC);
         *filePointerPointer = filePointer;
         return 0;
     }
     if (0 == strncmp(currentLine, "outflow", sizeof currentLine)) {
-        space->part.typeBC[boundary] = OUTFLOW;
+        part->typeBC[boundary] = OUTFLOW;
         *filePointerPointer = filePointer;
         return 0;
     }
     if (0 == strncmp(currentLine, "slip wall", sizeof currentLine)) {
-        space->part.typeBC[boundary] = SLIPWALL;
+        part->typeBC[boundary] = SLIPWALL;
         fgets(currentLine, sizeof currentLine, filePointer);
-        sscanf(currentLine, formatI, &(space->part.valueBC[boundary][ENTRYBC-1]));
+        sscanf(currentLine, formatI, &(part->valueBC[boundary][ENTRYBC-1]));
         *filePointerPointer = filePointer;
         return 0;
     }
     if (0 == strncmp(currentLine, "noslip wall", sizeof currentLine)) {
-        space->part.typeBC[boundary] = NOSLIPWALL;
+        part->typeBC[boundary] = NOSLIPWALL;
         fgets(currentLine, sizeof currentLine, filePointer);
-        sscanf(currentLine, formatI, &(space->part.valueBC[boundary][ENTRYBC-1]));
+        sscanf(currentLine, formatI, &(part->valueBC[boundary][ENTRYBC-1]));
         *filePointerPointer = filePointer;
         return 0;
     }
     if (0 == strncmp(currentLine, "periodic", sizeof currentLine)) {
-        /* only need to set id and its periodic pair */
-        space->part.typeBC[boundary] = PERIODIC;
-        if ((PWB == boundary) || (PSB == boundary) || (PFB == boundary)) {
-            space->part.typeBC[boundary+1] = PERIODIC;
-        } else {
-            space->part.typeBC[boundary-1] = PERIODIC;
-        }
+        part->typeBC[boundary] = PERIODIC;
         *filePointerPointer = filePointer;
         return 0;
     }
@@ -377,35 +370,36 @@ static int ReadConsecutiveRealData(FILE **filePointerPointer, Real *address, con
 }
 static int WriteBoundaryData(FILE **filePointerPointer, const Space *space, const int boundary)
 {
+    const Partition * part = &(space->part);
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
-    if (INFLOW == space->part.typeBC[boundary]) {
+    if (INFLOW == part->typeBC[boundary]) {
         fprintf(filePointer, "boundary type: inflow\n"); 
-        fprintf(filePointer, "density: %.6g\n", space->part.valueBC[boundary][0]);
-        fprintf(filePointer, "x velocity: %.6g\n", space->part.valueBC[boundary][1]);
-        fprintf(filePointer, "y velocity: %.6g\n", space->part.valueBC[boundary][2]);
-        fprintf(filePointer, "z velocity: %.6g\n", space->part.valueBC[boundary][3]);
-        fprintf(filePointer, "pressure: %.6g\n", space->part.valueBC[boundary][4]);
+        fprintf(filePointer, "density: %.6g\n", part->valueBC[boundary][0]);
+        fprintf(filePointer, "x velocity: %.6g\n", part->valueBC[boundary][1]);
+        fprintf(filePointer, "y velocity: %.6g\n", part->valueBC[boundary][2]);
+        fprintf(filePointer, "z velocity: %.6g\n", part->valueBC[boundary][3]);
+        fprintf(filePointer, "pressure: %.6g\n", part->valueBC[boundary][4]);
         *filePointerPointer = filePointer;
         return 0;
     }
-    if (OUTFLOW == space->part.typeBC[boundary]) {
+    if (OUTFLOW == part->typeBC[boundary]) {
         fprintf(filePointer, "boundary type: outflow\n"); 
         *filePointerPointer = filePointer;
         return 0;
     }
-    if (SLIPWALL == space->part.typeBC[boundary]) {
+    if (SLIPWALL == part->typeBC[boundary]) {
         fprintf(filePointer, "boundary type: slip wall\n"); 
-        fprintf(filePointer, "temperature: %.6g\n", space->part.valueBC[boundary][ENTRYBC-1]);
+        fprintf(filePointer, "temperature: %.6g\n", part->valueBC[boundary][ENTRYBC-1]);
         *filePointerPointer = filePointer;
         return 0;
     }
-    if (NOSLIPWALL == space->part.typeBC[boundary]) {
+    if (NOSLIPWALL == part->typeBC[boundary]) {
         fprintf(filePointer, "boundary type: noslip wall\n"); 
-        fprintf(filePointer, "temperature: %.6g\n", space->part.valueBC[boundary][ENTRYBC-1]);
+        fprintf(filePointer, "temperature: %.6g\n", part->valueBC[boundary][ENTRYBC-1]);
         *filePointerPointer = filePointer;
         return 0;
     }
-    if (PERIODIC == space->part.typeBC[boundary]) {
+    if (PERIODIC == part->typeBC[boundary]) {
         fprintf(filePointer, "boundary type: periodic\n"); 
         *filePointerPointer = filePointer;
         return 0;
@@ -415,43 +409,44 @@ static int WriteBoundaryData(FILE **filePointerPointer, const Space *space, cons
 }
 static int WriteInitializerData(FILE **filePointerPointer, const Space *space, const int n)
 {
+    const Partition * part = &(space->part);
     FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
-    if (ICGLOBAL == space->part.typeIC[n]) {
+    if (ICGLOBAL == part->typeIC[n]) {
         ; /* no extra information */
     }
-    if (ICPLANE == space->part.typeIC[n]) {
+    if (ICPLANE == part->typeIC[n]) {
         fprintf(filePointer, "regional initialization: plane\n"); 
         fprintf(filePointer, "plane point x, y, z: %.6g, %.6g, %.6g\n", 
-                space->part.valueIC[n][0], space->part.valueIC[n][1], space->part.valueIC[n][2]);
+                part->valueIC[n][0], part->valueIC[n][1], part->valueIC[n][2]);
         fprintf(filePointer, "plane normal nx, ny, nz: %.6g, %.6g, %.6g\n", 
-                space->part.valueIC[n][3], space->part.valueIC[n][4], space->part.valueIC[n][5]);
+                part->valueIC[n][3], part->valueIC[n][4], part->valueIC[n][5]);
     }
-    if (ICSPHERE == space->part.typeIC[n]) {
+    if (ICSPHERE == part->typeIC[n]) {
         fprintf(filePointer, "regional initialization: sphere\n"); 
         fprintf(filePointer, "center point x, y, z: %.6g, %.6g, %.6g\n", 
-                space->part.valueIC[n][0], space->part.valueIC[n][1], space->part.valueIC[n][2]);
-        fprintf(filePointer, "radius: %.6g\n", space->part.valueIC[n][6]);
+                part->valueIC[n][0], part->valueIC[n][1], part->valueIC[n][2]);
+        fprintf(filePointer, "radius: %.6g\n", part->valueIC[n][6]);
     }
-    if (ICBOX == space->part.typeIC[n]) {
+    if (ICBOX == part->typeIC[n]) {
         fprintf(filePointer, "regional initialization: box\n"); 
         fprintf(filePointer, "xmin, ymin, zmin: %.6g, %.6g, %.6g\n", 
-                space->part.valueIC[n][0], space->part.valueIC[n][1], space->part.valueIC[n][2]);
+                part->valueIC[n][0], part->valueIC[n][1], part->valueIC[n][2]);
         fprintf(filePointer, "xmax, ymax, zmax: %.6g, %.6g, %.6g\n", 
-                space->part.valueIC[n][3], space->part.valueIC[n][4], space->part.valueIC[n][5]);
+                part->valueIC[n][3], part->valueIC[n][4], part->valueIC[n][5]);
     }
-    if (ICCYLINDER == space->part.typeIC[n]) {
+    if (ICCYLINDER == part->typeIC[n]) {
         fprintf(filePointer, "regional initialization: cylinder\n"); 
         fprintf(filePointer, "xmin, ymin, zmin: %.6g, %.6g, %.6g\n", 
-                space->part.valueIC[n][0], space->part.valueIC[n][1], space->part.valueIC[n][2]);
+                part->valueIC[n][0], part->valueIC[n][1], part->valueIC[n][2]);
         fprintf(filePointer, "xmax, ymax, zmax: %.6g, %.6g, %.6g\n", 
-                space->part.valueIC[n][3], space->part.valueIC[n][4], space->part.valueIC[n][5]);
-        fprintf(filePointer, "radius: %.6g\n", space->part.valueIC[n][6]);
+                part->valueIC[n][3], part->valueIC[n][4], part->valueIC[n][5]);
+        fprintf(filePointer, "radius: %.6g\n", part->valueIC[n][6]);
     }
-    fprintf(filePointer, "density: %.6g\n", space->part.valueIC[n][ENTRYIC-5]);
-    fprintf(filePointer, "x velocity: %.6g\n", space->part.valueIC[n][ENTRYIC-4]);
-    fprintf(filePointer, "y velocity: %.6g\n", space->part.valueIC[n][ENTRYIC-3]);
-    fprintf(filePointer, "z velocity: %.6g\n", space->part.valueIC[n][ENTRYIC-2]);
-    fprintf(filePointer, "pressure: %.6g\n", space->part.valueIC[n][ENTRYIC-1]);
+    fprintf(filePointer, "density: %.6g\n", part->valueIC[n][ENTRYIC-5]);
+    fprintf(filePointer, "x velocity: %.6g\n", part->valueIC[n][ENTRYIC-4]);
+    fprintf(filePointer, "y velocity: %.6g\n", part->valueIC[n][ENTRYIC-3]);
+    fprintf(filePointer, "z velocity: %.6g\n", part->valueIC[n][ENTRYIC-2]);
+    fprintf(filePointer, "pressure: %.6g\n", part->valueIC[n][ENTRYIC-1]);
     *filePointerPointer = filePointer;
     return 0;
 }
@@ -460,6 +455,7 @@ static int WriteInitializerData(FILE **filePointerPointer, const Space *space, c
  */
 static int WriteVerifyData(const Time *time, const Space *space, const Model *model)
 {
+    const Partition * part = &(space->part);
     FILE *filePointer = fopen("artracfd.verify", "w");
     if (NULL == filePointer) {
         FatalError("failed to write data to file: artracfd.verify");
@@ -476,10 +472,10 @@ static int WriteVerifyData(const Time *time, const Space *space, const Model *mo
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "domain xmin, ymin, zmin: %.6g, %.6g, %.6g\n", 
-            space->part.domain[X][MIN], space->part.domain[Y][MIN], space->part.domain[Z][MIN]); 
+            part->domain[X][MIN], part->domain[Y][MIN], part->domain[Z][MIN]); 
     fprintf(filePointer, "domain xmax, ymax, zmax: %.6g, %.6g, %.6g\n", 
-            space->part.domain[X][MAX], space->part.domain[Y][MAX], space->part.domain[Z][MAX]); 
-    fprintf(filePointer, "x, y, z mesh number: %d, %d, %d\n", space->part.m[X], space->part.m[Y], space->part.m[Z]); 
+            part->domain[X][MAX], part->domain[Y][MAX], part->domain[Z][MAX]); 
+    fprintf(filePointer, "x, y, z mesh number: %d, %d, %d\n", part->m[X], part->m[Y], part->m[Z]); 
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                          >> Time Domain <<\n");
@@ -560,7 +556,7 @@ static int WriteVerifyData(const Time *time, const Space *space, const Model *mo
     fprintf(filePointer, "#                  >> Regional Initialization <<\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    for (int n = 1; n < space->part.countIC; ++n) {
+    for (int n = 1; n < part->countIC; ++n) {
         fprintf(filePointer, "#\n");
         WriteInitializerData(&filePointer, space, n);
     }
@@ -591,13 +587,14 @@ static int WriteVerifyData(const Time *time, const Space *space, const Model *mo
  */
 static int CheckCaseSettingData(const Time *time, const Space *space, const Model *model)
 {
+    const Partition * part = &(space->part);
     /* space */
-    if ((0.0 >= (space->part.domain[X][MAX] - space->part.domain[X][MIN])) ||
-            (0.0 >= (space->part.domain[Y][MAX] - space->part.domain[Y][MIN])) ||
-            (0.0 >= (space->part.domain[Z][MAX] - space->part.domain[Z][MIN]))) {
+    if ((0.0 >= (part->domain[X][MAX] - part->domain[X][MIN])) ||
+            (0.0 >= (part->domain[Y][MAX] - part->domain[Y][MIN])) ||
+            (0.0 >= (part->domain[Z][MAX] - part->domain[Z][MIN]))) {
         FatalError("wrong domian region values in case settings");
     }
-    if ((1 > space->part.m[X]) || (1 > space->part.m[Y]) || (1 > space->part.m[Z])) {
+    if ((1 > part->m[X]) || (1 > part->m[Y]) || (1 > part->m[Z])) {
         FatalError("too small mesh values in case settings");
     }
     /* time */

@@ -27,9 +27,6 @@
  *
  * Function
  *      Generate the initial case files: artracfd.case and artracfd.geo.
- * Outcome
- *      artracfd.case -- the case setting file.
- *      artracfd.geo -- the geometry input file.
  */
 extern int GenerateCaseFiles(void);
 #endif
