@@ -48,9 +48,11 @@ int Preprocess(Time *time, Space *space, Model *model)
  */
 static int ProgramMemoryAllocate(Space *space)
 {
-    space->node = AssignStorage(space->part.n[X] * space->part.n[Y] * space->part.n[Z] * sizeof(*space->node));
-    if (0 != space->geo.totalN) {
-        space->geo.poly = AssignStorage(space->geo.totalN * sizeof(*space->geo.poly));
+    Partition *part = &(space->part);
+    Geometry *geo = &(space->geo);
+    space->node = AssignStorage(part->n[X] * part->n[Y] * part->n[Z] * sizeof(*space->node));
+    if (0 != geo->totalN) {
+        geo->poly = AssignStorage(geo->totalN * sizeof(*geo->poly));
     }
     return 0;
 }

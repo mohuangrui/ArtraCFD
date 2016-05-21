@@ -43,26 +43,27 @@ int ComputeCFDParameters(Time *time, Space *space, Model *model)
  */
 static int NodeBasedMeshNumberRefine(Space *space, const Model *model)
 {
+    Partition * part = &(space->part);
     /* set ghost layers according to numerical scheme */
     if (WENOFIVE == model->scheme) {
-        space->part.ng = 2;
+        part->ng = 2;
     }
     /* check and mark collapsed space. */
-    space->part.collapsed = COLLAPSEN;
-    if (0 == (space->part.m[Z] - 1)) {
-        space->part.collapsed = COLLAPSEZ;
+    part->collapsed = COLLAPSEN;
+    if (0 == (part->m[Z] - 1)) {
+        part->collapsed = COLLAPSEZ;
     }
-    if (0 == (space->part.m[Y] - 1)) {
-        space->part.collapsed = 2 * space->part.collapsed + COLLAPSEY;
+    if (0 == (part->m[Y] - 1)) {
+        part->collapsed = 2 * part->collapsed + COLLAPSEY;
     }
-    if (0 == (space->part.m[X] - 1)) {
-        space->part.collapsed = 2 * space->part.collapsed + COLLAPSEX;
+    if (0 == (part->m[X] - 1)) {
+        part->collapsed = 2 * part->collapsed + COLLAPSEX;
     }
     for (int s = 0; s < DIMS; ++s) {
         /* ensure at least two inner cells per dimension */
-        space->part.m[s] = MaxInt(space->part.m[s], 2);
+        part->m[s] = MaxInt(part->m[s], 2);
         /* total number of nodes (including ghost nodes) */
-        space->part.n[s] = space->part.m[s] + 1 + 2 * space->part.ng; 
+        part->n[s] = part->m[s] + 1 + 2 * part->ng; 
     }
     return 0;
 }
@@ -73,15 +74,16 @@ static int NodeBasedMeshNumberRefine(Space *space, const Model *model)
  */
 static int InitializeCFDParameters(Time *time, Space *space, Model *model)
 {
+    Partition * part = &(space->part);
     /* space */
     for (int s = 0; s < DIMS; ++s) {
-        space->part.d[s] = ((space->part.domain[s][MAX] - space->part.domain[s][MIN]) /
-                (Real)(space->part.m[s])) / model->refL;
-        space->part.domain[s][MAX] = space->part.domain[s][MAX] / model->refL;
-        space->part.domain[s][MIN] = space->part.domain[s][MIN] / model->refL;
-        space->part.dd[s] = 1.0 / space->part.d[s];
+        part->d[s] = ((part->domain[s][MAX] - part->domain[s][MIN]) /
+                (Real)(part->m[s])) / model->refL;
+        part->domain[s][MAX] = part->domain[s][MAX] / model->refL;
+        part->domain[s][MIN] = part->domain[s][MIN] / model->refL;
+        part->dd[s] = 1.0 / part->d[s];
     }
-    space->part.tinyL = 1.0e-6 * MinReal(space->part.d[X], MinReal(space->part.d[Y], space->part.d[Z]));
+    part->tinyL = 1.0e-6 * MinReal(part->d[X], MinReal(part->d[Y], part->d[Z]));
     /* time */
     time->end = time->end * model->refV / model->refL;
     if (0 > time->stepN) {
