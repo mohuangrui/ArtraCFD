@@ -130,9 +130,9 @@ static Real ComputeTimeStep(const Time *time, const Space *space, const Model *m
      */
     for (int n = 0; n < geo->totalN; ++n) {
         poly = geo->poly + n;
-        speed = MaxReal(fabs(poly->V[X]) + poly->r * fabs(poly->W[X]), 
-                MaxReal(fabs(poly->V[Y]) + poly->r * fabs(poly->W[Y]), 
-                    fabs(poly->V[Z]) + poly->r * fabs(poly->W[Z])));
+        speed = MaxReal(fabs(poly->V[X]) + fabs(poly->W[X]) * poly->r, 
+                MaxReal(fabs(poly->V[Y]) + fabs(poly->W[Y]) * poly->r, 
+                    fabs(poly->V[Z]) + fabs(poly->W[Z]) * poly->r));
         if (speedMax < speed) {
             speedMax = speed;
         }

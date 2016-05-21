@@ -28,8 +28,6 @@
  *
  * Function
  *      Compute reconstructed convective fluxes by WENO scheme.
- * Parameters
- *      Fhat -- reconstructed convective fluxes.
  */
 extern void WENO(const int tn, const int s, const int k, const int j, const int i, 
         const int partn[restrict], const Node *node, const Model *model, Real Fhat[restrict]);
