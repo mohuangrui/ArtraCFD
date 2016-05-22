@@ -205,7 +205,7 @@ static void IdentifyInterfacialNode(Space *space, const Model *model)
                     /* a newly joined node */
                     const IntVec n = {i, j, k};
                     RealVec p = {0.0};
-                    RealVec Uo = {0.0};
+                    Real Uo[DIMUo] = {0.0};
                     p[X] = PointSpace(i, part->domain[X][MIN], part->d[X], part->ng);
                     p[Y] = PointSpace(j, part->domain[Y][MIN], part->d[Y], part->ng);
                     p[Z] = PointSpace(k, part->domain[Z][MIN], part->d[Z], part->ng);
@@ -303,7 +303,7 @@ void ImmersedBoundaryTreatment(const int tn, Space *space, const Model *model)
     Real UoG[DIMUo] = {0.0};
     Real UoO[DIMUo] = {0.0};
     Real UoI[DIMUo] = {0.0};
-    for (int r = 1; r < ng + 2; ++r) {
+    for (int r = 1; r < ng + 2; ++r) { /* layer by layer treatment */
         for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
             for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
                 for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
@@ -353,6 +353,7 @@ void MethodOfImage(const Real UoI[restrict], const Real UoO[restrict], Real UoG[
      *  -- reflecting vectors over wall for both slip and noslip, stationary and
      *     moving conditions is unified by linear interpolation.
      *  -- scalars are symmetrically reflected between image and ghost.
+     *  -- other scalars are determined by equation of state.
      */
     UoG[1] = 2.0 * UoO[1] - UoI[1];
     UoG[2] = 2.0 * UoO[2] - UoI[2];
@@ -392,6 +393,7 @@ static void FlowReconstruction(const int tn, const int n[restrict], const Real p
     weightSum = InverseDistanceWeighting(tn, n, p, h, type, part, node, model, UoI);
     /* physical boundary condition enforcement step */
     RealVec Vs = {0.0}; /* general motion of boundary point */
+    /* Vs = Vcentroid + W x r */
     const RealVec r = {pO[X] - poly->O[X], pO[Y] - poly->O[Y], pO[Z] - poly->O[Z]};
     Cross(poly->W, r, Vs); /* relative motion in translating coordinate system */
     Vs[X] = poly->V[X] + Vs[X];

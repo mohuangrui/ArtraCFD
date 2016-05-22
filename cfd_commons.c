@@ -422,9 +422,9 @@ void OrthogonalSpace(const Real N[restrict], Real Ta[restrict], Real Tb[restrict
         Ta[Z] = N[Y];
     } else {
         if (Y == mark) {
-            Ta[X] = -N[Z];
+            Ta[X] = N[Z];
             Ta[Y] = 0.0;
-            Ta[Z] = N[X];
+            Ta[Z] = -N[X];
         } else {
             Ta[X] = -N[Y];
             Ta[Y] = N[X];
