@@ -61,7 +61,7 @@ int InitializeComputationalDomain(Time *time, Space *space, const Model *model)
 static int GlobalInitialization(Space *space)
 {
     const Partition *restrict part = &(space->part);
-    Node *node = space->node;
+    Node *const node = space->node;
     const int idxMax = part->n[X] * part->n[Y] * part->n[Z];
     for (int idx = 0; idx < idxMax; ++idx) {
         node[idx].geoID = NONE;
@@ -78,7 +78,7 @@ static int GlobalInitialization(Space *space)
 static int InitializeFieldData(Space *space, const Model *model)
 {
     const Partition *restrict part = &(space->part);
-    Node *node = space->node;
+    Node *const node = space->node;
     Real *restrict U = NULL;
     int idx = 0; /* linear array index math variable */
     /* extract global initial values */
@@ -118,7 +118,7 @@ static int InitializeFieldData(Space *space, const Model *model)
 static int ApplyRegionalInitializer(const int n, Space *space, const Model *model)
 {
     const Partition *restrict part = &(space->part);
-    Node *node = space->node;
+    Node *const node = space->node;
     Real *restrict U = NULL;
     int idx = 0; /* linear array index math variable */
     /*

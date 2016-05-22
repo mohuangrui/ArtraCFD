@@ -84,7 +84,7 @@ static int ReadStructuredData(Space *space, const Model *model, ParaviewSet *par
         strncpy(format, "%g", sizeof format); /* float type */
     }
     const Partition *restrict part = &(space->part);
-    Node *node = space->node;
+    Node *const node = space->node;
     Real *restrict U = NULL;
     int idx = 0; /* linear array index math variable */
     /* get rid of redundant lines */

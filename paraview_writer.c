@@ -119,7 +119,7 @@ static int WriteStructuredData(const Space *space, const Model *model, ParaviewS
     ParaviewReal Vec[3] = {0.0}; /* paraview vector data */
     const char scalar[7][5] = {"rho", "u", "v", "w", "p", "T", "gid"};
     const Partition *restrict part = &(space->part);
-    const Node *node = space->node;
+    const Node *const node = space->node;
     const Real *restrict U = NULL;
     int idx = 0; /* linear array index math variable */
     fprintf(filePointer, "<?xml version=\"1.0\"?>\n");

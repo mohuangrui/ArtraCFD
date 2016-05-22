@@ -67,7 +67,7 @@ static int ReadStructuredData(Space *space, const Model *model, EnsightSet *enSe
     EnsightReal data = 0.0; /* the Ensight data format */
     const char scalar[5][5] = {"rho", "u", "v", "w", "p"};
     const Partition *restrict part = &(space->part);
-    Node *node = space->node;
+    Node *const node = space->node;
     Real *restrict U = NULL;
     int idx = 0; /* linear array index math variable */
     for (int count = 0; count < DIMU; ++count) {

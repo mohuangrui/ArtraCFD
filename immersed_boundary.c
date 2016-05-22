@@ -33,15 +33,15 @@ static void InitializeGeometryDomain(Space *);
 static void IdentifyGeometryNode(Space *);
 static void IdentifyInterfacialNode(Space *, const Model *);
 static int InterfacialState(const int, const int, const int, const int, const int,
-        const int [restrict][DIMS], const Node *, const Partition *);
+        const int [restrict][DIMS], const Node *const , const Partition *);
 static int GhostState(const int, const int, const int, const int, const int,
-        const int [restrict][DIMS], const Node *, const Partition *);
+        const int [restrict][DIMS], const Node *const , const Partition *);
 static void ApplyWeighting(const Real [restrict], const Real, Real, 
         Real [restrict], Real [restrict]);
 static Real InverseDistanceWeighting(const int, const int [restrict], const Real [restrict],
-        const int, const int, const Partition *, const Node *, const Model *, Real [restrict]);
+        const int, const int, const Partition *, const Node *const , const Model *, Real [restrict]);
 static void FlowReconstruction(const int, const int [restrict], const Real [restrict], const int,
-        const int, const Polyhedron *, const Partition *, const Node *, const Model *,
+        const int, const Polyhedron *, const Partition *, const Node *const , const Model *,
         const Real [restrict], const Real [restrict], Real [restrict], Real [restrict]);
 /****************************************************************************
  * Function definitions
@@ -51,7 +51,7 @@ static void FlowReconstruction(const int, const int [restrict], const Real [rest
  * incorrect mark of interfacial nodes near global domain boundaries.
  *
  * The identification process should proceed step by step to correctly handle
- * all these relationships and avoid interference between each step,
+ * all the relationships and avoid interference between each step,
  * interference may happen if identification processes are crunched together.
  *
  * Moreover, whenever identifying a node, link the node to geometry, which 
@@ -69,7 +69,7 @@ void ComputeGeometryDomain(Space *space, const Model *model)
 static void InitializeGeometryDomain(Space *space)
 {
     const Partition *restrict part = &(space->part);
-    Node *node = space->node;
+    Node *const node = space->node;
     int idx = 0; /* linear array index math variable */
     for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
         for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
@@ -107,7 +107,7 @@ static void IdentifyGeometryNode(Space *space)
 {
     const Partition *restrict part = &(space->part);
     Geometry *geo = &(space->geo);
-    Node *node = space->node;
+    Node *const node = space->node;
     Polyhedron *poly = NULL;
     const IntVec nMin = {part->ns[PIN][X][MIN], part->ns[PIN][Y][MIN], part->ns[PIN][Z][MIN]};
     const IntVec nMax = {part->ns[PIN][X][MAX], part->ns[PIN][Y][MAX], part->ns[PIN][Z][MAX]};
@@ -187,11 +187,14 @@ static void IdentifyGeometryNode(Space *space)
  * Note: if to apply this mechanism to all the regions, a new field identifier
  * that copy the geometry identifier shall be used rather than simply reusing
  * the face identifier to play this dual role.
+ * Note: for two area touching objects separating instantly, fresh normal
+ * nodes are generated without any valid neighbours, which situation requires 
+ * further treatment, which is unsolved currently.
  */
 static void IdentifyInterfacialNode(Space *space, const Model *model)
 {
     const Partition *restrict part = &(space->part);
-    Node *node = space->node;
+    Node *const node = space->node;
     int idx = 0; /* linear array index math variable */
     const int end = LAYER1 + part->ng * (LAYER2 - LAYER1); /* max search layer is ng + 1 */
     for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
@@ -228,7 +231,7 @@ static void IdentifyInterfacialNode(Space *space, const Model *model)
     return;
 }
 static int InterfacialState(const int k, const int j, const int i, const int geoID, const int end,
-        const int path[restrict][DIMS], const Node *node, const Partition *part)
+        const int path[restrict][DIMS], const Node *const node, const Partition *part)
 {
     /*
      * Search around the specified node to check whether current node
@@ -255,7 +258,7 @@ static int InterfacialState(const int k, const int j, const int i, const int geo
     return 0;
 }
 static int GhostState(const int k, const int j, const int i, const int geoID, const int end,
-        const int path[restrict][DIMS], const Node *node, const Partition *part)
+        const int path[restrict][DIMS], const Node *const node, const Partition *part)
 {
     /*
      * Search around the specified node to check whether current node
@@ -286,7 +289,7 @@ void ImmersedBoundaryTreatment(const int tn, Space *space, const Model *model)
     const Partition *restrict part = &(space->part);
     Geometry *geo = &(space->geo);
     Polyhedron *poly = NULL;
-    Node *node = space->node;
+    Node *const node = space->node;
     int idx = 0; /* linear array index math variable */
     const RealVec sMin = {part->domain[X][MIN], part->domain[Y][MIN], part->domain[Z][MIN]};
     const RealVec d = {part->d[X], part->d[Y], part->d[Z]};
@@ -381,7 +384,7 @@ void ComputeGeometricData(const int faceID, const Polyhedron *poly, const Real p
     return;
 }
 static void FlowReconstruction(const int tn, const int n[restrict], const Real p[restrict], const int h,
-        const int type, const Polyhedron *poly, const Partition *part, const Node *node, const Model *model,
+        const int type, const Polyhedron *poly, const Partition *part, const Node *const node, const Model *model,
         const Real pO[restrict], const Real N[restrict], Real UoO[restrict], Real UoI[restrict])
 {
     Real weightSum = 0.0; /* store the sum of weights */
@@ -424,7 +427,7 @@ static void FlowReconstruction(const int tn, const int n[restrict], const Real p
     return;
 }
 static Real InverseDistanceWeighting(const int tn, const int n[restrict], const Real p[restrict], const int h, 
-        const int type, const Partition *part, const Node *node, const Model *model, Real Uo[restrict])
+        const int type, const Partition *part, const Node *const node, const Model *model, Real Uo[restrict])
 {
     int idx = 0; /* linear array index math variable */
     const int idxMax = part->n[X] * part->n[Y] * part->n[Z];

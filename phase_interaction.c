@@ -78,7 +78,7 @@ static void SurfaceForceIntegration(Space *space, const Model *model)
     const Partition *restrict part = &(space->part);
     Geometry *geo = &(space->geo);
     Polyhedron *poly = NULL;
-    const Node *node = space->node;
+    const Node *const node = space->node;
     int idx = 0; /* linear array index math variable */
     RealVec pG = {0.0}; /* ghost point */
     RealVec pO = {0.0}; /* boundary point */

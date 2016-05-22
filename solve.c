@@ -120,7 +120,7 @@ static Real ComputeTimeStep(const Time *time, const Space *space, const Model *m
     const Partition *restrict part = &(space->part);
     const Geometry *geo = &(space->geo);
     const Polyhedron *poly = NULL;
-    const Node *node = space->node;
+    const Node *const node = space->node;
     const Real *restrict U = NULL;
     int idx = 0; /* linear array index math variable */
     Real speed = 0.0;

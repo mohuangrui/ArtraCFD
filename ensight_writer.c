@@ -214,7 +214,7 @@ static int WriteStructuredData(const Space *space, const Model *model, EnsightSe
     EnsightReal data = 0.0; /* the Ensight data format */
     const char scalar[7][5] = {"rho", "u", "v", "w", "p", "T", "gid"};
     const Partition *restrict part = &(space->part);
-    const Node *node = space->node;
+    const Node *const node = space->node;
     const Real *restrict U = NULL;
     int idx = 0; /* linear array index math variable */
     for (int count = 0; count < 7; ++count) {

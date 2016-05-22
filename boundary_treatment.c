@@ -35,7 +35,7 @@ void BoundaryCondtionsAndTreatments(const int tn, Space *space, const Model *mod
 static void ApplyBoundaryConditions(const int p, const int tn, Space *space, const Model *model)
 {
     const Partition *restrict part = &(space->part);
-    Node *node = space->node;
+    Node *const node = space->node;
     Real *restrict UG = NULL;
     Real *restrict UI = NULL;
     Real *restrict UO = NULL;

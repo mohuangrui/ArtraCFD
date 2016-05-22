@@ -30,7 +30,7 @@
  *      Compute reconstructed convective fluxes by WENO scheme.
  */
 extern void WENO(const int tn, const int s, const int k, const int j, const int i, 
-        const int partn[restrict], const Node *node, const Model *model, Real Fhat[restrict]);
+        const int partn[restrict], const Node *const node, const Model *model, Real Fhat[restrict]);
 #endif
 /* a good practice: end file with a newline */
 

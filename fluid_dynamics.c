@@ -28,10 +28,10 @@
  * generally clarifies the code.
  */
 typedef void (*ConvectiveFluxReconstructor)(const int, const int, const int,
-        const int, const int, const int [restrict], const Node *, 
+        const int, const int, const int [restrict], const Node *const , 
         const Model *, Real [restrict]);
 typedef void (*DiffusiveFluxReconstructor)(const int, const int, const int, 
-        const int, const int [restrict], const Real [restrict], const Node *, 
+        const int, const int [restrict], const Real [restrict], const Node *const , 
         const Model *, Real [restrict]);
 /****************************************************************************
  * Static Function Declarations
@@ -40,21 +40,21 @@ static void RungeKutta(const Real, const int, Space *, const Model *);
 static void LLL(const Real, const Real, const Real, const int,
         const int, const int, const int, Space *, const Model *);
 static void NumericalConvectiveFlux(const int, const int, const int, const int,
-        const int, const int [restrict], const Node *, const Model *, Real [restrict]);
+        const int, const int [restrict], const Node *const , const Model *, Real [restrict]);
 static void NumericalDiffusiveFlux(const int, const int, const int, const int, 
-        const int, const int [restrict], const Real [restrict], const Node *, 
+        const int, const int [restrict], const Real [restrict], const Node *const , 
         const Model *, Real [restrict]);
 static void NumericalDiffusiveFluxX(const int, const int, const int, 
-        const int, const int [restrict], const Real [restrict], const Node *, 
+        const int, const int [restrict], const Real [restrict], const Node *const , 
         const Model *, Real [restrict]);
 static void NumericalDiffusiveFluxY(const int, const int, const int, 
-        const int, const int [restrict], const Real [restrict], const Node *, 
+        const int, const int [restrict], const Real [restrict], const Node *const , 
         const Model *, Real [restrict]);
 static void NumericalDiffusiveFluxZ(const int, const int, const int, 
-        const int, const int [restrict], const Real [restrict], const Node *, 
+        const int, const int [restrict], const Real [restrict], const Node *const , 
         const Model *, Real [restrict]);
 static void SourceVector(const int, const int, const int, const int,
-        const int [restrict], const Node *, const Model *, Real [restrict]);
+        const int [restrict], const Node *const , const Model *, Real [restrict]);
 static Real Viscosity(const Real);
 static Real PrandtlNumber(void);
 /****************************************************************************
@@ -124,7 +124,7 @@ static void LLL(const Real dt, const Real coeA, const Real coeB, const int to,
         const int tn, const int tm, const int s, Space *space, const Model *model)
 {
     const Partition *restrict part = &(space->part);
-    Node *node = space->node;
+    Node *const node = space->node;
     const Real *restrict Uo = NULL;
     const Real *restrict Un = NULL;
     Real *restrict Um = NULL;
@@ -174,20 +174,20 @@ static void LLL(const Real dt, const Real coeA, const Real coeB, const int to,
     return;
 }
 static void NumericalConvectiveFlux(const int tn, const int s, const int k, const int j, const int i, 
-        const int partn[restrict], const Node *node, const Model *model, Real Fhat[restrict])
+        const int partn[restrict], const Node *const node, const Model *model, Real Fhat[restrict])
 {
     ReconstructConvectiveFlux[model->scheme](tn, s, k, j, i, partn, node, model, Fhat);
     return;
 }
 static void NumericalDiffusiveFlux(const int tn, const int s, const int k, const int j, 
-        const int i, const int partn[restrict], const Real dd[restrict], const Node *node, 
+        const int i, const int partn[restrict], const Real dd[restrict], const Node *const node, 
         const Model *model, Real Fvhat[restrict])
 {
     ReconstructDiffusiveFlux[s](tn, k, j, i, partn, dd, node, model, Fvhat);
     return;
 }
 static void NumericalDiffusiveFluxX(const int tn, const int k, const int j, 
-        const int i, const int partn[restrict], const Real dd[restrict], const Node *node, 
+        const int i, const int partn[restrict], const Real dd[restrict], const Node *const node, 
         const Model *model, Real Fvhat[restrict])
 {
     const int idx = IndexNode(k, j, i, partn[Y], partn[X]);
@@ -272,7 +272,7 @@ static void NumericalDiffusiveFluxX(const int tn, const int k, const int j,
     return;
 }
 static void NumericalDiffusiveFluxY(const int tn, const int k, const int j, 
-        const int i, const int partn[restrict], const Real dd[restrict], const Node *node, 
+        const int i, const int partn[restrict], const Real dd[restrict], const Node *const node, 
         const Model *model, Real Fvhat[restrict])
 {
     const int idx = IndexNode(k, j, i, partn[Y], partn[X]);
@@ -357,7 +357,7 @@ static void NumericalDiffusiveFluxY(const int tn, const int k, const int j,
     return ;
 }
 static void NumericalDiffusiveFluxZ(const int tn, const int k, const int j, 
-        const int i, const int partn[restrict], const Real dd[restrict], const Node *node, 
+        const int i, const int partn[restrict], const Real dd[restrict], const Node *const node, 
         const Model *model, Real Fvhat[restrict])
 {
     const int idx = IndexNode(k, j, i, partn[Y], partn[X]);
@@ -446,7 +446,7 @@ static void NumericalDiffusiveFluxZ(const int tn, const int k, const int j,
  * consistency with spatial splitting.
  */
 static void SourceVector(const int tn, const int k, const int j, const int i,
-        const int partn[restrict], const Node *node, const Model *model, Real Phi[restrict])
+        const int partn[restrict], const Node *const node, const Model *model, Real Phi[restrict])
 {
     const Real coe = 1.0 / 3.0;
     const int idx = IndexNode(k, j, i, partn[Y], partn[X]);

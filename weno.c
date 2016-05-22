@@ -28,7 +28,7 @@ typedef enum {
  * Static Function Declarations
  ****************************************************************************/
 static void CharacteristicProjection(const int, const int, const int, const int, const int, 
-        const int [restrict], const Node *, Real [restrict][DIMU], const Real [restrict],
+        const int [restrict], const Node *const , Real [restrict][DIMU], const Real [restrict],
         const int, const int, Real [restrict][NSTENCIL]);
 static void WENO5(Real [restrict][NSTENCIL], Real [restrict]);
 static void InverseProjection(Real [restrict][DIMU], const Real [restrict], 
@@ -37,7 +37,7 @@ static void InverseProjection(Real [restrict][DIMU], const Real [restrict],
  * Function definitions
  ****************************************************************************/
 void WENO(const int tn, const int s, const int k, const int j, const int i, 
-        const int partn[restrict], const Node *node, const Model *model, Real Fhat[restrict])
+        const int partn[restrict], const Node *const node, const Model *model, Real Fhat[restrict])
 {
     const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
     const int idxL = IndexNode(k, j, i, partn[Y], partn[X]);
@@ -71,7 +71,7 @@ void WENO(const int tn, const int s, const int k, const int j, const int i,
     return;
 }
 static void CharacteristicProjection(const int tn, const int s, const int k, const int j, const int i, 
-        const int partn[restrict], const Node *node, Real L[restrict][DIMU], const Real Lambda[restrict],
+        const int partn[restrict], const Node *const node, Real L[restrict][DIMU], const Real Lambda[restrict],
         const int startN, const int wind, Real H[restrict][NSTENCIL])
 {
     const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */

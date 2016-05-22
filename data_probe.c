@@ -27,7 +27,7 @@ int WriteFieldDataAtProbes(const Time *time, const Space *space, const Model *mo
     FILE *filePointer = NULL;
     String fileName = {'\0'};
     const Partition *restrict part = &(space->part);
-    const Node *node = space->node;
+    const Node *const node = space->node;
     const Real *restrict U = NULL;
     int idx = 0; /* linear array index math variable */
     Real Uo[DIMUo] = {0.0};
