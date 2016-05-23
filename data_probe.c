@@ -30,6 +30,7 @@ int WriteFieldDataAtProbes(const Time *time, const Space *space, const Model *mo
     const Node *const node = space->node;
     const Real *restrict U = NULL;
     int idx = 0; /* linear array index math variable */
+    int idxOld = 0; /* linear array index math variable */
     Real Uo[DIMUo] = {0.0};
     const IntVec nMin = {part->ns[PIN][X][MIN], part->ns[PIN][Y][MIN], part->ns[PIN][Z][MIN]};
     const IntVec nMax = {part->ns[PIN][X][MAX], part->ns[PIN][Y][MAX], part->ns[PIN][Z][MAX]};
@@ -56,11 +57,16 @@ int WriteFieldDataAtProbes(const Time *time, const Space *space, const Model *mo
         dl[X] = (p2[X] - p1[X]) / (Real)(stepN);
         dl[Y] = (p2[Y] - p1[Y]) / (Real)(stepN);
         dl[Z] = (p2[Z] - p1[Z]) / (Real)(stepN);
+        idxOld = -1; /* used to avoid repeating node for tiny step sizes */
         for (int m = 0; m <= stepN; ++m) {
             const int i = ValidNodeSpace(NodeSpace(p1[X] + m * dl[X], sMin[X], dd[X], ng), nMin[X], nMax[X]);
             const int j = ValidNodeSpace(NodeSpace(p1[Y] + m * dl[Y], sMin[Y], dd[Y], ng), nMin[Y], nMax[Y]);
             const int k = ValidNodeSpace(NodeSpace(p1[Z] + m * dl[Z], sMin[Z], dd[Z], ng), nMin[Z], nMax[Z]);
             idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
+            if (idxOld == idx) {
+                continue;
+            }
+            idxOld = idx; /* record */
             U = node[idx].U[TO];
             PrimitiveByConservative(model->gamma, model->gasR, U, Uo);
             fprintf(filePointer, "%d     %.6g      %.6g     %.6g      %.6g      %.6g      %.6g\n",

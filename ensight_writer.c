@@ -212,12 +212,12 @@ static int WriteStructuredData(const Space *space, const Model *model, EnsightSe
 {
     FILE *filePointer = NULL;
     EnsightReal data = 0.0; /* the Ensight data format */
-    const char scalar[7][5] = {"rho", "u", "v", "w", "p", "T", "gid"};
+    const char scalar[8][5] = {"rho", "u", "v", "w", "p", "T", "gid", "lid"};
     const Partition *restrict part = &(space->part);
     const Node *const node = space->node;
     const Real *restrict U = NULL;
     int idx = 0; /* linear array index math variable */
-    for (int count = 0; count < 7; ++count) {
+    for (int count = 0; count < 8; ++count) {
         snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, scalar[count]);
         filePointer = fopen(enSet->fileName, "wb");
         if (NULL == filePointer) {
@@ -260,6 +260,10 @@ static int WriteStructuredData(const Space *space, const Model *model, EnsightSe
                                 break;
                             case 6: /* node flag */
                                 data = node[idx].geoID;
+                                break;
+                            case 7: /* layer flag */
+                                data = node[idx].layerID;
+                                break;
                             default:
                                 break;
                         }

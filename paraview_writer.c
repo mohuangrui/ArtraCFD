@@ -117,7 +117,7 @@ static int WriteStructuredData(const Space *space, const Model *model, ParaviewS
     }
     ParaviewReal data = 0.0; /* paraview scalar data */
     ParaviewReal Vec[3] = {0.0}; /* paraview vector data */
-    const char scalar[7][5] = {"rho", "u", "v", "w", "p", "T", "gid"};
+    const char scalar[8][5] = {"rho", "u", "v", "w", "p", "T", "gid", "lid"};
     const Partition *restrict part = &(space->part);
     const Node *const node = space->node;
     const Real *restrict U = NULL;
@@ -130,7 +130,7 @@ static int WriteStructuredData(const Space *space, const Model *model, ParaviewS
     fprintf(filePointer, "    <Piece Extent=\"%d %d %d %d %d %d\">\n", 
             0, part->m[X] - 2, 0, part->m[Y] - 2, 0, part->m[Z] - 2);
     fprintf(filePointer, "      <PointData>\n");
-    for (int count = 0; count < 7; ++count) {
+    for (int count = 0; count < 8; ++count) {
         fprintf(filePointer, "        <DataArray type=\"%s\" Name=\"%s\" format=\"ascii\">\n", 
                 paraSet->floatType, scalar[count]);
         fprintf(filePointer, "          ");
@@ -160,6 +160,10 @@ static int WriteStructuredData(const Space *space, const Model *model, ParaviewS
                             break;
                         case 6: /* node flag */
                             data = node[idx].geoID;
+                            break;
+                        case 7: /* layer flag */
+                            data = node[idx].layerID;
+                            break;
                         default:
                             break;
                     }
