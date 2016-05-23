@@ -27,7 +27,7 @@
  */
 typedef void (*EigenvalueSplitter)(const Real[restrict], Real [restrict], Real [restrict]);
 typedef void (*EigenvectorLComputer)(const Real, const Real, const Real, const Real, 
-        const Real, const Real, const Real, Real [restrict][DIMU]);
+        const Real, const Real, Real [restrict][DIMU]);
 typedef void (*EigenvectorRComputer)(const Real, const Real, const Real, const Real,
         const Real, const Real, Real [restrict][DIMU]);
 typedef void (*ConvectiveFluxComputer)(const Real, const Real, const Real, const Real, 
@@ -38,11 +38,11 @@ typedef void (*ConvectiveFluxComputer)(const Real, const Real, const Real, const
 static void LocalLaxFriedrichs(const Real [restrict], Real [restrict], Real [restrict]);
 static void StegerWarming(const Real [restrict], Real [restrict], Real [restrict]);
 static void EigenvectorLX(const Real, const Real, const Real, const Real, 
-        const Real, const Real, const Real, Real [restrict][DIMU]);
+        const Real, const Real, Real [restrict][DIMU]);
 static void EigenvectorLY(const Real, const Real, const Real, const Real, 
-        const Real, const Real, const Real, Real [restrict][DIMU]);
+        const Real, const Real, Real [restrict][DIMU]);
 static void EigenvectorLZ(const Real, const Real, const Real, const Real, 
-        const Real, const Real, const Real, Real [restrict][DIMU]);
+        const Real, const Real, Real [restrict][DIMU]);
 static void EigenvectorRX(const Real, const Real, const Real, const Real,
         const Real, const Real, Real [restrict][DIMU]);
 static void EigenvectorRY(const Real, const Real, const Real, const Real,
@@ -145,10 +145,10 @@ void EigenvectorL(const int s, const Real gamma, const Real Uo[restrict], Real L
     const Real q = 0.5 * (u * u + v * v + w * w);
     const Real b = (gamma - 1.0) / (2.0 * c * c);
     const Real d = 1.0 / (2.0 * c); 
-    ComputeEigenvectorL[s](u, v, w, c, q, b, d, L);
+    ComputeEigenvectorL[s](u, v, w, q, b, d, L);
     return;
 }
-static void EigenvectorLX(const Real u, const Real v, const Real w, const Real c, 
+static void EigenvectorLX(const Real u, const Real v, const Real w, 
         const Real q, const Real b, const Real d, Real L[restrict][DIMU])
 {
     L[0][0] = b * q + d * u;          L[0][1] = -b * u - d;             L[0][2] = -b * v;
@@ -163,7 +163,7 @@ static void EigenvectorLX(const Real u, const Real v, const Real w, const Real c
     L[4][3] = -b * w;                 L[4][4] = b;
     return;
 }
-static void EigenvectorLY(const Real u, const Real v, const Real w, const Real c, 
+static void EigenvectorLY(const Real u, const Real v, const Real w, 
         const Real q, const Real b, const Real d, Real L[restrict][DIMU])
 {
     L[0][0] = b * q + d * v;          L[0][1] = -b * u;                 L[0][2] = -b * v - d;
@@ -178,7 +178,7 @@ static void EigenvectorLY(const Real u, const Real v, const Real w, const Real c
     L[4][3] = -b * w;                 L[4][4] = b;
     return;
 }
-static void EigenvectorLZ(const Real u, const Real v, const Real w, const Real c, 
+static void EigenvectorLZ(const Real u, const Real v, const Real w, 
         const Real q, const Real b, const Real d, Real L[restrict][DIMU])
 {
     L[0][0] = b * q + d * w;          L[0][1] = -b * u;                 L[0][2] = -b * v;

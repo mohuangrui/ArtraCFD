@@ -97,7 +97,7 @@ static void SurfaceForceIntegration(Space *space, const Model *model)
     RealVec Tau = {0.0}; /* torque */
     for (int n = 0; n < geo->totalN; ++n) {
         poly = geo->poly + n;
-        if (1.0e200 < poly->rho) { /* surface force negligible */
+        if (1.0e36 < poly->rho) { /* surface force negligible */
             continue;
         }
         /* reset some non accumulative information to zero */

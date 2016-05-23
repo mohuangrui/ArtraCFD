@@ -45,7 +45,7 @@ int ReadStlFile(const char *fileName, Polyhedron *poly)
     fread(&facetN, sizeof(StlLongInt), 1, filePointer);
     poly->faceN = facetN;
     poly->facet = AssignStorage(poly->faceN * sizeof(*poly->facet));
-    for (int n = 0; n < facetN; ++n) {
+    for (unsigned int n = 0; n < facetN; ++n) {
         fread(&facetData, sizeof(StlReal), 1, filePointer);
         poly->facet[n].N[X] = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
@@ -89,7 +89,7 @@ int WriteStlFile(const char *fileName, const Polyhedron *poly)
     fwrite(header, sizeof(char), sizeof(StlString), filePointer);
     facetN = poly->faceN;
     fwrite(&facetN, sizeof(StlLongInt), 1, filePointer);
-    for (int n = 0; n < facetN; ++n) {
+    for (unsigned int n = 0; n < facetN; ++n) {
         facetData = poly->facet[n].N[X];
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
         facetData = poly->facet[n].N[Y];

@@ -69,6 +69,7 @@ static int GlobalInitialization(Space *space)
         node[idx].layerID = NONE;
         node[idx].ghostID = NONE;
     }
+    return 0;
 }
 static int InitializeFieldData(Space *space, const Model *model)
 {
