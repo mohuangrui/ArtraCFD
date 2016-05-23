@@ -79,7 +79,14 @@ static void SurfaceForceIntegration(Space *space, const Model *model)
     Geometry *geo = &(space->geo);
     Polyhedron *poly = NULL;
     const Node *const node = space->node;
+    const IntVec nMin = {part->ns[PIN][X][MIN], part->ns[PIN][Y][MIN], part->ns[PIN][Z][MIN]};
+    const IntVec nMax = {part->ns[PIN][X][MAX], part->ns[PIN][Y][MAX], part->ns[PIN][Z][MAX]};
+    const RealVec sMin = {part->domain[X][MIN], part->domain[Y][MIN], part->domain[Z][MIN]};
+    const RealVec d = {part->d[X], part->d[Y], part->d[Z]};
+    const RealVec dd = {part->dd[X], part->dd[Y], part->dd[Z]};
+    const int ng = part->ng;
     int idx = 0; /* linear array index math variable */
+    int box[DIMS][LIMIT] = {{0}}; /* bounding box in node space */
     RealVec pG = {0.0}; /* ghost point */
     RealVec pO = {0.0}; /* boundary point */
     RealVec pI = {0.0}; /* image point */
@@ -87,10 +94,13 @@ static void SurfaceForceIntegration(Space *space, const Model *model)
     Real p = {0.0};
     RealVec r = {0.0}; /* position vector */
     RealVec F = {0.0}; /* force */
-    RealVec Tau = {0.0}; /* touque */
-    /* reset some non accumulative information of particles to zero */
+    RealVec Tau = {0.0}; /* torque */
     for (int n = 0; n < geo->totalN; ++n) {
         poly = geo->poly + n;
+        if (1.0e200 < poly->rho) { /* surface force negligible */
+            continue;
+        }
+        /* reset some non accumulative information to zero */
         poly->F[X] = 0; /* fx */
         poly->F[Y] = 0; /* fy */
         poly->F[Z] = 0; /* fz */
@@ -98,48 +108,49 @@ static void SurfaceForceIntegration(Space *space, const Model *model)
         poly->Tau[Y] = 0; /* torque y */
         poly->Tau[Z] = 0; /* torque z */
         poly->nodeN = 0; /* tally */
-    }
-    for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
-        for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
-            for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
-                idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
-                if (0 == node[idx].geoID) {
-                    continue;
+        /* determine search range according to bounding box of polyhedron and valid node space */
+        for (int s = 0; s < DIMS; ++s) {
+            box[s][MIN] = ValidNodeSpace(NodeSpace(poly->box[s][MIN], sMin[s], dd[s], ng), nMin[s], nMax[s]);
+            box[s][MAX] = ValidNodeSpace(NodeSpace(poly->box[s][MAX], sMin[s], dd[s], ng), nMin[s], nMax[s]) + 1;
+        }
+        for (int k = box[Z][MIN]; k < box[Z][MAX]; ++k) {
+            for (int j = box[Y][MIN]; j < box[Y][MAX]; ++j) {
+                for (int i = box[X][MIN]; i < box[X][MAX]; ++i) {
+                    idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
+                    if ((1 != node[idx].ghostID) && (n + 1 != node[idx].geoID)) {
+                        continue;
+                    }
+                    pG[X] = PointSpace(i, sMin[X], d[X], ng);
+                    pG[Y] = PointSpace(j, sMin[Y], d[Y], ng);
+                    pG[Z] = PointSpace(k, sMin[Z], d[Z], ng);
+                    ComputeGeometricData(node[idx].faceID, poly, pG, pO, pI, N);
+                    p = ComputePressure(model->gamma, node[idx].U[TO]);
+                    r[X] = pO[X] - poly->O[X];
+                    r[Y] = pO[Y] - poly->O[Y];
+                    r[Z] = pO[Z] - poly->O[Z];
+                    F[X] = -p * N[X];
+                    F[Y] = -p * N[Y];
+                    F[Z] = -p * N[Z];
+                    Cross(r, F, Tau);
+                    poly->F[X] = poly->F[X] + F[X]; /* integrate fx */
+                    poly->F[Y] = poly->F[Y] + F[Y]; /* integrate fy */
+                    poly->F[Z] = poly->F[Z] + F[Z]; /* integrate fz */
+                    poly->Tau[X] = poly->Tau[X] + Tau[X]; /* integrate torque x */
+                    poly->Tau[Y] = poly->Tau[Y] + Tau[Y]; /* integrate torque y */
+                    poly->Tau[Z] = poly->Tau[Z] + Tau[Z]; /* integrate torque z */
+                    ++(poly->nodeN); /* count number of ghosts */
                 }
-                if (1 != node[idx].ghostID) {
-                    continue;
-                }
-                poly = geo->poly + node[idx].geoID - 1;
-                ComputeGeometricData(node[idx].faceID, poly, pG, pO, pI, N);
-                p = ComputePressure(model->gamma, node[idx].U[TO]);
-                r[X] = pO[X] - poly->O[X];
-                r[Y] = pO[Y] - poly->O[Y];
-                r[Z] = pO[Z] - poly->O[Z];
-                F[X] = -p * N[X];
-                F[Y] = -p * N[Y];
-                F[Z] = -p * N[Z];
-                Cross(r, F, Tau);
-                poly->F[X] = poly->F[X] + F[X]; /* integrate fx */
-                poly->F[Y] = poly->F[Y] + F[Y]; /* integrate fy */
-                poly->F[Z] = poly->F[Z] + F[Z]; /* integrate fz */
-                poly->Tau[X] = poly->Tau[X] + Tau[X]; /* integrate torque x */
-                poly->Tau[Y] = poly->Tau[Y] + Tau[Y]; /* integrate torque y */
-                poly->Tau[Z] = poly->Tau[Z] + Tau[Z]; /* integrate torque z */
-                ++(poly->nodeN); /* count number of ghosts */
             }
         }
-    }
-    /* calibrate the sum of discrete forces into integration */
-    for (int n = 0; n < geo->totalN; ++n) {
-        poly = geo->poly + n;
+        /* calibrate the sum of discrete forces into integration */
         poly->F[X] = poly->F[X] * poly->area / poly->nodeN;
         poly->F[Y] = poly->F[Y] * poly->area / poly->nodeN;
         poly->F[Z] = poly->F[Z] * poly->area / poly->nodeN;
         poly->Tau[X] = poly->Tau[X] * poly->area / poly->nodeN;
         poly->Tau[Y] = poly->Tau[Y] * poly->area / poly->nodeN;
         poly->Tau[Z] = poly->Tau[Z] * poly->area / poly->nodeN;
+        return;
     }
-    return;
 }
 /* a good practice: end file with a newline */
 
