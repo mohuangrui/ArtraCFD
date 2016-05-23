@@ -54,11 +54,11 @@ void ConvertPolyhedron(Polyhedron *poly)
 }
 void AllocatePolyhedronMemory(const int vertN, const int faceN, Polyhedron *poly)
 {
-    /* edgeN = faceN * 3 / 2 */
+    const int edgeN = (int)(1.5 * faceN + 0.5); /* edgeN = faceN * 3 / 2 */
     poly->f = AssignStorage(faceN * sizeof(*poly->f));
     poly->Nf = AssignStorage(faceN * sizeof(*poly->Nf));
-    poly->e = AssignStorage((int)(1.5 * faceN + 0.5) * sizeof(*poly->e));
-    poly->Ne = AssignStorage((int)(1.5 * faceN + 0.5) * sizeof(*poly->Ne));
+    poly->e = AssignStorage(edgeN * sizeof(*poly->e));
+    poly->Ne = AssignStorage(edgeN * sizeof(*poly->Ne));
     poly->v = AssignStorage(vertN * sizeof(*poly->v));
     poly->Nv = AssignStorage(vertN * sizeof(*poly->Nv));
 }
@@ -121,11 +121,11 @@ void Transformation(const Real scale[restrict], const Real angle[restrict],
         {rotate[0][1], rotate[1][1], rotate[2][1]},
         {rotate[0][2], rotate[1][2], rotate[2][2]}};
     const Real num = 1.0 / sqrt(2.0);
-    const Real axis[6][DIMS] = { /* direction vector of axis xx, yy, zz, xy, yz, zx */
+    const Real axe[6][DIMS] = { /* direction vector of axis xx, yy, zz, xy, yz, zx */
         {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}, 
         {num, num, 0.0}, {0.0, num, num}, {num, 0.0, num}};
-    RealVec axe = {0.0}; /* direction vector of axis in rotated frame */
-    Real Inew[6] = {0.0}; /* inertia tensor after rotation */
+    RealVec axis = {0.0}; /* direction vector of axis in rotated frame */
+    Real I[6] = {0.0}; /* inertia tensor after rotation */
     /* transforming vertex */
     for (int n = 0; n < poly->vertN; ++n) {
         TransformVertex(poly->O, scale, rotate, offset, poly->v[n]);
@@ -150,14 +150,14 @@ void Transformation(const Real scale[restrict], const Real angle[restrict],
     }
     /* transform inertial tensor */
     for (int n = 0; n < 6; ++n) {
-        axe[X] = Dot(invrot[X], axis[n]);
-        axe[Y] = Dot(invrot[Y], axis[n]);
-        axe[Z] = Dot(invrot[Z], axis[n]);
-        Inew[n] = TransformInertia(poly->I, axe);
+        axis[X] = Dot(invrot[X], axe[n]);
+        axis[Y] = Dot(invrot[Y], axe[n]);
+        axis[Z] = Dot(invrot[Z], axe[n]);
+        I[n] = TransformInertia(poly->I, axis);
     }
-    poly->I[X][X] = Inew[0];  poly->I[X][Y] = -Inew[3]; poly->I[X][Z] = -Inew[5];
-    poly->I[Y][X] = -Inew[3]; poly->I[Y][Y] = Inew[1];  poly->I[Y][Z] = -Inew[4];
-    poly->I[Z][X] = -Inew[5]; poly->I[Z][Y] = -Inew[4]; poly->I[Z][Z] = Inew[2];
+    poly->I[X][X] = I[0];  poly->I[X][Y] = -I[3]; poly->I[X][Z] = -I[5];
+    poly->I[Y][X] = -I[3]; poly->I[Y][Y] = I[1];  poly->I[Y][Z] = -I[4];
+    poly->I[Z][X] = -I[5]; poly->I[Z][Y] = -I[4]; poly->I[Z][Z] = I[2];
     /* centroid should be transformed at last */
     poly->O[X] = poly->O[X] + offset[X];
     poly->O[Y] = poly->O[Y] + offset[Y];
@@ -167,7 +167,6 @@ void Transformation(const Real scale[restrict], const Real angle[restrict],
 static void TransformVertex(const Real O[restrict], const Real scale[restrict], 
         const Real rotate[restrict][DIMS], const Real offset[restrict], Real v[restrict])
 {
-    RealVec tmp = {0.0};
     /* translate reference frame to a parallel frame at centroid */
     v[X] = v[X] - O[X];
     v[Y] = v[Y] - O[Y];
@@ -177,27 +176,29 @@ static void TransformVertex(const Real O[restrict], const Real scale[restrict],
     v[Y] = v[Y] * scale[Y];
     v[Z] = v[Z] * scale[Z];
     /* rotate */
-    tmp[X] = Dot(rotate[X], v);
-    tmp[Y] = Dot(rotate[Y], v);
-    tmp[Z] = Dot(rotate[Z], v);
+    const RealVec tmp = {v[X], v[Y], v[Z]};
+    v[X] = Dot(rotate[X], tmp);
+    v[Y] = Dot(rotate[Y], tmp);
+    v[Z] = Dot(rotate[Z], tmp);
     /* translate with offset and then translate reference back to origin */
-    v[X] = tmp[X] + offset[X] + O[X];
-    v[Y] = tmp[Y] + offset[Y] + O[Y];
-    v[Z] = tmp[Z] + offset[Z] + O[Z];
+    v[X] = v[X] + offset[X] + O[X];
+    v[Y] = v[Y] + offset[Y] + O[Y];
+    v[Z] = v[Z] + offset[Z] + O[Z];
     return;
 }
 static void TransformNormal(const Real matrix[restrict][DIMS], Real N[restrict])
 {
-    N[X] = Dot(matrix[X], N);
-    N[Y] = Dot(matrix[Y], N);
-    N[Z] = Dot(matrix[Z], N);
+    const RealVec tmp = {N[X], N[Y], N[Z]};
+    N[X] = Dot(matrix[X], tmp);
+    N[Y] = Dot(matrix[Y], tmp);
+    N[Z] = Dot(matrix[Z], tmp);
     /* normalization is needed if anisotropic transformation happens */
     return;
 }
-static Real TransformInertia(Real I[restrict][DIMS], const Real axe[restrict])
+static Real TransformInertia(Real I[restrict][DIMS], const Real axis[restrict])
 {
-    return I[X][X] * axe[X] * axe[X] + I[Y][Y] * axe[Y] * axe[Y] + I[Z][Z] * axe[Z] * axe[Z] +
-        2.0 * I[X][Y] * axe[X] * axe[Y] + 2.0 * I[Y][Z] * axe[Y] * axe[Z] + 2.0 * I[Z][X] * axe[Z] * axe[X];
+    return I[X][X] * axis[X] * axis[X] + I[Y][Y] * axis[Y] * axis[Y] + I[Z][Z] * axis[Z] * axis[Z] +
+        2.0 * I[X][Y] * axis[X] * axis[Y] + 2.0 * I[Y][Z] * axis[Y] * axis[Z] + 2.0 * I[Z][X] * axis[Z] * axis[X];
 }
 void ComputeGeometryParameters(const int collapse, Geometry *geo)
 {
@@ -279,8 +280,8 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
     /*
      * Gelder, A. V. (1995). Efficient computation of polygon area and
      * polyhedron volume. Graphics Gems V.
-     * Robert Nurnberg, (2013). Calculating the area and centroid of a
-     * polygon and polyhedron. Imperial College London.
+     * Eberly, David. "Polyhedral mass properties (revisited)." Geometric
+     * Tools, LLC, Tech. Rep (2002).
      */
     for (int n = 0; n < poly->faceN; ++n) {
         BuildTriangle(n, poly, v0, v1, v2, e01, e02);

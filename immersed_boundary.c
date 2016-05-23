@@ -216,9 +216,9 @@ static void IdentifyInterfacialNode(Space *space, const Model *model)
                     ConservativeByPrimitive(model->gamma, Uo, node[idx].U[TO]);
                     node[idx].faceID = NONE; /* reset after correct reconstruction */
                 }
-                //if (0 == node[idx].geoID) { /* skip interfacial nodes for main domain */
-                //    continue;
-                //}
+                if (0 == node[idx].geoID) { /* skip interfacial nodes for main domain */
+                    continue;
+                }
                 /* search neighbours to determine interfacial state */
                 node[idx].layerID = InterfacialState(k, j, i, node[idx].geoID, end, part->path, node, part);
                 if ((0 != node[idx].layerID) && (0 != node[idx].geoID)) { /* an interfacial node may be a ghost node */

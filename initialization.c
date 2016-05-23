@@ -52,7 +52,7 @@ int InitializeComputationalDomain(Time *time, Space *space, const Model *model)
     return 0;
 }
 /*
- * Initialize the global domain.
+ * Initialize non zero quantities for the global domain.
  * After this global initialization, future computation only need
  * to focus on the interior computational domain. Physical quantities
  * are initialized into unphysical values to avoid hiding potential
@@ -68,11 +68,6 @@ static int GlobalInitialization(Space *space)
         node[idx].faceID = NONE;
         node[idx].layerID = NONE;
         node[idx].ghostID = NONE;
-        for (int dimT = 0; dimT < DIMT; ++dimT) {
-            for (int dimU = 0; dimU < DIMU; ++dimU) {
-                node[idx].U[dimT][dimU] = 0.0;
-            }
-        }
     }
 }
 static int InitializeFieldData(Space *space, const Model *model)

@@ -115,6 +115,12 @@ int ShowInformation(const char *statement)
  *    when the function exits. In a function, the value returned points to
  *    a static variable or returning a pointer to dynamically allocated 
  *    memory can both be valid.
+ *  - memset treats any memory buffer as a series of bytes, disregarding with
+ *    the specific data type. Therefore, it will not set multi-byte types to a
+ *    specific non-zero value. For example, int a[100]; memset(a, 1, sizeof(a));
+ *    will not set each member of a to the value 1 rather it will set every
+ *    byte in the memory buffer taken up by a to 1, which means every four-byte
+ *    int is set to the value 0x01010101, which is not the same as 0x00000001.
  */
 void *AssignStorage(size_t size)
 {
@@ -122,6 +128,7 @@ void *AssignStorage(size_t size)
     if (NULL == pointer) {
         FatalError("memory allocation failed");
     }
+    memset(pointer, 0, size); /* initialize to zero */
     return pointer;
 }
 /*
