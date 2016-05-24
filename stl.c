@@ -22,8 +22,8 @@
  * STL data format and type control
  */
 typedef char StlString[80]; /* STL string data requires 80 chars */
-typedef unsigned long StlLongInt; /* STL unsigned long integer */
-typedef unsigned int StlInt; /* STL unsigned integer */
+typedef unsigned int StlLongInt; /* STL unsigned long integer */
+typedef unsigned short int StlInt; /* STL unsigned integer */
 typedef float StlReal; /* STL requires real data to be float */
 /****************************************************************************
  * Static Function Declarations
@@ -45,7 +45,7 @@ int ReadStlFile(const char *fileName, Polyhedron *poly)
     fread(&facetN, sizeof(StlLongInt), 1, filePointer);
     poly->faceN = facetN;
     poly->facet = AssignStorage(poly->faceN * sizeof(*poly->facet));
-    for (unsigned int n = 0; n < facetN; ++n) {
+    for (StlLongInt n = 0; n < facetN; ++n) {
         fread(&facetData, sizeof(StlReal), 1, filePointer);
         poly->facet[n].N[X] = facetData;
         fread(&facetData, sizeof(StlReal), 1, filePointer);
@@ -89,7 +89,7 @@ int WriteStlFile(const char *fileName, const Polyhedron *poly)
     fwrite(header, sizeof(char), sizeof(StlString), filePointer);
     facetN = poly->faceN;
     fwrite(&facetN, sizeof(StlLongInt), 1, filePointer);
-    for (unsigned int n = 0; n < facetN; ++n) {
+    for (StlLongInt n = 0; n < facetN; ++n) {
         facetData = poly->facet[n].N[X];
         fwrite(&facetData, sizeof(StlReal), 1, filePointer);
         facetData = poly->facet[n].N[Y];
