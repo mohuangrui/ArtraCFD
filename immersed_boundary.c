@@ -22,7 +22,7 @@
  * Data Structure Declarations
  ****************************************************************************/
 typedef enum {
-    LAYER1 = 18,
+    LAYER1 = 6,
     LAYER2 = 24,
     LAYER3 = 30,
 } PATH;
@@ -196,7 +196,7 @@ static void IdentifyInterfacialNode(Space *space, const Model *model)
     const Partition *restrict part = &(space->part);
     Node *const node = space->node;
     int idx = 0; /* linear array index math variable */
-    const int end = LAYER1 + part->ng * (LAYER2 - LAYER1); /* max search layer is ng + 1 */
+    const int end = LAYER2 + (part->ng - 1) * (LAYER3 - LAYER2); /* max search layer is ng + 1 */
     for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
         for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
             for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {

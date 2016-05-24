@@ -177,7 +177,7 @@ int WriteToLine(FILE **filePointerPointer, const char *lineString)
         ++offset;
     }
     /* redirect to the target line */
-    filePointer = *filePointerPointer; /* reset */
+    rewind(filePointer); /* seek to the beginning of the file stream */
     for (int count = 0; count < offset; ++count) {
         fgets(currentLine, sizeof currentLine, filePointer);
     }

@@ -30,6 +30,7 @@ static int ProgramMemoryAllocate(Space *);
  */
 int Preprocess(Time *time, Space *space, Model *model)
 {
+    ShowInformation("Session End");
     ShowInformation("Preprocessing...");
     fprintf(stdout, "  loading case setting data...\n");
     LoadCaseSettingData(time, space, model);

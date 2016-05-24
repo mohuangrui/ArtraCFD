@@ -66,7 +66,7 @@ static int InitializeTransientCaseFile(EnsightSet *enSet)
     fprintf(filePointer, "scalar per node:  1  w    %s*****.w\n", enSet->rootName); 
     fprintf(filePointer, "scalar per node:  1  p    %s*****.p\n", enSet->rootName); 
     fprintf(filePointer, "scalar per node:  1  T    %s*****.T\n", enSet->rootName); 
-    fprintf(filePointer, "scalar per node:  1  gid   %s*****.gid\n", enSet->rootName); 
+    fprintf(filePointer, "scalar per node:  1  gid  %s*****.gid\n", enSet->rootName); 
     fprintf(filePointer, "vector per node:  1  Vel  %s*****.Vel\n", enSet->rootName); 
     fprintf(filePointer, "\n"); 
     fprintf(filePointer, "TIME\n"); 
@@ -102,7 +102,7 @@ static int WriteCaseFile(const Time *time, EnsightSet *enSet)
     fprintf(filePointer, "scalar per node:    w     %s.w\n", enSet->baseName); 
     fprintf(filePointer, "scalar per node:    p     %s.p\n", enSet->baseName); 
     fprintf(filePointer, "scalar per node:    T     %s.T\n", enSet->baseName); 
-    fprintf(filePointer, "scalar per node:    gid    %s.gid\n", enSet->baseName); 
+    fprintf(filePointer, "scalar per node:    gid   %s.gid\n", enSet->baseName); 
     fprintf(filePointer, "vector per node:    Vel   %s.Vel\n", enSet->baseName); 
     fprintf(filePointer, "\n"); 
     fclose(filePointer); /* close current opened file */
@@ -212,12 +212,12 @@ static int WriteStructuredData(const Space *space, const Model *model, EnsightSe
 {
     FILE *filePointer = NULL;
     EnsightReal data = 0.0; /* the Ensight data format */
-    const char scalar[8][5] = {"rho", "u", "v", "w", "p", "T", "gid", "lid"};
+    const char scalar[7][5] = {"rho", "u", "v", "w", "p", "T", "gid"};
     const Partition *restrict part = &(space->part);
     const Node *const node = space->node;
     const Real *restrict U = NULL;
     int idx = 0; /* linear array index math variable */
-    for (int count = 0; count < 8; ++count) {
+    for (int count = 0; count < 7; ++count) {
         snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, scalar[count]);
         filePointer = fopen(enSet->fileName, "wb");
         if (NULL == filePointer) {
@@ -260,9 +260,6 @@ static int WriteStructuredData(const Space *space, const Model *model, EnsightSe
                                 break;
                             case 6: /* node flag */
                                 data = node[idx].geoID;
-                                break;
-                            case 7: /* layer flag */
-                                data = node[idx].layerID;
                                 break;
                             default:
                                 break;

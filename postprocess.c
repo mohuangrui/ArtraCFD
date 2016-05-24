@@ -27,7 +27,7 @@ int Postprocess(Space *space)
     ShowInformation("Postprocessing...");
     fprintf(stdout, "  releasing memory...\n");
     ProgramMemoryRelease(space);
-    fprintf(stdout, "  computing finished, successfully exit!n");
+    fprintf(stdout, "  computing finished, successfully exit.\n");
     ShowInformation("Session End");
     return 0;
 }

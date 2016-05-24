@@ -57,7 +57,11 @@ static int SolutionEvolution(Time *time, Space *space, const Model *model)
     /* set some timers for monitoring time consuming of process */
     Timer operationTimer; /* timer for computing operations */
     Real operationTime = 0.0; /* record consuming time of operation */
-    for (time->countStep += 1; (time->now < time->end) && (time->countStep <= time->stepN); ++(time->countStep)) {
+    while ((time->now < time->end) && (time->countStep <= time->stepN)) {
+        /*
+         * Step count
+         */
+        ++(time->countStep);
         /*
          * Calculate dt for current time step
          */
@@ -93,26 +97,18 @@ static int SolutionEvolution(Time *time, Space *space, const Model *model)
          */
         record = record + dt;
         probeRecord = probeRecord + dt;
-        if (record > interval) {
+        if ((record >= interval) || (time->now >= time->end) || (time->countStep == time->stepN)) {
             ++(time->countOutput); /* export count increase */
             fprintf(stdout, "  exporting data...\n");
             WriteFieldData(time, space, model);
             WriteGeometryData(time, &(space->geo));
             record = 0.0; /* reset accumulated time */
         }
-        if (probeRecord > probeInterval) {
+        if ((probeRecord > probeInterval) || (time->now >= time->end) || (time->countStep == time->stepN)) {
             WriteFieldDataAtProbes(time, space, model);
             probeRecord = 0.0; /* reset probe accumulated time */
         }
     }
-    /*
-     * Export final sate of data since the accumulated time normally can not 
-     * increase to the exporting interval at the last phase.
-     */
-    ++(time->countOutput); /* export count increase */
-    WriteFieldData(time, space, model);
-    WriteGeometryData(time, &(space->geo));
-    WriteFieldDataAtProbes(time, space, model);
     return 0;
 }
 static Real ComputeTimeStep(const Time *time, const Space *space, const Model *model)
