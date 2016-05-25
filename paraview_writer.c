@@ -99,7 +99,7 @@ static int WriteCaseFile(const Time *time, ParaviewSet *paraSet)
         FatalError("failed to add data to transient case file...");
     }
     /* seek the target line for adding information */
-    WriteToLine(&filePointer, "</Collection>");
+    WriteToLine(filePointer, "</Collection>");
     /* append informatiom */
     fprintf(filePointer, "    <DataSet timestep=\"%.6g\" group=\"\" part=\"0\"\n", time->now);
     fprintf(filePointer, "             file=\"%s%s\"/>\n", paraSet->baseName, paraSet->fileExt);
@@ -315,7 +315,7 @@ static int WritePointPolyData(const int start, const int end, const Geometry *ge
     fprintf(filePointer, "  </PolyData>\n");
     fprintf(filePointer, "</VTKFile>\n");
     fprintf(filePointer, "<!--\n");
-    WritePolyhedronStateData(start, end, &filePointer, geo);
+    WritePolyhedronStateData(start, end, filePointer, geo);
     fprintf(filePointer, "-->\n");
     fclose(filePointer); /* close current opened file */
     return 0;
@@ -395,14 +395,13 @@ static int WritePolygonPolyData(const int start, const int end, const Geometry *
     fprintf(filePointer, "  </PolyData>\n");
     fprintf(filePointer, "</VTKFile>\n");
     fprintf(filePointer, "<!--\n");
-    WritePolyhedronStateData(start, end, &filePointer, geo);
+    WritePolyhedronStateData(start, end, filePointer, geo);
     fprintf(filePointer, "-->\n");
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-int WritePolyhedronStateData(const int start, const int end, FILE **filePointerPointer, const Geometry *geo)
+int WritePolyhedronStateData(const int start, const int end, FILE *filePointer, const Geometry *geo)
 {
-    FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
     const Polyhedron *poly = NULL;
     for (int n = start; n < end; ++n) {
         poly = geo->poly + n;
@@ -413,7 +412,6 @@ int WritePolyhedronStateData(const int start, const int end, FILE **filePointerP
                 poly->rho, poly->T, poly->cf,
                 poly->area, poly->volume, poly->matID, poly->gState);
     }
-    *filePointerPointer = filePointer; /* updated file pointer */
     return 0;
 }
 /* a good practice: end file with a newline */

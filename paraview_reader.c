@@ -56,7 +56,7 @@ static int ReadCaseFile(Time *time, ParaviewSet *paraSet)
     }
     /* read information from file */
     String currentLine = {'\0'}; /* store current line */
-    ReadInLine(&filePointer, "<!--");
+    ReadInLine(filePointer, "<!--");
     /* set format specifier according to the type of Real */
     char format[10] = {'\0'}; /* format information */
     strncpy(format, "%*s %lg", sizeof format); /* default is double type */
@@ -89,7 +89,7 @@ static int ReadStructuredData(Space *space, const Model *model, ParaviewSet *par
     int idx = 0; /* linear array index math variable */
     /* get rid of redundant lines */
     String currentLine = {'\0'}; /* store current line */
-    ReadInLine(&filePointer, "<PointData>");
+    ReadInLine(filePointer, "<PointData>");
     for (int count = 0; count < DIMU; ++count) {
         fgets(currentLine, sizeof currentLine, filePointer);
         for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
@@ -160,8 +160,8 @@ static int ReadPointPolyData(const int start, const int end, Geometry *geo, Para
     if (NULL == filePointer) {
         FatalError("failed to open data file...");
     }
-    ReadInLine(&filePointer, "<!--");
-    ReadPolyhedronStateData(start, end, &filePointer, geo);
+    ReadInLine(filePointer, "<!--");
+    ReadPolyhedronStateData(start, end, filePointer, geo);
     fclose(filePointer); /* close current opened file */
     return 0;
 }
@@ -197,7 +197,7 @@ static int ReadPolygonPolyData(const int start, const int end, Geometry *geo, Pa
     }
     /* get rid of redundant lines */
     String currentLine = {'\0'}; /* store current line */
-    ReadInLine(&filePointer, "<PolyData>");
+    ReadInLine(filePointer, "<PolyData>");
     for (int m = start; m < end; ++m) {
         poly = geo->poly + m;
         fgets(currentLine, sizeof currentLine, filePointer);
@@ -231,16 +231,15 @@ static int ReadPolygonPolyData(const int start, const int end, Geometry *geo, Pa
             AddEdge(poly->f[n][1], poly->f[n][2], n, poly); 
             AddEdge(poly->f[n][2], poly->f[n][0], n, poly); 
         }
-        ReadInLine(&filePointer, "</Piece>");
+        ReadInLine(filePointer, "</Piece>");
     }
-    ReadInLine(&filePointer, "<!--");
-    ReadPolyhedronStateData(start, end, &filePointer, geo);
+    ReadInLine(filePointer, "<!--");
+    ReadPolyhedronStateData(start, end, filePointer, geo);
     fclose(filePointer); /* close current opened file */
     return 0;
 }
-int ReadPolyhedronStateData(const int start, const int end, FILE **filePointerPointer, Geometry *geo)
+int ReadPolyhedronStateData(const int start, const int end, FILE *filePointer, Geometry *geo)
 {
-    FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
     String currentLine = {'\0'}; /* store the current read line */
     /* set format specifier according to the type of Real */
     char format[100] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %d, %lg";
@@ -262,7 +261,6 @@ int ReadPolyhedronStateData(const int start, const int end, FILE **filePointerPo
             poly->facet = NULL;
         }
     }
-    *filePointerPointer = filePointer; /* updated file pointer */
     return 0;
 }
 /* a good practice: end file with a newline */

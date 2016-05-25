@@ -116,7 +116,7 @@ static int WriteCaseFile(const Time *time, EnsightSet *enSet)
         FatalError("failed to add data to transient file...");
     }
     /* seek the target line for adding information */
-    ReadInLine(&filePointer, "time set: 1");
+    ReadInLine(filePointer, "time set: 1");
     fprintf(filePointer, "number of steps:          %d", (time->countOutput + 1)); 
     /* add the time flag of current export to the transient case */
     fseek(filePointer, 0, SEEK_END); // seek to the end of file

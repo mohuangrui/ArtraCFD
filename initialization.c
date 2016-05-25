@@ -215,7 +215,7 @@ static int InitializeGeometryData(Geometry *geo)
     while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
         CommandLineProcessor(currentLine); /* process current line */
         if (0 == strncmp(currentLine, "sphere state begin", sizeof currentLine)) {
-            ReadPolyhedronStateData(0, geo->sphereN, &filePointer, geo);
+            ReadPolyhedronStateData(0, geo->sphereN, filePointer, geo);
             continue;
         }
         if (0 == strncmp(currentLine, "polyhedron geometry begin", sizeof currentLine)) {
@@ -228,7 +228,7 @@ static int InitializeGeometryData(Geometry *geo)
             continue;
         }
         if (0 == strncmp(currentLine, "polyhedron state begin", sizeof currentLine)) {
-            ReadPolyhedronStateData(geo->sphereN, geo->totalN, &filePointer, geo);
+            ReadPolyhedronStateData(geo->sphereN, geo->totalN, filePointer, geo);
             continue;
         }
         if (0 == strncmp(currentLine, "polyhedron transform begin", sizeof currentLine)) {

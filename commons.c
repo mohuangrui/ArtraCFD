@@ -151,9 +151,8 @@ int RetrieveStorage(void *pointer)
     }
     return 0;
 }
-int ReadInLine(FILE **filePointerPointer, const char *lineString)
+int ReadInLine(FILE *filePointer, const char *lineString)
 {
-    FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
     String currentLine = {'\0'}; /* store the current read line */
     while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
         CommandLineProcessor(currentLine); /* process current line */
@@ -161,12 +160,10 @@ int ReadInLine(FILE **filePointerPointer, const char *lineString)
             break;
         }
     }
-    *filePointerPointer = filePointer; /* updated file pointer */
     return 0;
 }
-int WriteToLine(FILE **filePointerPointer, const char *lineString)
+int WriteToLine(FILE *filePointer, const char *lineString)
 {
-    FILE *filePointer = *filePointerPointer; /* get the value of file pointer */
     String currentLine = {'\0'}; /* store the current read line */
     int offset = 0; /* offset to target line */
     while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
@@ -181,7 +178,6 @@ int WriteToLine(FILE **filePointerPointer, const char *lineString)
     for (int count = 0; count < offset; ++count) {
         fgets(currentLine, sizeof currentLine, filePointer);
     }
-    *filePointerPointer = filePointer; /* updated file pointer */
     return 0;
 }
 /* a good practice: end file with a newline */

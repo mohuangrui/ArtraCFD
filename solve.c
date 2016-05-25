@@ -57,7 +57,7 @@ static int SolutionEvolution(Time *time, Space *space, const Model *model)
     /* set some timers for monitoring time consuming of process */
     Timer operationTimer; /* timer for computing operations */
     Real operationTime = 0.0; /* record consuming time of operation */
-    while ((time->now < time->end) && (time->countStep <= time->stepN)) {
+    while ((time->now < time->end) && (time->countStep < time->stepN)) {
         /*
          * Step count
          */

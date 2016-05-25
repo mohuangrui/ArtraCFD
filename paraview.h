@@ -53,8 +53,8 @@ extern int ReadPolyDataParaview(const Time *, Geometry *);
 /*
  * Polyhedron status writer and reader
  */
-extern int WritePolyhedronStateData(const int start, const int end, FILE **, const Geometry *);
-extern int ReadPolyhedronStateData(const int start, const int end, FILE **, Geometry *);
+extern int WritePolyhedronStateData(const int start, const int end, FILE *filePointer, const Geometry *);
+extern int ReadPolyhedronStateData(const int start, const int end, FILE *filePointer, Geometry *);
 #endif
 /* a good practice: end file with a newline */
 

@@ -856,7 +856,7 @@ extern int RetrieveStorage(void *pointer);
  *      Read in lines until a line matches the lineString.
  *      The file pointer points to the next line of the matched line.
  */
-extern int ReadInLine(FILE **filePointerPointer, const char *lineString);
+extern int ReadInLine(FILE *filePointer, const char *lineString);
 /*
  * Auxiliary Functions for File Writing
  *
@@ -864,7 +864,7 @@ extern int ReadInLine(FILE **filePointerPointer, const char *lineString);
  *      Search down the lines until a line matches the lineString.
  *      The file pointer points to the matched line.
  */
-extern int WriteToLine(FILE **filePointerPointer, const char *lineString);
+extern int WriteToLine(FILE *filePointer, const char *lineString);
 #endif
 /* a good practice: end file with a newline */
 

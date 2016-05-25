@@ -48,7 +48,7 @@ static int ReadCaseFile(Time *time, EnsightSet *enSet)
     }
     /* read information from file */
     String currentLine = {'\0'}; /* store current line */
-    ReadInLine(&filePointer, "VARIABLE");
+    ReadInLine(filePointer, "VARIABLE");
     /* set format specifier according to the type of Real */
     char format[25] = "%*s %*s %*s %*s %lg"; /* default is double type */
     if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
