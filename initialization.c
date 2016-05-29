@@ -205,9 +205,9 @@ static int InitializeGeometryData(Geometry *geo)
     if (NULL == filePointer) {
         FatalError("failed to open file: artracfd.geo...");
     }
-    char formatVI[30] = "%lg, %lg, %lg, %lg, %lg, %lg"; /* default is double type */
+    char formatIX[45] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg"; /* default is double type */
     if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
-        strncpy(formatVI, "%g, %g, %g, %g, %g, %g", sizeof formatVI); /* float type */
+        strncpy(formatIX, "%g, %g, %g, %g, %g, %g, %g, %g, %g", sizeof formatIX); /* float type */
     }
     /* read and process file line by line */
     String currentLine = {'\0'}; /* store the current read line */
@@ -237,7 +237,7 @@ static int InitializeGeometryData(Geometry *geo)
             RealVec offset = {0.0};
             for (int n = geo->sphereN; n < geo->totalN; ++n) {
                 fgets(currentLine, sizeof currentLine, filePointer);
-                sscanf(currentLine, formatVI, scale + X, scale + Y, scale + Z, 
+                sscanf(currentLine, formatIX, scale + X, scale + Y, scale + Z, 
                         angle + X, angle + Y, angle + Z, offset + X, offset + Y, offset + Z);
                 Transformation(scale, angle, offset, geo->poly + n);
             }
