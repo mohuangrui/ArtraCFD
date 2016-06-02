@@ -166,6 +166,7 @@ int WriteToLine(FILE *filePointer, const char *lineString)
 {
     String currentLine = {'\0'}; /* store the current read line */
     int offset = 0; /* offset to target line */
+    rewind(filePointer); /* seek to the beginning of the file stream */
     while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
         CommandLineProcessor(currentLine); /* process current line */
         if (0 == strncmp(currentLine, lineString, sizeof currentLine)) {

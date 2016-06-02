@@ -23,6 +23,7 @@
  * - Tips for Optimizing C/C++ Code by Clemson
  * - How to loop through multidimensional arrays quickly by Nadeau software
  * - How expensive is an operation on a CPU by Vincent Hindriksen
+ * - Performance Tuning with the RESTRICT Keyword by David H Bartley
  *
  ****************************************************************************/
 /****************************************************************************
@@ -81,8 +82,6 @@
  *   don't use blank lines when you don't have to. Blank lines at the 
  *   beginning or end of a function very rarely help readability.
  * - When defining a function, parameter order is: inputs, then outputs.
- * - Return or exit a function with the 0 or 1 code to indicate all of the 
- *   commands executed successfully or unsuccessfully.
  * - Avoid side effects, such as do not use assignment statements in if 
  *   condition, should use ++ and -- on lines by themselves.
  * - Always use the prefix version of ++ and -- (++x, --x) instead of the
@@ -91,7 +90,7 @@
  *   C: multiplication and division come before addition and subtraction.
  *   Everything else should be in parentheses. 
  * - Avoid complex logic like multiply nested ifs. Consider splitting your 
- *   code into multiple procedures, to decrease the level of complexity.
+ *   code into multiple procedures to decrease the level of complexity.
  * - Variables should be declared as locally as possible:
  *    * declare non-constant variables that are used throughout the function
  *      at the top.
@@ -154,10 +153,20 @@
  *
  *                            Information Flow
  *
+ * - Two key steps: Algorithm development. Devise a clear step-by-step solution 
+ *   strategy for the problem based on formal logic. Algorithm implementation. 
+ *   Translate the algorithm into source code. To be a good translator, the
+ *   information flow and the structure of the code shall resemble those in the
+ *   solution stratedy to minimize mistakes and to improve readability.
+ *
  * - Elements of a Program: In computer programming, you need two things: 
  *   data (variables) and instructions (code or functions). Variables are
  *   the basic building blocks of a program. Instructions tell the computer
- *   what to do with the variables.
+ *   what to do with the variables:
+ *
+ *                           Instructions
+ *             Input data ------------------> Output data
+ *
  * - Program should read like an essay. It should be as clear and easy to
  *   understand as possible. Always comment your programs, which helps you 
  *   organize your thoughts while making you work an art rather than a junk.
@@ -457,7 +466,7 @@
  *   in operations, numerical stability of the algorithms.
  * - Recommend double rather than float type for floating point variables. 
  * - Don't test for exact equality between floating point numbers. Don't do
- *   this even if one was assigned to the other: y = x;...if ( x == y )...
+ *   this even if one was assigned to the other: y = x;...if (x == y)...
  * - Don't subtract nearly equal quantities and then divide by something small.
  *   This often results in catastrophic cancellation and all digits of accuracy
  *   are lost. In general, if you subtract numbers where the first k digits are
@@ -853,7 +862,7 @@ extern int RetrieveStorage(void *pointer);
  * Auxiliary Functions for File Reading
  *
  * Function
- *      Read in lines until a line matches the lineString.
+ *      Read in lines from the current line until a line matches the lineString.
  *      The file pointer points to the next line of the matched line.
  */
 extern int ReadInLine(FILE *filePointer, const char *lineString);
@@ -861,7 +870,7 @@ extern int ReadInLine(FILE *filePointer, const char *lineString);
  * Auxiliary Functions for File Writing
  *
  * Function
- *      Search down the lines until a line matches the lineString.
+ *      Search down the file from beginning until a line matches the lineString.
  *      The file pointer points to the matched line.
  */
 extern int WriteToLine(FILE *filePointer, const char *lineString);

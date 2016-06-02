@@ -26,19 +26,19 @@ int main(int argc, char *argv[])
     /*
      * Declare and initialize variables
      */    
-    Control theControl = {
+    Control control = {
         .runMode = 'i',
         .procN = 1};
-    Time theTime = {0};
-    Space theSpace = {0};
-    Model theModel = {0};
+    Time time = {0};
+    Space space = {0};
+    Model model = {0};
     /*
      * Perform computation
      */
-    ProgramEntrance(argc, argv, &theControl);
-    Preprocess(&theTime, &theSpace, &theModel);
-    Solve(&theTime, &theSpace, &theModel);
-    Postprocess(&theSpace);
+    ProgramEntrance(argc, argv, &control);
+    Preprocess(&time, &space, &model);
+    Solve(&time, &space, &model);
+    Postprocess(&space);
     exit(EXIT_SUCCESS); 
 }
 /* a good practice: end file with a newline */
