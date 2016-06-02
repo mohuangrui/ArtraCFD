@@ -21,10 +21,10 @@
 /*
  * STL data format and type control
  */
-typedef char StlString[80]; /* STL string data requires 80 chars */
-typedef unsigned int StlLongInt; /* STL unsigned long integer */
-typedef unsigned short int StlInt; /* STL unsigned integer */
-typedef float StlReal; /* STL requires real data to be float */
+typedef char StlString[80]; /* UINT8[80], STL string data requires 80 chars */
+typedef unsigned int StlLongInt; /* UINT32, STL unsigned long integer */
+typedef unsigned short int StlInt; /* UINT16, STL unsigned integer */
+typedef float StlReal; /* REAL32, STL real data */
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/

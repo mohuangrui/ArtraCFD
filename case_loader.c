@@ -480,7 +480,7 @@ static int WriteVerifyData(const Time *time, const Space *space, const Model *mo
     fprintf(filePointer, "average method: %d\n", model->averager);
     fprintf(filePointer, "flux splitting method: %d\n", model->splitter);
     fprintf(filePointer, "phase interaction: %d\n", model->fsi);
-    fprintf(filePointer, "interfacial layers using reconstruction: %d\n", model->layers);
+    fprintf(filePointer, "layers for reconstruction: %d\n", model->layers);
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                       >> Material Properties <<\n");

@@ -83,7 +83,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "0                  # average method (integer; 0: Arithmetic mean; 1: Roe averages)\n");
     fprintf(filePointer, "0                  # flux splitting method (integer; 0: LLF; 1: SW)\n");
     fprintf(filePointer, "1                  # phase interaction (integer; 0: Off; 1: On)\n");
-    fprintf(filePointer, "-1                 # interfacial layers using reconstruction (integer; -1: all)\n");
+    fprintf(filePointer, "1                  # layers for reconstruction not interpolation (integer; -1: all)\n");
     fprintf(filePointer, "numerical end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
@@ -94,7 +94,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "0                  # material (integer; 0: gas; 1: water; 2: solid)\n");
     fprintf(filePointer, "1                  # viscous level (0: none; 1: normal)\n");
     fprintf(filePointer, "0                  # gravity state (integer; 0: off; 1: on)\n");
-    fprintf(filePointer, "0, -9.806, 0       # gravity level and direction (x, y, z)\n");
+    fprintf(filePointer, "0, -9.806, 0       # gravity vector\n");
     fprintf(filePointer, "material end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
