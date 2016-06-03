@@ -385,7 +385,7 @@ Real Square(const Real x)
 }
 Real Dot(const Real V1[restrict], const Real V2[restrict])
 {
-    return (V1[X] * V2[X] + V1[Y] * V2[Y] + V1[Z] * V2[Z]);
+    return V1[X] * V2[X] + V1[Y] * V2[Y] + V1[Z] * V2[Z];
 }
 Real Norm(const Real V[restrict])
 {

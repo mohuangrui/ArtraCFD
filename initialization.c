@@ -232,7 +232,7 @@ static int InitializeGeometryData(Geometry *geo)
             continue;
         }
         if (0 == strncmp(currentLine, "polyhedron transform begin", sizeof currentLine)) {
-            RealVec scale = {1.0};
+            RealVec scale = {0.0};
             RealVec angle = {0.0};
             RealVec offset = {0.0};
             for (int n = geo->sphereN; n < geo->totalN; ++n) {

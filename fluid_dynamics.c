@@ -265,7 +265,7 @@ static void NumericalDiffusiveFluxX(const int tn, const int k, const int j,
     const Real divV = du_dx + dv_dy + dw_dz;
 
     Fvhat[0] = 0.0;
-    Fvhat[1] = mu * (2.0 * du_dx - (2.0/3.0) * divV);
+    Fvhat[1] = mu * (du_dx + du_dx - (2.0/3.0) * divV);
     Fvhat[2] = mu * (du_dy + dv_dx);
     Fvhat[3] = mu * (du_dz + dw_dx);
     Fvhat[4] = heatK * dT_dx + Fvhat[1] * uhat + Fvhat[2] * vhat + Fvhat[3] * what;
@@ -351,7 +351,7 @@ static void NumericalDiffusiveFluxY(const int tn, const int k, const int j,
 
     Fvhat[0] = 0.0;
     Fvhat[1] = mu * (dv_dx + du_dy);
-    Fvhat[2] = mu * (2.0 * dv_dy - (2.0/3.0) * divV);
+    Fvhat[2] = mu * (dv_dy + dv_dy - (2.0/3.0) * divV);
     Fvhat[3] = mu * (dv_dz + dw_dy);
     Fvhat[4] = heatK * dT_dy + Fvhat[1] * uhat + Fvhat[2] * vhat + Fvhat[3] * what;
     return ;
@@ -437,7 +437,7 @@ static void NumericalDiffusiveFluxZ(const int tn, const int k, const int j,
     Fvhat[0] = 0.0;
     Fvhat[1] = mu * (dw_dx + du_dz);
     Fvhat[2] = mu * (dw_dy + dv_dz);
-    Fvhat[3] = mu * (2.0 * dw_dz - (2.0/3.0) * divV);
+    Fvhat[3] = mu * (dw_dz + dw_dz - (2.0/3.0) * divV);
     Fvhat[4] = heatK * dT_dz + Fvhat[1] * uhat + Fvhat[2] * vhat + Fvhat[3] * what;
     return;
 }
