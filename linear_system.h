@@ -34,10 +34,11 @@
  *      the right hand matrix with each column vector stands for a right hand 
  *      vector of a single linear system. If B is a unit matrix, then solution
  *      matrix X is the inverse matrix of A. In practice, right hand matrix 
- *      and solution matrix can share the same storage.
+ *      and solution matrix can share the same storage even they are declared
+ *      as restricted pointers here.
  */
-extern int MatrixLinearSystemSolver(const int n, Real A[][n],
-        const int m, Real X[][m], Real B[][m]);
+extern int MatrixLinearSystemSolver(const int n, Real A[restrict][n],
+        const int m, Real X[restrict][m], Real B[restrict][m]);
 #endif
 /* a good practice: end file with a newline */
 

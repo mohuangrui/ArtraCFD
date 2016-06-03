@@ -18,14 +18,14 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int LUFactorization(const int n, Real A[][n], int permute[]);
-static int FactorizedLinearSystemSolver(const int n, Real L[][n], Real U[][n],
-        Real x[], Real b[], const int permute[]);
+static int LUFactorization(const int n, Real A[restrict][n], int permute[restrict]);
+static int FactorizedLinearSystemSolver(const int n, Real L[restrict][n], Real U[restrict][n],
+        Real x[], Real b[], const int permute[restrict]);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int MatrixLinearSystemSolver(const int n, Real A[][n],
-        const int m, Real X[][m], Real B[][m])
+int MatrixLinearSystemSolver(const int n, Real A[restrict][n],
+        const int m, Real X[restrict][m], Real B[restrict][m])
 {
     int permute[n]; /* record the permutation information */
     Real rhs[n]; /* transfer data into column vector */
@@ -52,11 +52,17 @@ int MatrixLinearSystemSolver(const int n, Real A[][n],
  * permutation will be employed. The permutations are recorded in the integer 
  * vector "permute", which will be used to reorder the right hand side vectors
  * before solving the factorized linear system.
+ *
+ * Press, William H. Numerical recipes: The art of scientific computing. 
+ * Cambridge university press.
  */
-static int LUFactorization(const int n, Real A[][n], int permute[])
+static int LUFactorization(const int n, Real A[restrict][n], int permute[restrict])
 {
     const Real epsilon = 1.0e-15; /* a small number for singularity check */
+    const Real zero = 0.0;
+    const Real one = 1.0;
     Real temp = 0.0; /* auxiliary variable */
+    Real maximum = 0.0; /* store the maximum value in column */
     Real scale[n]; /* stores the implicit scaling of each row with variable length array */
     int rowMax = 0; /* record the row number of current pivot element */
     int sign = 1; /* used for determine the sign of determinant after pivoting */
@@ -64,23 +70,23 @@ static int LUFactorization(const int n, Real A[][n], int permute[])
      * Loop over rows to get the implicit scaling information.
      */
     for (int row = 0; row < n; ++row) {
-        Real maximum = 0.0;
+        maximum = zero;
         for (int col = 0; col < n; ++col) {
             temp = fabs(A[row][col]);
             if (temp > maximum) {
                 maximum = temp;
             }
         }
-        if (0 == maximum) {
+        if (zero == maximum) {
             FatalError("singular matrix in LU factorization...");
         }
-        scale[row] = 1.0 / maximum; /* save the scaling */
+        scale[row] = one / maximum; /* save the scaling */
     }
     /*
      * Do LU factorization with partial pivoting.
      */
     for (int loop = 0; loop < n; ++loop) {
-        Real maximum = 0.0; /* initialize for the search of largest pivot element */
+        maximum = zero; /* initialize for the search of largest pivot element */
         rowMax = loop; /* initialize the pivot position to current row */
         for (int row = loop; row < n; ++row) { /* search pivot element for current loop */
             temp = scale[row] * fabs(A[row][loop]);
@@ -99,12 +105,12 @@ static int LUFactorization(const int n, Real A[][n], int permute[])
             scale[rowMax] = scale[loop]; /* replace the scale factor */
         }
         permute[loop] = rowMax; /* record the permutation */
-        if (0 == A[loop][loop]) { /* substitute zero pivot element with epsilon */
+        if (zero == A[loop][loop]) { /* substitute zero pivot element with epsilon */
             A[loop][loop] = epsilon;
         }
         for (int row = loop + 1; row < n; ++row) {
             A[row][loop] = A[row][loop] / A[loop][loop]; /* divide column element with pivot element */
-            for (int col = loop + 1; col < n; ++col) {
+            for (int col = loop + 1; col < n; ++col) { /* reduce remaining submatrix */
                 A[row][col] = A[row][col] - A[row][loop] * A[loop][col];
             }
         }
@@ -116,9 +122,13 @@ static int LUFactorization(const int n, Real A[][n], int permute[])
  * the right hand side vector. Vector x and b can refer to the same storage
  * space, in this situation, solution vector overwrites the right hand size
  * vector. The permutation information are required for the solving.
+ *
+ * L and U matrix can safely alias each other since they are read only. In
+ * fact, their subelements do not alias each other but only stored in the
+ * same matrix A.
  */
-static int FactorizedLinearSystemSolver(const int n, Real L[][n], Real U[][n], 
-        Real x[], Real b[], const int permute[])
+static int FactorizedLinearSystemSolver(const int n, Real L[restrict][n], Real U[restrict][n], 
+        Real x[], Real b[], const int permute[restrict])
 {
     /*
      * Rearrange the elements of right hand side vector according to
@@ -127,8 +137,9 @@ static int FactorizedLinearSystemSolver(const int n, Real L[][n], Real U[][n],
      * the right hand side vector and solution vector may occupy the
      * same storage space.
      */
+    Real temp = 0.0; /* auxiliary variable */
     for (int row = 0; row < n; ++row) {
-        const Real temp = b[row];
+        temp = b[row];
         x[row] = b[permute[row]];
         b[permute[row]] = temp;
     }
