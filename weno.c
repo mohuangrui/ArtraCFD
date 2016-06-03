@@ -111,9 +111,9 @@ static void WENO5(Real F[restrict][NSTENCIL], Real Fhat[restrict])
         omega[0] = alpha[0] / (alpha[0] + alpha[1] + alpha[2]);
         omega[1] = alpha[1] / (alpha[0] + alpha[1] + alpha[2]);
         omega[2] = alpha[2] / (alpha[0] + alpha[1] + alpha[2]);
-        q[0] = (2.0 * F[row][CEN-2] - 7.0 * F[row][CEN-1] + 11.0 * F[row][CEN]) / 6.0;
-        q[1] = (-F[row][CEN-1] + 5.0 * F[row][CEN] + 2.0 * F[row][CEN+1]) / 6.0;
-        q[2] = (2.0 * F[row][CEN] + 5.0 * F[row][CEN+1] - F[row][CEN+2]) / 6.0;
+        q[0] = (1.0 / 6.0) * (2.0 * F[row][CEN-2] - 7.0 * F[row][CEN-1] + 11.0 * F[row][CEN]);
+        q[1] = (1.0 / 6.0) * (-F[row][CEN-1] + 5.0 * F[row][CEN] + 2.0 * F[row][CEN+1]);
+        q[2] = (1.0 / 6.0) * (2.0 * F[row][CEN] + 5.0 * F[row][CEN+1] - F[row][CEN+2]);
         Fhat[row] = omega[0] * q[0] + omega[1] * q[1] + omega[2] * q[2];
     }
     return;
