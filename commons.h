@@ -710,7 +710,6 @@ typedef struct {
     int faceN; /* number of faces. 0 for analytical sphere */
     int edgeN; /* number of edges */
     int vertN; /* number of vertices */
-    int nodeN; /* total 1st type interfacial node */
     int matID; /* material type */
     Real r; /* radius of sphere */
     RealVec O; /* centroid */
