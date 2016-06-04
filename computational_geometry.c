@@ -28,7 +28,7 @@ static void ComputeParametersPolyhedron(const int, Polyhedron *);
 static void TransformVertex(const Real [restrict], const Real [restrict], 
         const Real [restrict][DIMS], const Real [restrict], Real [restrict]);
 static void TransformNormal(const Real [restrict][DIMS], Real [restrict]);
-static Real TransformInertia(Real [restrict][DIMS], const Real [restrict]);
+static Real TransformInertia(const Real [restrict], Real [restrict][DIMS]);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -153,7 +153,7 @@ void Transformation(const Real scale[restrict], const Real angle[restrict],
         axis[X] = Dot(invrot[X], axe[n]);
         axis[Y] = Dot(invrot[Y], axe[n]);
         axis[Z] = Dot(invrot[Z], axe[n]);
-        I[n] = TransformInertia(poly->I, axis);
+        I[n] = TransformInertia(axis, poly->I);
     }
     poly->I[X][X] = I[0];  poly->I[X][Y] = -I[3]; poly->I[X][Z] = -I[5];
     poly->I[Y][X] = -I[3]; poly->I[Y][Y] = I[1];  poly->I[Y][Z] = -I[4];
@@ -195,7 +195,7 @@ static void TransformNormal(const Real matrix[restrict][DIMS], Real N[restrict])
     /* normalization is needed if anisotropic transformation happens */
     return;
 }
-static Real TransformInertia(Real I[restrict][DIMS], const Real axis[restrict])
+static Real TransformInertia(const Real axis[restrict], Real I[restrict][DIMS])
 {
     return I[X][X] * axis[X] * axis[X] + I[Y][Y] * axis[Y] * axis[Y] + I[Z][Z] * axis[Z] * axis[Z] +
         2.0 * I[X][Y] * axis[X] * axis[Y] + 2.0 * I[Y][Z] * axis[Y] * axis[Z] + 2.0 * I[Z][X] * axis[Z] * axis[X];
@@ -227,16 +227,16 @@ static void ComputeParametersSphere(const int collapse, Polyhedron *poly)
         poly->box[s][MAX] = poly->O[s] + poly->r;
     }
     /* geometric property */
-    Real num = 0.4 * poly->r * poly->r;
+    Real num = 0.4;
     if (COLLAPSEN == collapse) { /* no space dimension collapsed */
         poly->area = 4.0 * pi * poly->r * poly->r; /* area of a sphere */
-        poly->volume = 4.0 * pi * poly->r * poly->r * poly->r / 3.0; /* volume of a sphere */
+        poly->volume = (4.0 / 3.0) * pi * poly->r * poly->r * poly->r; /* volume of a sphere */
     } else {
         poly->area = 2.0 * pi * poly->r; /* side area of a unit thickness cylinder */
         poly->volume = pi * poly->r * poly->r; /* volume of a unit thickness cylinder */
-        num = 0.5 * poly->r * poly->r;
+        num = 0.5;
     }
-    num = num * poly->volume;
+    num = num * poly->r * poly->r * poly->volume;
     poly->I[X][X] = num;  poly->I[X][Y] = 0;    poly->I[X][Z] = 0;
     poly->I[Y][X] = 0;    poly->I[Y][Y] = num;  poly->I[Y][Z] = 0;
     poly->I[Z][X] = 0;    poly->I[Z][Y] = 0;    poly->I[Z][Z] = num;
@@ -326,10 +326,10 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
         Angle[1] = acos((Dot(e01, e01) + Dot(e12, e12) - Dot(e02, e02)) / 
                 (2.0 * sqrt(Dot(e01, e01) * Dot(e12, e12))));
         Angle[2] = 3.14159265359 - Angle[0] - Angle[1];
-        for (int s = 0; s < DIMS; ++s) {
-            poly->Nv[poly->f[n][0]][s] = poly->Nv[poly->f[n][0]][s] + Angle[0] * Nf[s];
-            poly->Nv[poly->f[n][1]][s] = poly->Nv[poly->f[n][1]][s] + Angle[1] * Nf[s];
-            poly->Nv[poly->f[n][2]][s] = poly->Nv[poly->f[n][2]][s] + Angle[2] * Nf[s];
+        for (int v = 0; v < 3; ++v) {
+            for (int s = 0; s < DIMS; ++s) {
+                poly->Nv[poly->f[n][v]][s] = poly->Nv[poly->f[n][v]][s] + Angle[v] * Nf[s];
+            }
         }
         /* assign face normal */
         for (int s = 0; s < DIMS; ++s) {
@@ -338,16 +338,16 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
     }
     /* rectify final integration */
     area = 0.5 * area;
-    volume = volume / 6.0;
-    O[X] = O[X] / 24.0;
-    O[Y] = O[Y] / 24.0;
-    O[Z] = O[Z] / 24.0;
-    I[0] = I[0] / 60.0;
-    I[1] = I[1] / 60.0;
-    I[2] = I[2] / 60.0;
-    I[3] = I[3] / 120.0;
-    I[4] = I[4] / 120.0;
-    I[5] = I[5] / 120.0;
+    volume = volume * (1.0 / 6.0);
+    O[X] = O[X] * (1.0 / 24.0);
+    O[Y] = O[Y] * (1.0 / 24.0);
+    O[Z] = O[Z] * (1.0 / 24.0);
+    I[0] = I[0] * (1.0 / 60.0);
+    I[1] = I[1] * (1.0 / 60.0);
+    I[2] = I[2] * (1.0 / 60.0);
+    I[3] = I[3] * (1.0 / 120.0);
+    I[4] = I[4] * (1.0 / 120.0);
+    I[5] = I[5] * (1.0 / 120.0);
     /* assign to polyhedron */
     if (COLLAPSEN == collapse) { /* no space dimension collapsed */
         poly->area = area;
@@ -355,9 +355,9 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
         poly->area = area - 2.0 * volume; /* change to side area of a unit thickness polygon */
     }
     poly->volume = volume;
-    poly->O[X] = O[X];
-    poly->O[Y] = O[Y];
-    poly->O[Z] = O[Z];
+    poly->O[X] = O[X] / volume;
+    poly->O[Y] = O[Y] / volume;
+    poly->O[Z] = O[Z] / volume;
     /* inertia relative to centroid */
     poly->I[X][X] = I[1] + I[2] - volume * (O[Y] * O[Y] + O[Z] * O[Z]);
     poly->I[X][Y] = -I[3] + volume * O[X] * O[Y];

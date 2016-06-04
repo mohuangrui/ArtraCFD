@@ -34,15 +34,18 @@ int Postprocess(Space *space)
 static int ProgramMemoryRelease(Space *space)
 {
     /* geometry related */
-    for (int n = space->geo.sphereN; n < space->geo.totalN; ++n) {
-        RetrieveStorage(space->geo.poly[n].f);
-        RetrieveStorage(space->geo.poly[n].Nf);
-        RetrieveStorage(space->geo.poly[n].e);
-        RetrieveStorage(space->geo.poly[n].Ne);
-        RetrieveStorage(space->geo.poly[n].v);
-        RetrieveStorage(space->geo.poly[n].Nv);
+    Geometry *geo = &(space->geo);
+    Polyhedron *poly = NULL;
+    for (int n = geo->sphereN; n < geo->totalN; ++n) {
+        poly = geo->poly + n;
+        RetrieveStorage(poly->f);
+        RetrieveStorage(poly->Nf);
+        RetrieveStorage(poly->e);
+        RetrieveStorage(poly->Ne);
+        RetrieveStorage(poly->v);
+        RetrieveStorage(poly->Nv);
     }
-    RetrieveStorage(space->geo.poly);
+    RetrieveStorage(geo->poly);
     /* field variable related */
     RetrieveStorage(space->node);
     return 0;
