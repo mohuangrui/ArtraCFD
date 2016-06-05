@@ -25,7 +25,8 @@ typedef enum {
     LAYER1 = 6,
     LAYER2 = 24,
     LAYER3 = 30,
-} PATH;
+    R = 2,
+} IBM;
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
@@ -39,9 +40,9 @@ static int GhostState(const int, const int, const int, const int, const int,
 static void ApplyWeighting(const Real [restrict], const Real, Real, 
         Real [restrict], Real [restrict]);
 static Real InverseDistanceWeighting(const int, const int [restrict], const Real [restrict],
-        const int, const int, const Partition *, const Node *const , const Model *, Real [restrict]);
+        const int, const int, const int, const Partition *, const Node *const , const Model *, Real [restrict]);
 static void FlowReconstruction(const int, const int [restrict], const Real [restrict], const int,
-        const int, const Polyhedron *, const Partition *, const Node *const , const Model *,
+        const int, const int, const Polyhedron *, const Partition *, const Node *const , const Model *,
         const Real [restrict], const Real [restrict], Real [restrict], Real [restrict]);
 /****************************************************************************
  * Function definitions
@@ -197,19 +198,23 @@ static void IdentifyInterfacialNode(Space *space, const Model *model)
     Node *const node = space->node;
     int idx = 0; /* linear array index math variable */
     const int end = LAYER2 + (part->ng - 1) * (LAYER3 - LAYER2); /* max search layer is ng + 1 */
+    IntVec n = {0};
+    RealVec p = {0.0};
+    Real Uo[DIMUo] = {0.0};
+    Real weightSum = 0.0;
     for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
         for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
             for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
                 idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
                 if ((NONE != node[idx].faceID) && (0 == node[idx].geoID)) {
                     /* a newly joined node */
-                    const IntVec n = {i, j, k};
-                    RealVec p = {0.0};
-                    Real Uo[DIMUo] = {0.0};
+                    n[X] = i;
+                    n[Y] = j;
+                    n[Z] = k;
                     p[X] = PointSpace(i, part->domain[X][MIN], part->d[X], part->ng);
                     p[Y] = PointSpace(j, part->domain[Y][MIN], part->d[Y], part->ng);
                     p[Z] = PointSpace(k, part->domain[Z][MIN], part->d[Z], part->ng);
-                    const Real weightSum = InverseDistanceWeighting(TO, n, p, 2, 0, part, node, model, Uo);
+                    weightSum = InverseDistanceWeighting(TO, n, p, R, NONE, 0, part, node, model, Uo);
                     /* Normalize the weighted values */
                     Normalize(DIMUo, weightSum, Uo);
                     Uo[0] = Uo[4] / (Uo[5] * model->gasR); /* compute density */
@@ -291,31 +296,42 @@ void ImmersedBoundaryTreatment(const int tn, Space *space, const Model *model)
     Polyhedron *poly = NULL;
     Node *const node = space->node;
     int idx = 0; /* linear array index math variable */
+    const IntVec nMin = {part->ns[PIN][X][MIN], part->ns[PIN][Y][MIN], part->ns[PIN][Z][MIN]};
+    const IntVec nMax = {part->ns[PIN][X][MAX], part->ns[PIN][Y][MAX], part->ns[PIN][Z][MAX]};
     const RealVec sMin = {part->domain[X][MIN], part->domain[Y][MIN], part->domain[Z][MIN]};
     const RealVec d = {part->d[X], part->d[Y], part->d[Z]};
     const RealVec dd = {part->dd[X], part->dd[Y], part->dd[Z]};
     const int ng = part->ng;
+    IntVec nI = {0}; /* image node */
+    IntVec nG = {0}; /* ghost node */
     RealVec pG = {0.0}; /* ghost point */
     RealVec pO = {0.0}; /* boundary point */
     RealVec pI = {0.0}; /* image point */
-    IntVec nI = {0}; /* image node */
     RealVec N = {0.0}; /* normal */
     Real UoG[DIMUo] = {0.0};
     Real UoO[DIMUo] = {0.0};
     Real UoI[DIMUo] = {0.0};
+    Real weightSum = 0.0;
+    int box[DIMS][LIMIT] = {{0}}; /* bounding box in node space */
+    for (int n = 0; n < geo->totalN; ++n) {
+        poly = geo->poly + n;
+        /* determine search range according to bounding box of polyhedron and valid node space */
+        for (int s = 0; s < DIMS; ++s) {
+            box[s][MIN] = ValidNodeSpace(NodeSpace(poly->box[s][MIN], sMin[s], dd[s], ng), nMin[s], nMax[s]);
+            box[s][MAX] = ValidNodeSpace(NodeSpace(poly->box[s][MAX], sMin[s], dd[s], ng), nMin[s], nMax[s]) + 1;
+        }
     for (int r = 1; r < ng + 2; ++r) { /* layer by layer treatment */
-        for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
-            for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
-                for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
+        for (int k = box[Z][MIN]; k < box[Z][MAX]; ++k) {
+            for (int j = box[Y][MIN]; j < box[Y][MAX]; ++j) {
+                for (int i = box[X][MIN]; i < box[X][MAX]; ++i) {
                     idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
-                    if (r != node[idx].ghostID) { /* not a ghost node in current layer */
+                    if ((r != node[idx].ghostID) || (n + 1 != node[idx].geoID)) {
                         continue;
                     }
                     pG[X] = PointSpace(i, sMin[X], d[X], ng);
                     pG[Y] = PointSpace(j, sMin[Y], d[Y], ng);
                     pG[Z] = PointSpace(k, sMin[Z], d[Z], ng);
                     if (model->layers >= r) { /* immersed boundary treatment */
-                        poly = geo->poly + node[idx].geoID - 1;
                         ComputeGeometricData(node[idx].faceID, poly, pG, pO, pI, N);
                         nI[X] = NodeSpace(pI[X], sMin[X], dd[X], ng);
                         nI[Y] = NodeSpace(pI[Y], sMin[Y], dd[Y], ng);
@@ -330,11 +346,13 @@ void ImmersedBoundaryTreatment(const int tn, Space *space, const Model *model)
                          * stencils and to only use smooth stencils. However,
                          * this will make the algorithm much more complex.
                          */
-                        FlowReconstruction(tn, nI, pI, 2, 0, poly, part, node, model, pO, N, UoO, UoI);
+                        FlowReconstruction(tn, nI, pI, R, NONE, 0, poly, part, node, model, pO, N, UoO, UoI);
                         MethodOfImage(UoI, UoO, UoG);
                     } else { /* inverse distance weighting */
-                        const IntVec nG = {i, j, k};
-                        const Real weightSum = InverseDistanceWeighting(tn, nG, pG, 1, r - 1, part, node, model, UoG);
+                        nG[X] = i;
+                        nG[Y] = j;
+                        nG[Z] = k;
+                        weightSum = InverseDistanceWeighting(tn, nG, pG, 1, r - 1, n + 1, part, node, model, UoG);
                         /* Normalize the weighted values */
                         Normalize(DIMUo, weightSum, UoG);
                     }
@@ -343,6 +361,7 @@ void ImmersedBoundaryTreatment(const int tn, Space *space, const Model *model)
                 }
             }
         }
+    }
     }
     return;
 }
@@ -385,12 +404,12 @@ void ComputeGeometricData(const int faceID, const Polyhedron *poly, const Real p
     return;
 }
 static void FlowReconstruction(const int tn, const int n[restrict], const Real p[restrict], const int h,
-        const int type, const Polyhedron *poly, const Partition *part, const Node *const node, const Model *model,
-        const Real pO[restrict], const Real N[restrict], Real UoO[restrict], Real UoI[restrict])
+        const int type, const int geoID, const Polyhedron *poly, const Partition *part, const Node *const node, 
+        const Model *model, const Real pO[restrict], const Real N[restrict], Real UoO[restrict], Real UoI[restrict])
 {
     Real weightSum = 0.0; /* store the sum of weights */
     /* pre-estimate step */
-    weightSum = InverseDistanceWeighting(tn, n, p, h, type, part, node, model, UoI);
+    weightSum = InverseDistanceWeighting(tn, n, p, h, type, geoID, part, node, model, UoI);
     /* physical boundary condition enforcement step */
     RealVec Vs = {0.0}; /* general motion of boundary point */
     /* Vs = Vcentroid + W x r */
@@ -428,8 +447,9 @@ static void FlowReconstruction(const int tn, const int n[restrict], const Real p
     Normalize(DIMUo, weightSum, UoI);
     return;
 }
-static Real InverseDistanceWeighting(const int tn, const int n[restrict], const Real p[restrict], const int h, 
-        const int type, const Partition *part, const Node *const node, const Model *model, Real Uo[restrict])
+static Real InverseDistanceWeighting(const int tn, const int n[restrict], const Real p[restrict], 
+        const int h, const int type, const int geoID, const Partition *part, 
+        const Node *const node, const Model *model, Real Uo[restrict])
 {
     int idx = 0; /* linear array index math variable */
     const int idxMax = part->n[X] * part->n[Y] * part->n[Z];
@@ -454,8 +474,11 @@ static Real InverseDistanceWeighting(const int tn, const int n[restrict], const 
                 if ((0 > idx) || (idxMax <= idx)) {
                     continue; /* illegal index */
                 }
-                if (0 == type) { /* require normal node type */
-                    if ((0 != node[idx].geoID) || (NONE != node[idx].faceID)) {
+                if (geoID != node[idx].geoID) {
+                    continue;
+                }
+                if (0 == geoID) { /* require normal node type */
+                    if (type != node[idx].faceID) {
                         continue;
                     }
                 } else { /* require specified ghost node type */
@@ -485,7 +508,7 @@ static void ApplyWeighting(const Real Uoh[restrict], const Real tiny, Real weigh
     if (tiny > weight) { /* avoid overflow of too small weight */
         weight = tiny;
     }
-    weight = 1 / weight; /* compute weight */
+    weight = 1.0 / weight; /* compute weight */
     for (int n = 0; n < DIMUo; ++n) {
         Uo[n] = Uo[n] + Uoh[n] * weight;
     }
