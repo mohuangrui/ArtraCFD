@@ -44,6 +44,10 @@ int PhaseInteraction(const Real dt, Space *space, const Model *model)
     const RealVec scale = {1.0, 1.0, 1.0}; /* scale */
     for (int n = 0; n < geo->totalN; ++n) {
         poly = geo->poly + n;
+        if ((1.0e36 < poly->rho) && (EqualReal(poly->gState, 0.0))) {
+            poly->steady = 1;
+            continue;
+        }
         /* tranlation and angular acceleration */
         MatrixLinearSystemSolver(DIMS, poly->I, 1, (Real (*)[1])alpha, (Real (*)[1])poly->Tau);
         for (int s = 0; s < DIMS; ++s) {
@@ -105,12 +109,12 @@ static void SurfaceForceIntegration(Space *space, const Model *model)
             continue;
         }
         /* reset some non accumulative information to zero */
-        poly->F[X] = 0; /* fx */
-        poly->F[Y] = 0; /* fy */
-        poly->F[Z] = 0; /* fz */
-        poly->Tau[X] = 0; /* torque x */
-        poly->Tau[Y] = 0; /* torque y */
-        poly->Tau[Z] = 0; /* torque z */
+        poly->F[X] = 0.0; /* fx */
+        poly->F[Y] = 0.0; /* fy */
+        poly->F[Z] = 0.0; /* fz */
+        poly->Tau[X] = 0.0; /* torque x */
+        poly->Tau[Y] = 0.0; /* torque y */
+        poly->Tau[Z] = 0.0; /* torque z */
         nodeN = 0; /* tally */
         /* determine search range according to bounding box of polyhedron and valid node space */
         for (int s = 0; s < DIMS; ++s) {

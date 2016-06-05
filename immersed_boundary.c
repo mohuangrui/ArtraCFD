@@ -71,14 +71,31 @@ static void InitializeGeometryDomain(Space *space)
 {
     const Partition *restrict part = &(space->part);
     Node *const node = space->node;
+    Geometry *geo = &(space->geo);
+    Polyhedron *poly = NULL;
     int idx = 0; /* linear array index math variable */
+    int skip = 0; /* indicator for whether a node in a stationary geometry */
     for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
         for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
             for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
                 idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
-                node[idx].geoID = 0;
+                for (int n = 0; n < geo->totalN; ++n) {
+                    poly = geo->poly + n;
+                    if (1 == poly->steady) {
+                        if (n + 1 == node[idx].geoID) {
+                            skip = 1;
+                            break;
+                        }
+                    }
+                }
                 node[idx].layerID = 0;
                 node[idx].ghostID = 0;
+                if (1 == skip) {
+                    /* maintain geometric information */
+                    skip = 0; /* reset */
+                    continue;
+                }
+                node[idx].geoID = 0;
             }
         }
     }
@@ -122,6 +139,9 @@ static void IdentifyGeometryNode(Space *space)
     RealVec p = {0.0}; /* node point */
     for (int n = 0; n < geo->totalN; ++n) {
         poly = geo->poly + n;
+        if (1 == poly->steady) {
+            continue;
+        }
         /* determine search range according to bounding box of polyhedron and valid node space */
         for (int s = 0; s < DIMS; ++s) {
             box[s][MIN] = ValidNodeSpace(NodeSpace(poly->box[s][MIN], sMin[s], dd[s], ng), nMin[s], nMax[s]);
