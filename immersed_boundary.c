@@ -320,48 +320,48 @@ void ImmersedBoundaryTreatment(const int tn, Space *space, const Model *model)
             box[s][MIN] = ValidNodeSpace(NodeSpace(poly->box[s][MIN], sMin[s], dd[s], ng), nMin[s], nMax[s]);
             box[s][MAX] = ValidNodeSpace(NodeSpace(poly->box[s][MAX], sMin[s], dd[s], ng), nMin[s], nMax[s]) + 1;
         }
-    for (int r = 1; r < ng + 2; ++r) { /* layer by layer treatment */
-        for (int k = box[Z][MIN]; k < box[Z][MAX]; ++k) {
-            for (int j = box[Y][MIN]; j < box[Y][MAX]; ++j) {
-                for (int i = box[X][MIN]; i < box[X][MAX]; ++i) {
-                    idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
-                    if ((r != node[idx].ghostID) || (n + 1 != node[idx].geoID)) {
-                        continue;
+        for (int r = 1; r < ng + 2; ++r) { /* layer by layer treatment */
+            for (int k = box[Z][MIN]; k < box[Z][MAX]; ++k) {
+                for (int j = box[Y][MIN]; j < box[Y][MAX]; ++j) {
+                    for (int i = box[X][MIN]; i < box[X][MAX]; ++i) {
+                        idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
+                        if ((r != node[idx].ghostID) || (n + 1 != node[idx].geoID)) {
+                            continue;
+                        }
+                        pG[X] = PointSpace(i, sMin[X], d[X], ng);
+                        pG[Y] = PointSpace(j, sMin[Y], d[Y], ng);
+                        pG[Z] = PointSpace(k, sMin[Z], d[Z], ng);
+                        if (model->layers >= r) { /* immersed boundary treatment */
+                            ComputeGeometricData(node[idx].faceID, poly, pG, pO, pI, N);
+                            nI[X] = NodeSpace(pI[X], sMin[X], dd[X], ng);
+                            nI[Y] = NodeSpace(pI[Y], sMin[Y], dd[Y], ng);
+                            nI[Z] = NodeSpace(pI[Z], sMin[Z], dd[Z], ng);
+                            /*
+                             * When extremely strong discontinuities exist in the
+                             * domain of dependence of inverse distance weighting,
+                             * the original weighting approach may produce spurious
+                             * discontinuities among the weighted node and its
+                             * neighboring nodes. The best way to solve this issue
+                             * is to apply WENO's idea to avoid discontinuous
+                             * stencils and to only use smooth stencils. However,
+                             * this will make the algorithm much more complex.
+                             */
+                            FlowReconstruction(tn, nI, pI, R, NONE, 0, poly, part, node, model, pO, N, UoO, UoI);
+                            MethodOfImage(UoI, UoO, UoG);
+                        } else { /* inverse distance weighting */
+                            nG[X] = i;
+                            nG[Y] = j;
+                            nG[Z] = k;
+                            weightSum = InverseDistanceWeighting(tn, nG, pG, 1, r - 1, n + 1, part, node, model, UoG);
+                            /* Normalize the weighted values */
+                            Normalize(DIMUo, weightSum, UoG);
+                        }
+                        UoG[0] = UoG[4] / (UoG[5] * model->gasR); /* compute density */
+                        ConservativeByPrimitive(model->gamma, UoG, node[idx].U[tn]);
                     }
-                    pG[X] = PointSpace(i, sMin[X], d[X], ng);
-                    pG[Y] = PointSpace(j, sMin[Y], d[Y], ng);
-                    pG[Z] = PointSpace(k, sMin[Z], d[Z], ng);
-                    if (model->layers >= r) { /* immersed boundary treatment */
-                        ComputeGeometricData(node[idx].faceID, poly, pG, pO, pI, N);
-                        nI[X] = NodeSpace(pI[X], sMin[X], dd[X], ng);
-                        nI[Y] = NodeSpace(pI[Y], sMin[Y], dd[Y], ng);
-                        nI[Z] = NodeSpace(pI[Z], sMin[Z], dd[Z], ng);
-                        /*
-                         * When extremely strong discontinuities exist in the
-                         * domain of dependence of inverse distance weighting,
-                         * the original weighting approach may produce spurious
-                         * discontinuities among the weighted node and its
-                         * neighboring nodes. The best way to solve this issue
-                         * is to apply WENO's idea to avoid discontinuous
-                         * stencils and to only use smooth stencils. However,
-                         * this will make the algorithm much more complex.
-                         */
-                        FlowReconstruction(tn, nI, pI, R, NONE, 0, poly, part, node, model, pO, N, UoO, UoI);
-                        MethodOfImage(UoI, UoO, UoG);
-                    } else { /* inverse distance weighting */
-                        nG[X] = i;
-                        nG[Y] = j;
-                        nG[Z] = k;
-                        weightSum = InverseDistanceWeighting(tn, nG, pG, 1, r - 1, n + 1, part, node, model, UoG);
-                        /* Normalize the weighted values */
-                        Normalize(DIMUo, weightSum, UoG);
-                    }
-                    UoG[0] = UoG[4] / (UoG[5] * model->gasR); /* compute density */
-                    ConservativeByPrimitive(model->gamma, UoG, node[idx].U[tn]);
                 }
             }
         }
-    }
     }
     return;
 }

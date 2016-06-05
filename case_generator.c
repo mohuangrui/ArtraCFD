@@ -82,7 +82,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "0                  # spatial scheme (integer; 0: 5th WENO;)\n");
     fprintf(filePointer, "0                  # average method (integer; 0: Arithmetic mean; 1: Roe averages)\n");
     fprintf(filePointer, "0                  # flux splitting method (integer; 0: LLF; 1: SW)\n");
-    fprintf(filePointer, "1                  # phase interaction (integer; 0: Off; 1: On)\n");
+    fprintf(filePointer, "0                  # phase interaction (integer; 0: Off; 1: On)\n");
     fprintf(filePointer, "1                  # layers for reconstruction not interpolation (integer; -1: all)\n");
     fprintf(filePointer, "numerical end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
@@ -92,7 +92,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "material begin\n");
     fprintf(filePointer, "0                  # material (integer; 0: gas; 1: water; 2: solid)\n");
-    fprintf(filePointer, "1                  # viscous level (0: none; 1: normal)\n");
+    fprintf(filePointer, "0                  # viscous level (0: none; 1: normal)\n");
     fprintf(filePointer, "0                  # gravity state (integer; 0: off; 1: on)\n");
     fprintf(filePointer, "0, -9.806, 0       # gravity vector\n");
     fprintf(filePointer, "material end\n");
@@ -282,7 +282,17 @@ static int CaseGeometryFileGenerator(void)
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                   >> Geometry Information <<\n");
     fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#State: x, y, z, r, Vx, Vy, Vz, Wx, Wy, Wz, rho, T, cf, area, volume, matID, g\n");
+    fprintf(filePointer, "#State: Ox, Oy, Oz, r, Vx, Vy, Vz, Wx, Wy, Wz, rho, T, cf, area, volume, matID, g\n");
+    fprintf(filePointer, "#      (Ox, Oy, Oz): geometric center; relative frame for transformation\n");
+    fprintf(filePointer, "#      r: bounding sphere\n");
+    fprintf(filePointer, "#      (Vx, Vy, Vz): initial translational velocity of geometric center\n");
+    fprintf(filePointer, "#      (Wx, Wy, Wz): initial rotational velocity relative to geometric center\n");
+    fprintf(filePointer, "#      rho: density; > 1.0e36 if ignore surface force effect\n");
+    fprintf(filePointer, "#      T: wall temperature; < 0.0 if adiabatic; >= 0.0 if constant\n");
+    fprintf(filePointer, "#      cf: roughness; <= 0.0 if slip; > 0.0 if no slip\n");
+    fprintf(filePointer, "#      area, volume, matID: surface area, volume, material identifier\n");
+    fprintf(filePointer, "#      g: level of gravity; == 0.0 if no gravity effect\n");
+    fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#                 >> Analytical Sphere Section <<\n");

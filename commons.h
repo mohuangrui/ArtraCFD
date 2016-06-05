@@ -719,8 +719,8 @@ typedef struct {
     RealVec F; /* force */
     RealVec Tau; /* torque */
     Real rho; /* density */
-    Real T; /* wall temperature. T < 0, adiabatic; T >= 0, constant temperature */
-    Real cf; /* roughness. cf <= 0, slip wall; cf > 0, no-slip wall */
+    Real T; /* wall temperature */
+    Real cf; /* roughness */
     Real area; /* area */
     Real volume; /* volume */
     Real gState; /* gravity state */

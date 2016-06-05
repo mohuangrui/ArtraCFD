@@ -26,10 +26,19 @@ static void ZeroGradient(const Real [restrict], Real [restrict]);
  ****************************************************************************/
 void BoundaryCondtionsAndTreatments(const int tn, Space *space, const Model *model)
 {
+    /*
+     * Internal boundary treatment
+     * Should be performed first to ensure stencils for diffusive flux
+     * discretization are treated correctly, especially for collapsed
+     * dimensions.
+     */
+    ImmersedBoundaryTreatment(tn, space, model);
+    /*
+     * External boundary treatment
+     */
     for (int p = PWB; p < PWG; ++p) {
         ApplyBoundaryConditions(p, tn, space, model);
     }
-    ImmersedBoundaryTreatment(tn, space, model);
     return;
 }
 static void ApplyBoundaryConditions(const int p, const int tn, Space *space, const Model *model)
