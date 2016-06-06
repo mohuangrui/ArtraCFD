@@ -31,8 +31,8 @@ int WriteFieldDataAtProbes(const Time *time, const Space *space, const Model *mo
     int idx = 0; /* linear array index math variable */
     int idxOld = 0; /* linear array index math variable */
     Real Uo[DIMUo] = {0.0};
-    const IntVec nMin = {part->ns[PIN][X][MIN], part->ns[PIN][Y][MIN], part->ns[PIN][Z][MIN]};
-    const IntVec nMax = {part->ns[PIN][X][MAX], part->ns[PIN][Y][MAX], part->ns[PIN][Z][MAX]};
+    const IntVec nMin = {part->ns[PIN][X][MIN] - 1, part->ns[PIN][Y][MIN] - 1, part->ns[PIN][Z][MIN] - 1};
+    const IntVec nMax = {part->ns[PIN][X][MAX] + 1, part->ns[PIN][Y][MAX] + 1, part->ns[PIN][Z][MAX] + 1};
     const RealVec sMin = {part->domain[X][MIN], part->domain[Y][MIN], part->domain[Z][MIN]};
     const RealVec d = {part->d[X], part->d[Y], part->d[Z]};
     const RealVec dd = {part->dd[X], part->dd[Y], part->dd[Z]};
