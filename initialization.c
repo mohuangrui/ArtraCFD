@@ -29,6 +29,7 @@ static int GlobalInitialization(Space *);
 static int InitializeFieldData(Space *, const Model *);
 static int ApplyRegionalInitializer(const int, Space *, const Model *);
 static int InitializeGeometryData(Geometry *);
+static int IdentifyGeometryState(Geometry *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
@@ -45,6 +46,7 @@ int InitializeComputationalDomain(Time *time, Space *space, const Model *model)
     ComputeGeometryParameters(space->part.collapsed, &(space->geo));
     ComputeGeometryDomain(space, model);
     BoundaryCondtionsAndTreatments(TO, space, model);
+    IdentifyGeometryState(&(space->geo));
     if (0 == time->restart) { /* non restart */
         WriteFieldData(time, space, model);
         WriteGeometryData(time, &(space->geo));
@@ -246,6 +248,28 @@ static int InitializeGeometryData(Geometry *geo)
     }
     fclose(filePointer); /* close current opened file */
     return 0;
+}
+/*
+ * Identify geometry state
+ *
+ * Identify some special geometry state to simplfy computation.
+ * Should be done after the initial computation of geometry domain.
+ */
+static int IdentifyGeometryState(Geometry *geo)
+{
+    Polyhedron *poly = NULL;
+    for (int n = 0; n < geo->totalN; ++n) {
+        poly = geo->poly + n;
+        if (1.0e36 < poly->rho) { /* ignore surface force integration */
+            poly->state = 2;
+            if (EqualReal(poly->V[X], 0.0) && EqualReal(poly->V[Y], 0.0) && 
+                    EqualReal(poly->V[Z], 0.0) && EqualReal(poly->W[X], 0.0) &&
+                    EqualReal(poly->W[Y], 0.0) && EqualReal(poly->W[Z], 0.0) &&
+                    EqualReal(poly->gState, 0.0)) { /* stationary geometry */
+                poly->state = 1;
+            }
+        }
+    }
 }
 /* a good practice: end file with a newline */
 

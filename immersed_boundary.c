@@ -81,7 +81,7 @@ static void InitializeGeometryDomain(Space *space)
                 idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
                 for (int n = 0; n < geo->totalN; ++n) {
                     poly = geo->poly + n;
-                    if (1 == poly->steady) {
+                    if (1 == poly->state) {
                         if (n + 1 == node[idx].geoID) {
                             skip = 1;
                             break;
@@ -139,7 +139,7 @@ static void IdentifyGeometryNode(Space *space)
     RealVec p = {0.0}; /* node point */
     for (int n = 0; n < geo->totalN; ++n) {
         poly = geo->poly + n;
-        if (1 == poly->steady) {
+        if (1 == poly->state) {
             continue;
         }
         /* determine search range according to bounding box of polyhedron and valid node space */
