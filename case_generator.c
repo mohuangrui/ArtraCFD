@@ -287,11 +287,12 @@ static int CaseGeometryFileGenerator(void)
     fprintf(filePointer, "#      r: bounding sphere\n");
     fprintf(filePointer, "#      (Vx, Vy, Vz): initial translational velocity of geometric center\n");
     fprintf(filePointer, "#      (Wx, Wy, Wz): initial rotational velocity relative to geometric center\n");
-    fprintf(filePointer, "#      rho: density; > 1.0e36 if ignore surface force effect\n");
-    fprintf(filePointer, "#      T: wall temperature; < 0.0 if adiabatic; >= 0.0 if constant\n");
-    fprintf(filePointer, "#      cf: roughness; <= 0.0 if slip; > 0.0 if no slip\n");
+    fprintf(filePointer, "#      rho: density; > 1.0e10 if ignore surface force effect\n");
+    fprintf(filePointer, "#      T: wall temperature; < 0 if adiabatic; >= 0 if constant\n");
+    fprintf(filePointer, "#      cf: roughness; <= 0 if slip; > 0 if no slip\n");
     fprintf(filePointer, "#      area, volume, matID: surface area, volume, material identifier\n");
-    fprintf(filePointer, "#      g: level of gravity; == 0.0 if no gravity effect\n");
+    fprintf(filePointer, "#      g: level of gravity; = 0 if no gravity effect\n");
+    fprintf(filePointer, "#      stationary object: V = 0; W = 0; rho > 1.0e36; g = 0\n");
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");

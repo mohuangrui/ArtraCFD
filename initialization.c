@@ -260,12 +260,12 @@ static int IdentifyGeometryState(Geometry *geo)
     Polyhedron *poly = NULL;
     for (int n = 0; n < geo->totalN; ++n) {
         poly = geo->poly + n;
-        if (1.0e36 < poly->rho) { /* ignore surface force integration */
+        if (1.0e10 < poly->rho) { /* ignore surface force integration */
             poly->state = 2;
             if (EqualReal(poly->V[X], 0.0) && EqualReal(poly->V[Y], 0.0) && 
                     EqualReal(poly->V[Z], 0.0) && EqualReal(poly->W[X], 0.0) &&
                     EqualReal(poly->W[Y], 0.0) && EqualReal(poly->W[Z], 0.0) &&
-                    EqualReal(poly->gState, 0.0)) { /* stationary geometry */
+                    EqualReal(poly->gState, 0.0) && (1.0e36 < poly->rho)) { /* stationary geometry */
                 poly->state = 1;
             }
         }
