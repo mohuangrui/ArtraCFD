@@ -33,6 +33,7 @@
 extern void ConvertPolyhedron(Polyhedron *);
 extern void AllocatePolyhedronMemory(const int vertN, const int faceN, Polyhedron *);
 extern void AddEdge(const int v0, const int v1, const int f, Polyhedron *);
+extern void QuickSortEdge(const int n, int e[restrict][4]);
 extern void BuildTriangle(const int faceID, const Polyhedron *, Real v0[restrict], 
         Real v1[restrict], Real v2[restrict], Real e01[restrict], Real e02[restrict]);
 /*

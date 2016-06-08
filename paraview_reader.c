@@ -231,6 +231,7 @@ static int ReadPolygonPolyData(const int start, const int end, Geometry *geo, Pa
             AddEdge(poly->f[n][1], poly->f[n][2], n, poly); 
             AddEdge(poly->f[n][2], poly->f[n][0], n, poly); 
         }
+        QuickSortEdge(poly->edgeN, poly->e);
         ReadInLine(filePointer, "</Piece>");
     }
     ReadInLine(filePointer, "<!--");

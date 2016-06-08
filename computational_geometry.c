@@ -22,7 +22,7 @@
  * Static Function Declarations
  ****************************************************************************/
 static int AddVertex(const Real [restrict], Polyhedron *);
-static int FindEdge(const int, const int, const Polyhedron *);
+static int FindEdge(const int, const int, const int, int [restrict][4]);
 static void ComputeParametersSphere(const int, Polyhedron *);
 static void ComputeParametersPolyhedron(const int, Polyhedron *);
 static void TransformVertex(const Real [restrict], const Real [restrict], 
@@ -45,6 +45,7 @@ void ConvertPolyhedron(Polyhedron *poly)
         AddEdge(poly->f[n][1], poly->f[n][2], n, poly); 
         AddEdge(poly->f[n][2], poly->f[n][0], n, poly); 
     }
+    QuickSortEdge(poly->edgeN, poly->e);
     /* adjust the memory allocation */
     RetrieveStorage(poly->facet);
     poly->facet = NULL;
@@ -80,32 +81,77 @@ static int AddVertex(const Real v[restrict], Polyhedron *poly)
 }
 void AddEdge(const int v0, const int v1, const int f, Polyhedron *poly)
 {
+    /* insert by a predefined order */
+    const int vMax = (v0 > v1) ? v0 : v1;
+    const int vMin = (v0 > v1) ? v1 : v0;
     /* search the edge list, if already exist, add the second face index */
     for (int n = 0; n < poly->edgeN; ++n) {
-        if (((v0 == poly->e[n][0]) && (v1 == poly->e[n][1])) ||
-                ((v1 == poly->e[n][0]) && (v0 == poly->e[n][1]))) {
+        if ((vMax == poly->e[n][0]) && (vMin == poly->e[n][1])) {
             poly->e[n][3] = f;
             return;
         }
     }
     /* otherwise, add to the edge list */
-    poly->e[poly->edgeN][0] = v0;
-    poly->e[poly->edgeN][1] = v1;
+    poly->e[poly->edgeN][0] = vMax;
+    poly->e[poly->edgeN][1] = vMin;
     poly->e[poly->edgeN][2] = f;
     ++(poly->edgeN); /* increase pointer */
     return;
 }
-static int FindEdge(const int v0, const int v1, const Polyhedron *poly)
+void QuickSortEdge(const int n, int e[restrict][4])
 {
-    /* search the edge list and return the edge index */
-    for (int n = 0; n < poly->edgeN; ++n) {
-        if (((v0 == poly->e[n][0]) && (v1 == poly->e[n][1])) ||
-                ((v1 == poly->e[n][0]) && (v0 == poly->e[n][1]))) {
-            return n;
+    if (2 > n) {
+        return;
+    }
+    int v[2] = {0};
+    int temp = 0;
+    int i = 0;
+    int j = 0;
+    v[0] = e[n/2][0];
+    v[1] = e[n/2][1];
+    for (i = 0, j = n - 1;; ++i, --j) {
+        while ((e[i][0] < v[0]) || ((e[i][0] == v[0]) && (e[i][1] < v[1]))) {
+            ++i;
+        }
+        while ((e[j][0] > v[0]) || ((e[j][0] == v[0]) && (e[j][1] > v[1]))) {
+            --j;
+        }
+        if (i >= j) {
+            break;
+        }
+        for (int k = 0; k < 4; ++k) {
+            temp = e[i][k];
+            e[i][k] = e[j][k];
+            e[j][k] = temp;
         }
     }
-    /* otherwise, something is wrong */
-    return 0;
+    QuickSortEdge(i, e);
+    QuickSortEdge(n - i, e + i);
+}
+static int FindEdge(const int v0, const int v1, const int n, int e[restrict][4])
+{
+    /* obtain a predefined order */
+    const int vMax = (v0 > v1) ? v0 : v1;
+    const int vMin = (v0 > v1) ? v1 : v0;
+    /* binary search the edge list and return the edge index */
+    int i = 0;
+    int j = n - 1;
+    int k = 0;
+    while (i <= j) {
+        k = (i + j) / 2;
+        if ((vMax == e[k][0]) && (vMin == e[k][1])) {
+            return k;
+        } else {
+            if ((vMax > e[k][0]) || ((vMax == e[k][0]) && (vMin > e[k][1]))) {
+                i = k + 1;
+            } else {
+                j = k - 1;
+            }
+        }
+    }
+    /* target was not found */
+    FatalError("finding edge failed...");
+    return -1;
 }
 void Transformation(const Real scale[restrict], const Real angle[restrict],
         const Real offset[restrict], Polyhedron *poly)
@@ -237,9 +283,9 @@ static void ComputeParametersSphere(const int collapse, Polyhedron *poly)
         num = 0.5;
     }
     num = num * poly->r * poly->r * poly->volume;
-    poly->I[X][X] = num;  poly->I[X][Y] = 0;    poly->I[X][Z] = 0;
-    poly->I[Y][X] = 0;    poly->I[Y][Y] = num;  poly->I[Y][Z] = 0;
-    poly->I[Z][X] = 0;    poly->I[Z][Y] = 0;    poly->I[Z][Z] = num;
+    poly->I[X][X] = num;  poly->I[X][Y] = 0.0;  poly->I[X][Z] = 0.0;
+    poly->I[Y][X] = 0.0;  poly->I[Y][Y] = num;  poly->I[Y][Z] = 0.0;
+    poly->I[Z][X] = 0.0;  poly->I[Z][Y] = 0.0;  poly->I[Z][Z] = num;
     return;
 }
 static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
@@ -403,13 +449,14 @@ void BuildTriangle(const int faceID, const Polyhedron *poly, Real v0[restrict],
 }
 int PointInPolyhedron(const Real p[restrict], const Polyhedron *poly, int faceID[restrict])
 {
-    RealVec v0 = {0.0}; /* vertices */
-    RealVec v1 = {0.0};
-    RealVec v2 = {0.0};
-    RealVec e01 = {0.0}; /* edges */
-    RealVec e02 = {0.0};
-    RealVec pi = {0.0}; /* closest point */
-    RealVec N = {0.0}; /* normal of the closest point */
+    const Real zero = 0.0;
+    RealVec v0 = {zero}; /* vertices */
+    RealVec v1 = {zero};
+    RealVec v2 = {zero};
+    RealVec e01 = {zero}; /* edges */
+    RealVec e02 = {zero};
+    RealVec pi = {zero}; /* closest point */
+    RealVec N = {zero}; /* normal of the closest point */
     /*
      * Parametric equation of triangle defined plane 
      * T(s,t) = v0 + s(v1-v0) + t(v2-v0) = v0 + s*e01 + t*e02
@@ -419,8 +466,8 @@ int PointInPolyhedron(const Real p[restrict], const Polyhedron *poly, int faceID
      * s+t=1 is true with each condition corresponds to one edge. Each 
      * s=0, t=0; s=1, t=0; s=0, t=1 corresponds to v0, v1, and v2.
      */
-    RealVec para = {0.0}; /* parametric coordinates */
-    Real distSquare = 0.0; /* store computed squared distance */
+    RealVec para = {zero}; /* parametric coordinates */
+    Real distSquare = zero; /* store computed squared distance */
     Real distSquareMin = FLT_MAX; /* store minimum squared distance */
     int fid = 0; /* closest face identifier */
     for (int n = 0; n < poly->faceN; ++n) {
@@ -436,7 +483,7 @@ int PointInPolyhedron(const Real p[restrict], const Polyhedron *poly, int faceID
     pi[X] = p[X] - pi[X];
     pi[Y] = p[Y] - pi[Y];
     pi[Z] = p[Z] - pi[Z];
-    if (0.0 < Dot(pi, N)) {
+    if (zero < Dot(pi, N)) {
         /* outside polyhedron */
         return 0;
     } else {
@@ -463,7 +510,7 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
     const Real one = 1.0;
     Real s = b * e - c * d;
     Real t = b * d - a * e;
-    Real distSquare = 0.0;
+    Real distSquare = zero;
     if (s + t <= det) {
         if (s < zero) {
             if (t < zero) {
@@ -629,27 +676,27 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
 Real ComputeIntersection(const Real p[restrict], const int faceID, const Polyhedron *poly,
         Real pi[restrict], Real N[restrict])
 {
-    RealVec v0 = {0.0}; /* vertices */
-    RealVec v1 = {0.0};
-    RealVec v2 = {0.0};
-    RealVec e01 = {0.0}; /* edges */
-    RealVec e02 = {0.0};
-    RealVec para = {0.0}; /* parametric coordinates */
     const Real zero = 0.0;
     const Real one = 1.0;
+    RealVec v0 = {zero}; /* vertices */
+    RealVec v1 = {zero};
+    RealVec v2 = {zero};
+    RealVec e01 = {zero}; /* edges */
+    RealVec e02 = {zero};
+    RealVec para = {zero}; /* parametric coordinates */
     const IntVec v = {poly->f[faceID][0], poly->f[faceID][1], poly->f[faceID][2]}; /* vertex index in vertex list */
     int e = 0; /* edge index in edge list */
     BuildTriangle(faceID, poly, v0, v1, v2, e01, e02);
     const Real distSquare = PointTriangleDistance(p, v0, e01, e02, para);
-    if (EqualReal(para[1], zero)) {
-        if (EqualReal(para[2], zero)) {
+    if (zero == para[1]) {
+        if (zero == para[2]) {
             /* vertex 0 */
             for (int s = 0; s < DIMS; ++s) {
                 pi[s] = v0[s];
                 N[s] = poly->Nv[v[0]][s];
             }
         } else {
-            if (EqualReal(para[2], one)) {
+            if (one == para[2]) {
                 /* vertex 2 */
                 for (int s = 0; s < DIMS; ++s) {
                     pi[s] = v2[s];
@@ -657,7 +704,7 @@ Real ComputeIntersection(const Real p[restrict], const int faceID, const Polyhed
                 }
             } else {
                 /* edge e02 */
-                e = FindEdge(v[0], v[2], poly);
+                e = FindEdge(v[0], v[2], poly->edgeN, poly->e);
                 for (int s = 0; s < DIMS; ++s) {
                     pi[s] = v0[s] + para[2] * e02[s];
                     N[s] = poly->Ne[e][s];
@@ -665,24 +712,24 @@ Real ComputeIntersection(const Real p[restrict], const int faceID, const Polyhed
             }
         }
     } else {
-        if (EqualReal(para[1], one)) {
+        if (one == para[1]) {
             /* vertex 1 */
             for (int s = 0; s < DIMS; ++s) {
                 pi[s] = v1[s];
                 N[s] = poly->Nv[v[1]][s];
             }
         } else {
-            if (EqualReal(para[2], zero)) {
+            if (zero == para[2]) {
                 /* edge e01 */
-                e = FindEdge(v[0], v[1], poly);
+                e = FindEdge(v[0], v[1], poly->edgeN, poly->e);
                 for (int s = 0; s < DIMS; ++s) {
                     pi[s] = v0[s] + para[1] * e01[s];
                     N[s] = poly->Ne[e][s];
                 }
             } else {
-                if (EqualReal(para[0], zero)) {
+                if (zero == para[0]) {
                     /* edge e12 */
-                    e = FindEdge(v[1], v[2], poly);
+                    e = FindEdge(v[1], v[2], poly->edgeN, poly->e);
                     for (int s = 0; s < DIMS; ++s) {
                         pi[s] = v0[s] + para[1] * e01[s] + para[2] * e02[s];
                         N[s] = poly->Ne[e][s];
