@@ -465,8 +465,6 @@
  *   an algorithm or even an operation. Be aware of catastrophic cancellation
  *   in operations, numerical stability of the algorithms.
  * - Recommend double rather than float type for floating point variables. 
- * - Don't test for exact equality between floating point numbers. Don't do
- *   this even if one was assigned to the other: y = x;...if (x == y)...
  * - Don't subtract nearly equal quantities and then divide by something small.
  *   This often results in catastrophic cancellation and all digits of accuracy
  *   are lost. In general, if you subtract numbers where the first k digits are

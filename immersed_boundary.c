@@ -427,25 +427,26 @@ static void FlowReconstruction(const int tn, const int n[restrict], const Real p
         const int type, const int geoID, const Polyhedron *poly, const Partition *part, const Node *const node, 
         const Model *model, const Real pO[restrict], const Real N[restrict], Real UoO[restrict], Real UoI[restrict])
 {
-    Real weightSum = 0.0; /* store the sum of weights */
+    const Real zero = 0.0;
+    Real weightSum = zero; /* store the sum of weights */
     /* pre-estimate step */
     weightSum = InverseDistanceWeighting(tn, n, p, h, type, geoID, part, node, model, UoI);
     /* physical boundary condition enforcement step */
-    RealVec Vs = {0.0}; /* general motion of boundary point */
+    RealVec Vs = {zero}; /* general motion of boundary point */
     /* Vs = Vcentroid + W x r */
     const RealVec r = {pO[X] - poly->O[X], pO[Y] - poly->O[Y], pO[Z] - poly->O[Z]};
     Cross(poly->W, r, Vs); /* relative motion in translating coordinate system */
     Vs[X] = poly->V[X] + Vs[X];
     Vs[Y] = poly->V[Y] + Vs[Y];
     Vs[Z] = poly->V[Z] + Vs[Z];
-    if (0 < poly->cf) { /* noslip wall */
+    if (zero < poly->cf) { /* noslip wall */
         UoO[1] = Vs[X];
         UoO[2] = Vs[Y];
         UoO[3] = Vs[Z];
     } else { /* slip wall */
-        RealVec Ta = {0.0}; /* tangential vector */
-        RealVec Tb = {0.0}; /* tangential vector */
-        Real RHS[DIMS] = {0.0}; /* right hand side vector */
+        RealVec Ta = {zero}; /* tangential vector */
+        RealVec Tb = {zero}; /* tangential vector */
+        Real RHS[DIMS] = {zero}; /* right hand side vector */
         OrthogonalSpace(N, Ta, Tb);
         RHS[X] = Dot(Vs, N);
         RHS[Y] = Dot(UoI + 1, Ta) / weightSum;
@@ -455,7 +456,7 @@ static void FlowReconstruction(const int tn, const int n[restrict], const Real p
         UoO[3] = N[Z] * RHS[X] + Ta[Z] * RHS[Y] + Tb[Z] * RHS[Z];
     }
     UoO[4] = UoI[4] / weightSum; /* zero gradient pressure */
-    if (0.0 > poly->T) { /* adiabatic, dT/dn = 0 */
+    if (zero > poly->T) { /* adiabatic, dT/dn = 0 */
         UoO[5] = UoI[5] / weightSum;
     } else { /* otherwise, use specified constant wall temperature, T = Tw */
         UoO[5] = poly->T;

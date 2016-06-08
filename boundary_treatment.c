@@ -53,10 +53,11 @@ static void ApplyBoundaryConditions(const int p, const int tn, Space *space, con
     int idxI = 0; /* index at image node */
     int idxO = 0; /* index at boundary point */
     int idxh = 0; /* index at neighbouring point */
-    Real UoG[DIMUo] = {0.0};
-    Real UoI[DIMUo] = {0.0};
-    Real UoO[DIMUo] = {0.0};
-    Real Uoh[DIMUo] = {0.0};
+    const Real zero = 0.0;
+    Real UoG[DIMUo] = {zero};
+    Real UoI[DIMUo] = {zero};
+    Real UoO[DIMUo] = {zero};
+    Real Uoh[DIMUo] = {zero};
     const Real UoGiven[DIMUo] = { /* specified primitive values of current boundary */
         part->valueBC[p][0],
         part->valueBC[p][1],
@@ -94,7 +95,7 @@ static void ApplyBoundaryConditions(const int p, const int tn, Space *space, con
                         UoO[2] = (!N[Y]) * Uoh[2];
                         UoO[3] = (!N[Z]) * Uoh[3];
                         UoO[4] = Uoh[4]; /* zero normal gradient of pressure */
-                        if (0.0 > UoGiven[5]) { /* adiabatic, dT/dn = 0 */
+                        if (zero > UoGiven[5]) { /* adiabatic, dT/dn = 0 */
                             UoO[5] = Uoh[5];
                         } else { /* otherwise, use specified constant wall temperature, T = Tw */
                             UoO[5] = UoGiven[5];
@@ -106,11 +107,11 @@ static void ApplyBoundaryConditions(const int p, const int tn, Space *space, con
                         idxh = IndexNode(k - N[Z], j - N[Y], i - N[X], part->n[Y], part->n[X]);
                         Uh = node[idxh].U[tn];
                         PrimitiveByConservative(model->gamma, model->gasR, Uh, Uoh);
-                        UoO[1] = 0.0;
-                        UoO[2] = 0.0;
-                        UoO[3] = 0.0;
+                        UoO[1] = zero;
+                        UoO[2] = zero;
+                        UoO[3] = zero;
                         UoO[4] = Uoh[4]; /* zero normal gradient of pressure */
-                        if (0.0 > UoGiven[5]) { /* adiabatic, dT/dn = 0 */
+                        if (zero > UoGiven[5]) { /* adiabatic, dT/dn = 0 */
                             UoO[5] = Uoh[5];
                         } else { /* otherwise, use specified constant wall temperature, T = Tw */
                             UoO[5] = UoGiven[5];

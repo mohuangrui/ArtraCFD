@@ -351,9 +351,85 @@ Real MaxReal(const Real x, const Real y)
     }
     return y;
 }
+/*
+ * Comparing for float equality
+ *
+ * https://randomascii.wordpress.com/2012/02/25/
+ * comparing-floating-point-numbers-2012-edition/
+ *
+ * https://randomascii.wordpress.com/2012/06/26/
+ * doubles-are-not-floats-so-dont-compare-them/
+ *
+ * When comparing against zero, relative epsilons based comparisons
+ * are meaningless, an absolute epsilon is needed. When comparing 
+ * against a non-zero number, relative epsilons based comparisons
+ * are desirable. The most generic way is to use a mixture of 
+ * absolute and relative epsilons.
+ *
+ * Floating point math is not exact. Simple values like 0.1 cannot 
+ * be precisely represented using binary floating point numbers, 
+ * and the limited precision of floating point numbers means that
+ * slight changes in the order of operations or the precision of
+ * intermediates can change the result. 
+ *
+ * There is a clear difference between 0.1, float(0.1), and double(0.1).
+ * In C/C++ the numbers 0.1 and double(0.1) are the same thing, but here
+ * "0.1" in text meaning the exact base-10 number, whereas float(0.1) and
+ * double(0.1) are rounded versions of 0.1. And, to be clear, float(0.1) 
+ * and double(0.1) do not have the same value, because float(0.1) has 
+ * fewer binary digits, and therefore has more error. 
+ *
+ * If you do a series of operations with floating-point numbers then,
+ * since they have finite precision, it is normal and expected that 
+ * some error will creep in. If you do the same calculation in a 
+ * slightly different way then it is normal and expected that you 
+ * might get slightly different results. In that case a thoughtful
+ * comparison of the two results with a carefully chosen relative 
+ * and/or absolute epsilon value is entirely appropriate.
+ *
+ * However if you start adding epsilons carelessly - if you allow 
+ * for error where there should be none - then you get a chaotic
+ * explosion of uncertainty where you can't tell truth from fiction.
+ *
+ * Sometimes people think that floating-point numbers are magically
+ * error prone. There seems to be a belief that if you redo the exact
+ * same calculation with the exact same inputs then you might get a 
+ * different answer. Now this can happen if you change compilers or
+ * use instructions like fsin whose value is not precisely defined.
+ * But if you stick to the basic five operations (plus, minus, divide,
+ * multiply, square root) and you haven't recompiled your code then 
+ * you should absolutely expect the same results.
+ *
+ * Constants compared to themselves: 
+ * float x = 1.1; 
+ * if (x != 1.1)
+ * Fatally flawed floats: The problem is that there are two main 
+ * floating-point types in most C/C++ implementations. These are 
+ * float (32 bits) and double (64 bits). Floating-point constants
+ * in C/C++ are double precision, the code above is equivalent to:
+ * if (float(1.1) != double(1.1)); which is flawed. In other words, 
+ * it tests whether 1.1 when stored as a float is the same as the 
+ * one when stored as a double, which is frequently false given 
+ * that there are twice as many bits in a double as there are in
+ * a float. Two reasonable ways to fix the initial code would be:
+ * float x = 1.1f; // float constant
+ * if (x != 1.1f) // float constant
+ * or:
+ * double x = 1.1; // double constant
+ * if (x != 1.1) // double constant
+ */
 int EqualReal(const Real x, const Real y)
 {
-    return (fabs(x - y) <= DBL_EPSILON * MaxReal(fabs(x), fabs(y)));
+    const Real epsilon = DBL_EPSILON;
+    const Real diffMax = FLT_MIN;
+    const Real diff = fabs(x - y);
+    if (diff <= diffMax) {
+        return 1;
+    }
+    const Real absx = fabs(x);
+    const Real absy = fabs(y);
+    const Real absMax = (absx > absy) ? absx : absy;
+    return (diff <= epsilon * absMax);
 }
 int MinInt(const int x, const int y)
 {
@@ -371,10 +447,11 @@ int MaxInt(const int x, const int y)
 }
 int Sign(const Real x)
 {
-    if (0.0 < x) {
+    const Real zero = 0.0;
+    if (zero < x) {
         return 1;
     }
-    if (0.0 > x) {
+    if (zero > x) {
         return -1;
     }
     return 0;
@@ -410,6 +487,7 @@ void Cross(const Real V1[restrict], const Real V2[restrict], Real V[restrict])
 void OrthogonalSpace(const Real N[restrict], Real Ta[restrict], Real Tb[restrict])
 {
     int mark = Z; /* default mark for minimum component */
+    const Real zero = 0.0;
     if (fabs(N[mark]) > fabs(N[Y])) {
         mark = Y;
     }
@@ -417,18 +495,18 @@ void OrthogonalSpace(const Real N[restrict], Real Ta[restrict], Real Tb[restrict
         mark = X;
     }
     if (X == mark) {
-        Ta[X] = 0.0;
+        Ta[X] = zero;
         Ta[Y] = -N[Z];
         Ta[Z] = N[Y];
     } else {
         if (Y == mark) {
             Ta[X] = N[Z];
-            Ta[Y] = 0.0;
+            Ta[Y] = zero;
             Ta[Z] = -N[X];
         } else {
             Ta[X] = -N[Y];
             Ta[Y] = N[X];
-            Ta[Z] = 0.0;
+            Ta[Z] = zero;
         }
     }
     Normalize(DIMS, Norm(Ta), Ta);

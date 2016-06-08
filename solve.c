@@ -44,19 +44,20 @@ int Solve(Time *time, Space *space, const Model *model)
 static int SolutionEvolution(Time *time, Space *space, const Model *model)
 {
     Real dt = time->end - time->now; /* time step size */
+    const Real zero = 0.0;
     /* check whether current time is equal to or larger than the end time */
-    if (0.0 >= dt) {
+    if (zero >= dt) {
         fprintf(stdout, "  current time is equal to or larger than the end time...\n");
         return 1;
     }
     /* obtain the desired export time interval */
     const Real interval = dt / (Real)(MaxInt(time->outputN - time->countOutput, 1));
     const Real probeInterval = dt / (Real)(time->outputNProbe);
-    Real record = 0.0; /* used for control when to export data */
-    Real probeRecord = 0.0; /* used for control when to export probe data */
+    Real record = zero; /* used for control when to export data */
+    Real probeRecord = zero; /* used for control when to export probe data */
     /* set some timers for monitoring time consuming of process */
     Timer operationTimer; /* timer for computing operations */
-    Real operationTime = 0.0; /* record consuming time of operation */
+    Real operationTime = zero; /* record consuming time of operation */
     while ((time->now < time->end) && (time->countStep < time->stepN)) {
         /*
          * Step count
@@ -97,16 +98,16 @@ static int SolutionEvolution(Time *time, Space *space, const Model *model)
          */
         record = record + dt;
         probeRecord = probeRecord + dt;
-        if ((record >= interval) || (time->now >= time->end) || (time->countStep == time->stepN)) {
+        if ((record >= interval) || (time->now == time->end) || (time->countStep == time->stepN)) {
             ++(time->countOutput); /* export count increase */
             fprintf(stdout, "  exporting data...\n");
             WriteFieldData(time, space, model);
             WriteGeometryData(time, &(space->geo));
-            record = 0.0; /* reset accumulated time */
+            record = zero; /* reset accumulated time */
         }
-        if ((probeRecord > probeInterval) || (time->now >= time->end) || (time->countStep == time->stepN)) {
+        if ((probeRecord > probeInterval) || (time->now == time->end) || (time->countStep == time->stepN)) {
             WriteFieldDataAtProbes(time, space, model);
-            probeRecord = 0.0; /* reset probe accumulated time */
+            probeRecord = zero; /* reset probe accumulated time */
         }
     }
     return 0;

@@ -23,7 +23,7 @@
  * Operand
  */
 typedef struct {
-    double * const base; /* pointer to stack bottom */
+    double *const base; /* pointer to stack bottom */
     double *top; /* pointer to stack top */
     const int stacksize;
 } OperandStack;
@@ -31,7 +31,7 @@ typedef struct {
  * Operator
  */
 typedef struct {
-    char * const base; /* pointer to stack bottom */
+    char *const base; /* pointer to stack bottom */
     char *top; /* pointer to stack top */
     const int stacksize;
     const char priority[19][19]; /* store the priority of operators */
@@ -83,7 +83,7 @@ int ExpressionCalculator(void)
     /*
      * Data declaration and initialization
      */
-    double operandStackSpace[100] = {0};
+    double operandStackSpace[100] = {0.0};
     OperandStack theOperandStack = {
         .base = operandStackSpace,
         .top = operandStackSpace,
@@ -118,7 +118,7 @@ int ExpressionCalculator(void)
     };
     Parameter theParameter = {
         .pi = acos(-1),
-        .answer = 0,
+        .answer = 0.0,
         .radianMode = 1,
         .angleFactor = 1.0
     };
@@ -190,9 +190,9 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
     char *pointer = command; /* pointer to point the expression */
     char headOperator = '\0'; /* store the top operator of operator stack */
     char currentOperator = '\0'; /* store the current operator in command */
-    double currentOperand = 0; /* store the current operand in command */
-    double operandA = 0; /* first top operand in stack */
-    double operandB = 0; /* second top operand in stack */
+    double currentOperand = 0.0; /* store the current operand in command */
+    double operandA = 0.0; /* first top operand in stack */
+    double operandB = 0.0; /* second top operand in stack */
     /*
      * Always initialize and reset the stack status
      */
@@ -316,7 +316,7 @@ static int ComputeExpression(const char *currentLine, OperandStack *operandStack
      */
     if (1 != (operandStack->top - operandStack->base)) {
         ShowInformation("error, wrong expression");
-        parameter->answer = 0; /* reset answer */
+        parameter->answer = 0.0; /* reset answer */
         return 1;
     }
     /*
@@ -668,7 +668,7 @@ static int IsDot(const char character)
 static double ReadFirstFloat(char **pointerAddress)
 {
     char *string = *pointerAddress; /* copy the command address */
-    double operand = 0;
+    double operand = 0.0;
     /* first, use sscanf read a float to operand */
     sscanf(string, "%lg", &operand);
     /* then update the pointer to latest position*/
@@ -687,7 +687,7 @@ static double ReadFirstFloat(char **pointerAddress)
 static double ReadConstant(const Parameter *parameter, char **pointerAddress)
 {
     char *string = *pointerAddress; /* copy the command address */
-    double operand = 0;
+    double operand = 0.0;
     switch (string[0]) {
         case 'p': 
             operand = parameter->pi;
@@ -712,7 +712,7 @@ static int UnaryOperation(const Parameter *parameter,
             currentOperandAddress[0] = exp(operandA);
             break;
         case 'n':
-            if (0 >= operandA) {
+            if (0.0 >= operandA) {
                 ShowInformation("negative argument of ln(x)");
                 currentOperandAddress[0] = 0;
                 return 1;
@@ -720,7 +720,7 @@ static int UnaryOperation(const Parameter *parameter,
             currentOperandAddress[0] = log(operandA);
             break;
         case 'g':
-            if (0 >= operandA) {
+            if (0.0 >= operandA) {
                 ShowInformation("negative argument of lg(x)");
                 currentOperandAddress[0] = 0;
                 return 1;
@@ -737,7 +737,7 @@ static int UnaryOperation(const Parameter *parameter,
             currentOperandAddress[0] = cos(operandA * parameter->angleFactor);
             break;
         case 't':
-            if (0 == cos(operandA * parameter->angleFactor)) {
+            if (0.0 == cos(operandA * parameter->angleFactor)) {
                 ShowInformation("negative argument of tangent");
                 currentOperandAddress[0] = 0;
                 return 1;
@@ -765,7 +765,7 @@ static int BinaryOperation(const double operandB,
             currentOperandAddress[0] = operandB * operandA;
             break;
         case '/':
-            if (0 == operandA) {
+            if (0.0 == operandA) {
                 ShowInformation("negative argument of divide");
                 currentOperandAddress[0] = 0;
                 return 1;

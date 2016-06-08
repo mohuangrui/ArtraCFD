@@ -128,16 +128,18 @@ static void LLL(const Real dt, const Real coeA, const Real coeB, const int to,
     const Real *restrict Uo = NULL;
     const Real *restrict Un = NULL;
     Real *restrict Um = NULL;
+    const Real zero = 0.0;
     int idx = 0; /* linear array index math variable */
     const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
-    Real FhatR[DIMU] = {0.0}; /* reconstructed numerical convective flux vector */
-    Real FhatL[DIMU] = {0.0}; /* reconstructed numerical convective flux vector */
-    Real FvhatR[DIMU] = {0.0}; /* reconstructed numerical diffusive flux vector */
-    Real FvhatL[DIMU] = {0.0}; /* reconstructed numerical diffusive flux vector */
-    Real Phi[DIMU] = {0.0}; /* source vector */
+    Real FhatR[DIMU] = {zero}; /* reconstructed numerical convective flux vector */
+    Real FhatL[DIMU] = {zero}; /* reconstructed numerical convective flux vector */
+    Real FvhatR[DIMU] = {zero}; /* reconstructed numerical diffusive flux vector */
+    Real FvhatL[DIMU] = {zero}; /* reconstructed numerical diffusive flux vector */
+    Real Phi[DIMU] = {zero}; /* source vector */
     const IntVec partn = {part->n[X], part->n[Y], part->n[Z]};
     const RealVec dd = {part->dd[X], part->dd[Y], part->dd[Z]};
     const RealVec r = {dt * dd[X], dt * dd[Y], dt * dd[Z]};
+    const Real rPhi = (1.0 / 3.0) * dt;
     for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
         for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
             for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
@@ -157,7 +159,7 @@ static void LLL(const Real dt, const Real coeA, const Real coeB, const int to,
                 Um = node[idx].U[tm];
                 NumericalConvectiveFlux(tn, s, k, j, i, partn, node, model, FhatR);
                 NumericalConvectiveFlux(tn, s, k - h[s][Z], j - h[s][Y], i - h[s][X], partn, node, model, FhatL);
-                if (0.0 < model->refMu) {
+                if (zero < model->refMu) {
                     NumericalDiffusiveFlux(tn, s, k, j, i, partn, dd, node, model, FvhatR);
                     NumericalDiffusiveFlux(tn, s, k - h[s][Z], j - h[s][Y], i - h[s][X], partn, dd, node, model, FvhatL);
                 }
@@ -166,7 +168,7 @@ static void LLL(const Real dt, const Real coeA, const Real coeB, const int to,
                 }
                 for (int dim = 0; dim < DIMU; ++dim) {
                     /* conservative discretization for fluxes */
-                    Um[dim] = coeA * Uo[dim] + coeB * (Un[dim] - r[s] * (FhatR[dim] - FhatL[dim]) + r[s] * (FvhatR[dim] - FvhatL[dim]) + dt * Phi[dim]);
+                    Um[dim] = coeA * Uo[dim] + coeB * (Un[dim] - r[s] * (FhatR[dim] - FhatL[dim]) + r[s] * (FvhatR[dim] - FvhatL[dim]) + rPhi * Phi[dim]);
                 }
             }
         }
@@ -448,15 +450,14 @@ static void NumericalDiffusiveFluxZ(const int tn, const int k, const int j,
 static void SourceVector(const int tn, const int k, const int j, const int i,
         const int partn[restrict], const Node *const node, const Model *model, Real Phi[restrict])
 {
-    const Real coe = 1.0 / 3.0;
     const int idx = IndexNode(k, j, i, partn[Y], partn[X]);
     const Real *restrict U = node[idx].U[tn];
     const RealVec V = {U[1] / U[0], U[2] / U[0], U[3] / U[0]};
-    Phi[0] = coe * 0.0;
-    Phi[1] = coe * model->g[X];
-    Phi[2] = coe * model->g[Y];
-    Phi[3] = coe * model->g[Z];
-    Phi[4] = coe * Dot(model->g, V);
+    Phi[0] = 0.0;
+    Phi[1] = model->g[X];
+    Phi[2] = model->g[Y];
+    Phi[3] = model->g[Z];
+    Phi[4] = Dot(model->g, V);
     return;
 }
 static Real Viscosity(const Real T)

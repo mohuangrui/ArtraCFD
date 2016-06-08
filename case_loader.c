@@ -305,7 +305,7 @@ static int ReadGeometrySettingData(Geometry *geo)
     }
     return 0;
 }
-static int ReadBoundaryData(FILE *filePointer, Space *space, const int boundary)
+static int ReadBoundaryData(FILE *filePointer, Space *space, const int n)
 {
     Partition *part = &(space->part);
     String currentLine = {'\0'}; /* store the current read line */
@@ -316,28 +316,28 @@ static int ReadBoundaryData(FILE *filePointer, Space *space, const int boundary)
     fgets(currentLine, sizeof currentLine, filePointer);
     CommandLineProcessor(currentLine); /* process current line */
     if (0 == strncmp(currentLine, "inflow", sizeof currentLine)) {
-        part->typeBC[boundary] = INFLOW;
-        ReadConsecutiveRealData(filePointer, part->valueBC[boundary], VARBC);
+        part->typeBC[n] = INFLOW;
+        ReadConsecutiveRealData(filePointer, part->valueBC[n], VARBC);
         return 0;
     }
     if (0 == strncmp(currentLine, "outflow", sizeof currentLine)) {
-        part->typeBC[boundary] = OUTFLOW;
+        part->typeBC[n] = OUTFLOW;
         return 0;
     }
     if (0 == strncmp(currentLine, "slip wall", sizeof currentLine)) {
-        part->typeBC[boundary] = SLIPWALL;
+        part->typeBC[n] = SLIPWALL;
         fgets(currentLine, sizeof currentLine, filePointer);
-        sscanf(currentLine, formatI, &(part->valueBC[boundary][ENTRYBC-1]));
+        sscanf(currentLine, formatI, &(part->valueBC[n][ENTRYBC-1]));
         return 0;
     }
     if (0 == strncmp(currentLine, "noslip wall", sizeof currentLine)) {
-        part->typeBC[boundary] = NOSLIPWALL;
+        part->typeBC[n] = NOSLIPWALL;
         fgets(currentLine, sizeof currentLine, filePointer);
-        sscanf(currentLine, formatI, &(part->valueBC[boundary][ENTRYBC-1]));
+        sscanf(currentLine, formatI, &(part->valueBC[n][ENTRYBC-1]));
         return 0;
     }
     if (0 == strncmp(currentLine, "periodic", sizeof currentLine)) {
-        part->typeBC[boundary] = PERIODIC;
+        part->typeBC[n] = PERIODIC;
         return 0;
     }
     FatalError("unidentified boundary type...");
@@ -360,72 +360,74 @@ static int ReadConsecutiveRealData(FILE *filePointer, Real *address, const int e
     }
     return 0;
 }
-static int WriteBoundaryData(FILE *filePointer, const Space *space, const int boundary)
+static int WriteBoundaryData(FILE *filePointer, const Space *space, const int n)
 {
     const Partition *part = &(space->part);
-    if (INFLOW == part->typeBC[boundary]) {
-        fprintf(filePointer, "boundary type: inflow\n"); 
-        fprintf(filePointer, "density: %.6g\n", part->valueBC[boundary][0]);
-        fprintf(filePointer, "x velocity: %.6g\n", part->valueBC[boundary][1]);
-        fprintf(filePointer, "y velocity: %.6g\n", part->valueBC[boundary][2]);
-        fprintf(filePointer, "z velocity: %.6g\n", part->valueBC[boundary][3]);
-        fprintf(filePointer, "pressure: %.6g\n", part->valueBC[boundary][4]);
-        return 0;
+    switch (part->typeBC[n]) {
+        case INFLOW:
+            fprintf(filePointer, "boundary type: inflow\n"); 
+            fprintf(filePointer, "density: %.6g\n", part->valueBC[n][0]);
+            fprintf(filePointer, "x velocity: %.6g\n", part->valueBC[n][1]);
+            fprintf(filePointer, "y velocity: %.6g\n", part->valueBC[n][2]);
+            fprintf(filePointer, "z velocity: %.6g\n", part->valueBC[n][3]);
+            fprintf(filePointer, "pressure: %.6g\n", part->valueBC[n][4]);
+            break;
+        case OUTFLOW:
+            fprintf(filePointer, "boundary type: outflow\n"); 
+            break;
+        case SLIPWALL:
+            fprintf(filePointer, "boundary type: slip wall\n"); 
+            fprintf(filePointer, "temperature: %.6g\n", part->valueBC[n][ENTRYBC-1]);
+            break;
+        case NOSLIPWALL:
+            fprintf(filePointer, "boundary type: noslip wall\n"); 
+            fprintf(filePointer, "temperature: %.6g\n", part->valueBC[n][ENTRYBC-1]);
+            break;
+        case PERIODIC:
+            fprintf(filePointer, "boundary type: periodic\n"); 
+            break;
+        default:
+            FatalError("unidentified boundary type...");
+            break;
     }
-    if (OUTFLOW == part->typeBC[boundary]) {
-        fprintf(filePointer, "boundary type: outflow\n"); 
-        return 0;
-    }
-    if (SLIPWALL == part->typeBC[boundary]) {
-        fprintf(filePointer, "boundary type: slip wall\n"); 
-        fprintf(filePointer, "temperature: %.6g\n", part->valueBC[boundary][ENTRYBC-1]);
-        return 0;
-    }
-    if (NOSLIPWALL == part->typeBC[boundary]) {
-        fprintf(filePointer, "boundary type: noslip wall\n"); 
-        fprintf(filePointer, "temperature: %.6g\n", part->valueBC[boundary][ENTRYBC-1]);
-        return 0;
-    }
-    if (PERIODIC == part->typeBC[boundary]) {
-        fprintf(filePointer, "boundary type: periodic\n"); 
-        return 0;
-    }
-    FatalError("unidentified boundary type...");
     return 0;
 }
 static int WriteInitializerData(FILE *filePointer, const Space *space, const int n)
 {
     const Partition *part = &(space->part);
-    if (ICGLOBAL == part->typeIC[n]) {
-        ; /* no extra information */
-    }
-    if (ICPLANE == part->typeIC[n]) {
-        fprintf(filePointer, "regional initialization: plane\n"); 
-        fprintf(filePointer, "plane point x, y, z: %.6g, %.6g, %.6g\n", 
-                part->valueIC[n][0], part->valueIC[n][1], part->valueIC[n][2]);
-        fprintf(filePointer, "plane normal nx, ny, nz: %.6g, %.6g, %.6g\n", 
-                part->valueIC[n][3], part->valueIC[n][4], part->valueIC[n][5]);
-    }
-    if (ICSPHERE == part->typeIC[n]) {
-        fprintf(filePointer, "regional initialization: sphere\n"); 
-        fprintf(filePointer, "center point x, y, z: %.6g, %.6g, %.6g\n", 
-                part->valueIC[n][0], part->valueIC[n][1], part->valueIC[n][2]);
-        fprintf(filePointer, "radius: %.6g\n", part->valueIC[n][6]);
-    }
-    if (ICBOX == part->typeIC[n]) {
-        fprintf(filePointer, "regional initialization: box\n"); 
-        fprintf(filePointer, "xmin, ymin, zmin: %.6g, %.6g, %.6g\n", 
-                part->valueIC[n][0], part->valueIC[n][1], part->valueIC[n][2]);
-        fprintf(filePointer, "xmax, ymax, zmax: %.6g, %.6g, %.6g\n", 
-                part->valueIC[n][3], part->valueIC[n][4], part->valueIC[n][5]);
-    }
-    if (ICCYLINDER == part->typeIC[n]) {
-        fprintf(filePointer, "regional initialization: cylinder\n"); 
-        fprintf(filePointer, "xmin, ymin, zmin: %.6g, %.6g, %.6g\n", 
-                part->valueIC[n][0], part->valueIC[n][1], part->valueIC[n][2]);
-        fprintf(filePointer, "xmax, ymax, zmax: %.6g, %.6g, %.6g\n", 
-                part->valueIC[n][3], part->valueIC[n][4], part->valueIC[n][5]);
-        fprintf(filePointer, "radius: %.6g\n", part->valueIC[n][6]);
+    switch (part->typeIC[n]) {
+        case ICGLOBAL:
+            break;
+        case ICPLANE:
+            fprintf(filePointer, "regional initialization: plane\n"); 
+            fprintf(filePointer, "plane point x, y, z: %.6g, %.6g, %.6g\n", 
+                    part->valueIC[n][0], part->valueIC[n][1], part->valueIC[n][2]);
+            fprintf(filePointer, "plane normal nx, ny, nz: %.6g, %.6g, %.6g\n", 
+                    part->valueIC[n][3], part->valueIC[n][4], part->valueIC[n][5]);
+            break;
+        case ICSPHERE:
+            fprintf(filePointer, "regional initialization: sphere\n"); 
+            fprintf(filePointer, "center point x, y, z: %.6g, %.6g, %.6g\n", 
+                    part->valueIC[n][0], part->valueIC[n][1], part->valueIC[n][2]);
+            fprintf(filePointer, "radius: %.6g\n", part->valueIC[n][6]);
+            break;
+        case ICBOX:
+            fprintf(filePointer, "regional initialization: box\n"); 
+            fprintf(filePointer, "xmin, ymin, zmin: %.6g, %.6g, %.6g\n", 
+                    part->valueIC[n][0], part->valueIC[n][1], part->valueIC[n][2]);
+            fprintf(filePointer, "xmax, ymax, zmax: %.6g, %.6g, %.6g\n", 
+                    part->valueIC[n][3], part->valueIC[n][4], part->valueIC[n][5]);
+            break;
+        case ICCYLINDER:
+            fprintf(filePointer, "regional initialization: cylinder\n"); 
+            fprintf(filePointer, "xmin, ymin, zmin: %.6g, %.6g, %.6g\n", 
+                    part->valueIC[n][0], part->valueIC[n][1], part->valueIC[n][2]);
+            fprintf(filePointer, "xmax, ymax, zmax: %.6g, %.6g, %.6g\n", 
+                    part->valueIC[n][3], part->valueIC[n][4], part->valueIC[n][5]);
+            fprintf(filePointer, "radius: %.6g\n", part->valueIC[n][6]);
+            break;
+        default:
+            break;
     }
     fprintf(filePointer, "density: %.6g\n", part->valueIC[n][ENTRYIC-5]);
     fprintf(filePointer, "x velocity: %.6g\n", part->valueIC[n][ENTRYIC-4]);

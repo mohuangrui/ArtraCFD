@@ -118,6 +118,7 @@ static int ApplyRegionalInitializer(const int n, Space *space, const Model *mode
     const Partition *restrict part = &(space->part);
     Node *const node = space->node;
     Real *restrict U = NULL;
+    const Real zero = 0.0;
     int idx = 0; /* linear array index math variable */
     /*
      * Acquire the specialized information data entries
@@ -146,9 +147,9 @@ static int ApplyRegionalInitializer(const int n, Space *space, const Model *mode
      * Apply initial values for nodes that meets condition
      */
     int flag = 0; /* control flag for whether current node in the region */
-    RealVec pc = {0.0}; /* coordinates of current node */
-    RealVec P1Pc = {0.0}; /* position vector */
-    Real proj = 0.0;
+    RealVec pc = {zero}; /* coordinates of current node */
+    RealVec P1Pc = {zero}; /* position vector */
+    Real proj = zero;
     for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
         for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
             for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
@@ -161,7 +162,7 @@ static int ApplyRegionalInitializer(const int n, Space *space, const Model *mode
                 flag = 0; /* always initialize flag to zero */
                 switch (part->typeIC[n]) {
                     case ICPLANE:
-                        if (0.0 <= Dot(P1Pc, p2)) { /* on the normal direction or the plane */
+                        if (zero <= Dot(P1Pc, p2)) { /* on the normal direction or the plane */
                             flag = 1; /* set flag to true */
                         }
                         break;
@@ -174,13 +175,13 @@ static int ApplyRegionalInitializer(const int n, Space *space, const Model *mode
                         P1Pc[X] = P1Pc[X] * (pc[X] - p2[X]);
                         P1Pc[Y] = P1Pc[Y] * (pc[Y] - p2[Y]);
                         P1Pc[Z] = P1Pc[Z] * (pc[Z] - p2[Z]);
-                        if ((0.0 >= P1Pc[X]) && (0.0 >= P1Pc[Y]) && (0.0 >= P1Pc[Z])) { /* in or on the box */
+                        if ((zero >= P1Pc[X]) && (zero >= P1Pc[Y]) && (zero >= P1Pc[Z])) { /* in or on the box */
                             flag = 1; /* set flag to true */
                         }
                         break;
                     case ICCYLINDER:
                         proj = Dot(P1Pc, P1P2);
-                        if ((0.0 > proj) || (l2_P1P2 < proj)) { /* outside the two ends */
+                        if ((zero > proj) || (l2_P1P2 < proj)) { /* outside the two ends */
                             break;
                         }
                         proj = Dot(P1Pc, P1Pc) - proj * proj / l2_P1P2;
@@ -258,14 +259,17 @@ static int InitializeGeometryData(Geometry *geo)
 static int IdentifyGeometryState(Geometry *geo)
 {
     Polyhedron *poly = NULL;
+    const Real zero = 0.0;
+    const Real rhoNoForce = 1.0e10;
+    const Real rhoNoMove = 1.0e36;
     for (int n = 0; n < geo->totalN; ++n) {
         poly = geo->poly + n;
-        if (1.0e10 < poly->rho) { /* ignore surface force integration */
+        if (rhoNoForce < poly->rho) { /* ignore surface force integration */
             poly->state = 2;
-            if (EqualReal(poly->V[X], 0.0) && EqualReal(poly->V[Y], 0.0) && 
-                    EqualReal(poly->V[Z], 0.0) && EqualReal(poly->W[X], 0.0) &&
-                    EqualReal(poly->W[Y], 0.0) && EqualReal(poly->W[Z], 0.0) &&
-                    EqualReal(poly->gState, 0.0) && (1.0e36 < poly->rho)) { /* stationary geometry */
+            if ((zero == poly->V[X]) && (zero == poly->V[Y]) && 
+                    (zero == poly->V[Z]) && (zero == poly->W[X]) &&
+                    (zero == poly->W[Y]) && (zero == poly->W[Z]) &&
+                    (zero == poly->gState) && (rhoNoMove < poly->rho)) { /* stationary geometry */
                 poly->state = 1;
             }
         }
