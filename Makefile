@@ -101,12 +101,15 @@ CC := gcc
 #  Use Valgrind for cache missing check (http://valgrind.org/)
 #    -g -O2    Use this flag to compile the program, then run command line
 #    valgrind --tool=cachegrind artracfd arg1 arg2
-#  Use google-perftools for performance check (http://goog-perftools.sourceforge.net/)
+#  Use google-perftools for performance check (https://github.com/gperftools/gperftools)
+#    sudo apt-get update
+#    sudo apt-get install google-perftools
 #   -g  -O0    Use this flag to compile the program
 #   -lprofiler add this flag to the value of LFLAGS
 #   make       to generate binary executable, then run command line
 #   CPUPROFILE=./cpu.prof ./artracfd arg1 arg2
-#   pprof --gv /bin/ls ./cpu.prof  (Displays annotated call-graph via 'gv')
+#   pprof ./artracfd ./cpu.prof       (-pg-like text output)
+#   pprof --gv ./artracfd ./cpu.prof  (annotated call-graph via 'gv')
 #
 ifeq ($(CC),icc)
 CFLAGS += -Wall -Wextra -fast -ansi-alias -std=c99 -pedantic
