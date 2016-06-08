@@ -274,6 +274,7 @@ static int IdentifyGeometryState(Geometry *geo)
             }
         }
     }
+    return 0;
 }
 /* a good practice: end file with a newline */
 
