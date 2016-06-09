@@ -89,14 +89,24 @@ void SymmetricAverage(const int averager, const Real gamma,
     const Real vR = UR[2] / UR[0];
     const Real wR = UR[3] / UR[0];
     const Real hTR = (UR[4] / UR[0]) * gamma - 0.5 * (uR * uR + vR * vR + wR * wR) * (gamma - 1.0);
-    Real D = 1.0; /* default is arithmetic mean */
-    if (1 == averager) { /* Roe average */
-        D = sqrt(rhoR / rhoL);
+    Real D = 0.0;
+    switch (averager) {
+        case 0: /* arithmetic mean */
+            Uo[1] = 0.5 * (uL + uR); /* u average */
+            Uo[2] = 0.5 * (vL + vR); /* v average */
+            Uo[3] = 0.5 * (wL + wR); /* w average */
+            Uo[4] = 0.5 * (hTL + hTR); /* hT average */
+            break;
+        case 1: /* Roe average */
+            D = sqrt(rhoR / rhoL);
+            Uo[1] = (uL + D * uR) / (1.0 + D); /* u average */
+            Uo[2] = (vL + D * vR) / (1.0 + D); /* v average */
+            Uo[3] = (wL + D * wR) / (1.0 + D); /* w average */
+            Uo[4] = (hTL + D * hTR) / (1.0 + D); /* hT average */
+            break;
+        default:
+            break;
     }
-    Uo[1] = (uL + D * uR) / (1.0 + D); /* u average */
-    Uo[2] = (vL + D * vR) / (1.0 + D); /* v average */
-    Uo[3] = (wL + D * wR) / (1.0 + D); /* w average */
-    Uo[4] = (hTL + D * hTR) / (1.0 + D); /* hT average */
     Uo[5] = sqrt((gamma - 1.0) * (Uo[4] - 0.5 * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]))); /* the speed of sound */
     return;
 }
@@ -456,10 +466,6 @@ int Sign(const Real x)
     }
     return 0;
 }
-Real Square(const Real x)
-{
-    return x * x;
-}
 Real Dot(const Real V1[restrict], const Real V2[restrict])
 {
     return V1[X] * V2[X] + V1[Y] * V2[Y] + V1[Z] * V2[Z];
@@ -487,7 +493,6 @@ void Cross(const Real V1[restrict], const Real V2[restrict], Real V[restrict])
 void OrthogonalSpace(const Real N[restrict], Real Ta[restrict], Real Tb[restrict])
 {
     int mark = Z; /* default mark for minimum component */
-    const Real zero = 0.0;
     if (fabs(N[mark]) > fabs(N[Y])) {
         mark = Y;
     }
@@ -495,18 +500,18 @@ void OrthogonalSpace(const Real N[restrict], Real Ta[restrict], Real Tb[restrict
         mark = X;
     }
     if (X == mark) {
-        Ta[X] = zero;
+        Ta[X] = 0.0;
         Ta[Y] = -N[Z];
         Ta[Z] = N[Y];
     } else {
         if (Y == mark) {
             Ta[X] = N[Z];
-            Ta[Y] = zero;
+            Ta[Y] = 0.0;
             Ta[Z] = -N[X];
         } else {
             Ta[X] = -N[Y];
             Ta[Y] = N[X];
-            Ta[Z] = zero;
+            Ta[Z] = 0.0;
         }
     }
     Normalize(DIMS, Norm(Ta), Ta);
