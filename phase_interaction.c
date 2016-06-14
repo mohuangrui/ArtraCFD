@@ -14,6 +14,7 @@
 #include "phase_interaction.h"
 #include <stdio.h> /* standard library for input and output */
 #include <math.h> /* common mathematical functions */
+#include <float.h> /* size of floating point values */
 #include "immersed_boundary.h"
 #include "computational_geometry.h"
 #include "linear_system.h"
@@ -26,7 +27,7 @@ static void SurfaceForceIntegration(Space *, const Model *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int PhaseInteraction(const Real dt, Space *space, const Model *model)
+int PhaseInteraction(const Real now, const Real dt, Space *space, const Model *model)
 {
     Geometry *geo = &(space->geo);
     Polyhedron *poly = NULL;
@@ -44,15 +45,24 @@ int PhaseInteraction(const Real dt, Space *space, const Model *model)
     const RealVec scale = {1.0, 1.0, 1.0}; /* scale */
     for (int n = 0; n < geo->totalN; ++n) {
         poly = geo->poly + n;
-        if (1 == poly->state) {
+        if (1 == poly->state) { /* stationary object */
             continue;
+        }
+        if (now > poly->to) { /* end power supply */
+            poly->a[X] = 0.0;
+            poly->a[Y] = 0.0;
+            poly->a[Z] = 0.0;
+            poly->alpha[X] = 0.0;
+            poly->alpha[Y] = 0.0;
+            poly->alpha[Z] = 0.0;
+            poly->to = FLT_MAX; /* avoid repeating */
         }
         /* tranlation and angular acceleration */
         MatrixLinearSystemSolver(DIMS, poly->I, 1, (Real (*)[1])alpha, (Real (*)[1])poly->Tau);
         for (int s = 0; s < DIMS; ++s) {
             /* acceleration from surface force and body force */
-            a[s] = poly->F[s] / (poly->rho * poly->volume) + poly->gState * model->g[s];
-            alpha[s] = alpha[s] / poly->rho;
+            a[s] = (poly->Fp[s] + poly->Fv[s]) / (poly->rho * poly->volume) + poly->a[s] + poly->g[s] + poly->ac[s];
+            alpha[s] = alpha[s] / poly->rho + poly->alpha[s];
         }
         /* velocity and position integration */
         for (int s = 0; s < DIMS; ++s) {
@@ -100,7 +110,7 @@ static void SurfaceForceIntegration(Space *space, const Model *model)
     RealVec N = {0.0}; /* normal */
     Real p = {0.0}; /* surface force by pressure */
     RealVec r = {0.0}; /* position vector */
-    RealVec F = {0.0}; /* force */
+    RealVec Fp = {0.0}; /* pressure force */
     RealVec Tau = {0.0}; /* torque */
     for (int n = 0; n < geo->totalN; ++n) {
         poly = geo->poly + n;
@@ -108,12 +118,12 @@ static void SurfaceForceIntegration(Space *space, const Model *model)
             continue;
         }
         /* reset some non accumulative information to zero */
-        poly->F[X] = 0.0; /* fx */
-        poly->F[Y] = 0.0; /* fy */
-        poly->F[Z] = 0.0; /* fz */
-        poly->Tau[X] = 0.0; /* torque x */
-        poly->Tau[Y] = 0.0; /* torque y */
-        poly->Tau[Z] = 0.0; /* torque z */
+        poly->Fp[X] = 0.0;
+        poly->Fp[Y] = 0.0;
+        poly->Fp[Z] = 0.0;
+        poly->Tau[X] = 0.0;
+        poly->Tau[Y] = 0.0;
+        poly->Tau[Z] = 0.0;
         nodeN = 0; /* tally */
         /* determine search range according to bounding box of polyhedron and valid node space */
         for (int s = 0; s < DIMS; ++s) {
@@ -139,23 +149,24 @@ static void SurfaceForceIntegration(Space *space, const Model *model)
                     r[X] = pO[X] - poly->O[X];
                     r[Y] = pO[Y] - poly->O[Y];
                     r[Z] = pO[Z] - poly->O[Z];
-                    F[X] = -p * N[X];
-                    F[Y] = -p * N[Y];
-                    F[Z] = -p * N[Z];
-                    Cross(r, F, Tau);
-                    poly->F[X] = poly->F[X] + F[X]; /* integrate fx */
-                    poly->F[Y] = poly->F[Y] + F[Y]; /* integrate fy */
-                    poly->F[Z] = poly->F[Z] + F[Z]; /* integrate fz */
-                    poly->Tau[X] = poly->Tau[X] + Tau[X]; /* integrate torque x */
-                    poly->Tau[Y] = poly->Tau[Y] + Tau[Y]; /* integrate torque y */
-                    poly->Tau[Z] = poly->Tau[Z] + Tau[Z]; /* integrate torque z */
+                    Fp[X] = -p * N[X];
+                    Fp[Y] = -p * N[Y];
+                    Fp[Z] = -p * N[Z];
+                    Cross(r, Fp, Tau);
+                    /* integration sum */
+                    poly->Fp[X] = poly->Fp[X] + Fp[X];
+                    poly->Fp[Y] = poly->Fp[Y] + Fp[Y];
+                    poly->Fp[Z] = poly->Fp[Z] + Fp[Z];
+                    poly->Tau[X] = poly->Tau[X] + Tau[X];
+                    poly->Tau[Y] = poly->Tau[Y] + Tau[Y];
+                    poly->Tau[Z] = poly->Tau[Z] + Tau[Z];
                 }
             }
         }
         /* calibrate the sum of discrete forces into integration by ds */
-        poly->F[X] = poly->F[X] * poly->area / nodeN;
-        poly->F[Y] = poly->F[Y] * poly->area / nodeN;
-        poly->F[Z] = poly->F[Z] * poly->area / nodeN;
+        poly->Fp[X] = poly->Fp[X] * poly->area / nodeN;
+        poly->Fp[Y] = poly->Fp[Y] * poly->area / nodeN;
+        poly->Fp[Z] = poly->Fp[Z] * poly->area / nodeN;
         poly->Tau[X] = poly->Tau[X] * poly->area / nodeN;
         poly->Tau[Y] = poly->Tau[Y] * poly->area / nodeN;
         poly->Tau[Z] = poly->Tau[Z] * poly->area / nodeN;

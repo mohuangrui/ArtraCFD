@@ -26,7 +26,7 @@
 /*
  * Phase Interaction
  */
-extern int PhaseInteraction(const Real dt, Space *, const Model *);
+extern int PhaseInteraction(const Real now, const Real dt, Space *, const Model *);
 #endif
 /* a good practice: end file with a newline */
 

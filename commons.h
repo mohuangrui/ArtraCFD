@@ -621,7 +621,7 @@ typedef enum {
  * Define some universe data type for portability and maintenance.
  */
 typedef double Real; /* real data */
-typedef char String[200]; /* string data */
+typedef char String[400]; /* string data */
 typedef int IntVec[DIMS]; /* integer type vector */
 typedef Real RealVec[DIMS]; /* real type vector */
 /*
@@ -710,19 +710,24 @@ typedef struct {
     int vertN; /* number of vertices */
     int state; /* dynamic motion indicator */
     int matID; /* material type */
-    Real r; /* radius of sphere */
+    Real r; /* bounding sphere */
     RealVec O; /* centroid */
     Real I[DIMS][DIMS]; /* inertia tensor */
-    RealVec V; /* velocity */
-    RealVec W; /* angular velocity */
-    RealVec F; /* force */
-    RealVec Tau; /* torque */
+    RealVec V; /* translational velocity */
+    RealVec W; /* rotational velocity */
+    RealVec a; /* input translational acceleration */
+    RealVec g; /* gravitational acceleration */
+    RealVec alpha; /* input rotational acceleration */
+    RealVec ac; /* collision acceleration */
+    RealVec Fp; /* pressure force */
+    RealVec Fv; /* viscous force */
+    RealVec Tau; /* total torque */
+    Real to; /* time to end power */
     Real rho; /* density */
     Real T; /* wall temperature */
     Real cf; /* roughness */
     Real area; /* area */
     Real volume; /* volume */
-    Real gState; /* gravity state */
     Real box[DIMS][LIMIT]; /* a bounding box of the polyhedron */
     int (*restrict f)[3]; /* face-vertex list */
     Real (*restrict Nf)[DIMS]; /* face normal */

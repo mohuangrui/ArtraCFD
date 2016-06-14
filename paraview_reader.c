@@ -14,6 +14,7 @@
 #include "paraview.h"
 #include <stdio.h> /* standard library for input and output */
 #include <string.h> /* manipulating strings */
+#include <float.h> /* size of floating point values */
 #include "computational_geometry.h"
 #include "cfd_commons.h"
 #include "commons.h"
@@ -243,20 +244,34 @@ int ReadPolyhedronStateData(const int start, const int end, FILE *filePointer, G
 {
     String currentLine = {'\0'}; /* store the current read line */
     /* set format specifier according to the type of Real */
-    char format[100] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %d, %lg";
+    char formatI[100] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %d";
+    char formatJ[100] = "%lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg, %lg";
     if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
-        strncpy(format, "%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %d, %g", sizeof format);
+        strncpy(formatI, "%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %d", sizeof formatI);
+        strncpy(formatJ, "%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g", sizeof formatJ);
     }
     Polyhedron *poly  = NULL;
+    const Real zero = 0.0;
     for (int n = start; n < end; ++n) {
         poly = geo->poly + n;
         fgets(currentLine, sizeof currentLine, filePointer);
-        sscanf(currentLine, format,
+        sscanf(currentLine, formatI,
                 &(poly->O[X]), &(poly->O[Y]), &(poly->O[Z]), &(poly->r),
+                &(poly->Fp[X]), &(poly->Fp[Y]), &(poly->Fp[Z]),
+                &(poly->Fv[X]), &(poly->Fv[Y]), &(poly->Fv[Z]),
+                &(poly->rho), &(poly->T), &(poly->cf),
+                &(poly->area), &(poly->volume), &(poly->matID));
+        fgets(currentLine, sizeof currentLine, filePointer);
+        sscanf(currentLine, formatJ,
                 &(poly->V[X]), &(poly->V[Y]), &(poly->V[Z]),
                 &(poly->W[X]), &(poly->W[Y]), &(poly->W[Z]),
-                &(poly->rho), &(poly->T), &(poly->cf),
-                &(poly->area), &(poly->volume), &(poly->matID), &(poly->gState));
+                &(poly->a[X]), &(poly->a[Y]), &(poly->a[Z]),
+                &(poly->g[X]), &(poly->g[Y]), &(poly->g[Z]),
+                &(poly->alpha[X]), &(poly->alpha[Y]), &(poly->alpha[Z]),
+                &(poly->to));
+        if (zero >= poly->to) {
+            poly->to = FLT_MAX;
+        }
         if (geo->sphereN > n) {
             poly->faceN = 0; /* analytical sphere tag */
             poly->facet = NULL;

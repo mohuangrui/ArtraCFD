@@ -402,15 +402,24 @@ static int WritePolygonPolyData(const int start, const int end, const Geometry *
 }
 int WritePolyhedronStateData(const int start, const int end, FILE *filePointer, const Geometry *geo)
 {
+    const char formatI[100] = "  %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %d\n";
+    const char formatJ[100] = "  %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g\n";
     const Polyhedron *poly = NULL;
     for (int n = start; n < end; ++n) {
         poly = geo->poly + n;
-        fprintf(filePointer, "        %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %.6g, %d, %.6g\n",
+        fprintf(filePointer, formatI,
                 poly->O[X], poly->O[Y], poly->O[Z], poly->r,
+                poly->Fp[X], poly->Fp[Y], poly->Fp[Z],
+                poly->Fv[X], poly->Fv[Y], poly->Fv[Z],
+                poly->rho, poly->T, poly->cf,
+                poly->area, poly->volume, poly->matID);
+        fprintf(filePointer, formatJ,
                 poly->V[X], poly->V[Y], poly->V[Z],
                 poly->W[X], poly->W[Y], poly->W[Z],
-                poly->rho, poly->T, poly->cf,
-                poly->area, poly->volume, poly->matID, poly->gState);
+                poly->a[X], poly->a[Y], poly->a[Z],
+                poly->g[X], poly->g[Y], poly->g[Z],
+                poly->alpha[X], poly->alpha[Y], poly->alpha[Z],
+                poly->to);
     }
     return 0;
 }

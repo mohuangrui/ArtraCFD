@@ -266,10 +266,12 @@ static int IdentifyGeometryState(Geometry *geo)
         poly = geo->poly + n;
         if (rhoNoForce < poly->rho) { /* ignore surface force integration */
             poly->state = 2;
-            if ((zero == poly->V[X]) && (zero == poly->V[Y]) && 
-                    (zero == poly->V[Z]) && (zero == poly->W[X]) &&
-                    (zero == poly->W[Y]) && (zero == poly->W[Z]) &&
-                    (zero == poly->gState) && (rhoNoMove < poly->rho)) { /* stationary geometry */
+            if ((zero == poly->V[X]) && (zero == poly->V[Y]) && (zero == poly->V[Z]) && 
+                    (zero == poly->W[X]) && (zero == poly->W[Y]) && (zero == poly->W[Z]) &&
+                    (zero == poly->a[X]) && (zero == poly->a[Y]) && (zero == poly->a[Z]) &&
+                    (zero == poly->g[X]) && (zero == poly->g[Y]) && (zero == poly->g[Z]) &&
+                    (zero == poly->alpha[X]) && (zero == poly->alpha[Y]) && (zero == poly->alpha[Z]) &&
+                    (rhoNoMove < poly->rho)) { /* stationary geometry */
                 poly->state = 1;
             }
         }
