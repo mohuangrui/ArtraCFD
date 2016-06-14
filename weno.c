@@ -23,12 +23,14 @@ typedef enum {
     N = 2, /* N = (r - 1) */
     CEN = 2, /* position index of center node in stencil */
     NSTENCIL = 5, /* number of nodes in a stencil = (2r - 1) */
+    TNSTENCIL = 6, /* total number of involved nodes = (2r) */
 } WENOConstants;
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static void CharacteristicProjection(const int, const int, const int, const int, const int, 
-        const int [restrict], const Node *const , Real [restrict][DIMU], const Real [restrict],
+static void CharacteristicVariable(const int, const int, const int, const int, const int, 
+        const int [restrict], const Node *const, Real [restrict][DIMU], Real [restrict][TNSTENCIL]);
+static void CharacteristicFlux(const Real [restrict], Real [restrict][TNSTENCIL],
         const int, const int, Real [restrict][NSTENCIL]);
 static void WENO5(Real [restrict][NSTENCIL], Real [restrict]);
 static void InverseProjection(Real [restrict][DIMU], const Real [restrict], 
@@ -44,77 +46,88 @@ void WENO(const int tn, const int s, const int k, const int j, const int i,
     const int idxL = IndexNode(k, j, i, partn[Y], partn[X]);
     const int idxR = IndexNode(k + h[s][Z], j + h[s][Y], i + h[s][X], partn[Y], partn[X]);
     /* evaluate interface values by averaging */
-    Real Uo[DIMUo] = {0.0}; /* store averaged primitives */
+    Real Uo[DIMUo]; /* store averaged primitives */
     SymmetricAverage(model->averager, model->gamma, node[idxL].U[tn], node[idxR].U[tn], Uo);
-    /* decompose Jocabian matrix */
-    Real Lambda[DIMU] = {0.0}; /* eigenvalues */
-    Real L[DIMU][DIMU] = {{0.0}}; /* vector space {Ln} */
-    Real R[DIMU][DIMU] = {{0.0}}; /* vector space {Rn} */
+    /* decompose Jacobian matrix */
+    Real Lambda[DIMU]; /* eigenvalues */
+    Real L[DIMU][DIMU]; /* vector space {Ln} */
+    Real R[DIMU][DIMU]; /* vector space {Rn} */
     Eigenvalue(s, Uo, Lambda);
     EigenvectorL(s, model->gamma, Uo, L);
     EigenvectorR(s, Uo, R);
     /* flux vector splitting */
-    Real LambdaP[DIMU] = {0.0}; /* eigenvalues */
-    Real LambdaN[DIMU] = {0.0}; /* eigenvalues */
+    Real LambdaP[DIMU]; /* eigenvalues */
+    Real LambdaN[DIMU]; /* eigenvalues */
     EigenvalueSplitting(model->splitter, Lambda, LambdaP, LambdaN);
+    /* construct local characteristic variables for all potential stencils */
+    Real W[DIMU][TNSTENCIL];
+    CharacteristicVariable(tn, s, k, j, i, partn, node, L, W);
     /* construct local characteristic fluxes */
-    Real HP[DIMU][NSTENCIL] = {{0.0}}; /* forward characteristic flux stencil */
-    Real HN[DIMU][NSTENCIL] = {{0.0}}; /* backward characteristic flux stencil */
-    CharacteristicProjection(tn, s, k, j, i, partn, node, L, LambdaP, -2, +1, HP);
-    CharacteristicProjection(tn, s, k, j, i, partn, node, L, LambdaN, +3, -1, HN);
+    Real HP[DIMU][NSTENCIL]; /* forward characteristic flux stencil */
+    Real HN[DIMU][NSTENCIL]; /* backward characteristic flux stencil */
+    CharacteristicFlux(LambdaP, W, 0, +1, HP);
+    CharacteristicFlux(LambdaN, W, 5, -1, HN);
     /* WENO reconstruction */
-    Real HhatP[DIMU] = {0.0}; /* forward numerical flux of characteristic fields */
-    Real HhatN[DIMU] = {0.0}; /* backward numerical flux of characteristic fields */
-    WENO5(HP, HhatP);
-    WENO5(HN, HhatN);
+    Real HhatP[DIMU]; /* forward numerical flux of characteristic fields */
+    Real HhatN[DIMU]; /* backward numerical flux of characteristic fields */
+    WENO5(HP+CEN, HhatP);
+    WENO5(HN+CEN, HhatN);
     /* inverse projection */
     InverseProjection(R, HhatP, HhatN, Fhat);
     return;
 }
-static void CharacteristicProjection(const int tn, const int s, const int k, const int j, const int i, 
-        const int partn[restrict], const Node *const node, Real L[restrict][DIMU], const Real Lambda[restrict],
-        const int startN, const int wind, Real H[restrict][NSTENCIL])
+static void CharacteristicVariable(const int tn, const int s, const int k, const int j, const int i, 
+        const int partn[restrict], const Node *const node, Real L[restrict][DIMU], Real W[restrict][TNSTENCIL])
 {
     const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
     int idx = 0; /* linear array index math variable */
     const Real *restrict U = NULL;
-    for (int n = startN, count = 0; count < NSTENCIL; n = n + wind, ++count) {
+    for (int n = -N, count = 0; count < TNSTENCIL; ++n, ++count) {
         idx = IndexNode(k + n * h[s][Z], j + n * h[s][Y], i + n * h[s][X], partn[Y], partn[X]);
         U = node[idx].U[tn];
         for (int row = 0; row < DIMU; ++row) {
-            H[row][count] = 0.0;
+            W[row][count] = 0.0;
             for (int dummy = 0; dummy < DIMU; ++dummy) {
-                H[row][count] = H[row][count] + L[row][dummy] * U[dummy];
+                W[row][count] = W[row][count] + L[row][dummy] * U[dummy];
             }
-            H[row][count] = H[row][count] * Lambda[row];
+        }
+    }
+    return;
+}
+static void CharacteristicFlux(const Real Lambda[restrict], Real W[restrict][TNSTENCIL],
+        const int startN, const int wind, Real H[restrict][NSTENCIL])
+{
+    for (int n = startN, count = 0; count < NSTENCIL; n = n + wind, ++count) {
+        for (int row = 0; row < DIMU; ++row) {
+            H[row][count] = Lambda[row] * W[row][n];
         }
     }
     return;
 }
 static void WENO5(Real F[restrict][NSTENCIL], Real Fhat[restrict])
 {
-    Real omega[R] = {0.0}; /* weights */
-    Real q[R] = {0.0}; /* q vectors */
-    Real alpha[R] = {0.0};
-    Real IS[R] = {0.0};
+    Real omega[R]; /* weights */
+    Real q[R]; /* q vectors */
+    Real alpha[R];
+    Real IS[R];
     const Real C[R] = {0.1, 0.6, 0.3};
     const Real epsilon = 1.0e-6;
     for (int row = 0; row < DIMU; ++row) {
-        IS[0] = (13.0 / 12.0) * Square(F[row][CEN-2] - 2.0 * F[row][CEN-1] + F[row][CEN]) + 
-            (1.0 / 4.0) * Square(F[row][CEN-2] - 4.0 * F[row][CEN-1] + 3.0 * F[row][CEN]);
-        IS[1] = (13.0 / 12.0) * Square(F[row][CEN-1] - 2.0 * F[row][CEN] + F[row][CEN+1]) +
-            (1.0 / 4.0) * Square(F[row][CEN-1] - F[row][CEN+1]);
-        IS[2] = (13.0 / 12.0) * Square(F[row][CEN] - 2.0 * F[row][CEN+1] + F[row][CEN+2]) +
-            (1.0 / 4.0) * Square(3.0 * F[row][CEN] - 4.0 * F[row][CEN+1] + F[row][CEN+2]);
+        IS[0] = (13.0 / 12.0) * Square(F[row][-2] - 2.0 * F[row][-1] + F[row][0]) + 
+            (1.0 / 4.0) * Square(F[row][-2] - 4.0 * F[row][-1] + 3.0 * F[row][0]);
+        IS[1] = (13.0 / 12.0) * Square(F[row][-1] - 2.0 * F[row][0] + F[row][1]) +
+            (1.0 / 4.0) * Square(F[row][-1] - F[row][1]);
+        IS[2] = (13.0 / 12.0) * Square(F[row][0] - 2.0 * F[row][1] + F[row][2]) +
+            (1.0 / 4.0) * Square(3.0 * F[row][0] - 4.0 * F[row][1] + F[row][2]);
         alpha[0] = C[0] / Square(epsilon + IS[0]);
         alpha[1] = C[1] / Square(epsilon + IS[1]);
         alpha[2] = C[2] / Square(epsilon + IS[2]);
         omega[0] = alpha[0] / (alpha[0] + alpha[1] + alpha[2]);
         omega[1] = alpha[1] / (alpha[0] + alpha[1] + alpha[2]);
         omega[2] = alpha[2] / (alpha[0] + alpha[1] + alpha[2]);
-        q[0] = (1.0 / 6.0) * (2.0 * F[row][CEN-2] - 7.0 * F[row][CEN-1] + 11.0 * F[row][CEN]);
-        q[1] = (1.0 / 6.0) * (-F[row][CEN-1] + 5.0 * F[row][CEN] + 2.0 * F[row][CEN+1]);
-        q[2] = (1.0 / 6.0) * (2.0 * F[row][CEN] + 5.0 * F[row][CEN+1] - F[row][CEN+2]);
+        q[0] = (1.0 / 6.0) * (2.0 * F[row][-2] - 7.0 * F[row][-1] + 11.0 * F[row][0]);
+        q[1] = (1.0 / 6.0) * (-F[row][-1] + 5.0 * F[row][0] + 2.0 * F[row][1]);
+        q[2] = (1.0 / 6.0) * (2.0 * F[row][0] + 5.0 * F[row][1] - F[row][2]);
         Fhat[row] = omega[0] * q[0] + omega[1] * q[1] + omega[2] * q[2];
     }
     return;
