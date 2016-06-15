@@ -199,19 +199,19 @@ static void LLL(const Real dt, const Real coeA, const Real coeB, const int to,
                 Uo = node[idx].U[to];
                 Un = node[idx].U[tn];
                 Um = node[idx].U[tm];
-                if (0 == state) { /* compute numerical flux at left interface */
-                    NumericalConvectiveFlux(tn, s, k - h[s][Z], j - h[s][Y], i - h[s][X], partn, node, model, FhatL);
-                    if (zero < model->refMu) {
-                        NumericalDiffusiveFlux(tn, s, k - h[s][Z], j - h[s][Y], i - h[s][X], partn, dd, node, model, FvhatL);
-                    }
-                    state = 1;
-                } else { /* inherit numerical flux from the previous node */
+                if (1 == state) { /* inherit numerical flux from the previous node */
                     temp = FhatL;
                     FhatL = FhatR;
                     FhatR = temp;
                     temp = FvhatL;
                     FvhatL = FvhatR;
                     FvhatR = temp;
+                } else { /* compute numerical flux at left interface */
+                    NumericalConvectiveFlux(tn, s, k - h[s][Z], j - h[s][Y], i - h[s][X], partn, node, model, FhatL);
+                    if (zero < model->refMu) {
+                        NumericalDiffusiveFlux(tn, s, k - h[s][Z], j - h[s][Y], i - h[s][X], partn, dd, node, model, FvhatL);
+                    }
+                    state = 1;
                 }
                 NumericalConvectiveFlux(tn, s, k, j, i, partn, node, model, FhatR);
                 if (zero < model->refMu) {
