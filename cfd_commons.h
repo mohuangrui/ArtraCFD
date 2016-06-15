@@ -51,6 +51,11 @@ extern void EigenvectorR(const int s, const Real Uo[restrict], Real R[restrict][
  */
 extern void ConvectiveFlux(const int s, const Real gamma, const Real U[restrict], Real F[restrict]);
 /*
+ * Physical property
+ */
+extern Real Viscosity(const Real);
+extern Real PrandtlNumber(void);
+/*
  * Compute the values of primitive variable vector
  *
  * Parameter

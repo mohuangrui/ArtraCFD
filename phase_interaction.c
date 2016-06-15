@@ -104,26 +104,34 @@ static void SurfaceForceIntegration(Space *space, const Model *model)
     int idx = 0; /* linear array index math variable */
     int box[DIMS][LIMIT] = {{0}}; /* bounding box in node space */
     int nodeN = 0; /* count total number of interfacial nodes */
-    RealVec pG = {0.0}; /* ghost point */
-    RealVec pO = {0.0}; /* boundary point */
-    RealVec pI = {0.0}; /* image point */
-    RealVec N = {0.0}; /* normal */
-    Real p = {0.0}; /* surface force by pressure */
-    RealVec r = {0.0}; /* position vector */
-    RealVec Fp = {0.0}; /* pressure force */
-    RealVec Tau = {0.0}; /* torque */
+    const Real zero = 0.0;
+    RealVec pG = {zero}; /* ghost point */
+    RealVec pO = {zero}; /* boundary point */
+    RealVec pI = {zero}; /* image point */
+    RealVec N = {zero}; /* normal */
+    Real Uo[DIMUo] = {zero};
+    RealVec V = {zero};
+    RealVec r = {zero}; /* position vector */
+    RealVec Fp = {zero}; /* pressure force */
+    RealVec Fv = {zero}; /* viscous force */
+    RealVec Fs = {zero}; /* surface force */
+    RealVec Tau = {zero}; /* torque */
+    Real mu = zero; /* viscosity */
     for (int n = 0; n < geo->totalN; ++n) {
         poly = geo->poly + n;
         if (0 < poly->state) { /* surface force negligible */
             continue;
         }
         /* reset some non accumulative information to zero */
-        poly->Fp[X] = 0.0;
-        poly->Fp[Y] = 0.0;
-        poly->Fp[Z] = 0.0;
-        poly->Tau[X] = 0.0;
-        poly->Tau[Y] = 0.0;
-        poly->Tau[Z] = 0.0;
+        poly->Fp[X] = zero;
+        poly->Fp[Y] = zero;
+        poly->Fp[Z] = zero;
+        poly->Fv[X] = zero;
+        poly->Fv[Y] = zero;
+        poly->Fv[Z] = zero;
+        poly->Tau[X] = zero;
+        poly->Tau[Y] = zero;
+        poly->Tau[Z] = zero;
         nodeN = 0; /* tally */
         /* determine search range according to bounding box of polyhedron and valid node space */
         for (int s = 0; s < DIMS; ++s) {
@@ -134,10 +142,10 @@ static void SurfaceForceIntegration(Space *space, const Model *model)
             for (int j = box[Y][MIN]; j < box[Y][MAX]; ++j) {
                 for (int i = box[X][MIN]; i < box[X][MAX]; ++i) {
                     idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
-                    if ((1 == node[idx].layerID) && (n + 1 == node[idx].geoID)) {
+                    if ((2 == node[idx].layerID) && (n + 1 == node[idx].geoID)) {
                         ++nodeN; /* an interfacial node of current geometry */
                     }
-                    if ((1 != node[idx].ghostID) || (n + 1 != node[idx].geoID)) {
+                    if ((2 != node[idx].ghostID) || (n + 1 != node[idx].geoID)) {
                         continue;
                     }
                     /* surface force exerted by fluid (pressure + shear force) */
@@ -145,18 +153,41 @@ static void SurfaceForceIntegration(Space *space, const Model *model)
                     pG[Y] = PointSpace(j, sMin[Y], d[Y], ng);
                     pG[Z] = PointSpace(k, sMin[Z], d[Z], ng);
                     ComputeGeometricData(node[idx].faceID, poly, pG, pO, pI, N);
-                    p = ComputePressure(model->gamma, node[idx].U[TO]);
                     r[X] = pO[X] - poly->O[X];
                     r[Y] = pO[Y] - poly->O[Y];
                     r[Z] = pO[Z] - poly->O[Z];
-                    Fp[X] = -p * N[X];
-                    Fp[Y] = -p * N[Y];
-                    Fp[Z] = -p * N[Z];
-                    Cross(r, Fp, Tau);
+                    PrimitiveByConservative(model->gamma, model->gasR, node[idx].U[TO], Uo);
+                    Fp[X] = Uo[4] * N[X];
+                    Fp[Y] = Uo[4] * N[Y];
+                    Fp[Z] = Uo[4] * N[Z];
+                    if ((zero < model->refMu) && (zero < poly->cf)) {
+                        mu = model->refMu * Viscosity(Uo[5] * model->refT);
+                        Cross(poly->W, r, V);
+                        V[X] = poly->V[X] + V[X];
+                        V[Y] = poly->V[Y] + V[Y];
+                        V[Z] = poly->V[Z] + V[Z];
+                        V[X] = Uo[1] - V[X];
+                        V[Y] = Uo[2] - V[Y];
+                        V[Z] = Uo[3] - V[Z];
+                        Fv[X] = mu * (V[X] - Dot(V,N) * N[X]) / Dist(pG, pO);
+                        Fv[Y] = mu * (V[Y] - Dot(V,N) * N[Y]) / Dist(pG, pO);
+                        Fv[Z] = mu * (V[Z] - Dot(V,N) * N[Z]) / Dist(pG, pO);
+                    } else {
+                        Fv[X] = zero;
+                        Fv[Y] = zero;
+                        Fv[Z] = zero;
+                    }
+                    Fs[X] = Fp[X] + Fv[X];
+                    Fs[Y] = Fp[Y] + Fv[Y];
+                    Fs[Z] = Fp[Z] + Fv[Z];
+                    Cross(r, Fs, Tau);
                     /* integration sum */
                     poly->Fp[X] = poly->Fp[X] + Fp[X];
                     poly->Fp[Y] = poly->Fp[Y] + Fp[Y];
                     poly->Fp[Z] = poly->Fp[Z] + Fp[Z];
+                    poly->Fv[X] = poly->Fv[X] + Fv[X];
+                    poly->Fv[Y] = poly->Fv[Y] + Fv[Y];
+                    poly->Fv[Z] = poly->Fv[Z] + Fv[Z];
                     poly->Tau[X] = poly->Tau[X] + Tau[X];
                     poly->Tau[Y] = poly->Tau[Y] + Tau[Y];
                     poly->Tau[Z] = poly->Tau[Z] + Tau[Z];
@@ -164,12 +195,15 @@ static void SurfaceForceIntegration(Space *space, const Model *model)
             }
         }
         /* calibrate the sum of discrete forces into integration by ds */
-        poly->Fp[X] = poly->Fp[X] * poly->area / nodeN;
-        poly->Fp[Y] = poly->Fp[Y] * poly->area / nodeN;
-        poly->Fp[Z] = poly->Fp[Z] * poly->area / nodeN;
-        poly->Tau[X] = poly->Tau[X] * poly->area / nodeN;
-        poly->Tau[Y] = poly->Tau[Y] * poly->area / nodeN;
-        poly->Tau[Z] = poly->Tau[Z] * poly->area / nodeN;
+        poly->Fp[X] = -poly->Fp[X] * poly->area / nodeN;
+        poly->Fp[Y] = -poly->Fp[Y] * poly->area / nodeN;
+        poly->Fp[Z] = -poly->Fp[Z] * poly->area / nodeN;
+        poly->Fv[X] = -poly->Fv[X] * poly->area / nodeN;
+        poly->Fv[Y] = -poly->Fv[Y] * poly->area / nodeN;
+        poly->Fv[Z] = -poly->Fv[Z] * poly->area / nodeN;
+        poly->Tau[X] = -poly->Tau[X] * poly->area / nodeN;
+        poly->Tau[Y] = -poly->Tau[Y] * poly->area / nodeN;
+        poly->Tau[Z] = -poly->Tau[Z] * poly->area / nodeN;
         return;
     }
 }

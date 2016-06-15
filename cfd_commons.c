@@ -285,6 +285,14 @@ static void ConvectiveFluxZ(const Real rho, const Real u, const Real v, const Re
     F[4] = (rho * eT + p) * w;
     return;
 }
+Real Viscosity(const Real T)
+{
+    return 1.458e-6 * pow(T, 1.5) / (T + 110.4); /* Sutherland's law */
+}
+Real PrandtlNumber(void)
+{
+    return 0.71; /* air */
+}
 /*
  * Get value of primitive variable vector.
  */

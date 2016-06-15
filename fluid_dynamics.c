@@ -55,8 +55,6 @@ static void NumericalDiffusiveFluxZ(const int, const int, const int,
         const Model *, Real [restrict]);
 static void SourceVector(const int, const int, const int, const int,
         const int [restrict], const Node *const , const Model *, Real [restrict]);
-static Real Viscosity(const Real);
-static Real PrandtlNumber(void);
 /****************************************************************************
  * Global Variables Definition with Private Scope
  ****************************************************************************/
@@ -513,14 +511,6 @@ static void SourceVector(const int tn, const int k, const int j, const int i,
     Phi[3] = model->g[Z];
     Phi[4] = Dot(model->g, V);
     return;
-}
-static Real Viscosity(const Real T)
-{
-    return 1.458e-6 * pow(T, 1.5) / (T + 110.4); /* Sutherland's law */
-}
-static Real PrandtlNumber(void)
-{
-    return 0.71; /* air */
 }
 /* a good practice: end file with a newline */
 
