@@ -129,22 +129,64 @@ static void LLL(const Real dt, const Real coeA, const Real coeB, const int to,
     const Real *restrict Un = NULL;
     Real *restrict Um = NULL;
     const Real zero = 0.0;
+    int i = 0;
+    int j = 0;
+    int k = 0;
     int idx = 0; /* linear array index math variable */
     const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
-    Real FhatR[DIMU] = {zero}; /* reconstructed numerical convective flux vector */
-    Real FhatL[DIMU] = {zero}; /* reconstructed numerical convective flux vector */
-    Real FvhatR[DIMU] = {zero}; /* reconstructed numerical diffusive flux vector */
-    Real FvhatL[DIMU] = {zero}; /* reconstructed numerical diffusive flux vector */
-    Real Phi[DIMU] = {zero}; /* source vector */
+    Real LU[5][DIMU] = {{zero}}; /* spatial operator */
+    Real *restrict FhatR = LU[0]; /* reconstructed numerical convective flux vector */
+    Real *restrict FhatL = LU[1]; /* reconstructed numerical convective flux vector */
+    Real *restrict FvhatR = LU[2]; /* reconstructed numerical diffusive flux vector */
+    Real *restrict FvhatL = LU[3]; /* reconstructed numerical diffusive flux vector */
+    Real *restrict Phi = LU[4]; /* source vector */
+    Real *temp = NULL;
     const IntVec partn = {part->n[X], part->n[Y], part->n[Z]};
     const RealVec dd = {part->dd[X], part->dd[Y], part->dd[Z]};
     const RealVec r = {dt * dd[X], dt * dd[Y], dt * dd[Z]};
     const Real rPhi = (1.0 / 3.0) * dt;
-    for (int k = part->ns[PIN][Z][MIN]; k < part->ns[PIN][Z][MAX]; ++k) {
-        for (int j = part->ns[PIN][Y][MIN]; j < part->ns[PIN][Y][MAX]; ++j) {
-            for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
+    const int ns[DIMS][DIMS][LIMIT] = {
+        {
+            {part->ns[PIN][X][MIN], part->ns[PIN][X][MAX]}, 
+            {part->ns[PIN][Y][MIN], part->ns[PIN][Y][MAX]}, 
+            {part->ns[PIN][Z][MIN], part->ns[PIN][Z][MAX]}
+        },
+        {
+            {part->ns[PIN][Y][MIN], part->ns[PIN][Y][MAX]}, 
+            {part->ns[PIN][X][MIN], part->ns[PIN][X][MAX]}, 
+            {part->ns[PIN][Z][MIN], part->ns[PIN][Z][MAX]}
+        },
+        {
+            {part->ns[PIN][Z][MIN], part->ns[PIN][Z][MAX]}, 
+            {part->ns[PIN][X][MIN], part->ns[PIN][X][MAX]}, 
+            {part->ns[PIN][Y][MIN], part->ns[PIN][Y][MAX]}
+        },
+    };
+    for (int ks = ns[s][Z][MIN]; ks < ns[s][Z][MAX]; ++ks) {
+        for (int js = ns[s][Y][MIN]; js < ns[s][Y][MAX]; ++js) {
+            for (int is = ns[s][X][MIN], state = 0; is < ns[s][X][MAX]; ++is) {
+                switch (s) {
+                    case X:
+                        i = is;
+                        j = js;
+                        k = ks;
+                        break;
+                    case Y:
+                        i = js;
+                        j = is;
+                        k = ks;
+                        break;
+                    case Z:
+                        i = js;
+                        j = ks;
+                        k = is;
+                        break;
+                    default:
+                        break;
+                }
                 idx = IndexNode(k, j, i, partn[Y], partn[X]);
                 if (0 != node[idx].geoID) {
+                    state = 0; /* change state to mark boundary occurrence */
                     continue;
                 }
                 /*
@@ -157,11 +199,23 @@ static void LLL(const Real dt, const Real coeA, const Real coeB, const int to,
                 Uo = node[idx].U[to];
                 Un = node[idx].U[tn];
                 Um = node[idx].U[tm];
+                if (0 == state) { /* compute numerical flux at left interface */
+                    NumericalConvectiveFlux(tn, s, k - h[s][Z], j - h[s][Y], i - h[s][X], partn, node, model, FhatL);
+                    if (zero < model->refMu) {
+                        NumericalDiffusiveFlux(tn, s, k - h[s][Z], j - h[s][Y], i - h[s][X], partn, dd, node, model, FvhatL);
+                    }
+                    state = 1;
+                } else { /* inherit numerical flux from the previous node */
+                    temp = FhatL;
+                    FhatL = FhatR;
+                    FhatR = temp;
+                    temp = FvhatL;
+                    FvhatL = FvhatR;
+                    FvhatR = temp;
+                }
                 NumericalConvectiveFlux(tn, s, k, j, i, partn, node, model, FhatR);
-                NumericalConvectiveFlux(tn, s, k - h[s][Z], j - h[s][Y], i - h[s][X], partn, node, model, FhatL);
                 if (zero < model->refMu) {
                     NumericalDiffusiveFlux(tn, s, k, j, i, partn, dd, node, model, FvhatR);
-                    NumericalDiffusiveFlux(tn, s, k - h[s][Z], j - h[s][Y], i - h[s][X], partn, dd, node, model, FvhatL);
                 }
                 if (1 == model->sState) {
                     SourceVector(tn, k, j, i, partn, node, model, Phi);
