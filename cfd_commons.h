@@ -53,7 +53,7 @@ extern void ConvectiveFlux(const int s, const Real gamma, const Real U[restrict]
 /*
  * Physical property
  */
-extern Real Viscosity(const Real);
+extern Real Viscosity(const Real T);
 extern Real PrandtlNumber(void);
 /*
  * Compute the values of primitive variable vector
