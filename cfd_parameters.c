@@ -84,6 +84,7 @@ static int InitializeCFDParameters(Time *time, Space *space, Model *model)
         part->dd[s] = 1.0 / part->d[s];
     }
     part->tinyL = 1.0e-6 * MinReal(part->d[X], MinReal(part->d[Y], part->d[Z]));
+    part->tinyL = part->tinyL * part->tinyL; /* distance square based comparison */
     /* time */
     time->end = time->end * model->refV / model->refL;
     if (0 > time->stepN) {

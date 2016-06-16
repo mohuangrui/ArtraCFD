@@ -29,8 +29,8 @@ typedef enum {
  * Static Function Declarations
  ****************************************************************************/
 static void CharacteristicVariable(const int, const int, const int, const int, const int, 
-        const int [restrict], const Node *const, Real [restrict][DIMU], Real [restrict][TNSTENCIL]);
-static void CharacteristicFlux(const Real [restrict], Real [restrict][TNSTENCIL],
+        const int [restrict], const Node *const, Real [restrict][DIMU], Real [restrict][DIMU]);
+static void CharacteristicFlux(const Real [restrict], Real [restrict][DIMU],
         const int, const int, Real [restrict][NSTENCIL]);
 static void WENO5(Real [restrict][NSTENCIL], Real [restrict]);
 static void InverseProjection(Real [restrict][DIMU], const Real [restrict], 
@@ -60,7 +60,7 @@ void WENO(const int tn, const int s, const int k, const int j, const int i,
     Real LambdaN[DIMU]; /* eigenvalues */
     EigenvalueSplitting(model->splitter, Lambda, LambdaP, LambdaN);
     /* construct local characteristic variables for all potential stencils */
-    Real W[DIMU][TNSTENCIL];
+    Real W[TNSTENCIL][DIMU];
     CharacteristicVariable(tn, s, k, j, i, partn, node, L, W);
     /* construct local characteristic fluxes */
     Real HP[DIMU][NSTENCIL]; /* forward characteristic flux stencil */
@@ -77,7 +77,7 @@ void WENO(const int tn, const int s, const int k, const int j, const int i,
     return;
 }
 static void CharacteristicVariable(const int tn, const int s, const int k, const int j, const int i, 
-        const int partn[restrict], const Node *const node, Real L[restrict][DIMU], Real W[restrict][TNSTENCIL])
+        const int partn[restrict], const Node *const node, Real L[restrict][DIMU], Real W[restrict][DIMU])
 {
     const int h[DIMS][DIMS] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}; /* direction indicator */
     int idx = 0; /* linear array index math variable */
@@ -86,20 +86,20 @@ static void CharacteristicVariable(const int tn, const int s, const int k, const
         idx = IndexNode(k + n * h[s][Z], j + n * h[s][Y], i + n * h[s][X], partn[Y], partn[X]);
         U = node[idx].U[tn];
         for (int row = 0; row < DIMU; ++row) {
-            W[row][count] = 0.0;
+            W[count][row] = 0.0;
             for (int dummy = 0; dummy < DIMU; ++dummy) {
-                W[row][count] = W[row][count] + L[row][dummy] * U[dummy];
+                W[count][row] = W[count][row] + L[row][dummy] * U[dummy];
             }
         }
     }
     return;
 }
-static void CharacteristicFlux(const Real Lambda[restrict], Real W[restrict][TNSTENCIL],
+static void CharacteristicFlux(const Real Lambda[restrict], Real W[restrict][DIMU],
         const int startN, const int wind, Real H[restrict][NSTENCIL])
 {
     for (int n = startN, count = 0; count < NSTENCIL; n = n + wind, ++count) {
         for (int row = 0; row < DIMU; ++row) {
-            H[row][count] = Lambda[row] * W[row][n];
+            H[row][count] = Lambda[row] * W[n][row];
         }
     }
     return;
