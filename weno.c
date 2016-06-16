@@ -70,8 +70,8 @@ void WENO(const int tn, const int s, const int k, const int j, const int i,
     /* WENO reconstruction */
     Real HhatP[DIMU]; /* forward numerical flux of characteristic fields */
     Real HhatN[DIMU]; /* backward numerical flux of characteristic fields */
-    WENO5(HP+CEN, HhatP);
-    WENO5(HN+CEN, HhatN);
+    WENO5(HP, HhatP);
+    WENO5(HN, HhatN);
     /* inverse projection */
     InverseProjection(R, HhatP, HhatN, Fhat);
     return;
@@ -113,21 +113,21 @@ static void WENO5(Real F[restrict][NSTENCIL], Real Fhat[restrict])
     const Real C[R] = {0.1, 0.6, 0.3};
     const Real epsilon = 1.0e-6;
     for (int row = 0; row < DIMU; ++row) {
-        IS[0] = (13.0 / 12.0) * Square(F[row][-2] - 2.0 * F[row][-1] + F[row][0]) + 
-            (1.0 / 4.0) * Square(F[row][-2] - 4.0 * F[row][-1] + 3.0 * F[row][0]);
-        IS[1] = (13.0 / 12.0) * Square(F[row][-1] - 2.0 * F[row][0] + F[row][1]) +
-            (1.0 / 4.0) * Square(F[row][-1] - F[row][1]);
-        IS[2] = (13.0 / 12.0) * Square(F[row][0] - 2.0 * F[row][1] + F[row][2]) +
-            (1.0 / 4.0) * Square(3.0 * F[row][0] - 4.0 * F[row][1] + F[row][2]);
+        IS[0] = (13.0 / 12.0) * Square(F[row][CEN-2] - 2.0 * F[row][CEN-1] + F[row][CEN]) + 
+            (1.0 / 4.0) * Square(F[row][CEN-2] - 4.0 * F[row][CEN-1] + 3.0 * F[row][CEN]);
+        IS[1] = (13.0 / 12.0) * Square(F[row][CEN-1] - 2.0 * F[row][CEN] + F[row][CEN+1]) +
+            (1.0 / 4.0) * Square(F[row][CEN-1] - F[row][CEN+1]);
+        IS[2] = (13.0 / 12.0) * Square(F[row][CEN] - 2.0 * F[row][CEN+1] + F[row][CEN+2]) +
+            (1.0 / 4.0) * Square(3.0 * F[row][CEN] - 4.0 * F[row][CEN+1] + F[row][CEN+2]);
         alpha[0] = C[0] / Square(epsilon + IS[0]);
         alpha[1] = C[1] / Square(epsilon + IS[1]);
         alpha[2] = C[2] / Square(epsilon + IS[2]);
         omega[0] = alpha[0] / (alpha[0] + alpha[1] + alpha[2]);
         omega[1] = alpha[1] / (alpha[0] + alpha[1] + alpha[2]);
         omega[2] = alpha[2] / (alpha[0] + alpha[1] + alpha[2]);
-        q[0] = (1.0 / 6.0) * (2.0 * F[row][-2] - 7.0 * F[row][-1] + 11.0 * F[row][0]);
-        q[1] = (1.0 / 6.0) * (-F[row][-1] + 5.0 * F[row][0] + 2.0 * F[row][1]);
-        q[2] = (1.0 / 6.0) * (2.0 * F[row][0] + 5.0 * F[row][1] - F[row][2]);
+        q[0] = (1.0 / 6.0) * (2.0 * F[row][CEN-2] - 7.0 * F[row][CEN-1] + 11.0 * F[row][CEN]);
+        q[1] = (1.0 / 6.0) * (-F[row][CEN-1] + 5.0 * F[row][CEN] + 2.0 * F[row][CEN+1]);
+        q[2] = (1.0 / 6.0) * (2.0 * F[row][CEN] + 5.0 * F[row][CEN+1] - F[row][CEN+2]);
         Fhat[row] = omega[0] * q[0] + omega[1] * q[1] + omega[2] * q[2];
     }
     return;
