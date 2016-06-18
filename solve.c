@@ -81,14 +81,16 @@ static int SolutionEvolution(Time *time, Space *space, const Model *model)
         /*
          * Compute field data in current time step, treat phase interaction
          * as two physical processes, and split these two processes in time
-         * space use a technique similar to Strang's splitting method.
+         * space use Strang's splitting method.
          */
         TickTime(&operationTimer);
-        if (1 == model->fsi) {
+        if (0 != model->fsi) {
             PhaseInteraction(time->now, 0.5 * dt, space, model);
         }
-        FluidDynamics(dt, space, model);
-        if (1 == model->fsi) {
+        if (1 != model->fsi) {
+            FluidDynamics(dt, space, model);
+        }
+        if (0 != model->fsi) {
             PhaseInteraction(time->now, 0.5 * dt, space, model);
         }
         operationTime = TockTime(&operationTimer);

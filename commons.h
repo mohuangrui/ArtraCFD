@@ -105,7 +105,7 @@
  *    * Two ways of declaring a const pointer: 
  *      a) the target address which the pointer points to is fixed, but 
  *      the content in the address can be changed:
- *      double * const pointer; (pointer itself is const, can't be changed)
+ *      double *const pointer; (pointer itself is const, can't be changed)
  *      Use const pointer to a large compound variable type is useful for
  *      storage that can be changed in value but not moved in memory, since
  *      address of the storage is fixed, then the pointer can be const.
@@ -518,7 +518,7 @@
  *   Should never do value passing to avoid copying the complete contents
  *   of the structure onto the stack.
  * - Make sure assigning a valid memory location to the pointer before
- *   dereferencing a pointer!
+ *   dereferencing a pointer.
  ****************************************************************************/
 /****************************************************************************
  *
@@ -792,7 +792,7 @@ typedef struct {
     Real refMa; /* reference Mach number */
     Real refMu; /* reference dynamic viscosity */
     Real gamma; /* heat capacity ratio */
-    Real gasR; /* the gas constant */
+    Real gasR; /* specific gas constant */
     Real cv; /* specific heat capacity at constant volume */
     Real refL; /* characteristic length */
     Real refRho; /* characteristic density */

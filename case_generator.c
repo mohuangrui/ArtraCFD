@@ -46,7 +46,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "# - Physical quantities are SI Unit based. Data are float type if no specific -\n");
     fprintf(filePointer, "#   information is given. Floats can be exponential notation of 'e'.          -\n");
     fprintf(filePointer, "# - In each 'begin end' environment, there should NOT be any empty or comment -\n");
-    fprintf(filePointer, "#   lines. Please double check your input!                                    -\n");
+    fprintf(filePointer, "#   lines. Please double check your input.                                    -\n");
     fprintf(filePointer, "#                                                                             -\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
@@ -67,7 +67,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "time begin\n");
     fprintf(filePointer, "0                  # restart number tag (integer; 0: non restart)\n");
     fprintf(filePointer, "1.0                # total evolution time\n");
-    fprintf(filePointer, "1.0                # CFL condition number (CFL in (0, 2])\n");
+    fprintf(filePointer, "1.0                # CFL condition number in (0, 2]\n");
     fprintf(filePointer, "-1                 # maximum computing steps (integer; -1: automatic)\n");
     fprintf(filePointer, "1                  # number of times to write computed data (integer)\n");
     fprintf(filePointer, "1                  # data streamer (integer; 0: ParaView; 1: Ensight)\n");
@@ -82,7 +82,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "0                  # spatial scheme (integer; 0: 5th WENO;)\n");
     fprintf(filePointer, "0                  # average method (integer; 0: Arithmetic mean; 1: Roe averages)\n");
     fprintf(filePointer, "0                  # flux splitting method (integer; 0: LLF; 1: SW)\n");
-    fprintf(filePointer, "0                  # phase interaction (integer; 0: Off; 1: On)\n");
+    fprintf(filePointer, "0                  # phase interaction (integer; 0: F; 1: S; 2: FSI; 3: FSI+SSI)\n");
     fprintf(filePointer, "1                  # layers for reconstruction not interpolation (integer; -1: all)\n");
     fprintf(filePointer, "numerical end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
@@ -233,7 +233,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "#\n");
     fprintf(filePointer, "#Probes originally are all line segments, but can be changed to a single point\n");
     fprintf(filePointer, "#or any allowed number of points by adjusting resolution (points on line).\n");
-    fprintf(filePointer, "#NOTICE: the number of probe specify sections should not exceed 10.\n");
+    fprintf(filePointer, "#NOTICE: the number of probe sections should not exceed 10.\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "probe control begin\n");
     fprintf(filePointer, "1                 # total number of times of exporting probe data (integer)\n");
@@ -266,7 +266,7 @@ static int CaseGeometryFileGenerator(void)
     fprintf(filePointer, "#   north; Z axis is perpendicular to screen and points from front to back.   -\n");
     fprintf(filePointer, "# - Coordinates and physical quantities should be normalized to dimensionless.-\n");
     fprintf(filePointer, "# - In each 'begin end' environment, there should NOT be any empty or comment -\n");
-    fprintf(filePointer, "#   lines. Please double check your input!                                    -\n");
+    fprintf(filePointer, "#   lines. Please double check your input.                                    -\n");
     fprintf(filePointer, "#                                                                             -\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");

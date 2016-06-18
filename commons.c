@@ -90,7 +90,7 @@ int ShowInformation(const char *statement)
     return 0;
 }
 /*
- * Assign linear array storage to a pointer with a specific datatype.
+ * Assign linear array storage to a pointer.
  * Note:
  *  - in C, don't need to cast the return value of malloc. The pointer to
  *    void returned by malloc is automatically converted to the correct type.
@@ -100,7 +100,7 @@ int ShowInformation(const char *statement)
  *    followed by a type name or an expression (which may be merely a variable
  *    name). If a type name is used, it must always be enclosed in parentheses,
  *    whereas expressions can be specified with or without parentheses. 
- *  - The sizeof is a unary operator (not a function!), sizeof gives the size
+ *  - The sizeof is a unary operator (not a function), sizeof gives the size
  *    in units of chars.
  *  - When sizeof is applied to the name of a static array (not allocated
  *    through malloc), the result is the size in bytes (in unit of chars) of the 

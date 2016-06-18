@@ -84,7 +84,7 @@ int DomainPartition(Space *space)
      * out from the interior nodes at that direction and will not extent
      * on other parts, that is, they form cross like shapes in space 
      * without corner parts. For the global boundary nodes, they form a 
-     * square with corner nodes to provide stencils for mix derivatives
+     * square with corner nodes to provide stencils for mix derivatives.
      */
     part->ns[PIN][X][MIN] = part->ng + 1;
     part->ns[PIN][X][MAX] = part->n[X] - part->ng - 1;
