@@ -39,6 +39,10 @@ static Real Square(const Real x);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
+/*
+ * Jiang, G.S. and Shu, C.W., 1996. Efficient Implementation of Weighted
+ * ENO Schemes. Journal of Computational Physics, 126(1), pp.202-228.
+ */
 void WENO(const int tn, const int s, const int k, const int j, const int i, 
         const int partn[restrict], const Node *const node, const Model *model, Real Fhat[restrict])
 {

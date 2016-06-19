@@ -55,7 +55,7 @@ int ReadFieldData(Time *time, Space *space, const Model *model)
     ReadStructuredData[time->dataStreamer](time, space, model);
     return 0;
 }
-int WriteGeometryData(const Time *time, const Geometry * geo)
+int WriteGeometryData(const Time *time, const Geometry *geo)
 {
     if (0 == geo->totalN) {
         return 0;
@@ -63,7 +63,7 @@ int WriteGeometryData(const Time *time, const Geometry * geo)
     WritePolyData[0](time, geo);
     return 0;
 }
-int ReadGeometryData(const Time *time, Geometry * geo)
+int ReadGeometryData(const Time *time, Geometry *geo)
 {
     if (0 == geo->totalN) {
         return 0;

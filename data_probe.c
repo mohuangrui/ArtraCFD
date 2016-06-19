@@ -50,7 +50,7 @@ int WriteFieldDataAtProbes(const Time *time, const Space *space, const Model *mo
         if (NULL == filePointer) {
             FatalError("failed to write data at probes...");
         }
-        fprintf(filePointer, "# points  x  y  z  rho  u  v  w  p T\n"); 
+        fprintf(filePointer, "# x  y  z  rho  u  v  w  p T\n"); 
         p1[X] = time->probe[n][0];
         p1[Y] = time->probe[n][1];
         p1[Z] = time->probe[n][2];

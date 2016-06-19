@@ -87,9 +87,7 @@ static int SolutionEvolution(Time *time, Space *space, const Model *model)
         if (0 != model->fsi) {
             PhaseInteraction(time->now, 0.5 * dt, space, model);
         }
-        if (1 != model->fsi) {
-            FluidDynamics(dt, space, model);
-        }
+        FluidDynamics(dt, space, model);
         if (0 != model->fsi) {
             PhaseInteraction(time->now, 0.5 * dt, space, model);
         }

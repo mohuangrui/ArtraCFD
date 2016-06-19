@@ -309,6 +309,11 @@ static int GhostState(const int k, const int j, const int i, const int geoID, co
     }
     return 0;
 }
+/*
+ * Mo, H., Lien, F.S., Zhang, F. and Cronin, D.S., 2016. A sharp interface
+ * immersed boundary method for solving flow with arbitrarily irregular and
+ * changing geometry. arXiv preprint arXiv:1602.06830.
+ */
 void ImmersedBoundaryTreatment(const int tn, Space *space, const Model *model)
 {
     const Partition *restrict part = &(space->part);

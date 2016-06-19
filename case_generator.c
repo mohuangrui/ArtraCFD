@@ -82,7 +82,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "0                  # spatial scheme (integer; 0: 5th WENO;)\n");
     fprintf(filePointer, "0                  # average method (integer; 0: Arithmetic mean; 1: Roe averages)\n");
     fprintf(filePointer, "0                  # flux splitting method (integer; 0: LLF; 1: SW)\n");
-    fprintf(filePointer, "0                  # phase interaction (integer; 0: F; 1: S; 2: FSI; 3: FSI+SSI)\n");
+    fprintf(filePointer, "0                  # phase interaction (integer; 0: F; 1: FSI; 2: FSI+SSI)\n");
     fprintf(filePointer, "1                  # layers for reconstruction not interpolation (integer; -1: all)\n");
     fprintf(filePointer, "numerical end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");

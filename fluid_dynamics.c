@@ -28,10 +28,10 @@
  * generally clarifies the code.
  */
 typedef void (*ConvectiveFluxReconstructor)(const int, const int, const int,
-        const int, const int, const int [restrict], const Node *const , 
+        const int, const int, const int [restrict], const Node *const, 
         const Model *, Real [restrict]);
 typedef void (*DiffusiveFluxReconstructor)(const int, const int, const int, 
-        const int, const int [restrict], const Real [restrict], const Node *const , 
+        const int, const int [restrict], const Real [restrict], const Node *const, 
         const Model *, Real [restrict]);
 /****************************************************************************
  * Static Function Declarations
@@ -40,21 +40,21 @@ static void RungeKutta(const Real, const int, Space *, const Model *);
 static void LLL(const Real, const Real, const Real, const int,
         const int, const int, const int, Space *, const Model *);
 static void NumericalConvectiveFlux(const int, const int, const int, const int,
-        const int, const int [restrict], const Node *const , const Model *, Real [restrict]);
+        const int, const int [restrict], const Node *const, const Model *, Real [restrict]);
 static void NumericalDiffusiveFlux(const int, const int, const int, const int, 
-        const int, const int [restrict], const Real [restrict], const Node *const , 
+        const int, const int [restrict], const Real [restrict], const Node *const, 
         const Model *, Real [restrict]);
 static void NumericalDiffusiveFluxX(const int, const int, const int, 
-        const int, const int [restrict], const Real [restrict], const Node *const , 
+        const int, const int [restrict], const Real [restrict], const Node *const, 
         const Model *, Real [restrict]);
 static void NumericalDiffusiveFluxY(const int, const int, const int, 
-        const int, const int [restrict], const Real [restrict], const Node *const , 
+        const int, const int [restrict], const Real [restrict], const Node *const, 
         const Model *, Real [restrict]);
 static void NumericalDiffusiveFluxZ(const int, const int, const int, 
-        const int, const int [restrict], const Real [restrict], const Node *const , 
+        const int, const int [restrict], const Real [restrict], const Node *const, 
         const Model *, Real [restrict]);
 static void SourceVector(const int, const int, const int, const int,
-        const int [restrict], const Node *const , const Model *, Real [restrict]);
+        const int [restrict], const Node *const, const Model *, Real [restrict]);
 /****************************************************************************
  * Global Variables Definition with Private Scope
  ****************************************************************************/
@@ -68,14 +68,18 @@ static DiffusiveFluxReconstructor ReconstructDiffusiveFlux[DIMS] = {
  * Function definitions
  ****************************************************************************/
 /*
- * Two approaches for the numerical solution of governing equations:
+ * Three approaches for the numerical solution of governing equations:
  *   a)  - differential operator splitting
  *       - temporal discretization
  *       - spatial discretization (convective fluxes + diffusive fluxes)
  *   b)  - temporal discretization
  *       - algebraic operator splitting
  *       - spatial discretization (convective fluxes + diffusive fluxes)
- *   a) shows more accurate results according to tests on Riemann problems.
+ *   c)  - temporal discretization
+ *       - spatial discretization (convective fluxes + diffusive fluxes)
+ *       - dimension-by-dimension calculation without splitting
+ *   a) is currently adopted since a) is more accurate than b) for coarse
+ *   grids, and c) has a very restricted stability constrain.
  */
 void FluidDynamics(const Real dt, Space *space, const Model *model)
 {
@@ -233,15 +237,15 @@ static void NumericalConvectiveFlux(const int tn, const int s, const int k, cons
     ReconstructConvectiveFlux[model->scheme](tn, s, k, j, i, partn, node, model, Fhat);
     return;
 }
-static void NumericalDiffusiveFlux(const int tn, const int s, const int k, const int j, 
-        const int i, const int partn[restrict], const Real dd[restrict], const Node *const node, 
+static void NumericalDiffusiveFlux(const int tn, const int s, const int k, const int j, const int i,
+        const int partn[restrict], const Real dd[restrict], const Node *const node, 
         const Model *model, Real Fvhat[restrict])
 {
     ReconstructDiffusiveFlux[s](tn, k, j, i, partn, dd, node, model, Fvhat);
     return;
 }
-static void NumericalDiffusiveFluxX(const int tn, const int k, const int j, 
-        const int i, const int partn[restrict], const Real dd[restrict], const Node *const node, 
+static void NumericalDiffusiveFluxX(const int tn, const int k, const int j, const int i,
+        const int partn[restrict], const Real dd[restrict], const Node *const node, 
         const Model *model, Real Fvhat[restrict])
 {
     const int idx = IndexNode(k, j, i, partn[Y], partn[X]);
@@ -325,8 +329,8 @@ static void NumericalDiffusiveFluxX(const int tn, const int k, const int j,
     Fvhat[4] = heatK * dT_dx + Fvhat[1] * uhat + Fvhat[2] * vhat + Fvhat[3] * what;
     return;
 }
-static void NumericalDiffusiveFluxY(const int tn, const int k, const int j, 
-        const int i, const int partn[restrict], const Real dd[restrict], const Node *const node, 
+static void NumericalDiffusiveFluxY(const int tn, const int k, const int j, const int i,
+        const int partn[restrict], const Real dd[restrict], const Node *const node, 
         const Model *model, Real Fvhat[restrict])
 {
     const int idx = IndexNode(k, j, i, partn[Y], partn[X]);
@@ -410,8 +414,8 @@ static void NumericalDiffusiveFluxY(const int tn, const int k, const int j,
     Fvhat[4] = heatK * dT_dy + Fvhat[1] * uhat + Fvhat[2] * vhat + Fvhat[3] * what;
     return ;
 }
-static void NumericalDiffusiveFluxZ(const int tn, const int k, const int j, 
-        const int i, const int partn[restrict], const Real dd[restrict], const Node *const node, 
+static void NumericalDiffusiveFluxZ(const int tn, const int k, const int j, const int i,
+        const int partn[restrict], const Real dd[restrict], const Node *const node, 
         const Model *model, Real Fvhat[restrict])
 {
     const int idx = IndexNode(k, j, i, partn[Y], partn[X]);
