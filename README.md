@@ -14,6 +14,6 @@ A Computational Fluid Dynamics Solver For Multimaterial Flows
 
 ### Solid dynamics:
 
-#### Governing equations: Newton’s second law of translational motion, Euler equations of rotational motion, multi-body contact and collision model
+#### Governing equations: Newton’s second law (translation), Euler equations (rotation), multi-body contact and collision
 #### Temporal integration: RK2
 #### Interface description: triangulated facets with front tracking
