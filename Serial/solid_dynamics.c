@@ -80,7 +80,7 @@ void SurfaceForceIntegration(Space *space, const Model *model)
     int lidN = 0; /* count total number of interfacial nodes */
     int gstN = 0; /* count total number of ghost nodes */
     const Real zero = 0.0;
-    const Real percent = 1.0e-4;
+    const Real percent = FLT_EPSILON * FLT_EPSILON;
     RealVec pG = {zero}; /* ghost point */
     RealVec pO = {zero}; /* boundary point */
     RealVec pI = {zero}; /* image point */
