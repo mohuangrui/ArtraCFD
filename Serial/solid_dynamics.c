@@ -243,8 +243,10 @@ static void CollisionDynamics(Space *space)
     int box[DIMS][LIMIT] = {{0}}; /* bounding box in node space */
     const Real zero = 0.0;
     const Real one = 1.0;
-    const int collideNone = 100; /* null colliding polyhedron indicator */
+    const int collideNone = 100; /* none colliding polyhedron indicator */
     const Real crList[5] = {0.0, 0.25, 0.5, 0.75, 1.0}; /* coefficient of restitution */
+    RealVec Vo = {zero}; /* original translational velocity */
+    RealVec Wo = {zero}; /* original rotational velocity */
     RealVec V = {zero}; /* relative translational velocity */
     RealVec W = {zero}; /* relative rotational velocity */
     RealVec N = {zero}; /* line of impact */
@@ -276,19 +278,28 @@ static void CollisionDynamics(Space *space)
                 }
             }
         }
-        /* mark and skip none colliding polyhedrons */
+        /* mark and skip none contacting polyhedrons */
         if (0 == geo->colN) {
             polp->state = polp->state + collideNone;
             continue;
         }
+        /* backup original velocity */
+        memcpy(Vo, polp->V[TO], DIMS * sizeof(*polp->V[TO]));
+        memcpy(Wo, polp->W[TO], DIMS * sizeof(*polp->W[TO]));
         /* initialize post-collision velocity */
         memset(polp->V[TO], 0, DIMS * sizeof(*polp->V[TO]));
         memset(polp->W[TO], 0, DIMS * sizeof(*polp->W[TO]));
-        /* pairwise collision with velocity averaging */
+        /* pairwise collision */
         mp = polp->rho * polp->volume;
         for (int n = 0; n < geo->colN; ++n) {
             col = geo->col + n;
             if (0 == abs(col->N[X]) + abs(col->N[Y]) + abs(col->N[Z])) {
+                if (geo->colN - 1 == n) {
+                    /* mark and recover contacting but none colliding polyhedrons */
+                    polp->state = polp->state + collideNone;
+                    memcpy(polp->V[TO], Vo, DIMS * sizeof(*polp->V[TO]));
+                    memcpy(polp->W[TO], Wo, DIMS * sizeof(*polp->W[TO]));
+                }
                 continue;
             }
             N[X] = col->N[X];
@@ -306,14 +317,23 @@ static void CollisionDynamics(Space *space)
             cr = 0.5 * (crList[polp->mid] + crList[poln->mid]);
             cf = 0.5 * (polp->cf + poln->cf);
             Vn = Dot(V, N);
-            /* sum the collision speed in the global frame */
+            if (zero >= Vn) {
+                if (geo->colN - 1 == n) {
+                    /* mark and recover contacting but none colliding polyhedrons */
+                    polp->state = polp->state + collideNone;
+                    memcpy(polp->V[TO], Vo, DIMS * sizeof(*polp->V[TO]));
+                    memcpy(polp->W[TO], Wo, DIMS * sizeof(*polp->W[TO]));
+                }
+                continue;
+            }
+            /* vector summation of the collision velocities in the global frame */
             for (int s = 0; s < DIMS; ++s) {
                 polp->V[TO][s] = polp->V[TO][s] + polp->V[TN][s] - meff * (one + cr) * Vn * N[s] - cf * (V[s] - Vn * N[s]);
                 polp->W[TO][s] = polp->W[TO][s] + polp->W[TN][s] - meff * W[s];
             }
         }
     }
-    /* update averaged velocity for collided polyhedrons */
+    /* update post-collision velocity for collided polyhedrons */
     for (int p = 0; p < geo->totN; ++p) {
         polp = geo->poly + p;
         if (1 == polp->state) { /* stationary object */
@@ -323,10 +343,8 @@ static void CollisionDynamics(Space *space)
             polp->state = polp->state - collideNone;
             continue;
         }
-        for (int s = 0; s < DIMS; ++s) {
-            polp->V[TN][s] = polp->V[TO][s];
-            polp->W[TN][s] = polp->W[TO][s];
-        }
+        memcpy(polp->V[TN], polp->V[TO], DIMS * sizeof(*polp->V[TO]));
+        memcpy(polp->W[TN], polp->W[TO], DIMS * sizeof(*polp->W[TO]));
     }
     return;
 }
