@@ -287,12 +287,13 @@ static void CollisionDynamics(Space *space)
         memcpy(Vo, polp->V[TO], DIMS * sizeof(*polp->V[TO]));
         memcpy(Wo, polp->W[TO], DIMS * sizeof(*polp->W[TO]));
         /* initialize post-collision velocity */
-        memset(polp->V[TO], 0, DIMS * sizeof(*polp->V[TO]));
-        memset(polp->W[TO], 0, DIMS * sizeof(*polp->W[TO]));
+        memcpy(polp->V[TO], polp->V[TN], DIMS * sizeof(*polp->V[TO]));
+        memcpy(polp->W[TO], polp->W[TN], DIMS * sizeof(*polp->W[TO]));
         /* pairwise collision */
         mp = polp->rho * polp->volume;
         for (int n = 0; n < geo->colN; ++n) {
             col = geo->col + n;
+            /* line of impact */
             if (0 == abs(col->N[X]) + abs(col->N[Y]) + abs(col->N[Z])) {
                 if ((geo->colN - 1 == n) && (coltag > polp->state)) {
                     /* recover contacting but none colliding polyhedron */
@@ -306,15 +307,11 @@ static void CollisionDynamics(Space *space)
             N[Z] = col->N[Z];
             Normalize(DIMS, Norm(N), N);
             poln = geo->poly + col->gid - 1;
-            mn = poln->rho * poln->volume;
-            meff = mn / (mp + mn);
             /* relative speed */
             for (int s = 0; s < DIMS; ++s) {
                 V[s] = polp->V[TN][s] - poln->V[TN][s];
                 W[s] = polp->W[TN][s] - poln->W[TN][s];
             }
-            cr = 0.5 * (crList[polp->mid] + crList[poln->mid]);
-            cf = 0.5 * (polp->cf + poln->cf);
             Vn = Dot(V, N);
             if (zero >= Vn) {
                 if ((geo->colN - 1 == n) && (coltag > polp->state)) {
@@ -328,10 +325,14 @@ static void CollisionDynamics(Space *space)
             if (coltag > polp->state) {
                 polp->state = polp->state + coltag;
             }
-            /* vector summation of the collision velocities in the global frame */
+            mn = poln->rho * poln->volume;
+            meff = mn / (mp + mn);
+            cr = 0.5 * (crList[polp->mid] + crList[poln->mid]);
+            cf = 0.5 * (polp->cf + poln->cf);
+            /* vector summation of the velocity changes in the global frame */
             for (int s = 0; s < DIMS; ++s) {
-                polp->V[TO][s] = polp->V[TO][s] + polp->V[TN][s] - meff * (one + cr) * Vn * N[s] - cf * (V[s] - Vn * N[s]);
-                polp->W[TO][s] = polp->W[TO][s] + polp->W[TN][s] - meff * W[s];
+                polp->V[TO][s] = polp->V[TO][s] - meff * (one + cr) * Vn * N[s] - cf * (V[s] - Vn * N[s]);
+                polp->W[TO][s] = polp->W[TO][s] - meff * W[s];
             }
         }
     }
