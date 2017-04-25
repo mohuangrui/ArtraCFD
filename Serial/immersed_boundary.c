@@ -94,19 +94,15 @@ static void InitializeGeometryDomain(Space *space)
                     continue;
                 }
                 /* 
-                 * The rest is to treat nodes in nonstationary polyhedron. Due
-                 * to restricted motion, we can use the first layer nodes in 
-                 * polyhedron as pivot and reset nodes near boundary for remesh
-                 * while keeping those well inside nodes to reduce cost. The
-                 * reason for using the first node layer is because a concave
-                 * geometry on a coarse grid may not have other node layers.
+                 * The rest is to treat nodes in nonstationary polyhedrons. Due
+                 * to the restricted motion, we can reset interfacial nodes for
+                 * remesh while keeping non-interfacial nodes to reduce cost.
                  * When polyhedrons move, the previous nth layer may become a
-                 * (n-1)th layer, therefore, we need to reset layers in the
-                 * offset range [0,gl] from the first layer to ensure the
-                 * closest face id information of these nodes are all updated.
-                 * However, if we only need to update the closest face id
-                 * information for the future first layer nodes, then we can
-                 * only need to reset the current interfacial nodes.
+                 * (n-1)th layer, therefore, we need to reset gl+1 layers to 
+                 * ensure the closest face id information of all the future 
+                 * gl interfacial nodes are updated. However, if we only need to
+                 * update the closest face id information for the future gl-1
+                 * layers, we can only reset gl interfacial layers.
                  */
                 if (0 < node[idx].lid) {
                     node[idx].gid = 0;
