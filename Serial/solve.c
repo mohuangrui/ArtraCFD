@@ -31,6 +31,11 @@ static Real ComputeTimeStep(const Time *, const Space *, const Model *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
+/*
+ * Mo, H., Lien, F. S., Zhang, F., & Cronin, D. S. (2017). A numerical
+ * framework for the direct simulation of dense particulate flow under
+ * explosive dispersal. Shock Waves, 1-19.
+ */
 int Solve(Time *time, Space *space, const Model *model)
 {
     ShowInformation("Solving...");

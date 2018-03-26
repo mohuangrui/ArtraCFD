@@ -89,39 +89,6 @@ int ShowInformation(const char *statement)
     fprintf(stdout, "%s\n", statement);
     return 0;
 }
-/*
- * Assign linear array storage to a pointer.
- * Note:
- *  - in C, don't need to cast the return value of malloc. The pointer to
- *    void returned by malloc is automatically converted to the correct type.
- *    However, if compile with a C++ compiler, a cast is needed.
- *  - The sizeof operator is used to determine the amount of space a designated
- *    datatype would occupy in memory. To use sizeof, the keyword "sizeof" is
- *    followed by a type name or an expression (which may be merely a variable
- *    name). If a type name is used, it must always be enclosed in parentheses,
- *    whereas expressions can be specified with or without parentheses. 
- *  - The sizeof is a unary operator (not a function), sizeof gives the size
- *    in units of chars.
- *  - When sizeof is applied to the name of a static array (not allocated
- *    through malloc), the result is the size in bytes (in unit of chars) of the 
- *    whole array, that is, number of elements times the sizeof an array element.
- *    This is one of the few exceptions to the rule that the name of an array is
- *    converted to a pointer to the first element of the array, and is possible
- *    just because the actual array size is fixed and known at compile time, 
- *    when sizeof operator is evaluated.
- *  - When returning a pointer from a function, do not return a pointer that
- *    points to a value that is local to the function or that is a pointer
- *    to a function argument. Pointers to local variables become invalid
- *    when the function exits. In a function, the value returned points to
- *    a static variable or returning a pointer to dynamically allocated 
- *    memory can both be valid.
- *  - memset treats any memory buffer as a series of bytes, disregarding with
- *    the specific data type. Therefore, it will not set multi-byte types to a
- *    specific non-zero value. For example, int a[100]; memset(a, 1, sizeof(a));
- *    will not set each member of a to the value 1 rather it will set every
- *    byte in the memory buffer taken up by a to 1, which means every four-byte
- *    int is set to the value 0x01010101, which is not the same as 0x00000001.
- */
 void *AssignStorage(size_t size)
 {
     void *pointer = malloc(size);
@@ -131,19 +98,6 @@ void *AssignStorage(size_t size)
     memset(pointer, 0, size); /* initialize to zero */
     return pointer;
 }
-/*
- * There are a number of rules you should follow in de-allocating memory.
- * - Prevent access to de-allocated memory. This can be done by setting the
- *   pointer to null after de-allocating, which requires pass the reference
- *   of the target pointer.
- * - De-allocate memory in the reverse order it was allocated. This makes sure
- *   that any dependencies between the allocated memory will not result in 
- *   "dangling pointers". So if one allocated data structure has a pointer to 
- *   another allocated data structure, the second should be de-allocated first.
- * - For a temporary memory block, de-allocate the block before leaving the
- *   routine. If the de-allocation is not done before the routine ends, access
- *   to the memory is lost.
- */
 int RetrieveStorage(void *pointer)
 {
     if (NULL != pointer) {

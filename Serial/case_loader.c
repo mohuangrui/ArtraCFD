@@ -37,27 +37,6 @@ int LoadCaseData(Time *time, Space *space, Model *model)
     CheckCaseSettingData(time, space, model);
     return 0;
 }
-/*
- * This function reads the case settings from the case file.
- * Use "begin end" environment in the case file to control the reading. 
- * The function scanf is notorious for its poor end-of-line handling.
- * Instead, use fgets to read a line of input and sscanf to process it.
- * Note: use a large enough number when using fgets to ensure reading
- * a whole line at a time. fgets will get the entire line including
- * the newline character (\n).
- * Note: sscanf can correctly handle any space in the target string as
- * well as in the format specifier, therefore, no need to process those
- * lines that will be processed by sscanf.
- * Note: In fprintf(), the rvalue type promotions are expected. %f and 
- * %g actually correspond to parameters of type double. Thus in fprintf()
- * there is no difference between %f and %lf, or between %g and %lg. However, 
- * in sscanf() what is passed is a pointer to the variable so no rvalue type 
- * promotions occur or are expected. Thus %f and %lf are quite different in
- * sscanf, but the same in fprintf. Consequently, we need to use %g for 
- * float and %lg for double in sscanf. It doesn't matter which you use for 
- * fprintf because the fprintf library function treats them as synonymous, 
- * but it's crucial to get it right for sscanf. 
- */
 static int ReadCaseSettingData(Time *time, Space *space, Model *model)
 {
     Partition *part = &(space->part);

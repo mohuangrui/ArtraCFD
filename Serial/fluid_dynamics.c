@@ -216,7 +216,6 @@ static void LLL(const Real dt, const Real coeA, const Real coeB, const int to,
     const RealVec r = {dt * dd[X], dt * dd[Y], dt * dd[Z]};
     const Real rPhi = (DIMS == p) ? dt : (1.0 / 3.0) * dt;
     const int sN = (DIMS == p) ? p : p + 1;
-    /* dimension by dimension sweep with dimension priority */
     for (int s = (DIMS == p) ? 0 : p; s < sN; ++s) {
         for (int ks = part->np[s][Z][MIN]; ks < part->np[s][Z][MAX]; ++ks) {
             for (int js = part->np[s][Y][MIN]; js < part->np[s][Y][MAX]; ++js) {
@@ -236,17 +235,17 @@ static void LLL(const Real dt, const Real coeA, const Real coeB, const int to,
                     }
                     idx = IndexNode(k, j, i, partn[Y], partn[X]);
                     if (0 != node[idx].gid) {
-                        state = 0; /* change state to mark boundary occurrence */
+                        state = 0;
                         continue;
                     }
-                    if (1 == state) { /* inherit numerical flux from the previous node */
+                    if (1 == state) {
                         temp = FhatL;
                         FhatL = FhatR;
                         FhatR = temp;
                         temp = FvhatL;
                         FvhatL = FvhatR;
                         FvhatR = temp;
-                    } else { /* compute numerical flux at left interface */
+                    } else {
                         NumericalConvectiveFlux(tn, s, k - h[s][Z], j - h[s][Y], i - h[s][X], partn, node, model, FhatL);
                         NumericalDiffusiveFlux(tn, s, k - h[s][Z], j - h[s][Y], i - h[s][X], partn, dd, node, model, FvhatL);
                         state = 1;

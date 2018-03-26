@@ -47,17 +47,11 @@ static void FlowReconstruction(const int, const int [restrict], const Real [rest
  * Function definitions
  ****************************************************************************/
 /*
- * It's necessary to differentiate exterior nodes and interior nodes to avoid
- * incorrect mark of interfacial nodes near global domain boundaries.
+ * Mo, H., Lien, F. S., Zhang, F., & Cronin, D. S. (2017). A novel field
+ * function for solving complex and dynamic fluid-solid system on Cartesian
+ * grid. arXiv:1702.02474.
  *
- * The identification process should proceed step by step to correctly handle
- * all the relationships and avoid interference between each step,
- * interference may happen if identification processes are crunched together.
- *
- * Moreover, whenever identifying a node, link the node to geometry, which 
- * can be used to access the geometric data for computing required data. 
- * The rational is that don't store every information for each node, but
- * only store necessary information. When need it, access and calculate it.
+ * Node mapping should proceed step by step to avoid interference.
  */
 void ComputeGeometryDomain(Space *space, const Model *model)
 {
@@ -79,31 +73,18 @@ static void InitializeGeometryDomain(Space *space)
             for (int i = part->ns[PIN][X][MIN]; i < part->ns[PIN][X][MAX]; ++i) {
                 idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
                 gid = node[idx].gid;
-                if (0 >= gid) { /* reset information for non polyhedron nodes */
+                if (0 >= gid) {
                     node[idx].gid = 0;
                     node[idx].lid = 0;
                     node[idx].gst = 0;
                     continue;
                 }
-                /* the rest is to treat polyhedron nodes */
                 poly = geo->poly + gid - 1;
-                if (1 == poly->state) { /* nodes in stationary polyhedron */
-                    /* keep geometric information */
+                if (1 == poly->state) {
                     node[idx].lid = 0;
                     node[idx].gst = 0;
                     continue;
                 }
-                /* 
-                 * The rest is to treat nodes in nonstationary polyhedrons. Due
-                 * to the restricted motion, we can reset interfacial nodes for
-                 * remesh while keeping non-interfacial nodes to reduce cost.
-                 * When polyhedrons move, the previous nth layer may become a
-                 * (n-1)th layer, therefore, we need to reset gl+1 layers to 
-                 * ensure the closest face id information of all the future 
-                 * gl interfacial nodes are updated. However, if we only need to
-                 * update the closest face id information for the future gl-1
-                 * layers, we can only reset gl interfacial layers.
-                 */
                 if (0 < node[idx].lid) {
                     node[idx].gid = 0;
                     node[idx].lid = 0;
@@ -114,27 +95,6 @@ static void InitializeGeometryDomain(Space *space)
     }
     return;
 }
-/*
- * When locate geometry nodes, there are two approaches available. One is search
- * over each node and verify each node regarding to all the geometries; another
- * is search each geometry and find all the nodes inside current geometry.
- * The second method is adopted here for performance reason.
- *
- * To best utilize the convergence property of immersed boundary treatment,
- * points either in or on geometry should be classified into the corresponding
- * geometry for a ghost approach; only points in geometry should be classified 
- * into the corresponding geometry for a no ghost approach.
- *
- * It is efficient to only test points that are inside the bounding box or
- * sphere of a large polyhedron. Be cautious with the validity of any calculated
- * index. It's extremely necessary to adjust the index into the valid region or 
- * check the validity of the index to avoid index exceeding array bound limits.
- *
- * For a large data set, an extra data preprocessing with spatial subdivision
- * is required to ensure minimal test in addition to the bounding container
- * method. Spatial subdivision is to provide internal resolution for the
- * polyhedron for fast inclusion determination.
- */
 static void IdentifyGeometryNode(Space *space)
 {
     const Partition *restrict part = &(space->part);
@@ -189,43 +149,6 @@ static void IdentifyGeometryNode(Space *space)
     }
     return;
 }
-/*
- * Convective terms only have non-mixed derivatives, discretization
- * stencils of each computational nodes are cross types.
- * Diffusive terms have second order mixed derivatives, discretization
- * stencils of each computational nodes are plane squares with conner
- * nodes. Therefore, for interfacial computational nodes, neighbouring
- * nodes at corner directions require to be considered and is dependent
- * on the discretization of diffusive fluxes. An interfacial node is a
- * node that has heterogeneous neighbouring nodes on the searching path.
- * A ghost node is a node that is outside the normal computational domain
- * but locates on the numerical boundary. Hence, ghost nodes form a subset
- * of the interfacial nodes.
- */
-/*
- * When dealing with moving geometries, interfacial nodes may change their
- * corresponding geometry to others and keep as interfacial nodes in the 
- * new geometry. When a no ghost approach is adopted, this change will not
- * bring any problems since for each geometry, the newly joined nodes always
- * become to boundary nodes and their values will be constructed by boundary
- * treatment. However, for a ghost approach, the newly jointed nodes directly
- * become to normal computational nodes in the new geometry, therefore, a 
- * reconstruction is required to correctly deal with these newly jointed nodes.
- * To detect these nodes, two states, geometry identifier and face identifier 
- * are used together to flag nodes in geometry. After mesh regeneration, the
- * geometry identifier is updated and the face identifier maintains old value.
- * By comparing the updated value with the old value, we then are able to detect
- * those nodes previously are not in the current geometry and now newly become 
- * normal nodes in the current geometry. The physical values of the detected
- * nodes should be reconstructed from normal nodes with a NONE face identifier.
- * After that, the face identifier shall also be reset to NONE.
- * Note: if to apply this mechanism to all the regions, a new field identifier
- * that copy the geometry identifier shall be used rather than simply reusing
- * the face identifier to play this dual role.
- * Note: for two area touching objects separating instantly, fresh normal
- * nodes are generated without any valid neighbours, which situation requires 
- * further treatment.
- */
 static void IdentifyInterfacialNode(Space *space, const Model *model)
 {
     const Partition *restrict part = &(space->part);
@@ -320,9 +243,9 @@ static int GhostState(const int k, const int j, const int i, const int gid, cons
     return 0;
 }
 /*
- * Mo, H., Lien, F.S., Zhang, F. and Cronin, D.S., 2016. A sharp interface
- * immersed boundary method for solving flow with arbitrarily irregular and
- * changing geometry. arXiv preprint arXiv:1602.06830.
+ * Mo, H., Lien, F. S., Zhang, F., & Cronin, D. S. (2016). A novel immersed
+ * boundary method for solving flow with arbitrarily irregular and moving
+ * geometry. arXiv preprint arXiv:1602.06830.
  */
 void ImmersedBoundaryTreatment(const int tn, Space *space, const Model *model)
 {
@@ -371,13 +294,6 @@ void ImmersedBoundaryTreatment(const int tn, Space *space, const Model *model)
                             nI[X] = NodeSpace(pI[X], sMin[X], dd[X], ng);
                             nI[Y] = NodeSpace(pI[Y], sMin[Y], dd[Y], ng);
                             nI[Z] = NodeSpace(pI[Z], sMin[Z], dd[Z], ng);
-                            /*
-                             * When extremely strong discontinuities exist in the
-                             * domain of dependence of inverse distance weighting,
-                             * WENO's idea may be adopted to avoid discontinuous
-                             * stencils and to only use smooth stencils. However,
-                             * the algorithm will be too complex.
-                             */
                             FlowReconstruction(tn, nI, pI, R, NONE, 0, poly, part, node, model, pO, N, UoO, UoI);
                             MethodOfImage(UoI, UoO, UoG);
                         } else { /* inverse distance weighting */
@@ -398,13 +314,6 @@ void ImmersedBoundaryTreatment(const int tn, Space *space, const Model *model)
 }
 void MethodOfImage(const Real UoI[restrict], const Real UoO[restrict], Real UoG[restrict])
 {
-    /* 
-     * Apply the method of image.
-     *  -- reflecting vectors over wall for both slip and noslip, stationary and
-     *     moving conditions is unified by linear interpolation.
-     *  -- scalars are symmetrically reflected between image and ghost.
-     *  -- other scalars are determined by equation of state.
-     */
     UoG[1] = UoO[1] + UoO[1] - UoI[1];
     UoG[2] = UoO[2] + UoO[2] - UoI[2];
     UoG[3] = UoO[3] + UoO[3] - UoI[3];
@@ -468,15 +377,6 @@ static void FlowReconstruction(const int tn, const int n[restrict], const Real p
         UoO[2] = N[Y] * RHS[X] + Ta[Y] * RHS[Y] + Tb[Y] * RHS[Z];
         UoO[3] = N[Z] * RHS[X] + Ta[Z] * RHS[Y] + Tb[Z] * RHS[Z];
     }
-    /* 
-     * dp/dn = rho_f * v_t^2 / R - rho_f * a_s
-     * v_t = (v_o - v_s) - (v_o - vs) * n: relative tangential velocity
-     * v_o velocity of boundary point; v_s: velocity of solid surface
-     * R: radius of curvature;
-     * a_s = at + ar x r + w x (w x r): acceleration of solid surface
-     * currently, the effect of this condition is found very limited.
-     * Therefore, boundary layer pressure condition dp/dn = 0 is used.
-     */
     UoO[4] = UoI[4] * weight;
     if (zero > poly->T) { /* adiabatic, dT/dn = 0 */
         UoO[5] = UoI[5] * weight;
@@ -502,12 +402,6 @@ static Real InverseDistanceWeighting(const int tn, const int n[restrict], const 
     RealVec ph = {0.0}; /* neighbouring point */
     Real weightSum = 0.0;
     memset(Uo, 0, DIMUo * sizeof(*Uo));
-    /* 
-     * Search nodes with required "type" in the domain specified by the center node
-     * "n" and initial range "h" as interpolation stencils for the interpolated point "p".
-     * To preserve symmetry, the search range in each direction should be symmetric, and
-     * the search operator on each direction index should be symmetric.
-     */
     for (int r = h, tally = 0; 0 == tally; ++r) {
         for (int kh = -r; kh <= r; ++kh) {
             for (int jh = -r; jh <= r; ++jh) {

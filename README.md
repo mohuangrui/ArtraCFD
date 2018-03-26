@@ -1,5 +1,4 @@
-# ArtraCFD
-A Computational Fluid Dynamics Solver For Multimaterial Flows
+# `ArtraCFD` A Computational Fluid Dynamics Solver
 
 ## Solver configuration
 
