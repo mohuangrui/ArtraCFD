@@ -85,7 +85,7 @@ static int CaseSettingFileGenerator(void)
     fprintf(filePointer, "0                  # Jacobian average (integer; 0: Arithmetic mean; 1: Roe averages)\n");
     fprintf(filePointer, "0                  # flux splitting method (integer; 0: LLF; 1: SW)\n");
     fprintf(filePointer, "0                  # phase interaction (integer; 0: F; 1: FSI; 2: FSI+SSI)\n");
-    fprintf(filePointer, "1                  # layers for reconstruction (integer; 0: infinity)\n");
+    fprintf(filePointer, "0                  # layers for reconstruction (integer; 0: infinity)\n");
     fprintf(filePointer, "numerical end\n");
     fprintf(filePointer, "#------------------------------------------------------------------------------\n");
     fprintf(filePointer, "#\n");
