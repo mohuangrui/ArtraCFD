@@ -11,15 +11,14 @@
 
 #***************************************************************************#
 # Options:
-# 'make'             build executable file
-# 'make all'         build executable file
-# 'make install'     install
-# 'make uninstall'   uninstall
-# 'make clean'       removes all objects, dependency and executable files
+# 'make' or 'make all'  build executable file
+# 'make install'        build executable file and install
+# 'make uninstall'      uninstall
+# 'make clean'          remove objects, dependency and executable files
 #
 # Use 'cat -e -t -v Makefile' to show the presence of tabs with ^I and
 # line endings with $, which are vital to ensure that dependencies end
-# properly and tabs mark the action for the rules. 
+# properly and tabs mark the action for the rules.
 #
 #***************************************************************************#
 
@@ -92,32 +91,29 @@ CC := gcc
 #    -std=c99 -pedantic  Use ANSI C standard
 #    -g        Enable debugging
 #    -O0       No optimization; generates unoptimized code for debugging purposes.
-#    -O2       Recommended optimization; generates well optimized code. 
-#    -O3       Aggressive optimization; recommended for codes that have loops that 
-#              heavily use floating-point calculations and process large data sets. 
+#    -O2       Recommended optimization; generates well optimized code.
+#    -O3       Aggressive optimization; should be validated and compared with -O2.
 #  GCC compiler flags
-#    -fstrict-aliasing  Allow the compiler to assume the strictest aliasing rules
-#              and activates optimizations based on the type of expressions.
+#    -fstrict-aliasing  Assume the strictest aliasing rules for type optimizations.
 #    -Og       Enables optimizations that do not interfere with debugging.
+#    -fopenmp  Enable openmp
 #  ICC compiler flags
-#    -ansi-alias  Allow the compiler to assume the strictest aliasing rules 
-#              and activates optimizations based on the type of expressions.
-#    -fast     Enable processor specific optimization at -O3 level.
+#    -ansi-alias  Assume the strictest aliasing rules for type optimizations.
+#    -no-prec-div Enable optimizations for division.
+#    -ipo      Enable cross-file optimization such as cross-file inlining.
+#    -fast     Enable processor specific optimization and will fail for inconsistency.
+#    -qopenmp  Enable openmp
 #  Use Valgrind for memory access check (http://valgrind.org/)
 #    -g -O0    Use this flag to compile the program, then run command line
-#    valgrind --leak-check=full --track-origins=yes artracfd arg1 arg2
+#    valgrind --leak-check=full --track-origins=yes ./artracfd -m arg
 #  Use Valgrind for cache missing check (http://valgrind.org/)
 #    -g -O2    Use this flag to compile the program, then run command line
-#    valgrind --tool=cachegrind artracfd arg1 arg2
+#    valgrind --tool=cachegrind ./artracfd -m arg
 #  Use google-perftools for performance check (https://github.com/gperftools/gperftools)
-#    sudo apt-get update
-#    sudo apt-get install google-perftools
-#    -g  -O0    Use this flag to compile the program
-#    -lprofiler add this flag to the value of LFLAGS
-#    make       to generate binary executable, then run command line
-#    CPUPROFILE=./cpu.prof ./artracfd arg1 arg2
-#    pprof ./artracfd ./cpu.prof       (-pg-like text output)
-#    pprof --gv ./artracfd ./cpu.prof  (annotated call-graph via 'gv')
+#    sudo apt-get install google-perftools libgoogle-perftools-dev
+#    -g        Enable debugging to compile the program, then run command line
+#    LD_PRELOAD=/usr/lib/libprofiler.so CPUPROFILE=./cpuprof ./artracfd -m arg
+#    google-pprof ./artracfd ./cpuprof      (call-graph terminal)
 #  Enable floating-point exception handling to debug algorithm
 #    trapfpe.c  Add into source code
 #    -g  -O0    Use this flag to compile the program
@@ -126,7 +122,7 @@ CC := gcc
 #    where      Show trace information
 #
 ifeq ($(CC),icc)
-    CFLAGS += -Wall -Wextra -fast -ansi-alias -std=c99 -pedantic
+    CFLAGS += -Wall -Wextra -O2 -ansi-alias -std=c99 -pedantic
 else
     CFLAGS += -Wall -Wextra -O2 -fstrict-aliasing -std=c99 -pedantic
 endif
@@ -140,7 +136,7 @@ CPPFLAGS +=
 # Switch intelcc and gnu module
 #
 #  When using gcc to compile, it is common to see an error related to
-#  <math.h>. This error occurs because the intelcc module is loaded 
+#  <math.h>. This error occurs because the intelcc module is loaded
 #  and is pointing to the intel version of math.h. The Intel version
 #  of math.h does not work with the gcc compiler. There are two simple
 #  workarounds to fix this problem:
@@ -182,7 +178,7 @@ LIBS := -lm
 SRCS := $(wildcard *.c)
 
 #
-# Define the C object files 
+# Define the C object files
 #    This uses Suffix Replacement within a macro:
 #    $(name:string1=string2)
 #    For each word in 'name' replace 'string1' with 'string2'
@@ -193,7 +189,7 @@ OBJS := $(SRCS:.c=.o)
 
 #
 # Search path for make program
-#   make uses VPATH as a search list for both 
+#   make uses VPATH as a search list for both
 #   prerequisites and targets of rules.
 #
 VPATH :=
@@ -239,7 +235,7 @@ uninstall:
 #
 # Invoke object files
 #
-$(BINNAME): $(OBJS) 
+$(BINNAME): $(OBJS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(CPPFLAGS) -o $@ $(OBJS) $(LFLAGS) $(LIBS)
 
 #
@@ -247,7 +243,7 @@ $(BINNAME): $(OBJS)
 #
 DPND := $(SRCS:.c=.d)
 
-# Automatic prerequisites flag: -M for any compiler, -MM for GNU to 
+# Automatic prerequisites flag: -M for any compiler, -MM for GNU to
 # omit system headers. But -MM usually work with ICC without problem.
 ifeq ($(CC),icc)
     AUTOPRE := -MM
@@ -262,8 +258,8 @@ $(DPND): %.d: %.c
 		rm -f $@.$$$$
 
 # Include generated dependencies. Extra spaces are allowed and ignored
-# at the beginning of the include line, but the first character must 
-# NOT be a tab 
+# at the beginning of the include line, but the first character must
+# NOT be a tab
 ifneq ($(MAKECMDGOALS),clean)
     -include ${DPND}
 endif
@@ -276,7 +272,7 @@ CLEANLIST += $(DPND)
 #   object files can be built by the automatically generated
 #   prerequisites through implicit rules. Generally,
 #   to specify additional prerequisites, such as header files,
-#   implicit rules are more desirable. 
+#   implicit rules are more desirable.
 #
 
 #

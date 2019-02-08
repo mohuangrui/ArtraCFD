@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_SOLID_DYNAMICS_H_ /* if this is the first definition */
-#define ARTRACFD_SOLID_DYNAMICS_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_SOLID_DYNAMICS_H_ /* if undefined */
+#define ARTRACFD_SOLID_DYNAMICS_H_ /* set a unique marker */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -26,11 +26,11 @@
 /*
  * SolidDynamics
  */
-extern int SolidDynamics(const Real now, const Real dt, Space *, const Model *);
+extern void EvolveSolidDynamics(const Real now, const Real dt, Space *, const Model *);
 /*
  * Surface force integration
  */
-extern void SurfaceForceIntegration(Space *, const Model *);
+extern void IntegrateSurfaceForce(Space *, const Model *);
 #endif
 /* a good practice: end file with a newline */
 

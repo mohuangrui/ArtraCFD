@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_DATA_STREAM_H_ /* if this is the first definition */
-#define ARTRACFD_DATA_STREAM_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_DATA_STREAM_H_ /* if undefined */
+#define ARTRACFD_DATA_STREAM_H_ /* set a unique marker */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -23,22 +23,10 @@
 /****************************************************************************
  * Public Functions Declaration
  ****************************************************************************/
-/*
- * Export field data
- */
-extern int WriteFieldData(const Time *, const Space *, const Model *);
-/*
- * Load field data
- */
-extern int ReadFieldData(Time *, Space *, const Model *);
-/*
- * Export geometry data
- */
-extern int WriteGeometryData(const Time *, const Geometry *);
-/*
- * Load geometry data
- */
-extern int ReadGeometryData(const Time *, Geometry *);
+extern void WriteData(const int n, const Time *, const Space *, const Model *);
+extern void ReadData(const int n, Time *, Space *, const Model *);
+extern void WritePolyStateData(const int pm, const int pn, FILE *fp, const Geometry *const);
+extern void ReadPolyStateData(const int pm, const int pn, FILE *fp, Geometry *const);
 #endif
 /* a good practice: end file with a newline */
 

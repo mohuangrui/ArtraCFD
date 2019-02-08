@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_PREPROCESS_H_ /* if this is the first definition */
-#define ARTRACFD_PREPROCESS_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_PREPROCESS_H_ /* if undefined */
+#define ARTRACFD_PREPROCESS_H_ /* set a unique marker */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/

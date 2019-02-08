@@ -18,23 +18,23 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ProgramMemoryRelease(Time *, Space *);
+static void ReleaseProgramMemory(Time *, Space *, Model *);
 /****************************************************************************
  * Function Definitions
  ****************************************************************************/
-int Postprocess(Time *time, Space *space)
+int Postprocess(Time *time, Space *space, Model *model)
 {
-    ShowInformation("Postprocessing...");
-    fprintf(stdout, "  releasing memory...\n");
-    ProgramMemoryRelease(time, space);
-    fprintf(stdout, "  computing finished, successfully exit.\n");
-    ShowInformation("Session End");
+    ShowInfo("Postprocessing...\n");
+    ShowInfo("  releasing memory...\n");
+    ReleaseProgramMemory(time, space, model);
+    ShowInfo("  computing finished, successfully exit.\n");
+    ShowInfo("Session");
     return 0;
 }
-static int ProgramMemoryRelease(Time *time, Space *space)
+static void ReleaseProgramMemory(Time *time, Space *space, Model *model)
 {
     /* geometry related */
-    Geometry *geo = &(space->geo);
+    Geometry *const geo = &(space->geo);
     Polyhedron *poly = NULL;
     for (int n = geo->sphN; n < geo->totN; ++n) {
         poly = geo->poly + n;
@@ -47,12 +47,21 @@ static int ProgramMemoryRelease(Time *time, Space *space)
     }
     RetrieveStorage(geo->poly);
     RetrieveStorage(geo->col);
-    /* field variable related */
+    /* space related */
+    Partition *const part = &(space->part);
+    RetrieveStorage(part->typeBC);
+    RetrieveStorage(part->N);
+    RetrieveStorage(part->varBC);
+    RetrieveStorage(part->typeIC);
+    RetrieveStorage(part->posIC);
+    RetrieveStorage(part->varIC);
     RetrieveStorage(space->node);
     /* time related */
     RetrieveStorage(time->lp);
     RetrieveStorage(time->pp);
-    return 0;
+    /* model related */
+    RetrieveStorage(model->mat);
+    return;
 }
 /* a good practice: end file with a newline */
 

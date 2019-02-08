@@ -11,235 +11,208 @@
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "ensight.h" 
+#include "ensight.h"
 #include <stdio.h> /* standard library for input and output */
 #include <string.h> /* manipulating strings */
+#include "data_stream.h"
 #include "cfd_commons.h"
 #include "commons.h"
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int InitializeTransientCaseFile(EnsightSet *);
-static int WriteCaseFile(const Time *, EnsightSet *);
-static int WriteGeometryFile(const Space *, EnsightSet *);
-static int WriteStructuredData(const Space *, const Model *, EnsightSet *);
+static void InitializeTransientCaseFile(EnSet *);
+static void WriteCaseFile(const Time *, EnSet *);
+static void WriteGeometryFile(const Space *, EnSet *);
+static void WriteStructuredData(const Space *, const Model *, EnSet *);
+static void PointPolyDataWriter(const Time *, const Geometry *const);
+static void WritePointPolyData(const int, const int, const Geometry *const, EnSet *);
+static void PolygonPolyDataWriter(const Time *, const Geometry *const);
+static void WritePolygonPolyData(const int, const int, const Geometry *const, EnSet *);
+static void WritePolyVariable(const int, const int, const Geometry *const, EnSet *);
+static void WritePolyState(const int, const int, const Geometry *const, EnSet *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int WriteStructuredDataEnsight(const Time *time, const Space *space, const Model *model)
+void WriteStructuredDataEnsight(const Time *time, const Space *space, const Model *model)
 {
-    EnsightSet enSet = { /* initialize environment */
-        .rootName = "field", /* data file root name */
-        .baseName = {'\0'}, /* data file base name */
-        .fileName = {'\0'}, /* data file name */
-        .stringData = {'\0'}, /* string data recorder */
+    EnSet enSet = { /* initialize environment */
+        .rname = "field",
+        .bname = {'\0'},
+        .fname = {'\0'},
+        .str = {'\0'},
+        .fmt = "%s%05d",
+        .gtag = {'\0'},
+        .vtag = "*****",
+        .dtype = "block",
+        .part = {PIO, PIO + 1},
+        .scaN = 7,
+        .sca = {"rho", "u", "v", "w", "p", "T", "did"},
+        .vecN = 1,
+        .vec = {"Vel"},
     };
-    snprintf(enSet.baseName, sizeof(EnsightString), "%s%05d", 
-            enSet.rootName, time->writeC); 
-    if (0 == time->stepC) { /* this is the initialization step */
+    snprintf(enSet.bname, sizeof(EnStr), enSet.fmt, enSet.rname, time->dataC);
+    if (0 == time->stepC) { /* initialization step */
         InitializeTransientCaseFile(&enSet);
         WriteGeometryFile(space, &enSet);
     }
     WriteCaseFile(time, &enSet);
     WriteStructuredData(space, model, &enSet);
-    return 0;
+    return;
 }
-static int InitializeTransientCaseFile(EnsightSet *enSet)
+static void InitializeTransientCaseFile(EnSet *enSet)
 {
-    snprintf(enSet->fileName, sizeof(EnsightString), "%s.case", 
-            enSet->rootName); 
-    FILE *filePointer = fopen(enSet->fileName, "w");
-    if (NULL == filePointer) {
-        FatalError("failed to initialize transient case file...");
+    snprintf(enSet->fname, sizeof(EnStr), "%s.case", enSet->rname);
+    FILE *fp = Fopen(enSet->fname, "w");
+    fprintf(fp, "FORMAT\n");
+    fprintf(fp, "type: ensight gold\n");
+    fprintf(fp, "\n");
+    fprintf(fp, "GEOMETRY\n");
+    fprintf(fp, "model: %s%s.geo\n", enSet->rname, enSet->gtag);
+    fprintf(fp, "\n");
+    fprintf(fp, "VARIABLE\n");
+    for (int n = 0; n < enSet->scaN; ++n) {
+        fprintf(fp, "scalar per node:  1  %3s  %s%s.%s\n",
+                enSet->sca[n], enSet->rname, enSet->vtag, enSet->sca[n]);
     }
-    /* output information to file */
-    fprintf(filePointer, "FORMAT\n"); 
-    fprintf(filePointer, "type: ensight gold\n"); 
-    fprintf(filePointer, "\n"); 
-    fprintf(filePointer, "GEOMETRY\n"); 
-    fprintf(filePointer, "model:  %s.geo\n", enSet->rootName); 
-    fprintf(filePointer, "\n"); 
-    fprintf(filePointer, "VARIABLE\n"); 
-    fprintf(filePointer, "scalar per node:  1  rho  %s*****.rho\n", enSet->rootName); 
-    fprintf(filePointer, "scalar per node:  1  u    %s*****.u\n", enSet->rootName); 
-    fprintf(filePointer, "scalar per node:  1  v    %s*****.v\n", enSet->rootName); 
-    fprintf(filePointer, "scalar per node:  1  w    %s*****.w\n", enSet->rootName); 
-    fprintf(filePointer, "scalar per node:  1  p    %s*****.p\n", enSet->rootName); 
-    fprintf(filePointer, "scalar per node:  1  T    %s*****.T\n", enSet->rootName); 
-    fprintf(filePointer, "scalar per node:  1  gid  %s*****.gid\n", enSet->rootName); 
-    fprintf(filePointer, "vector per node:  1  Vel  %s*****.Vel\n", enSet->rootName); 
-    fprintf(filePointer, "\n"); 
-    fprintf(filePointer, "TIME\n"); 
-    fprintf(filePointer, "time set: 1\n"); 
-    fprintf(filePointer, "number of steps:          0          \n");
-    fprintf(filePointer, "filename start number:    0\n"); 
-    fprintf(filePointer, "filename increment:       1\n"); 
-    fprintf(filePointer, "time values:  "); 
-    fclose(filePointer); /* close current opened file */
-    return 0;
+    for (int n = 0; n < enSet->vecN; ++n) {
+        fprintf(fp, "vector per node:  1  %3s  %s%s.%s\n",
+                enSet->vec[n], enSet->rname, enSet->vtag, enSet->vec[n]);
+    }
+    fprintf(fp, "\n");
+    fprintf(fp, "TIME\n");
+    fprintf(fp, "time set: 1\n");
+    fprintf(fp, "number of steps:          0          \n");
+    fprintf(fp, "filename start number:    0\n");
+    fprintf(fp, "filename increment:       1\n");
+    fprintf(fp, "time values:  ");
+    fclose(fp);
+    return;
 }
-static int WriteCaseFile(const Time *time, EnsightSet *enSet)
+static void WriteCaseFile(const Time *time, EnSet *enSet)
 {
-    snprintf(enSet->fileName, sizeof(EnsightString), "%s.case", 
-            enSet->baseName); 
-    FILE *filePointer = fopen(enSet->fileName, "w");
-    if (NULL == filePointer) {
-        FatalError("failed to open case file...");
+    snprintf(enSet->fname, sizeof(EnStr), "%s.case", enSet->bname);
+    FILE *fp = Fopen(enSet->fname, "w");
+    fprintf(fp, "FORMAT\n");
+    fprintf(fp, "type: ensight gold\n");
+    fprintf(fp, "\n");
+    fprintf(fp, "GEOMETRY\n");
+    if ('\0' == *enSet->gtag) {
+        fprintf(fp, "model: %s.geo\n", enSet->rname);
+    } else {
+        fprintf(fp, "model: %s.geo\n", enSet->bname);
     }
-    /* output information to file */
-    fprintf(filePointer, "FORMAT\n"); 
-    fprintf(filePointer, "type: ensight gold\n"); 
-    fprintf(filePointer, "\n"); 
-    fprintf(filePointer, "GEOMETRY\n"); 
-    fprintf(filePointer, "model:  %s.geo\n", enSet->rootName); 
-    fprintf(filePointer, "\n"); 
-    fprintf(filePointer, "VARIABLE\n"); 
-    fprintf(filePointer, "constant per case:  Time  %.6g\n", time->now);
-    fprintf(filePointer, "constant per case:  Step  %d\n", time->stepC);
-    fprintf(filePointer, "scalar per node:    rho   %s.rho\n", enSet->baseName); 
-    fprintf(filePointer, "scalar per node:    u     %s.u\n", enSet->baseName); 
-    fprintf(filePointer, "scalar per node:    v     %s.v\n", enSet->baseName); 
-    fprintf(filePointer, "scalar per node:    w     %s.w\n", enSet->baseName); 
-    fprintf(filePointer, "scalar per node:    p     %s.p\n", enSet->baseName); 
-    fprintf(filePointer, "scalar per node:    T     %s.T\n", enSet->baseName); 
-    fprintf(filePointer, "scalar per node:    gid   %s.gid\n", enSet->baseName); 
-    fprintf(filePointer, "vector per node:    Vel   %s.Vel\n", enSet->baseName); 
-    fprintf(filePointer, "\n"); 
-    fclose(filePointer); /* close current opened file */
-    /*
-     * Add information to the transient case file
-     */
-    snprintf(enSet->fileName, sizeof(EnsightString), "%s.case", 
-            enSet->rootName); 
-    filePointer = fopen(enSet->fileName, "r+");
-    if (NULL == filePointer) {
-        FatalError("failed to add data to transient file...");
+    fprintf(fp, "\n");
+    fprintf(fp, "VARIABLE\n");
+    fprintf(fp, "constant per case:  Time  %.6g\n", time->now);
+    fprintf(fp, "constant per case:  Step  %d\n", time->stepC);
+    for (int n = 0; n < enSet->scaN; ++n) {
+        fprintf(fp, "scalar per node:     %3s  %s.%s\n",
+                enSet->sca[n], enSet->bname, enSet->sca[n]);
     }
+    for (int n = 0; n < enSet->vecN; ++n) {
+        fprintf(fp, "vector per node:     %3s  %s.%s\n",
+                enSet->vec[n], enSet->bname, enSet->vec[n]);
+    }
+    fprintf(fp, "\n");
+    fclose(fp);
+    /* add case to the transient case file */
+    snprintf(enSet->fname, sizeof(EnStr), "%s.case", enSet->rname);
+    fp = Fopen(enSet->fname, "r+");
     /* seek the target line for adding information */
-    ReadInLine(filePointer, "time set: 1");
-    fprintf(filePointer, "number of steps:          %d", (time->writeC + 1)); 
+    ReadInLine(fp, "time set: 1");
+    fprintf(fp, "number of steps:          %d", (time->dataC + 1));
     /* add the time flag of current export to the transient case */
-    fseek(filePointer, 0, SEEK_END); // seek to the end of file
-    if ((time->writeC % 5) == 0) { /* print to a new line every x outputs */
-        fprintf(filePointer, "\n"); 
+    fseek(fp, 0, SEEK_END); /* seek to the end of file */
+    if ((time->dataC % 5) == 0) { /* print to a new line every x outputs */
+        fprintf(fp, "\n");
     }
-    fprintf(filePointer, "%.6g ", time->now); 
-    fclose(filePointer); /* close current opened file */
-    return 0;
+    fprintf(fp, "%.6g ", time->now);
+    fclose(fp);
+    return;
 }
-static int WriteGeometryFile(const Space *space, EnsightSet *enSet)
+static void WriteGeometryFile(const Space *space, EnSet *enSet)
 {
     /*
      * Write the geometry file in Binary Form.
      * Maximums: maximum number of nodes in a part is 2GB.
      */
-    snprintf(enSet->fileName, sizeof(EnsightString), "%s.geo", 
-            enSet->rootName); 
-    FILE *filePointer = fopen(enSet->fileName, "wb");
-    if (NULL == filePointer) {
-        FatalError("failed to open data file...");
-    }
-    EnsightReal data = 0.0; /* the Ensight data format */
-    const Partition *restrict part = &(space->part);
-    IntVec nodeCount = {0}; /* i, j, k node number in each part */
-    /*
-     * Output information to file, need to strictly follow the Ensight data format.
-     * In fwrite, the first size is the sizeof an object, which is given in the
-     * units of chars, And the second size (count) is the number of object 
-     * that need to be written.
-     */
+    snprintf(enSet->fname, sizeof(EnStr), "%s.geo", enSet->rname);
+    FILE *fp = Fopen(enSet->fname, "wb");
+    EnReal data = 0.0; /* the Ensight data format */
+    const Partition *const part = &(space->part);
+    IntVec ne = {0}; /* i, j, k node number in each part */
     /* description at the beginning */
-    strncpy(enSet->stringData, "C Binary", sizeof(EnsightString));
-    fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-    strncpy(enSet->stringData, "Ensight Geometry File", sizeof(EnsightString));
-    fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-    strncpy(enSet->stringData, "Written by ArtraCFD", sizeof(EnsightString));
-    fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
+    strncpy(enSet->str, "C Binary", sizeof(EnStr));
+    fwrite(enSet->str, sizeof(EnStr), 1, fp);
+    strncpy(enSet->str, "Ensight Geometry File", sizeof(EnStr));
+    fwrite(enSet->str, sizeof(EnStr), 1, fp);
+    strncpy(enSet->str, "Written by ArtraCFD", sizeof(EnStr));
+    fwrite(enSet->str, sizeof(EnStr), 1, fp);
     /* node id and extents settings */
-    strncpy(enSet->stringData, "node id off", sizeof(EnsightString));
-    fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-    strncpy(enSet->stringData, "element id off", sizeof(EnsightString));
-    fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-    for (int p = PIN, partNum = 1; p < NPARTWRITE; ++p, ++partNum) {
-        strncpy(enSet->stringData, "part", sizeof(EnsightString));
-        fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        fwrite(&partNum, sizeof(int), 1, filePointer);
-        snprintf(enSet->stringData, sizeof(EnsightString), "part %d", p);
-        fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        strncpy(enSet->stringData, "block", sizeof(EnsightString));
-        fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        nodeCount[X] = part->ns[p][X][MAX] - part->ns[p][X][MIN]; 
-        nodeCount[Y] = part->ns[p][Y][MAX] - part->ns[p][Y][MIN]; 
-        nodeCount[Z] = part->ns[p][Z][MAX] - part->ns[p][Z][MIN]; 
-        fwrite(nodeCount, sizeof(int), 3, filePointer);
-        /* now output the x coordinates of all nodes in current part */
-        for (int k = part->ns[p][Z][MIN]; k < part->ns[p][Z][MAX]; ++k) {
-            for (int j = part->ns[p][Y][MIN]; j < part->ns[p][Y][MAX]; ++j) {
-                for (int i = part->ns[p][X][MIN]; i < part->ns[p][X][MAX]; ++i) {
-                    data = PointSpace(i, part->domain[X][MIN], part->d[X], part->ng);
-                    fwrite(&data, sizeof(EnsightReal), 1, filePointer);
-                }
-            }
-        }
-        /* now output the y coordinates of all nodes in current part */
-        for (int k = part->ns[p][Z][MIN]; k < part->ns[p][Z][MAX]; ++k) {
-            for (int j = part->ns[p][Y][MIN]; j < part->ns[p][Y][MAX]; ++j) {
-                for (int i = part->ns[p][X][MIN]; i < part->ns[p][X][MAX]; ++i) {
-                    data = PointSpace(j, part->domain[Y][MIN], part->d[Y], part->ng);
-                    fwrite(&data, sizeof(EnsightReal), 1, filePointer);
-                }
-            }
-        }
-        /* now output the z coordinates of all nodes in current part */
-        for (int k = part->ns[p][Z][MIN]; k < part->ns[p][Z][MAX]; ++k) {
-            for (int j = part->ns[p][Y][MIN]; j < part->ns[p][Y][MAX]; ++j) {
-                for (int i = part->ns[p][X][MIN]; i < part->ns[p][X][MAX]; ++i) {
-                    data = PointSpace(k, part->domain[Z][MIN], part->d[Z], part->ng);
-                    fwrite(&data, sizeof(EnsightReal), 1, filePointer);
+    strncpy(enSet->str, "node id off", sizeof(EnStr));
+    fwrite(enSet->str, sizeof(EnStr), 1, fp);
+    strncpy(enSet->str, "element id off", sizeof(EnStr));
+    fwrite(enSet->str, sizeof(EnStr), 1, fp);
+    for (int p = enSet->part[MIN], pnum = 1; p < enSet->part[MAX]; ++p, ++pnum) {
+        strncpy(enSet->str, "part", sizeof(EnStr));
+        fwrite(enSet->str, sizeof(EnStr), 1, fp);
+        fwrite(&pnum, sizeof(int), 1, fp);
+        snprintf(enSet->str, sizeof(EnStr), "part %d", p);
+        fwrite(enSet->str, sizeof(EnStr), 1, fp);
+        strncpy(enSet->str, enSet->dtype, sizeof(EnStr));
+        fwrite(enSet->str, sizeof(EnStr), 1, fp);
+        ne[X] = part->ns[p][X][MAX] - part->ns[p][X][MIN];
+        ne[Y] = part->ns[p][Y][MAX] - part->ns[p][Y][MIN];
+        ne[Z] = part->ns[p][Z][MAX] - part->ns[p][Z][MIN];
+        fwrite(ne, sizeof(int), 3, fp);
+        for (int s = 0; s < DIMS; ++s) {
+            for (int k = part->ns[p][Z][MIN]; k < part->ns[p][Z][MAX]; ++k) {
+                for (int j = part->ns[p][Y][MIN]; j < part->ns[p][Y][MAX]; ++j) {
+                    for (int i = part->ns[p][X][MIN]; i < part->ns[p][X][MAX]; ++i) {
+                        ne[X] = i; ne[Y] = j; ne[Z] = k;
+                        data = MapPoint(ne[s], part->domain[s][MIN], part->d[s], part->ng[s]);
+                        fwrite(&data, sizeof(EnReal), 1, fp);
+                    }
                 }
             }
         }
     }
-    fclose(filePointer); /* close current opened file */
-    return 0;
+    fclose(fp);
+    return;
 }
 /*
- * The values for each node of the structured block are output in 
+ * The values for each node of the structured block are output in
  * the same IJK order as the coordinates. (The number of nodes in the
  * part are obtained from the corresponding geometry file.)
  */
-static int WriteStructuredData(const Space *space, const Model *model, EnsightSet *enSet)
+static void WriteStructuredData(const Space *space, const Model *model, EnSet *enSet)
 {
-    FILE *filePointer = NULL;
-    EnsightReal data = 0.0; /* the Ensight data format */
-    const char scalar[7][5] = {"rho", "u", "v", "w", "p", "T", "gid"};
-    const Partition *restrict part = &(space->part);
+    FILE *fp = NULL;
+    EnReal data = 0.0; /* the Ensight data format */
+    const Partition *const part = &(space->part);
     const Node *const node = space->node;
     const Real *restrict U = NULL;
     int idx = 0; /* linear array index math variable */
-    for (int count = 0; count < 7; ++count) {
-        snprintf(enSet->fileName, sizeof(EnsightString), "%s.%s", enSet->baseName, scalar[count]);
-        filePointer = fopen(enSet->fileName, "wb");
-        if (NULL == filePointer) {
-            FatalError("failed to open data file...");
-        }
+    for (int s = 0; s < enSet->scaN; ++s) {
+        snprintf(enSet->fname, sizeof(EnStr), "%s.%s", enSet->bname, enSet->sca[s]);
+        fp = Fopen(enSet->fname, "wb");
         /* first line description per file */
-        strncpy(enSet->stringData, "scalar variable", sizeof(EnsightString));
-        fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        for (int p = PIN, partNum = 1; p < NPARTWRITE; ++p, ++partNum) {
+        strncpy(enSet->str, "scalar variable", sizeof(EnStr));
+        fwrite(enSet->str, sizeof(EnStr), 1, fp);
+        for (int p = enSet->part[MIN], pnum = 1; p < enSet->part[MAX]; ++p, ++pnum) {
             /* binary file format */
-            strncpy(enSet->stringData, "part", sizeof(EnsightString));
-            fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-            fwrite(&partNum, sizeof(int), 1, filePointer);
-            strncpy(enSet->stringData, "block", sizeof(EnsightString));
-            fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
+            strncpy(enSet->str, "part", sizeof(EnStr));
+            fwrite(enSet->str, sizeof(EnStr), 1, fp);
+            fwrite(&pnum, sizeof(int), 1, fp);
+            strncpy(enSet->str, enSet->dtype, sizeof(EnStr));
+            fwrite(enSet->str, sizeof(EnStr), 1, fp);
             /* now output the scalar value at each node in current part */
             for (int k = part->ns[p][Z][MIN]; k < part->ns[p][Z][MAX]; ++k) {
                 for (int j = part->ns[p][Y][MIN]; j < part->ns[p][Y][MAX]; ++j) {
                     for (int i = part->ns[p][X][MIN]; i < part->ns[p][X][MAX]; ++i) {
                         idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
                         U = node[idx].U[TO];
-                        switch (count) {
+                        switch (s) {
                             case 0: /* rho */
                                 data = U[0];
                                 break;
@@ -259,47 +232,270 @@ static int WriteStructuredData(const Space *space, const Model *model, EnsightSe
                                 data = ComputeTemperature(model->cv, U);
                                 break;
                             case 6: /* node flag */
-                                data = node[idx].gid;
+                                data = node[idx].did;
                                 break;
                             default:
                                 break;
                         }
-                        fwrite(&data, sizeof(EnsightReal), 1, filePointer);
+                        fwrite(&data, sizeof(EnReal), 1, fp);
                     }
                 }
             }
         }
-        fclose(filePointer); /* close current opened file */
+        fclose(fp);
     }
-    snprintf(enSet->fileName, sizeof(EnsightString), "%s.Vel", enSet->baseName);
-    filePointer = fopen(enSet->fileName, "wb");
-    if (NULL == filePointer) {
-        FatalError("failed to open data file...");
-    }
-    /* binary file format */
-    strncpy(enSet->stringData, "vector variable", sizeof(EnsightString));
-    fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-    for (int p = PIN, partNum = 1; p < NPARTWRITE; ++p, ++partNum) {
-        strncpy(enSet->stringData, "part", sizeof(EnsightString));
-        fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        fwrite(&partNum, sizeof(int), 1, filePointer);
-        strncpy(enSet->stringData, "block", sizeof(EnsightString));
-        fwrite(enSet->stringData, sizeof(char), sizeof(EnsightString), filePointer);
-        for (int count = 1; count < 4; ++count) {
-            for (int k = part->ns[p][Z][MIN]; k < part->ns[p][Z][MAX]; ++k) {
-                for (int j = part->ns[p][Y][MIN]; j < part->ns[p][Y][MAX]; ++j) {
-                    for (int i = part->ns[p][X][MIN]; i < part->ns[p][X][MAX]; ++i) {
-                        idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
-                        U = node[idx].U[TO];
-                        data = U[count] / U[0];
-                        fwrite(&data, sizeof(EnsightReal), 1, filePointer);
+    for (int s = 0; s < enSet->vecN; ++s) {
+        snprintf(enSet->fname, sizeof(EnStr), "%s.%s", enSet->bname, enSet->vec[s]);
+        fp = Fopen(enSet->fname, "wb");
+        /* binary file format */
+        strncpy(enSet->str, "vector variable", sizeof(EnStr));
+        fwrite(enSet->str, sizeof(EnStr), 1, fp);
+        for (int p = enSet->part[MIN], pnum = 1; p < enSet->part[MAX]; ++p, ++pnum) {
+            strncpy(enSet->str, "part", sizeof(EnStr));
+            fwrite(enSet->str, sizeof(EnStr), 1, fp);
+            fwrite(&pnum, sizeof(int), 1, fp);
+            strncpy(enSet->str, enSet->dtype, sizeof(EnStr));
+            fwrite(enSet->str, sizeof(EnStr), 1, fp);
+            for (int n = 1; n < 4; ++n) {
+                for (int k = part->ns[p][Z][MIN]; k < part->ns[p][Z][MAX]; ++k) {
+                    for (int j = part->ns[p][Y][MIN]; j < part->ns[p][Y][MAX]; ++j) {
+                        for (int i = part->ns[p][X][MIN]; i < part->ns[p][X][MAX]; ++i) {
+                            idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
+                            U = node[idx].U[TO];
+                            data = U[n] / U[0];
+                            fwrite(&data, sizeof(EnReal), 1, fp);
+                        }
                     }
                 }
             }
         }
+        fclose(fp);
     }
-    fclose(filePointer); /* close current opened file */
-    return 0;
+    return;
+}
+void WritePolyDataEnsight(const Time *time, const Geometry *const geo)
+{
+    if (0 != geo->sphN) {
+        PointPolyDataWriter(time, geo);
+    }
+    if (0 != geo->stlN) {
+        PolygonPolyDataWriter(time, geo);
+    }
+    return;
+}
+static void PointPolyDataWriter(const Time *time, const Geometry *const geo)
+{
+    EnSet enSet = { /* initialize environment */
+        .rname = "geo_sph",
+        .bname = {'\0'},
+        .fname = {'\0'},
+        .str = {'\0'},
+        .fmt = "%s%05d",
+        .gtag = "*****",
+        .vtag = "*****",
+        .dtype = "coordinates",
+        .part = {0, 1},
+        .scaN = 2,
+        .sca = {"r", "did"},
+        .vecN = 1,
+        .vec = {"Vel"},
+    };
+    snprintf(enSet.bname, sizeof(EnStr), enSet.fmt, enSet.rname, time->dataC);
+    if (0 == time->stepC) { /* initialization step */
+        InitializeTransientCaseFile(&enSet);
+    }
+    WriteCaseFile(time, &enSet);
+    WritePointPolyData(0, geo->sphN, geo, &enSet);
+    return;
+}
+static void WritePointPolyData(const int pm, const int pn, const Geometry *const geo, EnSet *enSet)
+{
+    snprintf(enSet->fname, sizeof(EnStr), "%s.geo", enSet->bname);
+    FILE *fp = Fopen(enSet->fname, "wb");
+    EnReal data = 0.0; /* the Ensight data format */
+    int ne = 0; /* total number of nodes in a part */
+    /* description at the beginning */
+    strncpy(enSet->str, "C Binary", sizeof(EnStr));
+    fwrite(enSet->str, sizeof(EnStr), 1, fp);
+    strncpy(enSet->str, "Ensight Geometry File", sizeof(EnStr));
+    fwrite(enSet->str, sizeof(EnStr), 1, fp);
+    strncpy(enSet->str, "Written by ArtraCFD", sizeof(EnStr));
+    fwrite(enSet->str, sizeof(EnStr), 1, fp);
+    /* node id and extents settings */
+    strncpy(enSet->str, "node id off", sizeof(EnStr));
+    fwrite(enSet->str, sizeof(EnStr), 1, fp);
+    strncpy(enSet->str, "element id off", sizeof(EnStr));
+    fwrite(enSet->str, sizeof(EnStr), 1, fp);
+    for (int p = enSet->part[MIN], pnum = 1; p < enSet->part[MAX]; ++p, ++pnum) {
+        strncpy(enSet->str, "part", sizeof(EnStr));
+        fwrite(enSet->str, sizeof(EnStr), 1, fp);
+        fwrite(&pnum, sizeof(int), 1, fp);
+        snprintf(enSet->str, sizeof(EnStr), "%d", pn - pm);
+        fwrite(enSet->str, sizeof(EnStr), 1, fp);
+        strncpy(enSet->str, enSet->dtype, sizeof(EnStr));
+        fwrite(enSet->str, sizeof(EnStr), 1, fp);
+        ne = pn - pm;
+        fwrite(&ne, sizeof(int), 1, fp);
+        for (int s = 0; s < DIMS; ++s) {
+            for (int n = pm; n < pn; ++n) {
+                data = geo->poly[n].O[s];
+                fwrite(&data, sizeof(EnReal), 1, fp);
+            }
+        }
+        strncpy(enSet->str, "point", sizeof(EnStr));
+        fwrite(enSet->str, sizeof(EnStr), 1, fp);
+        ne = pn - pm;
+        fwrite(&ne, sizeof(int), 1, fp);
+        for (int n = pm, m = 1; n < pn; ++n, ++m) {
+            fwrite(&m, sizeof(int), 1, fp);
+        }
+    }
+    fclose(fp);
+    WritePolyVariable(pm, pn, geo, enSet);
+    WritePolyState(pm, pn, geo, enSet);
+    return;
+}
+static void PolygonPolyDataWriter(const Time *time, const Geometry *const geo)
+{
+    EnSet enSet = { /* initialize environment */
+        .rname = "geo_stl",
+        .bname = {'\0'},
+        .fname = {'\0'},
+        .str = {'\0'},
+        .fmt = "%s%05d",
+        .gtag = "*****",
+        .vtag = "*****",
+        .dtype = "coordinates",
+        .part = {geo->sphN, geo->totN},
+        .scaN = 0,
+        .sca = {{'\0'}},
+        .vecN = 0,
+        .vec = {{'\0'}},
+    };
+    snprintf(enSet.bname, sizeof(EnStr), enSet.fmt, enSet.rname, time->dataC);
+    if (0 == time->stepC) { /* initialization step */
+        InitializeTransientCaseFile(&enSet);
+    }
+    WriteCaseFile(time, &enSet);
+    WritePolygonPolyData(geo->sphN, geo->totN, geo, &enSet);
+    return;
+}
+static void WritePolygonPolyData(const int pm, const int pn, const Geometry *const geo, EnSet *enSet)
+{
+    snprintf(enSet->fname, sizeof(EnStr), "%s.geo", enSet->bname);
+    FILE *fp = Fopen(enSet->fname, "wb");
+    EnReal data = 0.0; /* the Ensight data format */
+    const Polyhedron *poly = NULL;
+    int ne = 0; /* total number of nodes in a part */
+    /* description at the beginning */
+    strncpy(enSet->str, "C Binary", sizeof(EnStr));
+    fwrite(enSet->str, sizeof(EnStr), 1, fp);
+    strncpy(enSet->str, "Ensight Geometry File", sizeof(EnStr));
+    fwrite(enSet->str, sizeof(EnStr), 1, fp);
+    strncpy(enSet->str, "Written by ArtraCFD", sizeof(EnStr));
+    fwrite(enSet->str, sizeof(EnStr), 1, fp);
+    /* node id and extents settings */
+    strncpy(enSet->str, "node id off", sizeof(EnStr));
+    fwrite(enSet->str, sizeof(EnStr), 1, fp);
+    strncpy(enSet->str, "element id off", sizeof(EnStr));
+    fwrite(enSet->str, sizeof(EnStr), 1, fp);
+    for (int p = enSet->part[MIN], pnum = 1; p < enSet->part[MAX]; ++p, ++pnum) {
+        poly = geo->poly + p;
+        strncpy(enSet->str, "part", sizeof(EnStr));
+        fwrite(enSet->str, sizeof(EnStr), 1, fp);
+        fwrite(&pnum, sizeof(int), 1, fp);
+        snprintf(enSet->str, sizeof(EnStr), "%d %d %d",
+                poly->vertN, poly->edgeN, poly->faceN);
+        fwrite(enSet->str, sizeof(EnStr), 1, fp);
+        strncpy(enSet->str, enSet->dtype, sizeof(EnStr));
+        fwrite(enSet->str, sizeof(EnStr), 1, fp);
+        ne = poly->vertN;
+        fwrite(&ne, sizeof(int), 1, fp);
+        for (int s = 0; s < DIMS; ++s) {
+            for (int n = 0; n < poly->vertN; ++n) {
+                data = poly->v[n][s];
+                fwrite(&data, sizeof(EnReal), 1, fp);
+            }
+        }
+        strncpy(enSet->str, "tria3", sizeof(EnStr));
+        fwrite(enSet->str, sizeof(EnStr), 1, fp);
+        ne = poly->faceN;
+        fwrite(&ne, sizeof(int), 1, fp);
+        for (int n = 0, m = 0; n < poly->faceN; ++n) {
+            for (int s = 0; s < POLYN; ++s) {
+                m = poly->f[n][s] + 1;
+                fwrite(&m, sizeof(int), 1, fp);
+            }
+        }
+    }
+    fclose(fp);
+    WritePolyState(pm, pn, geo, enSet);
+    return;
+}
+static void WritePolyVariable(const int pm, const int pn, const Geometry *const geo, EnSet *enSet)
+{
+    FILE *fp = NULL;
+    EnReal data = 0.0; /* the Ensight data format */
+    for (int s = 0; s < enSet->scaN; ++s) {
+        snprintf(enSet->fname, sizeof(EnStr), "%s.%s", enSet->bname, enSet->sca[s]);
+        fp = Fopen(enSet->fname, "wb");
+        /* first line description per file */
+        strncpy(enSet->str, "scalar variable", sizeof(EnStr));
+        fwrite(enSet->str, sizeof(EnStr), 1, fp);
+        for (int p = enSet->part[MIN], pnum = 1; p < enSet->part[MAX]; ++p, ++pnum) {
+            /* binary file format */
+            strncpy(enSet->str, "part", sizeof(EnStr));
+            fwrite(enSet->str, sizeof(EnStr), 1, fp);
+            fwrite(&pnum, sizeof(int), 1, fp);
+            strncpy(enSet->str, enSet->dtype, sizeof(EnStr));
+            fwrite(enSet->str, sizeof(EnStr), 1, fp);
+            /* now output the scalar value at each node in current part */
+            for (int n = pm; n < pn; ++n) {
+                switch (s) {
+                    case 0:
+                        data = geo->poly[n].r;
+                        break;
+                    case 1:
+                        data = n + 1;
+                        break;
+                    default:
+                        break;
+                }
+                fwrite(&data, sizeof(EnReal), 1, fp);
+            }
+        }
+        fclose(fp);
+    }
+    for (int s = 0; s < enSet->vecN; ++s) {
+        snprintf(enSet->fname, sizeof(EnStr), "%s.%s", enSet->bname, enSet->vec[s]);
+        fp = Fopen(enSet->fname, "wb");
+        /* binary file format */
+        strncpy(enSet->str, "vector variable", sizeof(EnStr));
+        fwrite(enSet->str, sizeof(EnStr), 1, fp);
+        for (int p = enSet->part[MIN], pnum = 1; p < enSet->part[MAX]; ++p, ++pnum) {
+            strncpy(enSet->str, "part", sizeof(EnStr));
+            fwrite(enSet->str, sizeof(EnStr), 1, fp);
+            fwrite(&pnum, sizeof(int), 1, fp);
+            strncpy(enSet->str, enSet->dtype, sizeof(EnStr));
+            fwrite(enSet->str, sizeof(EnStr), 1, fp);
+            for (int n = 0; n < DIMS; ++n) {
+                for (int m = pm; m < pn; ++m) {
+                    data = geo->poly[m].V[TO][n];
+                    fwrite(&data, sizeof(EnReal), 1, fp);
+                }
+            }
+        }
+        fclose(fp);
+    }
+    return;
+}
+static void WritePolyState(const int pm, const int pn, const Geometry *const geo, EnSet *enSet)
+{
+    snprintf(enSet->fname, sizeof(EnStr), "%s.state", enSet->bname);
+    FILE *fp = Fopen(enSet->fname, "w");
+    WritePolyStateData(pm, pn, fp, geo);
+    fclose(fp);
+    return;
 }
 /* a good practice: end file with a newline */
 

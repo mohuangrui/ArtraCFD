@@ -11,25 +11,24 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_FLUID_DYNAMICS_H_ /* if undefined */
-#define ARTRACFD_FLUID_DYNAMICS_H_ /* set a unique marker */
+#ifndef ARTRACFD_TIMER_H_ /* if undefined */
+#define ARTRACFD_TIMER_H_ /* set a unique marker */
 /****************************************************************************
  * Required Header Files
- ****************************************************************************/
-#include "commons.h"
-/****************************************************************************
- * Data Structure Declarations
  ****************************************************************************/
 /****************************************************************************
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Fluid Dynamics
+ * Get real time
  *
  * Function
- *      Evolve fluid dynamics.
+ *      Return the real time in seconds or -1.0 if an error occurred.
+ *      Time is measured since an arbitrary and OS-dependent start time.
+ *      The returned real time is only useful for computing an elapsed time
+ *      between two calls to this function.
  */
-extern void EvolveFluidDynamics(const Real dt, Space *, const Model *);
+extern double GetTime(void);
 #endif
 /* a good practice: end file with a newline */
 

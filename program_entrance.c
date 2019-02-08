@@ -21,31 +21,41 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ConfigureProgram(Control *);
-static int Preamble(Control *);
-static int ProgramManual(void);
+static void ConfigureProgram(Control *, Space *);
+static void ShowPreamble(Control *);
+static void ShowManual(void);
 /****************************************************************************
  * Function Definitions
  ****************************************************************************/
-int ProgramEntrance(int argc, char *argv[], Control *control)
+int EnterProgram(int argc, char *argv[], Control *control, Space *space)
 {
-    int nscan = 0; /* read conversion count */
     /*
-     * Loop command line to process options
+     * Loop through command line to process options
+     * The procedure main takes two arguments: argc and argv. The parameter
+     * argc is the number of arguments on the command line (including the
+     * program name). The array argv contains the actual arguments.
+     * A standard command-line format has the form:
+     * command options file1 file2 file3 ...
+     * Options are preceded by a dash (-) and are usually a single letter.
+     * If the option takes a parameter, it follows the letter with a space.
+     * A while loop is used to cycle through the command-line options.
+     * One argument always exists: the program name. The expression
+     * (argc > 1) checks for additional arguments. The first one is
+     * numbered 1. The first character of the first argument is argv[1][0].
+     * If this is a dash, there is an option. The switch statement is used
+     * to decode the options.
      */
-    while ((1 < argc) && ('-' == argv[1][0])) {
+    while ((1 < argc) && ('-' == argv[1][0])) { /* options present */
         if (3 > argc) { /* not enough arguments */
-            fprintf(stderr,"error, empty entry after %s\n", argv[1]);
+            ShowError("empty entry after: %s\n", argv[1]);
             exit(EXIT_FAILURE);
         }
         switch (argv[1][1]) { /* argv[1][1] is the actual option character */
-            /*
-             * run mode: -m [interact], [serial], [threaded], [mpi], [gpu]
-             */
+            /* run mode: -m [gui], [serial], [omp], [mpi], [gpu] */
             case 'm':
                 ++argv;
                 --argc;
-                if (0 == strcmp(argv[1], "interact")) {
+                if (0 == strcmp(argv[1], "gui")) {
                     control->runMode = 'i';
                     break;
                 }
@@ -53,8 +63,8 @@ int ProgramEntrance(int argc, char *argv[], Control *control)
                     control->runMode = 's';
                     break;
                 }
-                if (0 == strcmp(argv[1], "threaded")) {
-                    control->runMode = 't';
+                if (0 == strcmp(argv[1], "omp")) {
+                    control->runMode = 'o';
                     break;
                 }
                 if (0 == strcmp(argv[1], "mpi")) {
@@ -65,124 +75,124 @@ int ProgramEntrance(int argc, char *argv[], Control *control)
                     control->runMode = 'g';
                     break;
                 }
-                fprintf(stderr,"error, bad option %s\n", argv[1]);
+                ShowError("bad option: %s\n", argv[1]);
                 exit(EXIT_FAILURE);
-                /*
-                 * number of processors: -n N
-                 */
+                /* number of processors: -n nx*ny*nz */
             case 'n':
                 ++argv;
                 --argc;
-                nscan = sscanf(argv[1], "%d", &(control->procN));
-                VerifyReadConversion(nscan, 1);
+                Sscanf(argv[1], 3, "%d*%d*%d", &(control->proc[X]),
+                        &(control->proc[Y]), &(control->proc[Z]));
                 break;
-            default: 
-                fprintf(stderr,"error, bad option %s\n", argv[1]);
+            default:
+                ShowError("bad option: %s\n", argv[1]);
                 exit(EXIT_FAILURE);
         }
-        /*
-         * move the argument list up one, move the count down one
-         */
+        /* adjust argument list and count to consume an option */
         ++argv;
         --argc;
     }
-    /*
-     * At this point, all the options have been processed.
-     * Check to see whether some other information left.
-     */
+    /* check information left */
     if (1 != argc) {
-        fprintf(stderr,"warning, unidentified arguments ignored: %s...\n", argv[1]);
-    } 
-    /*
-     * Configure program according to inputted commands and information
-     */
-    ConfigureProgram(control);
+        ShowWarning("unidentified arguments ignored: %s...\n", argv[1]);
+    }
+    /* configure program according to inputted options */
+    ConfigureProgram(control, space);
     return 0;
 }
-static int ConfigureProgram(Control *control)
+static void ConfigureProgram(Control *control, Space *space)
 {
+    Partition *const part = &(space->part);
     switch (control->runMode) {
-        case 'i': /* interaction mode */
-            Preamble(control);
-            break;
+        case 'i': /* gui mode */
+            ShowPreamble(control);
+            /* fall through */
         case 's': /* serial mode */
+            part->proc[X] = 1;
+            part->proc[Y] = 1;
+            part->proc[Z] = 1;
+            part->procN = 1;
             break;
-        case 't': /* threaded mode */
-            break;
+        case 'o': /* omp mode */
+            /* fall through */
         case 'm': /* mpi mode */
+            part->proc[X] = control->proc[X];
+            part->proc[Y] = control->proc[Y];
+            part->proc[Z] = control->proc[Z];
+            part->procN = control->proc[X] *
+                control->proc[Y] * control->proc[Z];
             break;
         case 'g': /* gpu mode */
             break;
         default:
             break;
     }
-    return 0;
+    return;
 }
-static int Preamble(Control *control)
+static void ShowPreamble(Control *control)
 {
-    fprintf(stdout, "**********************************************************\n");
-    fprintf(stdout, "*                        ArtraCFD                        *\n");
-    fprintf(stdout, "*                    <By Huangrui Mo>                    *\n");
-    fprintf(stdout, "**********************************************************\n\n");
-    fprintf(stdout, "Enter 'help' for more information\n");
-    fprintf(stdout, "**********************************************************\n\n");
-    String currentLine = {'\0'}; /* store the current read line */
+    ShowInfo("Session");
+    ShowInfo("*                         ArtraCFD                         *\n");
+    ShowInfo("*                     <By Huangrui Mo>                     *\n");
+    ShowInfo("*    Copyright (C) Huangrui Mo <huangrui.mo@gmail.com>     *\n");
+    ShowInfo("Session");
+    ShowInfo("Enter 'help' for more information\n");
+    ShowInfo("Session");
+    String str = {'\0'}; /* store the current read line */
     while (1) {
-        fprintf(stdout, "\nArtraCFD << ");
-        Fgets(currentLine, sizeof currentLine, stdin); /* read a line */
-        CommandLineProcessor(currentLine); /* process current line */
-        fprintf(stdout, "\n");
-        if (0 == strncmp(currentLine, "help", sizeof currentLine)) {
-            fprintf(stdout, "Options under interactive environment:\n\n");
-            fprintf(stdout, "[help]    show this information\n");
-            fprintf(stdout, "[init]    generate files for a sample case\n");
-            fprintf(stdout, "[solve]   solve current case in serial mode\n");
-            fprintf(stdout, "[calc]    access expression calculator\n");
-            fprintf(stdout, "[manual]  show a brief user manual of ArtraCFD\n");
-            fprintf(stdout, "[exit]    exit program\n");
+        ShowInfo("\nArtraCFD << ");
+        ParseCommand(fgets(str, sizeof str, stdin));
+        ShowInfo("\n");
+        if (0 == strncmp(str, "help", sizeof str)) {
+            ShowInfo("Options in gui environment:\n");
+            ShowInfo("[help]    show this information\n");
+            ShowInfo("[init]    generate files for a sample case\n");
+            ShowInfo("[solve]   solve current case in serial mode\n");
+            ShowInfo("[calc]    access expression calculator\n");
+            ShowInfo("[manual]  show user manual\n");
+            ShowInfo("[exit]    exit program\n");
             continue;
         }
-        if (0 == strncmp(currentLine, "init", sizeof currentLine)) {
+        if (0 == strncmp(str, "init", sizeof str)) {
             GenerateCaseFiles();
-            fprintf(stdout, "a sample case generated successfully\n");
+            ShowInfo("a sample case generated successfully\n");
             continue;
         }
-        if (0 == strncmp(currentLine, "calc", sizeof currentLine)) {
-            ExpressionCalculator();
+        if (0 == strncmp(str, "calc", sizeof str)) {
+            RunCalculator();
             continue;
         }
-        if (0 == strncmp(currentLine, "manual", sizeof currentLine)) {
-            ProgramManual();
+        if (0 == strncmp(str, "manual", sizeof str)) {
+            ShowManual();
             continue;
         }
-        if ('\0' == currentLine[0]) { /* no useful information in the command */
-            fprintf(stdout, "\n");
+        if ('\0' == str[0]) {
             continue;
         }
-        if (0 == strncmp(currentLine, "solve", sizeof currentLine)) {
-            control->runMode = 's'; /* change mode to serial */
-            ShowInformation("Session End");
-            return 0;
+        if (0 == strncmp(str, "solve", sizeof str)) {
+            control->runMode = 's';
+            ShowInfo("Session");
+            return;
         }
-        if (0 == strncmp(currentLine, "exit", sizeof currentLine)) {
-            ShowInformation("Session End");
+        if (0 == strncmp(str, "exit", sizeof str)) {
+            ShowInfo("Session");
             exit(EXIT_SUCCESS);
-        } 
+        }
         /* if non of above is true, then unknow commands */
-        fprintf(stdout, "artracfd: %s: command not found\n", currentLine);
+        ShowWarning("unknown command: %s\n", str);
     }
 }
-static int ProgramManual(void)
+static void ShowManual(void)
 {
-    fprintf(stdout, "\n            ArtraCFD User Manual\n\n");
-    fprintf(stdout, "SYSNOPSIS:\n");
-    fprintf(stdout, "        artracfd [-m runmode] [-n nprocessors]\n");
-    fprintf(stdout, "OPTIONS:\n");
-    fprintf(stdout, "        -m runmode        run mode: interact, serial, threaded, mpi, gpu\n");
-    fprintf(stdout, "        -n nprocessors    number of processors\n");
-    fprintf(stdout, "NOTES:\n");
-    fprintf(stdout, "        default run mode is 'interact'\n");
-    return 0;
+    ShowInfo("\n            ArtraCFD User Manual\n");
+    ShowInfo("SYNOPSIS:\n");
+    ShowInfo("        artracfd [-m runmode] [-n nprocessors]\n");
+    ShowInfo("OPTIONS:\n");
+    ShowInfo("        -m runmode        run mode: gui, serial, omp, mpi, gpu\n");
+    ShowInfo("        -n nprocessors    processors per dimension: nx*ny*nz\n");
+    ShowInfo("NOTES:\n");
+    ShowInfo("        default run mode is gui\n");
+    return;
 }
 /* a good practice: end file with a newline */
 

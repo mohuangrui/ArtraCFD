@@ -20,45 +20,33 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int NodeBasedMeshNumberRefine(Space *, const Model *);
-static int InitializeParameters(Time *, Space *, Model *);
+static void SetNodeNumber(Space *, Model *);
+static void InitializeParameters(Time *, Space *, Model *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int ComputeParameters(Time *time, Space *space, Model *model)
+void ComputeParameters(Time *time, Space *space, Model *model)
 {
-    NodeBasedMeshNumberRefine(space, model);
+    SetNodeNumber(space, model);
     InitializeParameters(time, space, model);
-    return 0;
+    return;
 }
 /*
- * Calculations are node based, boundaries are aligned with
- * the nodes. For m inner cells, there are m + 1 node layers.
- * In this program, 2D and 3D space are unified, a 2D space
- * is equivalent to a non-zero thickness 3D space with 2 inner
- * cells (that is, three node layers) in the collapsed direction.
- * These three node layers are treated as domain boundary,
- * inner node, domain boundary respectively. Zero gradient
- * condition need to be forced on the collapsed dimension.
+ * Calculations are node based, global domain boundaries are aligned
+ * with node layers. On each dimension, for m inner cells, there are
+ * m + 1 node layers. 2D and 3D space are unified, a 2D space is
+ * equivalent to a non-zero thickness 3D space with two inner cells
+ * (three node layers) in the collapsed direction. These three node
+ * layers are treated as domain boundary, inner node, domain boundary
+ * respectively. Zero gradient condition need to be enforced on the
+ * collapsed dimensions. Using three rather than one node layers is to
+ * be compatible with the three-dimensional governing equations,
+ * especially the calculation of the diffusive fluxes.
  */
-static int NodeBasedMeshNumberRefine(Space *space, const Model *model)
+static void SetNodeNumber(Space *space, Model *model)
 {
-    Partition *part = &(space->part);
-    /* set ghost layers according to numerical scheme */
-    if (WENOTHREE == model->sScheme) {
-        part->gl = 2;
-    }
-    if (WENOFIVE == model->sScheme) {
-        part->gl = 3;
-    }
-    /* global boundary account for one ghost layer */
-    part->ng = part->gl - 1;
-    /* rectify ghost layers for periodic boundary conditions */
-    if ((PERIODIC == part->typeBC[PWB]) || (PERIODIC == part->typeBC[PSB]) || 
-            (PERIODIC == part->typeBC[PFB])) {
-        part->ng = part->gl;
-    }
-    /* check and mark collapsed space. */
+    Partition *const part = &(space->part);
+    /* check and mark collapsed space */
     part->collapse = COLLAPSEN;
     if (0 == (part->m[Z] - 1)) {
         part->collapse = COLLAPSEZ;
@@ -69,29 +57,84 @@ static int NodeBasedMeshNumberRefine(Space *space, const Model *model)
     if (0 == (part->m[X] - 1)) {
         part->collapse = 2 * part->collapse + COLLAPSEX;
     }
+    /* set stencil width and ghost layers required by numerical scheme */
+    switch (model->sScheme) {
+        case WENOTHREE:
+            model->sL = -1; model->sR = 2; part->gl = 2;
+            break;
+        case WENOFIVE:
+            model->sL = -2; model->sR = 3; part->gl = 3;
+            break;
+        default:
+            break;
+    }
+    /*
+     * Number of ghost node layers of each spatial dimension.
+     * Note that the global boundary accounts for one ghost layer,
+     * except in the periodic boundary condition, in which the
+     * global boundary should be treated as normal node layers.
+     */
+    for (int s = 0; s < DIMS; ++s) {
+        part->ng[s] = part->gl - 1;
+    }
+    /* adjust according to dimension collapse */
+    if (OPTSPLIT == model->multidim) {
+        switch (part->collapse) {
+            case COLLAPSEN:
+                break;
+            case COLLAPSEX:
+                part->ng[X] = 0;
+                break;
+            case COLLAPSEY:
+                part->ng[Y] = 0;
+                break;
+            case COLLAPSEZ:
+                part->ng[Z] = 0;
+                break;
+            case COLLAPSEXY:
+                part->ng[X] = 0;
+                part->ng[Y] = 0;
+                break;
+            case COLLAPSEXZ:
+                part->ng[X] = 0;
+                part->ng[Z] = 0;
+                break;
+            case COLLAPSEYZ:
+                part->ng[Y] = 0;
+                part->ng[Z] = 0;
+                break;
+            default:
+                break;
+        }
+    }
+    /* adjust for periodic boundary conditions */
+    for (int s = 0, p = PWB; s < DIMS; ++s, p = p + 2) {
+        if (PERIODIC == part->typeBC[p]) {
+            part->ng[s] = part->gl;
+        }
+    }
+    /* mesh and node number on each spatial dimension */
     for (int s = 0; s < DIMS; ++s) {
         /* ensure at least two inner cells per dimension */
         part->m[s] = MaxInt(part->m[s], 2);
         /* total number of nodes (including ghost nodes) */
-        part->n[s] = part->m[s] + 1 + 2 * part->ng; 
+        part->n[s] = part->m[s] + 1 + 2 * part->ng[s];
     }
-    return 0;
+    return;
 }
 /*
- * This function computes values of necessary parameters, which initializes
- * the numerical simulation environment. These parameters will be normalized
- * by reference values.
+ * This function computes and initializes the values of necessary
+ * parameters, and performs the normalization of some parameters.
  */
-static int InitializeParameters(Time *time, Space *space, Model *model)
+static void InitializeParameters(Time *time, Space *space, Model *model)
 {
-    Partition *part = &(space->part);
-    Geometry *geo = &(space->geo);
+    Partition *const part = &(space->part);
+    Geometry *const geo = &(space->geo);
     /* space */
     for (int s = 0; s < DIMS; ++s) {
-        part->d[s] = ((part->domain[s][MAX] - part->domain[s][MIN]) /
-                (Real)(part->m[s])) / model->refL;
         part->domain[s][MAX] = part->domain[s][MAX] / model->refL;
         part->domain[s][MIN] = part->domain[s][MIN] / model->refL;
+        part->d[s] = (part->domain[s][MAX] - part->domain[s][MIN]) / (Real)(part->m[s]);
         part->dd[s] = 1.0 / part->d[s];
     }
     part->tinyL = 1.0e-6 * MinReal(part->d[X], MinReal(part->d[Y], part->d[Z]));
@@ -101,33 +144,14 @@ static int InitializeParameters(Time *time, Space *space, Model *model)
     if (0 >= time->stepN) {
         time->stepN = INT_MAX;
     }
-    if (0 >= time->writeN) {
-        time->writeN = INT_MAX;
-    }
-    time->writeC = time->restart;
-    if (0 >= time->pointWriteN) {
-        time->pointWriteN = INT_MAX;
-    }
-    if (0 >= time->lineWriteN) {
-        time->lineWriteN = INT_MAX;
-    }
-    if (0 >= time->curveWriteN) {
-        time->curveWriteN = INT_MAX;
-    }
-    if (0 >= time->forceWriteN) {
-        time->forceWriteN = INT_MAX;
-    }
-    if (0 >= time->pointProbeN) {
-        time->pointProbeN = 0;
-    }
-    if (0 >= time->lineProbeN) {
-        time->lineProbeN = 0;
-    }
-    if (0 >= time->curveProbeN) {
-        time->curveProbeN = 0;
-    }
-    if (0 >= time->forceProbeN) {
-        time->forceProbeN = 0;
+    time->dataC = time->restart;
+    for (int n = 0; n < NPROBE; ++n) {
+        if (0 >= time->dataN[n]) {
+            time->dataN[n] = 0;
+        }
+        if (0 >= time->dataW[n]) {
+            time->dataW[n] = INT_MAX;
+        }
     }
     /* geometry */
     if (0 >= geo->sphN) {
@@ -152,13 +176,13 @@ static int InitializeParameters(Time *time, Space *space, Model *model)
     /* reference dynamic viscosity for viscosity normalization */
     model->refMu = model->refMu / (model->refRho * model->refV * model->refL);
     /*
-     * Now replace some parameters by general forms that are valid
+     * Now replace some parameters with general forms that are valid
      * for both dimensional and nondimensional N-S equations, since
      * dimensional forms can be seen as normalized by reference 1.
      */
     model->gasR = 1.0 / (model->gamma * model->refMa * model->refMa);
     model->cv = model->gasR / (model->gamma - 1.0);
-    return 0;
+    return;
 }
 /* a good practice: end file with a newline */
 

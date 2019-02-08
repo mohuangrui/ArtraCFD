@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_DATA_PROBE_H_ /* if this is the first definition */
-#define ARTRACFD_DATA_PROBE_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_DATA_PROBE_H_ /* if undefined */
+#define ARTRACFD_DATA_PROBE_H_ /* set a unique marker */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -23,16 +23,10 @@
 /****************************************************************************
  * Public Functions Declaration
  ****************************************************************************/
-/*
- * Write probe data
- *
- * Function
- *      Write field data of probes.
- */
-extern void WriteFieldDataAtPointProbes(const Time *, const Space *, const Model *);
-extern void WriteFieldDataAtLineProbes(const Time *, const Space *, const Model *);
-extern void WriteFieldDataAtCurveProbes(const Time *, const Space *, const Model *);
-extern void WriteSurfaceForceData(const Time *, const Space *);
+extern void WritePointProbeData(const Time *, const Space *, const Model *);
+extern void WriteLineProbeData(const Time *, const Space *, const Model *);
+extern void WriteCurveProbeData(const Time *, const Space *, const Model *);
+extern void WriteSurfaceForceData(const Time *, const Space *, const Model *);
 #endif
 /* a good practice: end file with a newline */
 

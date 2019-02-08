@@ -21,43 +21,41 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ProgramMemoryAllocate(Space *);
+static void AllocateProgramMemory(Space *, Model *);
 /****************************************************************************
  * Function Definitions
  ****************************************************************************/
-/*
- * This is the overall preprocessing function
- */
 int Preprocess(Time *time, Space *space, Model *model)
 {
-    ShowInformation("Session End");
-    ShowInformation("Preprocessing...");
-    fprintf(stdout, "  loading case data...\n");
+    ShowInfo("Session");
+    ShowInfo("Preprocessing...\n");
+    ShowInfo("  loading case data...\n");
     LoadCaseData(time, space, model);
-    fprintf(stdout, "  computing parameters...\n");
+    ShowInfo("  computing parameters...\n");
     ComputeParameters(time, space, model);
-    fprintf(stdout, "  partitioning domain...\n");
-    DomainPartition(space);
-    fprintf(stdout, "  allocating memory...\n");
-    ProgramMemoryAllocate(space);
-    ShowInformation("Session End");
+    ShowInfo("  partitioning domain...\n");
+    PartitionDomain(space);
+    ShowInfo("  allocating memory...\n");
+    AllocateProgramMemory(space, model);
+    ShowInfo("Session");
     return 0;
 }
 /*
- * This function allocates memory for field data. The storage retrieving
- * need to be done in the postprocessor.
+ * Allocate memory for the remaining unassigned data.
+ * Storage retrieving is done in the postprocessor.
  */
-static int ProgramMemoryAllocate(Space *space)
+static void AllocateProgramMemory(Space *space, Model *model)
 {
-    Partition *part = &(space->part);
-    Geometry *geo = &(space->geo);
+    Partition *const part = &(space->part);
+    Geometry *const geo = &(space->geo);
     const int totN = part->n[X] * part->n[Y] * part->n[Z];
     space->node = AssignStorage(totN * sizeof(*space->node));
     if (0 != geo->totN) {
         geo->col = AssignStorage(geo->totN * sizeof(*geo->col));
         geo->poly = AssignStorage(geo->totN * sizeof(*geo->poly));
     }
-    return 0;
+    model->mat = AssignStorage(sizeof(*model->mat));
+    return;
 }
 /* a good practice: end file with a newline */
 

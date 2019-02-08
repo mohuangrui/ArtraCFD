@@ -11,25 +11,37 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_CALCULATOR_H_ /* if this is the first definition */
-#define ARTRACFD_CALCULATOR_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_CALCULATOR_H_ /* if undefined */
+#define ARTRACFD_CALCULATOR_H_ /* set a unique marker */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
+#include "commons.h"
 /****************************************************************************
  * Data Structure Declarations
  ****************************************************************************/
+typedef struct {
+    Real t;
+    Real x;
+    Real y;
+    Real z;
+    Real ans; /* store answer */
+    const Real pi;
+} CalcVar; /* a set of valid variables */
 /****************************************************************************
  * Public Functions Declaration
  ****************************************************************************/
 /*
  * Expression calculator
+ */
+extern int RunCalculator(void);
+/*
+ * Calculate expression
  *
  * Function
- *      Provide a expression calculator that can calculate complex mathematical
- *      expressions.
+ *      Calculate expressions involving a set of defined variables
  */
-extern int ExpressionCalculator(void);
+extern Real ComputeExpression(CalcVar *, const char *str);
 #endif
 /* a good practice: end file with a newline */
 

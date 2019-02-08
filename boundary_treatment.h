@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_BOUNDARY_TREATMENT_H_ /* if this is the first definition */
-#define ARTRACFD_BOUNDARY_TREATMENT_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_BOUNDARY_TREATMENT_H_ /* if undefined */
+#define ARTRACFD_BOUNDARY_TREATMENT_H_ /* set a unique marker */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -24,12 +24,12 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Boundary condition
+ * Boundary treatment
  *
  * Function
  *      Apply boundary conditions and treatments for the field variable.
  */
-extern void BoundaryConditionsAndTreatments(const int tn, Space *, const Model *);
+extern void TreatBoundary(const int tn, Space *, const Model *);
 #endif
 /* a good practice: end file with a newline */
 

@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_LINEAR_SYSTEM_H_ /* if this is the first definition */
-#define ARTRACFD_LINEAR_SYSTEM_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_LINEAR_SYSTEM_H_ /* if undefined */
+#define ARTRACFD_LINEAR_SYSTEM_H_ /* set a unique marker */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -27,18 +27,18 @@
  * Linear System Solver in Matrix Form
  *
  * Function
- *      General matrix linear system solver for AX = B. 
+ *      General matrix linear system solver for AX = B.
  *      Dimension of A is n x n; dimension of X and B is n x m;
  *      A is the system matrix, X is the solution matrix with each column vector
- *      stands for a solution vector of a single linear system A * x = b, B is 
- *      the right hand matrix with each column vector stands for a right hand 
+ *      stands for a solution vector of a single linear system A * x = b, B is
+ *      the right hand matrix with each column vector stands for a right hand
  *      vector of a single linear system. If B is a unit matrix, then solution
- *      matrix X is the inverse matrix of A. In practice, right hand matrix 
+ *      matrix X is the inverse matrix of A. In practice, right hand matrix
  *      and solution matrix can share the same storage even they are declared
  *      as restricted pointers here. The matrix A will be transformed into
  *      its LU decomposition.
  */
-extern int MatrixLinearSystemSolver(const int n, Real A[restrict][n],
+extern int SolveLinearSystem(const int n, Real A[restrict][n],
         const int m, Real X[restrict][m], Real B[restrict][m]);
 #endif
 /* a good practice: end file with a newline */

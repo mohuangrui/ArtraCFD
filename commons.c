@@ -15,148 +15,223 @@
 #include <stdio.h> /* standard library for input and output */
 #include <stdlib.h> /* dynamic memory allocation and exit */
 #include <string.h> /* manipulating strings */
+#include <stdarg.h> /* variable-length argument lists */
+/****************************************************************************
+ * Global Real Constants Definition
+ ****************************************************************************/
+const Real PI = 3.14159265358979323846;
 /****************************************************************************
  * General functions
  ****************************************************************************/
-int CommandLineProcessor(char *lineCommand)
+int ParseCommand(char *cmdstr)
 {
-    char *scanner = lineCommand;
-    char *receiver = lineCommand;
-    /* check whether is a NULL command pointer */
-    if (NULL == lineCommand) {
-        fprintf(stderr, "warning: process a NULL command line pointer\n");
-        return 0;
+    char *scanner = cmdstr;
+    char *receiver = cmdstr;
+    if (NULL == cmdstr) {
+        ShowWarning("parse a NULL pointer");
+        return 1;
     }
-    /* check whether is a empty command line */
-    if ('\0' == *lineCommand) {
-        return 0;
+    if ('\0' == *cmdstr) {
+        return 1;
     }
-    /* then skip tabs and spaces at the front */
+    /* skip tabs and spaces at the front */
     while ((' ' == *scanner) || ('\t' == *scanner)) {
-        *scanner = ' '; /* replace tab with space */
-        ++scanner; /* update scanner */
+        *scanner = ' ';
+        ++scanner;
     }
-    while ('\0' != *scanner) { /* until reach the end of original command */
+    /* process valid text */
+    while ('\0' != *scanner) {
+        /* skip special characters */
         if (('\r' == *scanner) || ('\n' == *scanner)) {
-            ++scanner; /* scan the next character */
-            continue; /* go to next loop */
-        }
-        if ('#' == *scanner) {
-            break; /* no more scan */
-        }
-        if ((' ' == *scanner) || ('\t' == *scanner)) { /* a space or tab */
-            *scanner = ' '; /* replace tab with space */
-            if (' ' != *(scanner - 1)) { /* only check space; tabs are all replaced */
-                /* now its a first space or tab between words */
-                *receiver = ' '; /* receive a space */
-                ++receiver; /* update the receiver address */
-                ++scanner; /* scan the next character */
-                continue;
-            }
-            /* otherwise, do not receive */
-            ++scanner; /* scan the next character */
+            ++scanner;
             continue;
         }
-        /* now its a normal character */
-        *receiver = *scanner; /* receive the value of current scanner */
-        ++receiver; /* update the receiver address */
-        ++scanner; /* scan the next character */
+        /* stop at commenting text */
+        if ('#' == *scanner) {
+            break;
+        }
+        /* replace tabs with spaces and keep only one space between two words */
+        if ((' ' == *scanner) || ('\t' == *scanner)) {
+            *scanner = ' ';
+            if (' ' != *(scanner - 1)) { /* only check space; tabs are all replaced */
+                /* receive the first space between words */
+                *receiver = ' ';
+                ++receiver;
+                ++scanner;
+                continue;
+            }
+            /* otherwise, skip the redundant spaces */
+            ++scanner;
+            continue;
+        }
+        /* receive the normal character */
+        *receiver = *scanner;
+        ++receiver;
+        ++scanner;
     }
-    /* if no useful information in command, receiver didn't receive anything */
-    if (receiver == lineCommand) {
+    /* if received nothing, produce an empty string */
+    if (receiver == cmdstr) {
         *receiver = '\0';
-        return 0;
+        return 1;
     }
-    /* if received something and also ended with a space */
+    /* if ended with a space, skip it */
     if (' ' == *(receiver - 1)) {
         *(receiver - 1) = '\0';
         return 0;
     }
-    *receiver = '\0'; /* add string terminator */
+    *receiver = '\0';
     return 0;
 }
-void FatalError(const char *statement)
+char *ParseFormat(char *fmt)
 {
-    fprintf(stderr, "error: %s\n", statement);
-    exit(EXIT_FAILURE); /* indicate failure */
-}
-int ShowInformation(const char *statement)
-{
-    if (0 == strcmp(statement, "Session End")) {
-        fprintf(stdout, "\n**********************************************************\n\n");
-        return 0;
+    if (sizeof(Real) == sizeof(double)) {
+        return fmt;
     }
-    fprintf(stdout, "%s\n", statement);
-    return 0;
+    char *scanner = fmt;
+    char *receiver = fmt;
+    while ('\0' != *scanner) {
+        if ('l' == *scanner) {
+            ++scanner;
+            continue;
+        }
+        *receiver = *scanner;
+        ++receiver;
+        ++scanner;
+    }
+    *receiver = '\0';
+    return fmt;
+}
+void ShowError(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    verror("error", fmt, args);
+    va_end(args);
+    exit(EXIT_FAILURE);
+}
+void ShowWarning(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    verror("warning", fmt, args);
+    va_end(args);
+    return;
+}
+void verror(const char *prefix, const char *fmt, va_list args)
+{
+    fprintf(stderr, "%s: ", prefix);
+    vfprintf(stderr, fmt, args);
+    fprintf(stderr, "\n");
+    return;
+}
+void ShowInfo(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    if (0 == strcmp(fmt, "Session")) {
+        fprintf(stdout, "************************************************************\n");
+    } else {
+        vfprintf(stdout, fmt, args);
+    }
+    va_end(args);
+    return;
 }
 void *AssignStorage(size_t size)
 {
     void *pointer = malloc(size);
     if (NULL == pointer) {
-        FatalError("memory allocation failed");
+        ShowError("memory allocation failed");
     }
-    memset(pointer, 0, size); /* initialize to zero */
+    memset(pointer, 0, size);
     return pointer;
 }
-int RetrieveStorage(void *pointer)
+void RetrieveStorage(void *pointer)
 {
     if (NULL != pointer) {
         free(pointer);
     }
-    return 0;
+    return;
 }
-int ReadInLine(FILE *filePointer, const char *lineString)
+void ReadInLine(FILE *fp, const char *line)
 {
-    String currentLine = {'\0'}; /* store the current read line */
-    while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
-        CommandLineProcessor(currentLine); /* process current line */
-        if (0 == strncmp(currentLine, lineString, sizeof currentLine)) {
+    String str = {'\0'}; /* store the current read line */
+    while (NULL != fgets(str, sizeof str, fp)) {
+        ParseCommand(str);
+        if (0 == strncmp(str, line, sizeof str)) {
+            fseek(fp, 0, SEEK_CUR); /* update offset */
             break;
         }
     }
-    return 0;
+    return;
 }
-int WriteToLine(FILE *filePointer, const char *lineString)
+void WriteToLine(FILE *fp, const char *line)
 {
-    String currentLine = {'\0'}; /* store the current read line */
-    int offset = 0; /* offset to target line */
-    rewind(filePointer); /* seek to the beginning of the file stream */
-    while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
-        CommandLineProcessor(currentLine); /* process current line */
-        if (0 == strncmp(currentLine, lineString, sizeof currentLine)) {
+    String str = {'\0'}; /* store the current read line */
+    fpos_t pos; /* store position indicator */
+    /* find the offset */
+    fgetpos(fp, &pos);
+    while (NULL != fgets(str, sizeof str, fp)) {
+        ParseCommand(str);
+        if (0 == strncmp(str, line, sizeof str)) {
+            fsetpos(fp, &pos); /* redirect to the target line */
             break;
         }
-        ++offset;
-    }
-    /* redirect to the target line */
-    rewind(filePointer); /* seek to the beginning of the file stream */
-    for (int count = 0; count < offset; ++count) {
-        Fgets(currentLine, sizeof currentLine, filePointer);
-    }
-    return 0;
-}
-void Fgets(char *str, int num, FILE *stream)
-{
-    if (NULL == fgets(str, num, stream))
-    {
-        FatalError("reading information failed...");
+        fgetpos(fp, &pos);
     }
     return;
 }
-void Fread(void *ptr, size_t size, size_t count, FILE *stream)
+FILE *Fopen(const char *fname, const char *mode)
 {
-    if (count != fread(ptr, size, count, stream))
+    FILE *fp = fopen(fname, mode);
+    if (NULL == fp) {
+        ShowError("failed to open file: %s, mode: %s", fname, mode);
+    }
+    return fp;
+}
+void Fread(void *ptr, size_t size, size_t n, FILE *stream)
+{
+    if (n != fread(ptr, size, n, stream))
     {
-        FatalError("reading information failed...");
+        ShowError("fread failed: size: %d, n: %d", size, n);
     }
     return;
 }
-void VerifyReadConversion(const int num, const int expect)
+void Fscanf(FILE *stream, const int n, const char *fmt, ...)
 {
-    if (num != expect)
-    {
-        FatalError("reading information failed...");
+    va_list args;
+    va_start(args, fmt);
+    if ((n != vfscanf(stream, fmt, args)) && (0 < n)) {
+        ShowError("vfscanf failed: n: %d, fmt: %s", n, fmt);
     }
+    va_end(args);
+    return;
+}
+void Sscanf(const char *str, const int n, const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    if ((n != vsscanf(str, fmt, args)) && (0 < n)) {
+        ShowError("vsscanf failed: str: %s, fmt: %s", str, fmt);
+    }
+    va_end(args);
+    return;
+}
+void Sread(FILE *stream, const int n, const char *fmt, ...)
+{
+    String str = {'\0'};
+    if (NULL == fgets(str, sizeof str, stream))
+    {
+        ShowWarning("fgets return a NULL");
+    }
+    if (0 == n) {
+        return;
+    }
+    va_list args;
+    va_start(args, fmt);
+    if ((n != vsscanf(str, fmt, args)) && (0 < n)) {
+        ShowError("vsscanf failed: str: %s, fmt: %s", str, fmt);
+    }
+    va_end(args);
     return;
 }
 /* a good practice: end file with a newline */

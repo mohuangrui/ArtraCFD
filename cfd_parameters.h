@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_CFD_PARAMETERS_H_ /* if this is the first definition */
-#define ARTRACFD_CFD_PARAMETERS_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_CFD_PARAMETERS_H_ /* if undefined */
+#define ARTRACFD_CFD_PARAMETERS_H_ /* set a unique marker */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -27,11 +27,11 @@
  * Compute parameters
  *
  * Function
- *      Compute required parameters and perform nondimensionalize 
- *      operations on variables to unify the dimensional form 
+ *      Compute required parameters and perform nondimensionalize
+ *      operations on variables to unify the dimensional form
  *      and nondimensional form of governing equations.
  */
-extern int ComputeParameters(Time *, Space *, Model *);
+extern void ComputeParameters(Time *, Space *, Model *);
 #endif
 /* a good practice: end file with a newline */
 

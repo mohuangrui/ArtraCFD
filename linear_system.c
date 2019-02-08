@@ -19,13 +19,13 @@
  * Static Function Declarations
  ****************************************************************************/
 static int LUFactorization(const int n, Real A[restrict][n], int permute[restrict]);
-static int FactorizedLinearSystemSolver(const int n, Real L[restrict][n], Real U[restrict][n],
+static int SolveFactorizedLinearSystem(const int n, Real L[restrict][n], Real U[restrict][n],
         Real x[], Real b[], const int permute[restrict]);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int MatrixLinearSystemSolver(const int n, Real A[restrict][n],
-        const int m, Real X[restrict][m], Real B[restrict][m])
+int SolveLinearSystem(const int n, Real A[restrict][n], const int m,
+        Real X[restrict][m], Real B[restrict][m])
 {
     int permute[n]; /* record the permutation information */
     Real rhs[n]; /* transfer data into column vector */
@@ -34,7 +34,7 @@ int MatrixLinearSystemSolver(const int n, Real A[restrict][n],
         for (int row = 0; row < n; ++row) {
             rhs[row] = B[row][col]; /* obtain each right hand side vector */
         }
-        FactorizedLinearSystemSolver(n, A, A, rhs, rhs, permute);
+        SolveFactorizedLinearSystem(n, A, A, rhs, rhs, permute);
         for (int row = 0; row < n; ++row) { /* save solution vector */
             X[row][col] = rhs[row];
         }
@@ -44,16 +44,16 @@ int MatrixLinearSystemSolver(const int n, Real A[restrict][n],
 /*
  * Perform A = LU factorization, A is a n x n matrix.
  * After factorization, both L and U are stored into the storage space of A,
- * The returned A has its upper triangle as U, and the part beneath the 
+ * The returned A has its upper triangle as U, and the part beneath the
  * diagonal is equal to L. The missing diagonal elements of L are all 1.
  * Crout's algorithm is employed for factorization.
  *
  * Partial pivoting is used to stabilize the algorithm, that is, only row-wise
- * permutation will be employed. The permutations are recorded in the integer 
+ * permutation will be employed. The permutations are recorded in the integer
  * vector "permute", which will be used to reorder the right hand side vectors
  * before solving the factorized linear system.
  *
- * Press, William H. Numerical recipes: The art of scientific computing. 
+ * Press, William H. Numerical recipes: The art of scientific computing.
  * Cambridge university press.
  */
 static int LUFactorization(const int n, Real A[restrict][n], int permute[restrict])
@@ -78,7 +78,7 @@ static int LUFactorization(const int n, Real A[restrict][n], int permute[restric
             }
         }
         if (zero == maximum) {
-            FatalError("singular matrix in LU factorization...");
+            ShowError("singular matrix in LU factorization...");
         }
         scale[row] = one / maximum; /* save the scaling */
     }
@@ -127,13 +127,13 @@ static int LUFactorization(const int n, Real A[restrict][n], int permute[restric
  * fact, their subelements do not alias each other but only stored in the
  * same matrix A.
  */
-static int FactorizedLinearSystemSolver(const int n, Real L[restrict][n], Real U[restrict][n], 
+static int SolveFactorizedLinearSystem(const int n, Real L[restrict][n], Real U[restrict][n],
         Real x[], Real b[], const int permute[restrict])
 {
     /*
      * Rearrange the elements of right hand side vector according to
-     * permutations applied. Rearranged vector can be saved to the 
-     * solution vector, interchange values needs to be applied since 
+     * permutations applied. Rearranged vector can be saved to the
+     * solution vector, interchange values needs to be applied since
      * the right hand side vector and solution vector may occupy the
      * same storage space.
      */

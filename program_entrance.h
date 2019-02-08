@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_PROGRAM_ENTRANCE_H_ /* if this is the first definition */
-#define ARTRACFD_PROGRAM_ENTRANCE_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_PROGRAM_ENTRANCE_H_ /* if undefined */
+#define ARTRACFD_PROGRAM_ENTRANCE_H_ /* set a unique marker */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -29,7 +29,7 @@
  * Function
  *      Call a series of functions to handle the entering of the program.
  */
-extern int ProgramEntrance(int argc, char *argv[], Control *);
+extern int EnterProgram(int argc, char *argv[], Control *, Space *);
 #endif
 /* a good practice: end file with a newline */
 

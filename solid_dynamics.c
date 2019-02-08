@@ -25,63 +25,46 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static void Kinematics(const Real, const Real, Space *);
-static void CollisionDynamics(Space *);
-static void CollisionState(const int, const int, const int, const int, const int,
-        const int [restrict][DIMS], const Node *const, const Partition *, Geometry *);
-static void AddCollideObject(const int [restrict], const int, Geometry *);
+static void ApplyKinematics(const Real, const Real, Space *);
+static void ApplyCollision(Space *);
+static void DetectColState(const int, const int, const int, const int, const int,
+        const int [restrict][DIMS], const Node *const, const Partition *const,
+        Geometry *const);
+static void AddColObject(const int [restrict], const int, Geometry *const);
 static void ApplyMotion(const Real, Space *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int SolidDynamics(const Real now, const Real dt, Space *space, const Model *model)
+void EvolveSolidDynamics(const Real now, const Real dt, Space *space, const Model *model)
 {
-    /*
-     * Compute exerted surface forces.
-     */
-    SurfaceForceIntegration(space, model);
-    /*
-     * Kinematics
-     */
-    Kinematics(now, dt, space);
-    /*
-     * Collision
-     */
-    if (1 != model->fsi) {
-        CollisionDynamics(space);
+    IntegrateSurfaceForce(space, model);
+    ApplyKinematics(now, dt, space);
+    if (1 != model->psi) {
+        ApplyCollision(space);
     }
-    /*
-     * Update spatial position
-     */
     ApplyMotion(dt, space);
-    /*
-     * Recompute the geometry domain.
-     */
-    ComputeGeometryDomain(space, model);
-    /*
-     * Apply boundary condition
-     */
-    ImmersedBoundaryTreatment(TO, space, model);
-    return 0;
+    ComputeGeometricField(space, model);
+    TreatImmersedBoundary(TO, space, model);
+    return;
 }
-void SurfaceForceIntegration(Space *space, const Model *model)
+void IntegrateSurfaceForce(Space *space, const Model *model)
 {
-    const Partition *restrict part = &(space->part);
-    Geometry *geo = &(space->geo);
-    Polyhedron *poly = NULL;
+    const Partition *const part = &(space->part);
     const Node *const node = space->node;
+    Geometry *const geo = &(space->geo);
     const IntVec nMin = {part->ns[PIN][X][MIN], part->ns[PIN][Y][MIN], part->ns[PIN][Z][MIN]};
     const IntVec nMax = {part->ns[PIN][X][MAX], part->ns[PIN][Y][MAX], part->ns[PIN][Z][MAX]};
     const RealVec sMin = {part->domain[X][MIN], part->domain[Y][MIN], part->domain[Z][MIN]};
     const RealVec d = {part->d[X], part->d[Y], part->d[Z]};
     const RealVec dd = {part->dd[X], part->dd[Y], part->dd[Z]};
-    const int ng = part->ng;
+    const IntVec ng = {part->ng[X], part->ng[Y], part->ng[Z]};
+    const Real zero = 0.0;
+    const Real percent = FLT_EPSILON * FLT_EPSILON;
+    Polyhedron *poly = NULL;
     int idx = 0; /* linear array index math variable */
     int box[DIMS][LIMIT] = {{0}}; /* bounding box in node space */
     int lidN = 0; /* count total number of interfacial nodes */
     int gstN = 0; /* count total number of ghost nodes */
-    const Real zero = 0.0;
-    const Real percent = FLT_EPSILON * FLT_EPSILON;
     RealVec pG = {zero}; /* ghost point */
     RealVec pO = {zero}; /* boundary point */
     RealVec pI = {zero}; /* image point */
@@ -111,29 +94,29 @@ void SurfaceForceIntegration(Space *space, const Model *model)
         gstN = 0;
         /* determine search range according to bounding box of polyhedron and valid node space */
         for (int s = 0; s < DIMS; ++s) {
-            box[s][MIN] = ValidNodeSpace(NodeSpace(poly->box[s][MIN], sMin[s], dd[s], ng), nMin[s], nMax[s]);
-            box[s][MAX] = ValidNodeSpace(NodeSpace(poly->box[s][MAX], sMin[s], dd[s], ng), nMin[s], nMax[s]) + 1;
+            box[s][MIN] = ConfineSpace(MapNode(poly->box[s][MIN], sMin[s], dd[s], ng[s]), nMin[s], nMax[s]);
+            box[s][MAX] = ConfineSpace(MapNode(poly->box[s][MAX], sMin[s], dd[s], ng[s]), nMin[s], nMax[s]) + 1;
         }
         for (int k = box[Z][MIN]; k < box[Z][MAX]; ++k) {
             for (int j = box[Y][MIN]; j < box[Y][MAX]; ++j) {
                 for (int i = box[X][MIN]; i < box[X][MAX]; ++i) {
                     idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
-                    if ((2 == node[idx].lid) && (n + 1 == node[idx].gid)) {
+                    if ((2 == node[idx].lid) && (n + 1 == node[idx].did)) {
                         ++lidN; /* an interfacial node of current geometry */
                     }
-                    if ((2 != node[idx].gst) || (n + 1 != node[idx].gid)) {
+                    if ((2 != node[idx].gst) || (n + 1 != node[idx].did)) {
                         continue;
                     }
                     ++gstN; /* a ghost node of current geometry */
                     /* surface force exerted by fluid (pressure + shear force) */
-                    pG[X] = PointSpace(i, sMin[X], d[X], ng);
-                    pG[Y] = PointSpace(j, sMin[Y], d[Y], ng);
-                    pG[Z] = PointSpace(k, sMin[Z], d[Z], ng);
-                    ComputeGeometricData(node[idx].fid, poly, pG, pO, pI, N);
+                    pG[X] = MapPoint(i, sMin[X], d[X], ng[X]);
+                    pG[Y] = MapPoint(j, sMin[Y], d[Y], ng[Y]);
+                    pG[Z] = MapPoint(k, sMin[Z], d[Z], ng[Z]);
+                    ComputeGeometricData(pG, node[idx].fid, poly, pO, pI, N);
                     r[X] = pO[X] - poly->O[X];
                     r[Y] = pO[Y] - poly->O[Y];
                     r[Z] = pO[Z] - poly->O[Z];
-                    PrimitiveByConservative(model->gamma, model->gasR, node[idx].U[TO], Uo);
+                    MapPrimitive(model->gamma, model->gasR, node[idx].U[TO], Uo);
                     Fp[X] = Uo[4] * N[X];
                     Fp[Y] = Uo[4] * N[Y];
                     Fp[Z] = Uo[4] * N[Z];
@@ -186,9 +169,9 @@ void SurfaceForceIntegration(Space *space, const Model *model)
     }
     return;
 }
-static void Kinematics(const Real now, const Real dt, Space *space)
+static void ApplyKinematics(const Real now, const Real dt, Space *space)
 {
-    Geometry *geo = &(space->geo);
+    Geometry *const geo = &(space->geo);
     Polyhedron *poly = NULL;
     Real A[DIMS][DIMS] = {{0.0}};
     Real B[DIMS][1] = {{0.0}};
@@ -209,7 +192,7 @@ static void Kinematics(const Real now, const Real dt, Space *space)
             }
             B[s][0] = poly->Tt[s] / poly->rho;
         }
-        MatrixLinearSystemSolver(DIMS, A, 1, B, B);
+        SolveLinearSystem(DIMS, A, 1, B, B);
         for (int s = 0; s < DIMS; ++s) {
             /* acceleration from surface force and body force */
             poly->at[TO][s] = (poly->Fp[s] + poly->Fv[s]) / (poly->rho * poly->volume) + poly->at[TN][s] + poly->g[s];
@@ -227,25 +210,25 @@ static void Kinematics(const Real now, const Real dt, Space *space)
     }
     return;
 }
-static void CollisionDynamics(Space *space)
+static void ApplyCollision(Space *space)
 {
-    const Partition *restrict part = &(space->part);
-    Geometry *geo = &(space->geo);
-    Collision *col = NULL;
-    Polyhedron *polp = NULL;
-    Polyhedron *poln = NULL;
+    const Partition *const part = &(space->part);
     const Node *const node = space->node;
+    Geometry *const geo = &(space->geo);
     const IntVec nMin = {part->ns[PIN][X][MIN], part->ns[PIN][Y][MIN], part->ns[PIN][Z][MIN]};
     const IntVec nMax = {part->ns[PIN][X][MAX], part->ns[PIN][Y][MAX], part->ns[PIN][Z][MAX]};
     const RealVec sMin = {part->domain[X][MIN], part->domain[Y][MIN], part->domain[Z][MIN]};
     const RealVec dd = {part->dd[X], part->dd[Y], part->dd[Z]};
-    const int ng = part->ng;
-    int idx = 0; /* linear array index math variable */
-    int box[DIMS][LIMIT] = {{0}}; /* bounding box in node space */
+    const IntVec ng = {part->ng[X], part->ng[Y], part->ng[Z]};
     const Real zero = 0.0;
     const Real one = 1.0;
     const int coltag = INT_MAX / 2; /* colliding polyhedron marker */
     const Real crList[5] = {0.0, 0.25, 0.5, 0.75, 1.0}; /* coefficient of restitution */
+    Polyhedron *polp = NULL;
+    Polyhedron *poln = NULL;
+    Collision *col = NULL;
+    int idx = 0; /* linear array index math variable */
+    int box[DIMS][LIMIT] = {{0}}; /* bounding box in node space */
     RealVec Vo = {zero}; /* original translational velocity */
     RealVec Wo = {zero}; /* original rotational velocity */
     RealVec V = {zero}; /* relative translational velocity */
@@ -265,17 +248,17 @@ static void CollisionDynamics(Space *space)
         geo->colN = 0; /* reset */
         /* determine search range according to bounding box of polyhedron and valid node space */
         for (int s = 0; s < DIMS; ++s) {
-            box[s][MIN] = ValidNodeSpace(NodeSpace(polp->box[s][MIN], sMin[s], dd[s], ng), nMin[s], nMax[s]);
-            box[s][MAX] = ValidNodeSpace(NodeSpace(polp->box[s][MAX], sMin[s], dd[s], ng), nMin[s], nMax[s]) + 1;
+            box[s][MIN] = ConfineSpace(MapNode(polp->box[s][MIN], sMin[s], dd[s], ng[s]), nMin[s], nMax[s]);
+            box[s][MAX] = ConfineSpace(MapNode(polp->box[s][MAX], sMin[s], dd[s], ng[s]), nMin[s], nMax[s]) + 1;
         }
         for (int k = box[Z][MIN]; k < box[Z][MAX]; ++k) {
             for (int j = box[Y][MIN]; j < box[Y][MAX]; ++j) {
                 for (int i = box[X][MIN]; i < box[X][MAX]; ++i) {
                     idx = IndexNode(k, j, i, part->n[Y], part->n[X]);
-                    if ((1 != node[idx].lid) || (p + 1 != node[idx].gid)) {
+                    if ((1 != node[idx].lid) || (p + 1 != node[idx].did)) {
                         continue;
                     }
-                    CollisionState(k, j, i, p + 1, part->pathSep[1], part->path, node, part, geo);
+                    DetectColState(k, j, i, p + 1, part->pathSep[1], part->path, node, part, geo);
                 }
             }
         }
@@ -348,34 +331,37 @@ static void CollisionDynamics(Space *space)
     }
     return;
 }
-static void CollisionState(const int k, const int j, const int i, const int gid, const int end,
-        const int path[restrict][DIMS], const Node *const node, const Partition *part, Geometry *geo)
+static void DetectColState(const int k, const int j, const int i, const int did,
+        const int end, const int path[restrict][DIMS], const Node *const node,
+        const Partition *const part, Geometry *const geo)
 {
-    /*
-     * Search around the specified node to find colliding objects.
-     */
+    /* search around the specified node to find colliding objects */
     int idx = 0; /* linear array index math variable */
+    int ih = 0, jh = 0, kh = 0; /* neighbouring node */
     for (int n = 0; n < end; ++n) {
-        idx = IndexNode(k + path[n][Z], j + path[n][Y], i + path[n][X], part->n[Y], part->n[X]);
-        if (NONE == node[idx].gid) { /* an exterior node is not valid */
+        kh = k + path[n][Z];
+        jh = j + path[n][Y];
+        ih = i + path[n][X];
+        if (!InPartBox(kh, jh, ih, part->ns[PIN])) {
             continue;
         }
-        if (0 == node[idx].gid) { /* a fluid node is not valid */
+        idx = IndexNode(kh, jh, ih, part->n[Y], part->n[X]);
+        if (0 == node[idx].did) { /* a fluid node is not valid */
             continue;
         }
-        if (gid != node[idx].gid) { /* a heterogeneous node on the path */
-            AddCollideObject(path[n], node[idx].gid, geo);
+        if (did != node[idx].did) { /* a heterogeneous node on the path */
+            AddColObject(path[n], node[idx].did, geo);
         }
     }
     return;
 }
-static void AddCollideObject(const int N[restrict], const int gid, Geometry *geo)
+static void AddColObject(const int N[restrict], const int did, Geometry *const geo)
 {
     Collision *col = NULL;
     /* search the object list, if already exist, adjust the line of impact */
     for (int n = 0; n < geo->colN; ++n) {
         col = geo->col + n;
-        if (gid == col->gid) {
+        if (did == col->gid) {
             col->N[X] = col->N[X] + N[X];
             col->N[Y] = col->N[Y] + N[Y];
             col->N[Z] = col->N[Z] + N[Z];
@@ -384,7 +370,7 @@ static void AddCollideObject(const int N[restrict], const int gid, Geometry *geo
     }
     /* otherwise, add to the collision list */
     col = geo->col + geo->colN;
-    col->gid = gid;
+    col->gid = did;
     col->N[X] = N[X];
     col->N[Y] = N[Y];
     col->N[Z] = N[Z];
@@ -393,7 +379,7 @@ static void AddCollideObject(const int N[restrict], const int gid, Geometry *geo
 }
 static void ApplyMotion(const Real dt, Space *space)
 {
-    Geometry *geo = &(space->geo);
+    Geometry *const geo = &(space->geo);
     Polyhedron *poly = NULL;
     RealVec offset = {0.0}; /* translation */
     RealVec angle = {0.0}; /* rotation */
@@ -409,7 +395,7 @@ static void ApplyMotion(const Real dt, Space *space)
             angle[s] = poly->W[TN][s] * dt;
         }
         /* transform geometry */
-        if (0 == poly->faceN) { /* analytical sphere */
+        if (0 >= poly->faceN) { /* analytical polyhedron */
             poly->O[X] = poly->O[X] + offset[X];
             poly->O[Y] = poly->O[Y] + offset[Y];
             poly->O[Z] = poly->O[Z] + offset[Z];
@@ -419,7 +405,7 @@ static void ApplyMotion(const Real dt, Space *space)
                 poly->box[s][MAX] = poly->O[s] + poly->r;
             }
         } else { /* triangulated polyhedron */
-            Transformation(poly->O, scale, angle, offset, poly);
+            TransformPolyhedron(poly->O, scale, angle, offset, poly);
         }
     }
     return;

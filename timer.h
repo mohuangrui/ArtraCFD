@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_TIMER_H_ /* if this is the first definition */
-#define ARTRACFD_TIMER_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_TIMER_H_ /* if undefined */
+#define ARTRACFD_TIMER_H_ /* set a unique marker */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -26,23 +26,12 @@ typedef struct timeval Timer;
  ****************************************************************************/
 /*
  * Tick current time
- *
- * Function
- *      Records the time moment at calling into the input argument. This 
- *      function can be called before blocks of code to record current time
- *      which will be measured in microseconds. In short, tick the time and
- *      store in the timer.
  */
-extern void TickTime(Timer *timer);
+extern void TickTime(Timer *tm);
 /*
  * Tock the timer
- *
- * Function
- *      Return the time interval between the time recorded by the timer and the
- *      moment at "now" (the calling time of this function) in the form of
- *      seconds. In short, tock the timer.
  */
-extern double TockTime(const Timer *timer);
+extern double TockTime(const Timer *tm);
 #endif
 /* a good practice: end file with a newline */
 

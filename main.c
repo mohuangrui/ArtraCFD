@@ -23,23 +23,19 @@
  ****************************************************************************/
 int main(int argc, char *argv[])
 {
-    /*
-     * Declare and initialize variables
-     */    
+    /* declare and initialize variables */
     Control control = {
         .runMode = 'i',
-        .procN = 1};
+        .proc = {0}};
     Time time = {0};
     Space space = {0};
     Model model = {0};
-    /*
-     * Perform computation
-     */
-    ProgramEntrance(argc, argv, &control);
+    /* perform computation */
+    EnterProgram(argc, argv, &control, &space);
     Preprocess(&time, &space, &model);
     Solve(&time, &space, &model);
-    Postprocess(&time, &space);
-    exit(EXIT_SUCCESS); 
+    Postprocess(&time, &space, &model);
+    exit(EXIT_SUCCESS);
 }
 /* a good practice: end file with a newline */
 

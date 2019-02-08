@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_CFD_COMMONS_H_ /* if this is the first definition */
-#define ARTRACFD_CFD_COMMONS_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_CFD_COMMONS_H_ /* if undefined */
+#define ARTRACFD_CFD_COMMONS_H_ /* set a unique marker */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -29,7 +29,7 @@
  * Function
  *      Compute averaged variables at interface.
  */
-extern void SymmetricAverage(const int averager, const Real gamma, 
+extern void SymmetricAverage(const int averager, const Real gamma,
         const Real UL[restrict], const Real UR[restrict], Real Uo[restrict]);
 /*
  * Jacobian matrices, eigenvalues, and eigenvectors
@@ -38,7 +38,7 @@ extern void SymmetricAverage(const int averager, const Real gamma,
  *      Compute eigenvalues and eigenvectors.
  */
 extern void Eigenvalue(const int s, const Real Uo[restrict], Real Lambda[restrict]);
-extern void EigenvalueSplitting(const int splitter, const Real Lambda[restrict], 
+extern void EigenvalueSplitting(const int splitter, const Real Lambda[restrict],
         Real LambdaP[restrict], Real LambdaN[restrict]);
 extern void EigenvectorL(const int s, const Real gamma, const Real Uo[restrict],
         Real L[restrict][DIMU]);
@@ -58,39 +58,42 @@ extern Real PrandtlNumber(void);
 /*
  * Compute the values of primitive variable vector
  *
- * Parameter
- *      Uo[] -- a array stores the returned values of primitives.
- * Notice
- *      calculated values are [rho, u, v, w, p, T]
+ * Function
+ *      Compute primitive variable vector according to conservative vector.
  */
-extern void PrimitiveByConservative(const Real gamma, const Real gasR, const Real U[restrict], Real Uo[restrict]);
+extern void MapPrimitive(const Real gamma, const Real gasR, const Real U[restrict], Real Uo[restrict]);
 extern Real ComputePressure(const Real gamma, const Real U[restrict]);
 extern Real ComputeTemperature(const Real cv, const Real U[restrict]);
 /*
  * Compute and update conservative variable vector
  *
  * Function
- *      Compute and update conservative variable vector according to primitive values.
+ *      Compute conservative variable vector according to primitive vector.
  */
-extern void ConservativeByPrimitive(const Real gamma, const Real Uo[restrict], Real U[restrict]);
+extern void MapConservative(const Real gamma, const Real Uo[restrict], Real U[restrict]);
 /*
  * Index math
  *
  * Function
- *      calculate the index of current node.
- * Returns
- *      int -- the calculated index value
+ *      Calculate the node index.
  */
 extern int IndexNode(const int k, const int j, const int i, const int jMax, const int iMax);
+/*
+ * Verify node region
+ *
+ * Function
+ *     Check whether a node is within the part box.
+ */
+extern int InPartBox(const int k, const int j, const int i, const int pbox[restrict][LIMIT]);
 /*
  * Coordinates transformation
  *
  * Function
- *      transform coordinates between node coordinates and general coordinates.
+ *      Transform coordinates between node coordinates and general coordinates.
  */
-extern int NodeSpace(const Real s, const Real sMin, const Real dds, const int ng);
-extern int ValidNodeSpace(const int n, const int nMin, const int nMax);
-extern Real PointSpace(const int n, const Real sMin, const Real ds, const int ng);
+extern int MapNode(const Real s, const Real sMin, const Real dds, const int ng);
+extern int ConfineSpace(const int n, const int nMin, const int nMax);
+extern Real MapPoint(const int n, const Real sMin, const Real ds, const int ng);
 /*
  * Common math functions
  */

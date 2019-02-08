@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_PARAVIEW_H_ /* if this is the first definition */
-#define ARTRACFD_PARAVIEW_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_PARAVIEW_H_ /* if undefined */
+#define ARTRACFD_PARAVIEW_H_ /* set a unique marker */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -20,41 +20,41 @@
 /****************************************************************************
  * Data Structure Declarations
  ****************************************************************************/
-/*
- * Paraview data format and type control
- */
-typedef char ParaviewString[80]; /* string data */
-typedef double ParaviewReal; /* real data */
-/*
- * Paraview configuration structure
- */
+typedef enum {
+    PVSTR = 80, /* string data length */
+    PVVARSTR = 10, /* variable name length */
+    PVSCAN = 10, /* maximum number of scalar variables */
+    PVVECN = 1, /* maximum number of vector variables */
+} PvConst;
+typedef char PvStr[PVSTR]; /* string data */
+typedef Real PvReal; /* real data */
 typedef struct {
-    ParaviewString rootName; /* data file root name */
-    ParaviewString baseName; /* data file base name */
-    ParaviewString fileName; /* store current open file name */
-    ParaviewString fileExt; /* data file extension */
-    ParaviewString intType; /* Paraview int type */
-    ParaviewString floatType; /* Paraview float type */
-    ParaviewString byteOrder; /* byte order of data */
-}ParaviewSet;
+    PvStr rname; /* data file root name */
+    PvStr bname; /* data file base name */
+    PvStr fname; /* store current open file name */
+    PvStr fext; /* data file extension */
+    PvStr fmt; /* format specifier */
+    PvStr intType; /* int type */
+    PvStr floatType; /* float type */
+    PvStr byteOrder; /* byte order of data */
+    int scaN; /* number of scalar variables */
+    char sca[PVSCAN][PVVARSTR]; /* scalar variables */
+    int vecN; /* number of vector variables */
+    char vec[PVVECN][PVVARSTR]; /* vector variables */
+} PvSet; /* configuration structure */
 /****************************************************************************
  * Public Functions Declaration
  ****************************************************************************/
 /*
  * Structured data writer and reader
  */
-extern int WriteStructuredDataParaview(const Time *, const Space *, const Model *);
-extern int ReadStructuredDataParaview(Time *, Space *, const Model *);
+extern void WriteStructuredDataParaview(const Time *, const Space *, const Model *);
+extern void ReadStructuredDataParaview(Time *, Space *, const Model *);
 /*
  * Poly data writer and reader
  */
-extern int WritePolyDataParaview(const Time *, const Geometry *);
-extern int ReadPolyDataParaview(const Time *, Geometry *);
-/*
- * Polyhedron status writer and reader
- */
-extern int WritePolyhedronStateData(const int start, const int end, FILE *filePointer, const Geometry *);
-extern int ReadPolyhedronStateData(const int start, const int end, FILE *filePointer, Geometry *);
+extern void WritePolyDataParaview(const Time *, const Geometry *const);
+extern void ReadPolyDataParaview(const Time *, Geometry *const);
 #endif
 /* a good practice: end file with a newline */
 

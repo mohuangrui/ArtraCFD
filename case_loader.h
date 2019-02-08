@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_CASE_LOADER_H_ /* if this is the first definition */
-#define ARTRACFD_CASE_LOADER_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_CASE_LOADER_H_ /* if undefined */
+#define ARTRACFD_CASE_LOADER_H_ /* set a unique marker */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -26,7 +26,7 @@
 /*
  * Case setting data loader
  */
-extern int LoadCaseData(Time *, Space *, Model *);
+extern void LoadCaseData(Time *, Space *, Model *);
 #endif
 /* a good practice: end file with a newline */
 

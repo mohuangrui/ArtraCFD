@@ -19,45 +19,38 @@
 /****************************************************************************
  * Local Data Structure
  ****************************************************************************/
-/*
- * Operand
- */
+typedef enum {
+    DIMOP = 19, /* number of operator types */
+    NOPRD = 50, /* number of operands */
+    NOPRT = 50, /* number of operators */
+    LENOPRT = 5, /* longest length of operator symbol */
+} CalcConst;
 typedef struct {
-    double *const base; /* pointer to stack bottom */
-    double *top; /* pointer to stack top */
-    const int stacksize;
-} OperandStack;
-/*
- * Operator
- */
+    Real *const bom; /* pointer to stack bottom */
+    Real *top; /* pointer to stack top */
+    const int size; /* stack size */
+    Real space[NOPRD]; /* stack space */
+} Operand;
 typedef struct {
-    char *const base; /* pointer to stack bottom */
+    char *const bom; /* pointer to stack bottom */
     char *top; /* pointer to stack top */
-    const int stacksize;
-    const char priority[19][19]; /* store the priority of operators */
-} OperatorStack;
-/*
- * Parameters
- */
-typedef struct {
-    const double pi; /* PI */
-    double answer; /* store the answer of the latest calculation */
-    int radianMode; /* angle in radian mode is default */
-    double angleFactor; /* factor transfer to radian mode */
-} Parameter;
+    const int size; /* stack size */
+    char space[NOPRT]; /* stack space */
+    const char priority[DIMOP][DIMOP]; /* store the priority of operators */
+} Operator;
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ComputeExpression(const char *, OperandStack *, OperatorStack *, Parameter *);
-static int TranslateCommandToMathExpression(char *);
-static char QueryPriority(const OperatorStack *, const char, const char);
+static int SolveExpression(CalcVar *, const char *, Operand *, Operator *);
+static int TranslateToMath(char *);
+static char QueryPriority(const Operator *, const char, const char);
 static int QueryIndex(const char);
-static int PushOperatorToStack(OperatorStack *, const char);
-static int PushOperandToStack(OperandStack *, const double);
-static int PopOperatorFromStack(OperatorStack *, char *);
-static int PopOperandFromStack(OperandStack *, double *);
-static char PeakTopElementOfOperatorStack(const OperatorStack *);
-static double PeakTopElementOfOperandStack(const OperandStack *);
+static int PushOperator(Operator *, const char);
+static int PushOperand(Operand *, const Real);
+static int PopOperator(Operator *, char *);
+static int PopOperand(Operand *, Real *);
+static char GetTopOperator(const Operator *);
+static Real GetTopOperand(const Operand *);
 static int IsOperator(const char);
 static int IsPureUnaryOperator(const char);
 static int IsPureBinaryOperator(const char);
@@ -69,31 +62,80 @@ static int IsConstant(const char);
 static int IsEndTag(const char);
 static int IsDigit(const char);
 static int IsDot(const char);
-static int SetAngleMode(Parameter *);
-static void HelpCalculator(void);
-static double ReadFirstFloat(char **);
-static double ReadConstant(const Parameter *, char **);
-static int UnaryOperation(const Parameter *, const char, const double, double *);
-static int BinaryOperation(const double, const char, const double, double *);
+static Real ExtractFirstFloat(char **);
+static Real ExtractConstant(const CalcVar *, char **);
+static int DoUnary(const char, const Real, Real *);
+static int DoBinary(const Real, const char, const Real, Real *);
+static void ShowCalcManual(void);
+static int SetVariable(CalcVar *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int ExpressionCalculator(void)
+int RunCalculator(void)
 {
-    /*
-     * Data declaration and initialization
-     */
-    double operandStackSpace[100] = {0.0};
-    OperandStack theOperandStack = {
-        .base = operandStackSpace,
-        .top = operandStackSpace,
-        .stacksize = sizeof operandStackSpace - 1
+    CalcVar theVar = {
+        .t = 0.0,
+        .x = 0.0,
+        .y = 0.0,
+        .z = 0.0,
+        .ans = 0.0,
+        .pi = PI,
     };
-    char operatorStackSpace[100] = {'\0'};
-    OperatorStack theOperatorStack = {
-        .base = operatorStackSpace,
-        .top = operatorStackSpace,
-        .stacksize = sizeof operatorStackSpace - 1,
+    ShowInfo("Session");
+    ShowInfo("*                   Expression Calculator                  *\n");
+    ShowInfo("*                     <By Huangrui Mo>                     *\n");
+    ShowInfo("*    Copyright (C) Huangrui Mo <huangrui.mo@gmail.com>     *\n");
+    ShowInfo("Session");
+    ShowInfo("Enter 'help' for more information\n");
+    ShowInfo("Session");
+    String str = {'\0'}; /* store the input information */
+    while (1) {
+        ShowInfo("\nCalc << ");
+        ParseCommand(fgets(str, sizeof str, stdin));
+        ShowInfo("\n");
+        if (0 == strncmp(str, "help", sizeof str)) {
+            ShowInfo("Options:\n");
+            ShowInfo("[help]       show this information\n");
+            ShowInfo("[set]        set variable values\n");
+            ShowInfo("[math expr]  compute math expression\n");
+            ShowInfo("[manual]     show user manual\n");
+            ShowInfo("[exit]       return\n");
+            continue;
+        }
+        if (0 == strncmp(str, "set", sizeof str)) {
+            SetVariable(&theVar);
+            continue;
+        }
+        if (0 == strncmp(str, "manual", sizeof str)) {
+            ShowCalcManual();
+            continue;
+        }
+        if ('\0' == str[0]) {
+            continue;
+        }
+        if (0 == strncmp(str, "exit", sizeof str)) {
+            ShowInfo("Session");
+            return 0;
+        }
+        /* if non of above is true, then compute the expression */
+        ComputeExpression(&theVar, str);
+        ShowInfo("ans = %.6g\n", theVar.ans);
+    }
+    return 0;
+}
+Real ComputeExpression(CalcVar *var, const char *str)
+{
+    Operand theOprd = {
+        .bom = theOprd.space,
+        .top = theOprd.space,
+        .size = NOPRD - 1,
+        .space = {0.0}
+    };
+    Operator theOprt = {
+        .bom = theOprt.space,
+        .top = theOprt.space,
+        .size = NOPRT - 1,
+        .space = {'\0'},
         .priority = { /* + - * / ^ exp ln lg abs sin cos tan ( ) [ ] { } \0 */
             {'>', '>', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '>', '<', '>', '<', '>', '>'},
             {'>', '>', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '>', '<', '>', '<', '>', '>'},
@@ -116,234 +158,154 @@ int ExpressionCalculator(void)
             {'<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', '<', 'w', '<', 'w', '<', 'w', '='}
         }
     };
-    Parameter theParameter = {
-        .pi = acos(-1),
-        .answer = 0.0,
-        .radianMode = 1,
-        .angleFactor = 1.0
-    };
-    String currentLine = {'\0'}; /* store the input information */
-    /* main loop */
-    fprintf(stdout, "**********************************************************\n\n");
-    fprintf(stdout, "Enter 'help' for a brief user manual of calculator\n");
-    fprintf(stdout, "**********************************************************\n\n");
-    while (1) {
-        fprintf(stdout, "\nArtraCFD Calculator<< ");
-        Fgets(currentLine, sizeof currentLine, stdin);
-        CommandLineProcessor(currentLine); /* process current command */
-        fprintf(stdout, "\n");
-        if (0 == strncmp(currentLine, "help", sizeof currentLine)) {
-            HelpCalculator();
-            continue;
-        }
-        if (0 == strncmp(currentLine, "set", sizeof currentLine)) {
-            SetAngleMode(&theParameter);
-            continue;
-        }
-        if (0 == strncmp(currentLine, "exit", sizeof currentLine)) {
-            return 0;
-        } 
-        if ('\0' == currentLine[0]) { /* no useful information in the command */
-            fprintf(stdout, "\n");
-            continue;
-        }
-        /* if non of above is true, then compute the expression */
-        ComputeExpression(currentLine, &theOperandStack, &theOperatorStack, &theParameter);
-    }
+    SolveExpression(var, str, &theOprd, &theOprt);
+    return var->ans;
 }
-static int ComputeExpression(const char *currentLine, OperandStack *operandStack, 
-        OperatorStack *operatorStack, Parameter *parameter)
+/*
+ * The flow control of this program is important, thus, every function
+ * call which may result an important error will be monitored.
+ * These functional functions return 0 means true, 1 means false.
+ */
+static int SolveExpression(CalcVar *var, const char *str, Operand *oprd, Operator *oprt)
 {
+    /* use a new space to avoid modify the original expression */
+    String space = {'\0'};
     /*
-     *  Every call will define a new space to store the command to avoid
-     *  unclear interference between each inputted data which has different
-     *  content and lengths.
-     */
-    String expression = {'\0'};
-    /*
-     * Use as a flag to judge whether '+' and '-' are unary operator based on 
+     * Use as a flag to check whether '+' and '-' are unary operator based on
      * the assumption that if "+" "-" appears as unary operator then it must
-     * after a paratheses except at the beginning of an expression. By puting
-     * a "(" at the initial of the expression, then this rule is always true.
+     * after a parentheses except at the beginning of an expression. By putting
+     * a "(" at the front of the expression, then this rule is always true.
      */
-    expression[0] = '(';
-    /* target command begins at the second position of storage address */
-    char *command = expression + 1; 
+    space[0] = '(';
+    /* target expression begins at the second position of storage address */
+    char *expr = space + 1;
     /*
-     * Copy the information in current line to expression space, because need
-     * to access command[2] and even later data when search and convert the
-     * command to math expression, reduce and limit the available space for
-     * copy is a safety choice.
+     * Copy the expression to space, because need to access expr[2] and even
+     * later position when search and convert the expr to math expression,
+     * limit the available space for copy is a safety choice.
      */
-    strncpy(command, currentLine, (int)(sizeof expression) - 5);
-    /*
-     * The flow control of this program is important, thus, every function
-     * call which may result an important error will be monitored.
-     * These functional functions return 0 means true, 1 means false.
-     */
-    /*
-     * Translate the command to math expression
-     */
-    if (0 != TranslateCommandToMathExpression(command)) {
-        return 1; /* failed */
+    strncpy(expr, str, (int)(sizeof space) - LENOPRT);
+    if (0 != TranslateToMath(expr)) {
+        return 1;
     }
-    char *pointer = command; /* pointer to point the expression */
-    char headOperator = '\0'; /* store the top operator of operator stack */
-    char currentOperator = '\0'; /* store the current operator in command */
-    double currentOperand = 0.0; /* store the current operand in command */
-    double operandA = 0.0; /* first top operand in stack */
-    double operandB = 0.0; /* second top operand in stack */
-    /*
-     * Always initialize and reset the stack status
-     */
-    operandStack->top = operandStack->base;
-    operatorStack->top = operatorStack->base;
-    PushOperatorToStack(operatorStack,'\0'); /* push a end flag to the stack of operator */
-    /*
-     * Calculation loop
-     */
-    while (('\0' != pointer[0]) || ('\0' != PeakTopElementOfOperatorStack(operatorStack))) {
-        if (0 == IsDigit(pointer[0])) { /* find a operand */
-            /* 
-             * Read this float to current operand, note the read function will
-             * update the pointer to the first character after the float data.
-             */
-            currentOperand = ReadFirstFloat(&pointer); 
-            if (0 != PushOperandToStack(operandStack, currentOperand)) {
-                return 1; /* failed */
+    char toprt = '\0'; /* store the top operator of operator stack */
+    char coprt = '\0'; /* store the current operator */
+    Real oprdx = 0.0; /* first top operand in stack */
+    Real oprdy = 0.0; /* second top operand in stack */
+    Real coprd = 0.0; /* store the current operand */
+    /* always initialize and reset the stack status */
+    oprt->top = oprt->bom;
+    oprd->top = oprd->bom;
+    PushOperator(oprt,'\0'); /* push a end flag to the operator stack */
+    /* calculation loop */
+    while (('\0' != *expr) || ('\0' != GetTopOperator(oprt))) {
+        if (IsDigit(*expr)) { /* find a operand */
+            coprd = ExtractFirstFloat(&expr);
+            if (0 != PushOperand(oprd, coprd)) {
+                return 1;
             }
             continue;
         }
-        if (0 == IsConstant(pointer[0])) { /* find a constant */
-            /* 
-             * Read this constant to current operand, note the read function will
-             * update the pointer to the first character after the constant.
-             */
-            currentOperand = ReadConstant(parameter, &pointer);
-            if (0 != PushOperandToStack(operandStack, currentOperand)) {
-                return 1; /* failed */
+        if (IsConstant(*expr)) { /* find a constant */
+            coprd = ExtractConstant(var, &expr);
+            if (0 != PushOperand(oprd, coprd)) {
+                return 1;
             }
             continue;
         }
-        /*
-         * Now, treat everything left as an operator
-         */
-        if (0 != IsOperator(pointer[0])) {
-            ShowInformation("undefined operator in expression");
+        /* treat everything left as an operator */
+        if (!IsOperator(*expr)) {
+            ShowWarning("undefined operator in expression");
             return 1;
         }
-        currentOperator = pointer[0];
-        switch (QueryPriority(operatorStack, PeakTopElementOfOperatorStack(operatorStack), currentOperator)) {
-            case '<': 
-                /*
-                 * The priority of the head operator in the stack is lower
-                 * than current operator in command, thus need to push
-                 * current operator into stack.
-                 */
-                if (0 == IsDualOperatorActAsUnary(pointer)) {
+        coprt = *expr;
+        switch (QueryPriority(oprt, GetTopOperator(oprt), coprt)) {
+            case '<': /* push the new high-priority operator into stack */
+                if (IsDualOperatorActAsUnary(expr)) {
                     /*
-                     * Dual operator (they can both be unary and binary )
+                     * Dual operator (they can both be unary and binary)
                      * '+' '-' show as a unary operator, then push a 0 to
-                     * operand stack to make them become binary operator 
+                     * operand stack to make them become binary operator
                      */
-                    if (0 != PushOperandToStack(operandStack, 0)) {
+                    if (0 != PushOperand(oprd, 0)) {
                         return 1;
                     }
                 }
-                if (0 != PushOperatorToStack(operatorStack, currentOperator)) {
+                if (0 != PushOperator(oprt, coprt)) {
                     return 1;
                 }
-                ++pointer;
+                ++expr;
                 break;
-            case '=': 
-                /*
-                 * If the head operator in stack and current operator in
-                 * command have the same priority, they both need to be
-                 * dumped since they are control operators like parentheses
-                 * and end tag.
-                 */
-                if (0 != PopOperatorFromStack(operatorStack, &currentOperator)) {
+            case '=': /* dump the two same-priority operators as they are control operators */
+                if (0 != PopOperator(oprt, &coprt)) {
                     return 1;
                 }
-                ++pointer;
+                ++expr;
                 break;
-            case '>': 
-                /*
-                 * If the head operator in stack has higher priority than
-                 * the current operator in command, then the current
-                 * operator need to wait and can not go into the stack.
-                 * At the same time, the head operator need to finish its
-                 * calculation.
-                 */
-                if (0 != PopOperatorFromStack(operatorStack, &headOperator)) {
+            case '>': /* hold the new low-priority operator and finish the old high-priority operator */
+                if (0 != PopOperator(oprt, &toprt)) {
                     return 1;
                 }
-                if (0 == IsPureUnaryOperator(headOperator)) { /* unary operator */
-                    if (0 != PopOperandFromStack(operandStack, &operandA)) {
+                if (IsPureUnaryOperator(toprt)) {
+                    if (0 != PopOperand(oprd, &oprdx)) {
                         return 1;
                     }
-                    if (0 != UnaryOperation(parameter, headOperator, operandA, &currentOperand)) {
+                    if (0 != DoUnary(toprt, oprdx, &coprd)) {
                         return 1;
                     }
-                    if (0 != PushOperandToStack(operandStack, currentOperand)) {
+                    if (0 != PushOperand(oprd, coprd)) {
                         return 1;
                     }
-                } else {/* binary operator */
-                    if (0 != PopOperandFromStack(operandStack, &operandA)) {
+                } else {
+                    if (0 != PopOperand(oprd, &oprdx)) {
                         return 1;
                     }
-                    if (0 != PopOperandFromStack(operandStack, &operandB)) {
+                    if (0 != PopOperand(oprd, &oprdy)) {
                         return 1;
                     }
-                    if (0 != BinaryOperation(operandB, headOperator, operandA, &currentOperand)) {
+                    if (0 != DoBinary(oprdy, toprt, oprdx, &coprd)) {
                         return 1;
                     }
-                    if (0 != PushOperandToStack(operandStack, currentOperand)) {
+                    if (0 != PushOperand(oprd, coprd)) {
                         return 1;
                     }
                 }
                 break;
-            default: 
-                ShowInformation("can not match parenthesis");
+            default:
+                ShowWarning("can not match parenthesis");
                 return 1;
         }
     }
     /*
-     * If the loop successfully exit, then it means the command,
+     * If the loop successfully exit, then it means the expression
      * and operator stack are all processed, now need to check the
-     * operand stack, if there are more than one element left, 
+     * operand stack, if there are more than one element left,
      * it means something wrong happened.
      */
-    if (1 != (operandStack->top - operandStack->base)) {
-        ShowInformation("error, wrong expression");
-        parameter->answer = 0.0; /* reset answer */
+    if (1 != (oprd->top - oprd->bom)) {
+        ShowWarning("wrong expression");
         return 1;
     }
-    /*
-     * Finally, get the final answer
-     */
     /* save the result to answer */
-    parameter->answer = PeakTopElementOfOperandStack(operandStack); 
-    /* output the results */
-    fprintf(stdout, "ans = %.6g\n", parameter->answer);
+    var->ans = GetTopOperand(oprd);
     return 0;
 }
 /*
  * Obtain the priority between two operators from the priority matrix
  */
-static char QueryPriority(const OperatorStack *operatorStack, const char operatorA, const char operatorB)
+static char QueryPriority(const Operator *oprt, const char oprtx, const char oprty)
 {
-    const int i = QueryIndex(operatorA);
-    const int j = QueryIndex(operatorB);
-    return operatorStack->priority[i][j];
+    const int i = QueryIndex(oprtx);
+    const int j = QueryIndex(oprty);
+    return oprt->priority[i][j];
 }
 /*
  * Query the index of a operator in the priority matrix
  */
-static int QueryIndex(const char operator)
+static int QueryIndex(const char op)
 {
     int i = 0;
-    switch(operator) {
+    switch(op) {
         case '+':
             i = 0; break;
         case '-':
@@ -368,7 +330,7 @@ static int QueryIndex(const char operator)
             i = 10; break;
         case 't':
             i = 11; break;
-        case '(': 
+        case '(':
             i = 12; break;
         case ')':
             i = 13; break;
@@ -376,453 +338,405 @@ static int QueryIndex(const char operator)
             i = 14; break;
         case ']':
             i = 15; break;
-        case '{': 
+        case '{':
             i = 16; break;
-        case '}': 
+        case '}':
             i = 17; break;
         case '\0':
             i = 18; break;
-        default: 
-            ShowInformation("unidentified operator"); 
+        default:
+            ShowWarning("unidentified operator");
             break;
     }
     return i;
 }
-/*
- * Push an element to the operand stack
- */
-static int PushOperandToStack(OperandStack *operandStack, const double currentOperand)
+static int PushOperand(Operand *oprd, const Real op)
 {
-    if ((operandStack->top - operandStack->base) >= operandStack->stacksize) {
-        ShowInformation("operand stack is overflowing...");
+    if ((oprd->top - oprd->bom) >= oprd->size) {
+        ShowWarning("operand stack is overflowing...");
         return 1;
     }
-    operandStack->top[0] = currentOperand;
-    ++(operandStack->top);
+    *oprd->top = op;
+    ++(oprd->top);
     return 0;
 }
-/*
- * Pop an element from operand stack
- */
-static int PopOperandFromStack(OperandStack *operandStack, double *operandAddress)
+static int PopOperand(Operand *oprd, Real *pop)
 {
-    if (operandStack->top == operandStack->base) {
-        ShowInformation("no sufficient operands in expression...");
+    if (oprd->top == oprd->bom) {
+        ShowWarning("no sufficient operands in expression...");
         return 1;
     }
-    --(operandStack->top);
-    operandAddress[0] = operandStack->top[0];
+    --(oprd->top);
+    *pop = *oprd->top;
     return 0;
 }
-/*
- * Get the top element from operand stack
- */
-static double PeakTopElementOfOperandStack(const OperandStack *operandStack)
+static Real GetTopOperand(const Operand *oprd)
 {
-    return operandStack->top[-1];
+    return oprd->top[-1];
 }
-/*
- * Push an element to the operator stack
- */
-static int PushOperatorToStack(OperatorStack *operatorStack, const char currentOperator)
+static int PushOperator(Operator *oprt, const char op)
 {
-    if ((operatorStack->top - operatorStack->base) >= operatorStack->stacksize) {
-        ShowInformation("operator stack is overflowing...");
+    if ((oprt->top - oprt->bom) >= oprt->size) {
+        ShowWarning("operator stack is overflowing...");
         return 1;
     }
-    operatorStack->top[0] = currentOperator;
-    ++(operatorStack->top);
+    *oprt->top = op;
+    ++(oprt->top);
     return 0;
 }
-/*
- * Pop an element from the operator stack
- */
-static int PopOperatorFromStack(OperatorStack *operatorStack, char *operatorAddress)
+static int PopOperator(Operator *oprt, char *pop)
 {
-    if (operatorStack->top == operatorStack->base) {
-        ShowInformation("no sufficient operators in expression...");
+    if (oprt->top == oprt->bom) {
+        ShowWarning("no sufficient operators in expression...");
         return 1;
     }
-    --(operatorStack->top);
-    operatorAddress[0] = operatorStack->top[0];
+    --(oprt->top);
+    *pop = *oprt->top;
     return 0;
 }
-/*
- * Get the top element from the operator stack
- */
-static char PeakTopElementOfOperatorStack(const OperatorStack *operatorStack)
+static char GetTopOperator(const Operator *oprt)
 {
-    return operatorStack->top[-1];
+    return oprt->top[-1];
 }
 /*
- * Translate the input command to specific format that program can recognize
- * every operator correctly.
+ * Translate the input string to a specific format that the program
+ * can recognize every operator and operand correctly.
  */
-static int TranslateCommandToMathExpression(char *command)
+static int TranslateToMath(char *str)
 {
-    char *scanner = command; /* scanner of the string */
-    char *receiver = command; /* receiver to rewrite the string */
-    int test = 1; /* test condition, default is false 1 */
-    while ('\0' != scanner[0]) {
-        switch (scanner[0]) {
-            case 'e': 
-                if (('x' == scanner[1]) && ('p' == scanner[2])) { /* use "e" stands for "exp" */
-                    receiver[0] = 'e';
-                    ++receiver; /* update receiver to newest receiving position */
-                    scanner = scanner + 3; /* update scanner to newest scanning position */
+    char *scanner = str;
+    char *receiver = str;
+    while ('\0' != *scanner) {
+        switch (*scanner) {
+            case 'e':
+                if (('x' == scanner[1]) && ('p' == scanner[2])) { /* exp */
+                    *receiver = 'e';
+                    ++receiver;
+                    scanner += 3;
                 } else {
-                    ShowInformation("unknown operator: e..");
+                    ShowWarning("unknown operator: e..");
                     return 1;
                 }
                 break;
             case 'l':
-                if (('n' == scanner[1])) {/* use "n" stands for "ln" */
-                    receiver[0] = 'n';
+                if (('n' == scanner[1])) {/* ln */
+                    *receiver = 'n';
                     ++receiver;
-                    scanner = scanner + 2;
+                    scanner += 2;
                 } else {
-                    if (('g' == scanner[1])) { /* use "g" stands for "lg" */
-                        receiver[0] = 'g';
+                    if (('g' == scanner[1])) { /* lg */
+                        *receiver = 'g';
                         ++receiver;
-                        scanner = scanner + 2;
+                        scanner += 2;
                     } else {
-                        ShowInformation("unknown operator: l..");
+                        ShowWarning("unknown operator: l..");
                         return 1;
                     }
                 }
                 break;
-            case 'a': 
-                if (('b' == scanner[1]) && ('s' == scanner[2])) { /* use "a" stands for "abs" */
-                    receiver[0] = 'a';
+            case 'a':
+                if (('b' == scanner[1]) && ('s' == scanner[2])) { /* abs */
+                    *receiver = 'a';
                     ++receiver;
-                    scanner = scanner + 3;
+                    scanner += 3;
                 } else {
-                    if (('n' == scanner[1]) && ('s' == scanner[2])) { /* use 'q' for keyword "ans" */
-                        receiver[0] = 'q';
+                    if (('n' == scanner[1]) && ('s' == scanner[2])) { /* ans */
+                        *receiver = 'q';
                         ++receiver;
-                        scanner = scanner + 3;
+                        scanner += 3;
                     } else {
-                        ShowInformation("unknown operator: a..");
+                        ShowWarning("unknown operator: a..");
                         return 1;
                     }
                 }
                 break;
-            case 's': 
-                if (('i' == scanner[1]) && ('n' == scanner[2])) { /* use "s" stands for "sin" */
-                    receiver[0] = 's';
+            case 's':
+                if (('i' == scanner[1]) && ('n' == scanner[2])) { /* sin */
+                    *receiver = 's';
                     ++receiver;
-                    scanner = scanner + 3;
+                    scanner += 3;
                 } else {
-                    ShowInformation("unknown operator: s..");
+                    ShowWarning("unknown operator: s..");
                     return 1;
                 }
                 break;
-            case 'c': 
-                if (('o' == scanner[1]) && ('s' == scanner[2])) { /* use "c" stands for "cos" */
-                    receiver[0] = 'c';
+            case 'c':
+                if (('o' == scanner[1]) && ('s' == scanner[2])) { /* cos */
+                    *receiver = 'c';
                     ++receiver;
-                    scanner = scanner + 3;
+                    scanner += 3;
                 } else {
-                    ShowInformation("unknown operator: c..");
+                    ShowWarning("unknown operator: c..");
                     return 1;
                 }
                 break;
-            case 't': 
-                if (('a' == scanner[1]) && ('n' == scanner[2])) { /* use "t" stands for "tan" */
-                    receiver[0] = 't';
+            case 't':
+                if (('a' == scanner[1]) && ('n' == scanner[2])) { /* tan */
+                    *receiver = 't';
                     ++receiver;
-                    scanner = scanner + 3;
+                    scanner += 3;
+                } else { /* t */
+                    *receiver = 'u';
+                    ++receiver;
+                    ++scanner;
+                }
+                break;
+            case 'p':
+                if (('i' == scanner[1])) { /* pi */
+                    *receiver = 'p';
+                    ++receiver;
+                    scanner += 2;
                 } else {
-                    ShowInformation("unknown operator: t..");
+                    ShowWarning("unknown operator: p..");
                     return 1;
                 }
                 break;
-            case 'p': 
-                if (('i' == scanner[1])) { /* use "p" stands for "pi" */
-                    receiver[0] = 'p';
-                    ++receiver;
-                    scanner = scanner + 2;
-                } else {
-                    ShowInformation("unknown operator: p..");
-                    return 1;
-                }
-                break;
-            case '.':
-                if (0 != (IsDigit(scanner[1]) + IsDigit(scanner[-1]))) {
-                    ShowInformation(". is preceded or followed by non digits");
-                    return 1;
-                }
-                receiver[0] = scanner[0];
+            case 'x': /* x */
+                *receiver = 'x';
                 ++receiver;
                 ++scanner;
                 break;
-            case ' ': 
-                ++scanner;  /* ignore space */
+            case 'y': /* y */
+                *receiver = 'y';
+                ++receiver;
+                ++scanner;
                 break;
-            default:
-                test = IsDigit(scanner[0]) * IsPureBinaryOperator(scanner[0]) * 
-                    IsDualOperator(scanner[0]) * IsLeftParentheses(scanner[0]) * 
-                    IsRightParentheses(scanner[0]); /* if any one is true, it's true */
-                if (0 == test) { /* legal input single character */
-                    receiver[0] = scanner[0];
+            case 'z': /* z */
+                *receiver = 'z';
+                ++receiver;
+                ++scanner;
+                break;
+            case '.':
+                if (IsDigit(scanner[1]) && IsDigit(scanner[-1])) {
+                    *receiver = *scanner;
                     ++receiver;
                     ++scanner;
                 } else {
-                    ShowInformation("unknown operator in expression");
+                    ShowWarning(". is preceded or followed by non digits");
+                    return 1;
+                }
+                break;
+            case ' ':
+                ++scanner;  /* ignore space */
+                break;
+            default:
+                if (IsDigit(*scanner) || IsPureBinaryOperator(*scanner) ||
+                        IsDualOperator(*scanner) || IsLeftParentheses(*scanner) ||
+                        IsRightParentheses(*scanner)) { /* legal input single character */
+                    *receiver = *scanner;
+                    ++receiver;
+                    ++scanner;
+                } else {
+                    ShowWarning("unknown operator in expression");
                     return 1;
                 }
                 break;
         }
     }
-    /* add a '\0' at the end of translated expression */
-    receiver[0]='\0';
+    *receiver='\0';
     return 0;
 }
-static int IsOperator(const char character)
+static int IsOperator(const char op)
 {
-    int testCondition = 1; /* default is false 1 */
-    testCondition = IsPureUnaryOperator(character) *
-        IsPureBinaryOperator(character) * IsDualOperator(character) *
-        IsLeftParentheses(character) * IsRightParentheses(character) *
-        IsEndTag(character); /* if any one is true, it's true */
-    if (0 == testCondition) {
-        return 0;
-    }
-    return 1;
+    return (IsPureUnaryOperator(op) || IsPureBinaryOperator(op) ||
+            IsDualOperator(op) || IsLeftParentheses(op) ||
+            IsRightParentheses(op) || IsEndTag(op));
 }
-static int IsPureUnaryOperator(const char character)
+static int IsPureUnaryOperator(const char op)
 {
-    if (('e' == character) || ('n' == character) || ('g' == character) ||
-            ('a' == character) || ('s' == character) ||
-            ('c' == character) || ('t' == character)) {
-        return 0;
-    }
-    return 1;
+    return (('e' == op) || ('n' == op) || ('g' == op) ||
+            ('a' == op) || ('s' == op) ||
+            ('c' == op) || ('t' == op));
 }
-static int IsDualOperator(const char character)
+static int IsDualOperator(const char op)
 {
-    if (('+' == character) || ('-' == character)) {
-        return 0;
-    }
-    return 1;
+    return (('+' == op) || ('-' == op));
 }
-static int IsDualOperatorActAsUnary(const char *pointer)
+static int IsDualOperatorActAsUnary(const char *pop)
 {
-    int testCondition = IsDualOperator(pointer[0]) + 
-        IsLeftParentheses(pointer[-1]); /* if both are true, it's true */
-    if (0 == testCondition) { /* it means is a unary operator */
-        return 0;
-    }
-    return 1;
+    return (IsDualOperator(pop[0]) && IsLeftParentheses(pop[-1]));
 }
-static int IsPureBinaryOperator(const char character)
+static int IsPureBinaryOperator(const char op)
 {
-    if (('*' == character) || ('/' == character)
-            || ('^' == character)) {
-        return 0;
-    }
-    return 1;
+    return (('*' == op) || ('/' == op) || ('^' == op));
 }
-static int IsLeftParentheses(const char character)
+static int IsLeftParentheses(const char op)
 {
-    if (('(' == character) || ('[' == character) || ('{' == character)) {
-        return 0;
-    }
-    return 1;
+    return (('(' == op) || ('[' == op) || ('{' == op));
 }
-static int IsRightParentheses(const char character)
+static int IsRightParentheses(const char op)
 {
-    if ((')' == character) || (']' == character) || ('}' == character)) {
-        return 0;
-    }
-    return 1;
+    return ((')' == op) || (']' == op) || ('}' == op));
 }
-static int IsConstant(const char character)
+static int IsConstant(const char op)
 {
-    if (('p' == character) || ('q' == character)) {
-        return 0;
-    }
-    return 1;
+    return (('u' == op) || ('x' == op) || ('y' == op) ||
+            ('z' == op) || ('p' == op) || ('q' == op));
 }
-static int IsEndTag(const char character)
+static int IsEndTag(const char op)
 {
-    if (('\0' == character)) {
-        return 0;
-    }
-    return 1;
+    return ('\0' == op);
 }
-static int IsDigit(const char character)
+static int IsDigit(const char op)
 {
-    if (('0' <= character) && ('9' >= character)) {
-        return 0;
-    } 
-    return 1;
+    return (('0' <= op) && ('9' >= op));
 }
-static int IsDot(const char character)
+static int IsDot(const char op)
 {
-    if ('.' == character) {
-        return 0;
-    }
-    return 1;
+    return ('.' == op);
 }
-static double ReadFirstFloat(char **pointerAddress)
+static Real ExtractFirstFloat(char **pstr)
 {
-    int nscan = 0; /* read conversion count */
-    char *string = *pointerAddress; /* copy the command address */
-    double operand = 0.0;
-    /* first, read a float to operand */
-    nscan = sscanf(string, "%lg", &operand);
-    VerifyReadConversion(nscan, 1);
-    /* then update the pointer to latest position*/
-    while (0 == IsDigit(string[0])) {
-        ++string;
+    const char *fmtI = ParseFormat("%lg");
+    char *str = *pstr;
+    Real oprd = 0.0;
+    Sscanf(str, 1, fmtI, &oprd);
+    while (IsDigit(*str)) {
+        ++str;
     }
-    if (0 == IsDot(string[0])) {
-        ++string;
+    if (IsDot(*str)) {
+        ++str;
     }
-    while (0 == IsDigit(string[0])) {
-        ++string;
+    while (IsDigit(*str)) {
+        ++str;
     }
-    *pointerAddress = string; /* get the updated address */
-    return operand; /* return the float value */
+    *pstr = str;
+    return oprd;
 }
-static double ReadConstant(const Parameter *parameter, char **pointerAddress)
+static Real ExtractConstant(const CalcVar *var, char **pstr)
 {
-    char *string = *pointerAddress; /* copy the command address */
-    double operand = 0.0;
-    switch (string[0]) {
-        case 'p': 
-            operand = parameter->pi;
-            ++string;
+    char *str = *pstr;
+    Real oprd = 0.0;
+    switch (*str) {
+        case 'u':
+            oprd = var->t;
+            ++str;
             break;
-        case 'q': 
-            operand = parameter->answer;
-            ++string;
+        case 'x':
+            oprd = var->x;
+            ++str;
             break;
-        default: 
-            ShowInformation("undefined constant value");
+        case 'y':
+            oprd = var->y;
+            ++str;
+            break;
+        case 'z':
+            oprd = var->z;
+            ++str;
+            break;
+        case 'p':
+            oprd = var->pi;
+            ++str;
+            break;
+        case 'q':
+            oprd = var->ans;
+            ++str;
+            break;
+        default:
+            ShowWarning("undefined constant value");
             break;
     }
-    *pointerAddress = string; /* get the updated address */
-    return operand; /* return the float value */
+    *pstr = str;
+    return oprd;
 }
-static int UnaryOperation(const Parameter *parameter, 
-        const char headOperator, const double operandA, double *currentOperandAddress)
+static int DoUnary(const char toprt, const Real oprdx, Real *pcoprd)
 {
-    switch (headOperator) {
+    const Real zero = 0.0;
+    switch (toprt) {
         case 'e':
-            currentOperandAddress[0] = exp(operandA);
+            *pcoprd = exp(oprdx);
             break;
         case 'n':
-            if (0.0 >= operandA) {
-                ShowInformation("negative argument of ln(x)");
-                currentOperandAddress[0] = 0;
+            if (zero >= oprdx) {
+                ShowWarning("non-positive argument of ln(x)");
+                *pcoprd = zero;
                 return 1;
             }
-            currentOperandAddress[0] = log(operandA);
+            *pcoprd = log(oprdx);
             break;
         case 'g':
-            if (0.0 >= operandA) {
-                ShowInformation("negative argument of lg(x)");
-                currentOperandAddress[0] = 0;
+            if (zero >= oprdx) {
+                ShowWarning("non-positive argument of lg(x)");
+                *pcoprd = zero;
                 return 1;
             }
-            currentOperandAddress[0] = log10(operandA);
+            *pcoprd = log10(oprdx);
             break;
         case 'a':
-            currentOperandAddress[0] = fabs(operandA);
+            *pcoprd = fabs(oprdx);
             break;
         case 's':
-            currentOperandAddress[0] = sin(operandA * parameter->angleFactor);
+            *pcoprd = sin(oprdx);
             break;
         case 'c':
-            currentOperandAddress[0] = cos(operandA * parameter->angleFactor);
+            *pcoprd = cos(oprdx);
             break;
         case 't':
-            if (0.0 == cos(operandA * parameter->angleFactor)) {
-                ShowInformation("negative argument of tangent");
-                currentOperandAddress[0] = 0;
+            if (zero == cos(oprdx)) {
+                ShowWarning("illegal argument of tangent");
+                *pcoprd = zero;
                 return 1;
             }
-            currentOperandAddress[0] = sin(operandA * parameter->angleFactor) / cos(operandA * parameter->angleFactor);
+            *pcoprd = sin(oprdx) / cos(oprdx);
             break;
-        default: 
-            currentOperandAddress[0] = 0;
+        default:
+            *pcoprd = zero;
             return 1;
     }
     return 0;
 }
-static int BinaryOperation(const double operandB, 
-        const char headOperator, const double operandA, double *currentOperandAddress)
+static int DoBinary(const Real oprdy, const char toprt, const Real oprdx, Real *pcoprd)
 {
-    switch(headOperator)
+    const Real zero = 0.0;
+    switch(toprt)
     {
-        case '+': 
-            currentOperandAddress[0] = operandB + operandA;
+        case '+':
+            *pcoprd = oprdy + oprdx;
             break;
         case '-':
-            currentOperandAddress[0] = operandB - operandA;
+            *pcoprd = oprdy - oprdx;
             break;
         case '*':
-            currentOperandAddress[0] = operandB * operandA;
+            *pcoprd = oprdy * oprdx;
             break;
         case '/':
-            if (0.0 == operandA) {
-                ShowInformation("negative argument of divide");
-                currentOperandAddress[0] = 0;
+            if (zero == oprdx) {
+                ShowWarning("divide by zero");
+                *pcoprd = zero;
                 return 1;
             }
-            currentOperandAddress[0] = operandB / operandA;
+            *pcoprd = oprdy / oprdx;
             break;
         case '^':
-            currentOperandAddress[0] = pow(operandB, operandA);
+            *pcoprd = pow(oprdy, oprdx);
             break;
-        default: 
-            currentOperandAddress[0] = 0;
+        default:
+            *pcoprd = zero;
             return 1;
     }
     return 0;
 }
-static int SetAngleMode(Parameter *parameter)
+static void ShowCalcManual(void)
 {
-    fprintf(stdout, "Set mode by order number\n");
-    fprintf(stdout, "\n 1 Angle in radian\n 2 Angle in degree\n\nSet:");
-    String currentLine = {'\0'}; /* store current line */
-    int nscan = 0; /* read conversion count */
-    Fgets(currentLine, sizeof currentLine, stdin);
-    nscan = sscanf(currentLine, "%d", &(parameter->radianMode));
-    VerifyReadConversion(nscan, 1);
-    fprintf(stdout, "\n");
-    if (1 == parameter->radianMode) {
-        parameter->angleFactor = 1;
-        ShowInformation("*** Set mode: angle in radian ***");
-    } else {
-        if (2 == parameter->radianMode) {
-            parameter->angleFactor = parameter->pi / 180;
-            ShowInformation("*** Set mode: angle in degree ***");
-        } else {
-            ShowInformation("warning, unknown command...");
-            parameter->angleFactor = 1;
-            ShowInformation("*** Reset to default mode: angle in radian ***");
-        }
-    }
-    return 0;
+    ShowInfo("\n            Calculator User Manual\n");
+    ShowInfo("Operators:   +, -, *, /, x^y, exp(x), ln(x), lg(x), abs(x), sin(x), cos(x), tan(x)\n");
+    ShowInfo("             x, y are numbers or variables or expressions; angle should be radian;\n");
+    ShowInfo("Variables:   t, x, y, z, ans, pi;\n");
+    ShowInfo("Parenthesis: (), [], {}\n");
+    ShowInfo("Example:     1.5*sin(-pi/6)-[cos(pi/3)]^2+ln{exp[5*lg(abs(-100))]} = 9\n");
 }
-static void HelpCalculator(void)
+static int SetVariable(CalcVar *var)
 {
-    fprintf(stdout, "Operation options:\n\n");
-    fprintf(stdout, "[help]              show this information\n");
-    fprintf(stdout, "[set]               set angle mode in radian (default) or degree\n");
-    fprintf(stdout, "math expression     calculator the inputted math expression\n");
-    fprintf(stdout, "[exit]              return to ArtraCFD\n\n");
-    fprintf(stdout, "                   Expression Calculator\n");
-    fprintf(stdout, "Notice: Please avoid ambiguity expressions and use parenthesis:\n");
-    fprintf(stdout, "        \'()\',\'[]\',\'{}\' to make semantic clear\n");
-    fprintf(stdout, "Support: +, -, *, /, x^y, exp(x), ln(x), lg(x), abs(x), sin(a), cos(a), tan(a), pi\n");
-    fprintf(stdout, "         where, x,y are numbers or expressions; a is a degree or radian;\n");
-    fprintf(stdout, "         keyword \'ans\' is used to access the calculated value of last expression;\n");
-    fprintf(stdout, "         space and tab are ignored in expression calculation;\n");
-    fprintf(stdout, "Example: 1.5*sin(-pi/6)-[cos(pi/3)]^2+ln{exp[5*lg(abs(-100))]}\n\n");
+    const char *fmtI = ParseFormat("%lg");
+    ShowInfo("\n t=");
+    Sread(stdin, -1, fmtI, &(var->t));
+    ShowInfo("\n x=");
+    Sread(stdin, -1, fmtI, &(var->x));
+    ShowInfo("\n y=");
+    Sread(stdin, -1, fmtI, &(var->y));
+    ShowInfo("\n z=");
+    Sread(stdin, -1, fmtI, &(var->z));
+    return 0;
 }
 /* a good practice: end file with a newline */
 

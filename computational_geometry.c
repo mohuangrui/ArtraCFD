@@ -26,8 +26,8 @@ static int AddVertex(const Real [restrict], Polyhedron *);
 static int FindEdge(const int, const int, const int, int [restrict][EVF]);
 static void ComputeParametersSphere(const int, Polyhedron *);
 static void ComputeParametersPolyhedron(const int, Polyhedron *);
-static void TransformVertex(const Real [restrict], const Real [restrict], 
-        const Real [restrict][DIMS], const Real [restrict], Real [restrict][LIMIT], 
+static void TransformVertex(const Real [restrict], const Real [restrict],
+        const Real [restrict][DIMS], const Real [restrict], Real [restrict][LIMIT],
         const int, Real [restrict][DIMS]);
 static void TransformNormal(const Real [restrict][DIMS], const int, Real [restrict][DIMS]);
 static Real TransformInertia(const Real [restrict], Real [restrict][DIMS]);
@@ -43,9 +43,9 @@ void ConvertPolyhedron(Polyhedron *poly)
         poly->f[n][0] = AddVertex(poly->facet[n].v0, poly);
         poly->f[n][1] = AddVertex(poly->facet[n].v1, poly);
         poly->f[n][2] = AddVertex(poly->facet[n].v2, poly);
-        AddEdge(poly->f[n][0], poly->f[n][1], n, poly); 
-        AddEdge(poly->f[n][1], poly->f[n][2], n, poly); 
-        AddEdge(poly->f[n][2], poly->f[n][0], n, poly); 
+        AddEdge(poly->f[n][0], poly->f[n][1], n, poly);
+        AddEdge(poly->f[n][1], poly->f[n][2], n, poly);
+        AddEdge(poly->f[n][2], poly->f[n][0], n, poly);
     }
     QuickSortEdge(poly->edgeN, poly->e);
     /* adjust the memory allocation */
@@ -57,7 +57,8 @@ void ConvertPolyhedron(Polyhedron *poly)
     poly->Nv = realloc(poly->Nv, poly->vertN * sizeof(*poly->Nv));
     return;
 }
-void AllocatePolyhedronMemory(const int vertN, const int edgeN, const int faceN, Polyhedron *poly)
+void AllocatePolyhedronMemory(const int vertN, const int edgeN,
+        const int faceN, Polyhedron *poly)
 {
     poly->f = AssignStorage(faceN * sizeof(*poly->f));
     poly->Nf = AssignStorage(faceN * sizeof(*poly->Nf));
@@ -71,7 +72,7 @@ static int AddVertex(const Real v[restrict], Polyhedron *poly)
 {
     /* search the vertex list, if already exist, return the index */
     for (int n = 0; n < poly->vertN; ++n) {
-        if ((v[X] == poly->v[n][X]) && (v[Y] == poly->v[n][Y]) && 
+        if ((v[X] == poly->v[n][X]) && (v[Y] == poly->v[n][Y]) &&
                 (v[Z] == poly->v[n][Z])) {
             return n;
         }
@@ -155,11 +156,11 @@ static int FindEdge(const int v0, const int v1, const int n, int e[restrict][EVF
         }
     }
     /* target was not found */
-    FatalError("finding edge failed...");
+    ShowError("finding edge failed...");
     return -1;
 }
-void Transformation(const Real O[restrict], const Real scale[restrict], const Real angle[restrict],
-        const Real offset[restrict], Polyhedron *poly)
+void TransformPolyhedron(const Real O[restrict], const Real scale[restrict],
+        const Real angle[restrict], const Real offset[restrict], Polyhedron *poly)
 {
     const RealVec Sin = {sin(angle[X]), sin(angle[Y]), sin(angle[Z])};
     const RealVec Cos = {cos(angle[X]), cos(angle[Y]), cos(angle[Z])};
@@ -173,7 +174,7 @@ void Transformation(const Real O[restrict], const Real scale[restrict], const Re
         {rotate[0][2], rotate[1][2], rotate[2][2]}};
     const Real num = 1.0 / sqrt(2.0);
     const Real axe[6][DIMS] = { /* direction vector of axis xx, yy, zz, xy, yz, zx */
-        {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}, 
+        {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0},
         {num, num, 0.0}, {0.0, num, num}, {num, 0.0, num}};
     RealVec axis = {0.0}; /* direction vector of axis in rotated frame */
     Real I[6] = {0.0}; /* inertia tensor after rotation */
@@ -205,8 +206,9 @@ void Transformation(const Real O[restrict], const Real scale[restrict], const Re
     poly->O[Z] = Oc[0][Z];
     return;
 }
-static void TransformVertex(const Real O[restrict], const Real scale[restrict], const Real rotate[restrict][DIMS],
-        const Real offset[restrict], Real box[restrict][LIMIT], const int vertN, Real v[restrict][DIMS])
+static void TransformVertex(const Real O[restrict], const Real scale[restrict],
+        const Real rotate[restrict][DIMS], const Real offset[restrict],
+        Real box[restrict][LIMIT], const int vertN, Real v[restrict][DIMS])
 {
     RealVec tmp = {0.0};
     for (int n = 0; n < vertN; ++n) {
@@ -236,7 +238,8 @@ static void TransformVertex(const Real O[restrict], const Real scale[restrict], 
     }
     return;
 }
-static void TransformNormal(const Real matrix[restrict][DIMS], const int normalN, Real N[restrict][DIMS])
+static void TransformNormal(const Real matrix[restrict][DIMS],
+        const int normalN, Real N[restrict][DIMS])
 {
     RealVec tmp = {0.0};
     for (int n = 0; n < normalN; ++n) {
@@ -252,10 +255,11 @@ static void TransformNormal(const Real matrix[restrict][DIMS], const int normalN
 }
 static Real TransformInertia(const Real axis[restrict], Real I[restrict][DIMS])
 {
-    return I[X][X] * axis[X] * axis[X] + I[Y][Y] * axis[Y] * axis[Y] + I[Z][Z] * axis[Z] * axis[Z] +
-        2.0 * I[X][Y] * axis[X] * axis[Y] + 2.0 * I[Y][Z] * axis[Y] * axis[Z] + 2.0 * I[Z][X] * axis[Z] * axis[X];
+    return I[X][X] * axis[X] * axis[X] + I[Y][Y] * axis[Y] * axis[Y] +
+        I[Z][Z] * axis[Z] * axis[Z] + 2.0 * I[X][Y] * axis[X] * axis[Y] +
+        2.0 * I[Y][Z] * axis[Y] * axis[Z] + 2.0 * I[Z][X] * axis[Z] * axis[X];
 }
-void ComputeGeometryParameters(const int collapse, Geometry *geo)
+void ComputeGeometryParameters(const int collapse, Geometry *const geo)
 {
     for (int n = 0; n < geo->sphN; ++n) {
         ComputeParametersSphere(collapse, geo->poly + n);
@@ -275,7 +279,7 @@ void ComputeGeometryParameters(const int collapse, Geometry *geo)
  */
 static void ComputeParametersSphere(const int collapse, Polyhedron *poly)
 {
-    const Real pi = 3.14159265359;
+    const Real pi = PI;
     /* bounding box */
     for (int s = 0; s < DIMS; ++s) {
         poly->box[s][MIN] = poly->O[s] - poly->r;
@@ -301,7 +305,7 @@ static void ComputeParametersSphere(const int collapse, Polyhedron *poly)
 static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
 {
     /* initialize parameters */
-    const Real pi = 3.14159265359;
+    const Real pi = PI;
     RealVec v0 = {0.0}; /* vertices */
     RealVec v1 = {0.0};
     RealVec v2 = {0.0};
@@ -442,7 +446,7 @@ static void ComputeParametersPolyhedron(const int collapse, Polyhedron *poly)
     }
     return;
 }
-void BuildTriangle(const int fid, const Polyhedron *poly, Real v0[restrict], 
+void BuildTriangle(const int fid, const Polyhedron *poly, Real v0[restrict],
         Real v1[restrict], Real v2[restrict], Real e01[restrict], Real e02[restrict])
 {
     for (int s = 0; s < DIMS; ++s) {
@@ -467,12 +471,12 @@ int PointInPolyhedron(const Real p[restrict], const Polyhedron *poly, int fid[re
     RealVec pi = {zero}; /* closest point */
     RealVec N = {zero}; /* normal of the closest point */
     /*
-     * Parametric equation of triangle defined plane 
+     * Parametric equation of triangle defined plane
      * T(s,t) = v0 + s(v1-v0) + t(v2-v0) = v0 + s*e01 + t*e02
-     * s, t: real numbers. v0, v1, v2: vertices. e01, e02: edge vectors. 
+     * s, t: real numbers. v0, v1, v2: vertices. e01, e02: edge vectors.
      * A point pi = T(s,t) is in the triangle T when s>=0, t>=0, and s+t<=1.
-     * Further, pi is on an edge of T if one of the conditions s=0; t=0; 
-     * s+t=1 is true with each condition corresponds to one edge. Each 
+     * Further, pi is on an edge of T if one of the conditions s=0; t=0;
+     * s+t=1 is true with each condition corresponds to one edge. Each
      * s=0, t=0; s=1, t=0; s=0, t=1 corresponds to v0, v1, and v2.
      */
     RealVec para = {zero}; /* parametric coordinates */
@@ -504,7 +508,7 @@ int PointInPolyhedron(const Real p[restrict], const Polyhedron *poly, int fid[re
  * Eberly, D. (1999). Distance between point and triangle in 3D.
  * http://www.geometrictools.com/Documentation/DistancePoint3Triangle3.pdf
  */
-Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], const Real e01[restrict], 
+Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], const Real e01[restrict],
         const Real e02[restrict], Real para[restrict])
 {
     const RealVec D = {v0[X] - p[X], v0[Y] - p[Y], v0[Z] - p[Z]};
@@ -563,7 +567,7 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
                         distSquare = e * t + f;
                     }
                 }
-            }        
+            }
         } else {
             if (t < zero) {
                 /* region 5 */;
@@ -682,8 +686,8 @@ Real PointTriangleDistance(const Real p[restrict], const Real v0[restrict], cons
     }
     return distSquare;
 }
-Real ComputeIntersection(const Real p[restrict], const int fid, const Polyhedron *poly,
-        Real pi[restrict], Real N[restrict])
+Real ComputeIntersection(const Real p[restrict], const int fid,
+        const Polyhedron *poly, Real pi[restrict], Real N[restrict])
 {
     const Real zero = 0.0;
     const Real one = 1.0;
@@ -754,6 +758,28 @@ Real ComputeIntersection(const Real p[restrict], const int fid, const Polyhedron
         }
     }
     return distSquare;
+}
+void ComputeGeometricData(const Real p[restrict], const int fid, const Polyhedron *poly,
+        Real pi[restrict], Real pm[restrict], Real N[restrict])
+{
+    if (0 >= poly->faceN) { /* analytical polyhedron */
+        Real dist = 0.0;
+        N[X] = p[X] - poly->O[X];
+        N[Y] = p[Y] - poly->O[Y];
+        N[Z] = p[Z] - poly->O[Z];
+        dist = Norm(N);
+        Normalize(DIMS, dist, N);
+        dist = poly->r - dist;
+        pi[X] = p[X] + dist * N[X];
+        pi[Y] = p[Y] + dist * N[Y];
+        pi[Z] = p[Z] + dist * N[Z];
+    } else { /* triangulated polyhedron */
+        ComputeIntersection(p, fid, poly, pi, N);
+    }
+    pm[X] = pi[X] + pi[X] - p[X];
+    pm[Y] = pi[Y] + pi[Y] - p[Y];
+    pm[Z] = pi[Z] + pi[Z] - p[Z];
+    return;
 }
 /* a good practice: end file with a newline */
 

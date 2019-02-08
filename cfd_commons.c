@@ -26,22 +26,22 @@
  * generally clarifies the code.
  */
 typedef void (*EigenvalueSplitter)(const Real [restrict], Real [restrict], Real [restrict]);
-typedef void (*EigenvectorLComputer)(const Real, const Real, const Real, const Real, 
+typedef void (*EigenvectorLComputer)(const Real, const Real, const Real, const Real,
         const Real, const Real, Real [restrict][DIMU]);
 typedef void (*EigenvectorRComputer)(const Real, const Real, const Real, const Real,
         const Real, const Real, Real [restrict][DIMU]);
-typedef void (*ConvectiveFluxComputer)(const Real, const Real, const Real, const Real, 
+typedef void (*ConvectiveFluxComputer)(const Real, const Real, const Real, const Real,
         const Real, const Real, Real [restrict]);
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
 static void LocalLaxFriedrichs(const Real [restrict], Real [restrict], Real [restrict]);
 static void StegerWarming(const Real [restrict], Real [restrict], Real [restrict]);
-static void EigenvectorLX(const Real, const Real, const Real, const Real, 
+static void EigenvectorLX(const Real, const Real, const Real, const Real,
         const Real, const Real, Real [restrict][DIMU]);
-static void EigenvectorLY(const Real, const Real, const Real, const Real, 
+static void EigenvectorLY(const Real, const Real, const Real, const Real,
         const Real, const Real, Real [restrict][DIMU]);
-static void EigenvectorLZ(const Real, const Real, const Real, const Real, 
+static void EigenvectorLZ(const Real, const Real, const Real, const Real,
         const Real, const Real, Real [restrict][DIMU]);
 static void EigenvectorRX(const Real, const Real, const Real, const Real,
         const Real, const Real, Real [restrict][DIMU]);
@@ -49,11 +49,11 @@ static void EigenvectorRY(const Real, const Real, const Real, const Real,
         const Real, const Real, Real [restrict][DIMU]);
 static void EigenvectorRZ(const Real, const Real, const Real, const Real,
         const Real, const Real, Real [restrict][DIMU]);
-static void ConvectiveFluxX(const Real, const Real, const Real, const Real, 
+static void ConvectiveFluxX(const Real, const Real, const Real, const Real,
         const Real, const Real, Real [restrict]);
-static void ConvectiveFluxY(const Real, const Real, const Real, const Real, 
+static void ConvectiveFluxY(const Real, const Real, const Real, const Real,
         const Real, const Real, Real [restrict]);
-static void ConvectiveFluxZ(const Real, const Real, const Real, const Real, 
+static void ConvectiveFluxZ(const Real, const Real, const Real, const Real,
         const Real, const Real, Real [restrict]);
 /****************************************************************************
  * Global Variables Definition with Private Scope
@@ -76,7 +76,7 @@ static ConvectiveFluxComputer ComputeConvectiveFlux[DIMS] = {
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-void SymmetricAverage(const int averager, const Real gamma, 
+void SymmetricAverage(const int averager, const Real gamma,
         const Real UL[restrict], const Real UR[restrict], Real Uo[restrict])
 {
     const Real rhoL = UL[0];
@@ -130,9 +130,9 @@ static void LocalLaxFriedrichs(const Real Lambda[restrict],
 {
     /* set local maximum as (|Vs| + c) */
     const Real lambdaStar = fabs(Lambda[2]) + Lambda[4] - Lambda[2];
-    for (int row = 0; row < DIMU; ++row) {
-        LambdaP[row] = 0.5 * (Lambda[row] + lambdaStar);
-        LambdaN[row] = 0.5 * (Lambda[row] - lambdaStar);
+    for (int r = 0; r < DIMU; ++r) {
+        LambdaP[r] = 0.5 * (Lambda[r] + lambdaStar);
+        LambdaN[r] = 0.5 * (Lambda[r] - lambdaStar);
     }
     return;
 }
@@ -140,9 +140,9 @@ static void StegerWarming(const Real Lambda[restrict],
         Real LambdaP[restrict], Real LambdaN[restrict])
 {
     const Real epsilon = 1.0e-3;
-    for (int row = 0; row < DIMU; ++row) {
-        LambdaP[row] = 0.5 * (Lambda[row] + sqrt(Lambda[row] * Lambda[row] + epsilon * epsilon));
-        LambdaN[row] = 0.5 * (Lambda[row] - sqrt(Lambda[row] * Lambda[row] + epsilon * epsilon));
+    for (int r = 0; r < DIMU; ++r) {
+        LambdaP[r] = 0.5 * (Lambda[r] + sqrt(Lambda[r] * Lambda[r] + epsilon * epsilon));
+        LambdaN[r] = 0.5 * (Lambda[r] - sqrt(Lambda[r] * Lambda[r] + epsilon * epsilon));
     }
     return;
 }
@@ -154,11 +154,11 @@ void EigenvectorL(const int s, const Real gamma, const Real Uo[restrict], Real L
     const Real c = Uo[5];
     const Real q = 0.5 * (u * u + v * v + w * w);
     const Real b = (gamma - 1.0) / (2.0 * c * c);
-    const Real d = 1.0 / (2.0 * c); 
+    const Real d = 1.0 / (2.0 * c);
     ComputeEigenvectorL[s](u, v, w, q, b, d, L);
     return;
 }
-static void EigenvectorLX(const Real u, const Real v, const Real w, 
+static void EigenvectorLX(const Real u, const Real v, const Real w,
         const Real q, const Real b, const Real d, Real L[restrict][DIMU])
 {
     L[0][0] = b * q + d * u;          L[0][1] = -b * u - d;             L[0][2] = -b * v;
@@ -173,7 +173,7 @@ static void EigenvectorLX(const Real u, const Real v, const Real w,
     L[4][3] = -b * w;                 L[4][4] = b;
     return;
 }
-static void EigenvectorLY(const Real u, const Real v, const Real w, 
+static void EigenvectorLY(const Real u, const Real v, const Real w,
         const Real q, const Real b, const Real d, Real L[restrict][DIMU])
 {
     L[0][0] = b * q + d * v;          L[0][1] = -b * u;                 L[0][2] = -b * v - d;
@@ -188,7 +188,7 @@ static void EigenvectorLY(const Real u, const Real v, const Real w,
     L[4][3] = -b * w;                 L[4][4] = b;
     return;
 }
-static void EigenvectorLZ(const Real u, const Real v, const Real w, 
+static void EigenvectorLZ(const Real u, const Real v, const Real w,
         const Real q, const Real b, const Real d, Real L[restrict][DIMU])
 {
     L[0][0] = b * q + d * w;          L[0][1] = -b * u;                 L[0][2] = -b * v;
@@ -255,7 +255,7 @@ void ConvectiveFlux(const int s, const Real gamma, const Real U[restrict], Real 
     ComputeConvectiveFlux[s](rho, u, v, w, eT, p, F);
     return;
 }
-static void ConvectiveFluxX(const Real rho, const Real u, const Real v, const Real w, 
+static void ConvectiveFluxX(const Real rho, const Real u, const Real v, const Real w,
         const Real eT, const Real p, Real F[restrict])
 {
     F[0] = rho * u;
@@ -265,7 +265,7 @@ static void ConvectiveFluxX(const Real rho, const Real u, const Real v, const Re
     F[4] = (rho * eT + p) * u;
     return;
 }
-static void ConvectiveFluxY(const Real rho, const Real u, const Real v, const Real w, 
+static void ConvectiveFluxY(const Real rho, const Real u, const Real v, const Real w,
         const Real eT, const Real p, Real F[restrict])
 {
     F[0] = rho * v;
@@ -275,7 +275,7 @@ static void ConvectiveFluxY(const Real rho, const Real u, const Real v, const Re
     F[4] = (rho * eT + p) * v;
     return;
 }
-static void ConvectiveFluxZ(const Real rho, const Real u, const Real v, const Real w, 
+static void ConvectiveFluxZ(const Real rho, const Real u, const Real v, const Real w,
         const Real eT, const Real p, Real F[restrict])
 {
     F[0] = rho * w;
@@ -293,10 +293,7 @@ Real PrandtlNumber(void)
 {
     return 0.71; /* air */
 }
-/*
- * Get value of primitive variable vector.
- */
-void PrimitiveByConservative(const Real gamma, const Real gasR, const Real U[restrict], Real Uo[restrict])
+void MapPrimitive(const Real gamma, const Real gasR, const Real U[restrict], Real Uo[restrict])
 {
     Uo[0] = U[0];
     Uo[1] = U[1] / U[0];
@@ -314,37 +311,41 @@ Real ComputeTemperature(const Real cv, const Real U[restrict])
 {
     return (U[4] - 0.5 * (U[1] * U[1] + U[2] * U[2] + U[3] * U[3]) / U[0]) / (U[0] * cv);
 }
-/*
- * Compute conservative variable vector according to primitives.
- */
-void ConservativeByPrimitive(const Real gamma, const Real Uo[restrict], Real U[restrict])
+void MapConservative(const Real gamma, const Real Uo[restrict], Real U[restrict])
 {
     U[0] = Uo[0];
     U[1] = Uo[0] * Uo[1];
     U[2] = Uo[0] * Uo[2];
     U[3] = Uo[0] * Uo[3];
-    U[4] = 0.5 * Uo[0] * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]) + Uo[4] / (gamma - 1.0); 
+    U[4] = 0.5 * Uo[0] * (Uo[1] * Uo[1] + Uo[2] * Uo[2] + Uo[3] * Uo[3]) + Uo[4] / (gamma - 1.0);
     return;
 }
-/*
- * Index math.
- */
 int IndexNode(const int k, const int j, const int i, const int jMax, const int iMax)
 {
     return (k * jMax + j) * iMax + i;
 }
+int InPartBox(const int k, const int j, const int i, const int pbox[restrict][LIMIT])
+{
+    return
+        (pbox[Z][MIN] <= k) && (pbox[Z][MAX] > k) &&
+        (pbox[Y][MIN] <= j) && (pbox[Y][MAX] > j) &&
+        (pbox[X][MIN] <= i) && (pbox[X][MAX] > i);
+}
 /*
- * Coordinates transformations.
+ * Coordinates transformations
+ * When transform from spatial coordinates to node coordinates, a half grid
+ * distance shift is used to obtain a closest node coordinates, which
+ * considers the downward truncation of (int) and works for positive float.
  */
-int NodeSpace(const Real s, const Real sMin, const Real dds, const int ng)
+int MapNode(const Real s, const Real sMin, const Real dds, const int ng)
 {
     return (int)((s - sMin) * dds + 0.5) + ng;
 }
-int ValidNodeSpace(const int n, const int nMin, const int nMax)
+int ConfineSpace(const int n, const int nMin, const int nMax)
 {
     return MinInt(nMax - 1, MaxInt(nMin, n));
 }
-Real PointSpace(const int n, const Real sMin, const Real ds, const int ng)
+Real MapPoint(const int n, const Real sMin, const Real ds, const int ng)
 {
     return sMin + (n - ng) * ds;
 }

@@ -18,656 +18,529 @@
 /****************************************************************************
  * Static Function Declarations
  ****************************************************************************/
-static int ReadCaseSettingData(Time *, Space *, Model *);
-static int ReadGeometrySettingData(Geometry *);
-static int ReadBoundaryData(FILE *, Space *, const int);
-static int ReadConsecutiveRealData(FILE *, Real *, const int);
-static int WriteBoundaryData(FILE *, const Space *, const int);
-static int WriteInitializerData(FILE *, const Space *, const int);
-static int WriteVerifyData(const Time *, const Space *, const Model *);
-static int CheckCaseSettingData(const Time *, const Space *, const Model *);
+static void ReadCaseSettingData(Time *, Space *, Model *);
+static void ReadGeometrySettingData(Geometry *const);
+static void ReadBoundaryData(FILE *, Space *, const int);
+static void ReadConsecutiveData(FILE *, const int, const char *, Real *, char [][VARSTR]);
+static void WriteBoundaryData(FILE *, const Space *, const int);
+static void WriteInitializerData(FILE *, const Space *, const int);
+static void WriteVerifyData(const Time *, const Space *, const Model *);
+static void CheckCaseSettingData(const Time *, const Space *, const Model *);
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
-int LoadCaseData(Time *time, Space *space, Model *model)
+void LoadCaseData(Time *time, Space *space, Model *model)
 {
     ReadCaseSettingData(time, space, model);
     ReadGeometrySettingData(&(space->geo));
     WriteVerifyData(time, space, model);
     CheckCaseSettingData(time, space, model);
-    return 0;
+    return;
 }
-static int ReadCaseSettingData(Time *time, Space *space, Model *model)
+static void ReadCaseSettingData(Time *time, Space *space, Model *model)
 {
-    Partition *part = &(space->part);
-    FILE *filePointer = fopen("artracfd.case", "r");
-    if (NULL == filePointer) {
-        FatalError("failed to open file: artracfd.case...");
-    }
-    /*
-     * Read file line by line to get case setting data
-     */
-    String currentLine = {'\0'}; /* store the current read line */
-    int nscan = 0; /* read conversion count */
-    int entryCount = 0; /* entry count */
-    /* set format specifier according to the type of Real */
-    char formatI[5] = "%lg"; /* default is double type */
-    char formatIII[15] = "%lg, %lg, %lg"; /* default is double type */
-    if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
-        strncpy(formatI, "%g", sizeof formatI); /* float type */
-        strncpy(formatIII, "%g, %g, %g", sizeof formatIII); /* float type */
-    }
-    while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
-        CommandLineProcessor(currentLine); /* process current line */
-        if (0 == strncmp(currentLine, "space begin", sizeof currentLine)) {
-            ++entryCount;
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, formatIII, &(part->domain[X][MIN]),
-                    &(part->domain[Y][MIN]), &(part->domain[Z][MIN])); 
-            VerifyReadConversion(nscan, 3);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, formatIII, &(part->domain[X][MAX]),
-                    &(part->domain[Y][MAX]), &(part->domain[Z][MAX])); 
-            VerifyReadConversion(nscan, 3);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d, %d, %d", 
-                    &(part->m[X]), &(part->m[Y]), &(part->m[Z])); 
-            VerifyReadConversion(nscan, 3);
+    Partition *const part = &(space->part);
+    part->typeBC = AssignStorage(NBC * sizeof(*part->typeBC));
+    part->N = AssignStorage(NBC * sizeof(*part->N));
+    part->varBC = AssignStorage(NBC * sizeof(*part->varBC));
+    part->typeIC = AssignStorage(NIC * sizeof(*part->typeIC));
+    part->posIC = AssignStorage(NIC * sizeof(*part->posIC));
+    part->varIC = AssignStorage(NIC * sizeof(*part->varIC));
+    const char *fname = "artracfd.case";
+    FILE *fp = Fopen(fname, "r");
+    String str = {'\0'}; /* store the current read line */
+    int nentry = 0; /* entry count */
+    const char *fmtI = ParseFormat("%lg");
+    const char *fmtJ = ParseFormat("%lg, %lg, %lg");
+    while (NULL != fgets(str, sizeof str, fp)) {
+        ParseCommand(str);
+        if (0 == strncmp(str, "space begin", sizeof str)) {
+            ++nentry;
+            Sread(fp, 3, fmtJ, &(part->domain[X][MIN]), &(part->domain[Y][MIN]),
+                    &(part->domain[Z][MIN]));
+            Sread(fp, 3, fmtJ, &(part->domain[X][MAX]), &(part->domain[Y][MAX]),
+                    &(part->domain[Z][MAX]));
+            Sread(fp, 3, "%d, %d, %d", &(part->m[X]), &(part->m[Y]), &(part->m[Z]));
             continue;
         }
-        if (0 == strncmp(currentLine, "time begin", sizeof currentLine)) {
-            ++entryCount;
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(time->restart)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, formatI, &(time->end)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, formatI, &(time->numCFL)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(time->stepN)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(time->writeN)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(time->dataStreamer)); 
-            VerifyReadConversion(nscan, 1);
+        if (0 == strncmp(str, "time begin", sizeof str)) {
+            ++nentry;
+            Sread(fp, 1, "%d", &(time->restart));
+            Sread(fp, 1, fmtI, &(time->end));
+            Sread(fp, 1, fmtI, &(time->numCFL));
+            Sread(fp, 1, "%d", &(time->stepN));
+            Sread(fp, 1, "%d", &(time->dataW[PROSD]));
+            Sread(fp, 1, "%d", &(time->dataStreamer));
             continue;
         }
-        if (0 == strncmp(currentLine, "numerical begin", sizeof currentLine)) {
-            ++entryCount;
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(model->tScheme)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(model->sScheme)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(model->multidim)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(model->jacobMean)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(model->fluxSplit)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(model->fsi)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(model->ibmLayer)); 
-            VerifyReadConversion(nscan, 1);
+        if (0 == strncmp(str, "numerical begin", sizeof str)) {
+            ++nentry;
+            Sread(fp, 1, "%d", &(model->tScheme));
+            Sread(fp, 1, "%d", &(model->sScheme));
+            Sread(fp, 1, "%d", &(model->multidim));
+            Sread(fp, 1, "%d", &(model->jacobMean));
+            Sread(fp, 1, "%d", &(model->fluxSplit));
+            Sread(fp, 1, "%d", &(model->psi));
+            Sread(fp, 1, "%d", &(model->ibmLayer));
             continue;
         }
-        if (0 == strncmp(currentLine, "material begin", sizeof currentLine)) {
-            ++entryCount;
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(model->mid)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, formatI, &(model->refMu)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(model->gState)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, formatIII, &(model->g[X]),
-                    &(model->g[Y]), &(model->g[Z])); 
-            VerifyReadConversion(nscan, 3);
+        if (0 == strncmp(str, "material begin", sizeof str)) {
+            ++nentry;
+            Sread(fp, 1, "%d", &(model->mid));
+            Sread(fp, 1, fmtI, &(model->refMu));
+            Sread(fp, 1, "%d", &(model->gState));
+            Sread(fp, 3, fmtJ, &(model->g[X]), &(model->g[Y]), &(model->g[Z]));
             continue;
         }
-        if (0 == strncmp(currentLine, "reference begin", sizeof currentLine)) {
-            ++entryCount;
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, formatI, &(model->refL)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, formatI, &(model->refRho)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, formatI, &(model->refV)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, formatI, &(model->refT)); 
-            VerifyReadConversion(nscan, 1);
+        if (0 == strncmp(str, "reference begin", sizeof str)) {
+            ++nentry;
+            Sread(fp, 1, fmtI, &(model->refL));
+            Sread(fp, 1, fmtI, &(model->refRho));
+            Sread(fp, 1, fmtI, &(model->refV));
+            Sread(fp, 1, fmtI, &(model->refT));
             continue;
         }
-        if (0 == strncmp(currentLine, "initialization begin", sizeof currentLine)) {
-            ++entryCount;
-            part->countIC = 0; /* enforce global initialization first */
-            part->typeIC[part->countIC] = ICGLOBAL; /* IC type id */
-            ReadConsecutiveRealData(filePointer, part->valueIC[part->countIC] + ENTRYIC - VARIC, VARIC);
-            ++part->countIC;
+        if (0 == strncmp(str, "initialization begin", sizeof str)) {
+            ++nentry;
+            part->nIC = 0; /* enforce global initialization first */
+            part->typeIC[part->nIC] = ICGLOBAL;
+            ReadConsecutiveData(fp, VARIC, "%s", NULL, part->varIC[part->nIC]);
+            ++part->nIC;
             continue;
         }
-        if (0 == strncmp(currentLine, "west boundary begin", sizeof currentLine)) {
-            ++entryCount;
-            ReadBoundaryData(filePointer, space, PWB);
+        if (0 == strncmp(str, "west boundary begin", sizeof str)) {
+            ++nentry;
+            ReadBoundaryData(fp, space, PWB);
             continue;
         }
-        if (0 == strncmp(currentLine, "east boundary begin", sizeof currentLine)) {
-            ++entryCount;
-            ReadBoundaryData(filePointer, space, PEB);
+        if (0 == strncmp(str, "east boundary begin", sizeof str)) {
+            ++nentry;
+            ReadBoundaryData(fp, space, PEB);
             continue;
         }
-        if (0 == strncmp(currentLine, "south boundary begin", sizeof currentLine)) {
-            ++entryCount;
-            ReadBoundaryData(filePointer, space, PSB);
+        if (0 == strncmp(str, "south boundary begin", sizeof str)) {
+            ++nentry;
+            ReadBoundaryData(fp, space, PSB);
             continue;
         }
-        if (0 == strncmp(currentLine, "north boundary begin", sizeof currentLine)) {
-            ++entryCount;
-            ReadBoundaryData(filePointer, space, PNB);
+        if (0 == strncmp(str, "north boundary begin", sizeof str)) {
+            ++nentry;
+            ReadBoundaryData(fp, space, PNB);
             continue;
         }
-        if (0 == strncmp(currentLine, "front boundary begin", sizeof currentLine)) {
-            ++entryCount;
-            ReadBoundaryData(filePointer, space, PFB);
+        if (0 == strncmp(str, "front boundary begin", sizeof str)) {
+            ++nentry;
+            ReadBoundaryData(fp, space, PFB);
             continue;
         }
-        if (0 == strncmp(currentLine, "back boundary begin", sizeof currentLine)) {
-            ++entryCount;
-            ReadBoundaryData(filePointer, space, PBB);
+        if (0 == strncmp(str, "back boundary begin", sizeof str)) {
+            ++nentry;
+            ReadBoundaryData(fp, space, PBB);
             continue;
         }
-        if (0 == strncmp(currentLine, "plane initialization begin", sizeof currentLine)) {
+        if (0 == strncmp(str, "plane initialization begin", sizeof str)) {
             /* optional entry do not increase entry count */
-            part->typeIC[part->countIC] = ICPLANE; /* IC type id */
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, formatIII, part->valueIC[part->countIC] + 0, 
-                    part->valueIC[part->countIC] + 1, part->valueIC[part->countIC] + 2); 
-            VerifyReadConversion(nscan, 3);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, formatIII, part->valueIC[part->countIC] + 3, 
-                    part->valueIC[part->countIC] + 4, part->valueIC[part->countIC] + 5); 
-            VerifyReadConversion(nscan, 3);
-            ReadConsecutiveRealData(filePointer, part->valueIC[part->countIC] + ENTRYIC - VARIC, VARIC);
-            ++part->countIC;
+            part->typeIC[part->nIC] = ICPLANE;
+            Sread(fp, 3, fmtJ, part->posIC[part->nIC] + 0,
+                    part->posIC[part->nIC] + 1, part->posIC[part->nIC] + 2);
+            Sread(fp, 3, fmtJ, part->posIC[part->nIC] + 3,
+                    part->posIC[part->nIC] + 4, part->posIC[part->nIC] + 5);
+            ReadConsecutiveData(fp, VARIC, "%s", NULL, part->varIC[part->nIC]);
+            ++part->nIC;
             continue;
         }
-        if (0 == strncmp(currentLine, "sphere initialization begin", sizeof currentLine)) {
+        if (0 == strncmp(str, "sphere initialization begin", sizeof str)) {
             /* optional entry do not increase entry count */
-            part->typeIC[part->countIC] = ICSPHERE; /* IC type id */
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, formatIII, part->valueIC[part->countIC] + 0, 
-                    part->valueIC[part->countIC] + 1, part->valueIC[part->countIC] + 2); 
-            VerifyReadConversion(nscan, 3);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, formatI, part->valueIC[part->countIC] + 6); 
-            VerifyReadConversion(nscan, 1);
-            ReadConsecutiveRealData(filePointer, part->valueIC[part->countIC] + ENTRYIC - VARIC, VARIC);
-            ++part->countIC;
+            part->typeIC[part->nIC] = ICSPHERE;
+            Sread(fp, 3, fmtJ, part->posIC[part->nIC] + 0,
+                    part->posIC[part->nIC] + 1, part->posIC[part->nIC] + 2);
+            Sread(fp, 1, fmtI, part->posIC[part->nIC] + 6);
+            ReadConsecutiveData(fp, VARIC, "%s", NULL, part->varIC[part->nIC]);
+            ++part->nIC;
             continue;
         }
-        if (0 == strncmp(currentLine, "box initialization begin", sizeof currentLine)) {
+        if (0 == strncmp(str, "box initialization begin", sizeof str)) {
             /* optional entry do not increase entry count */
-            part->typeIC[part->countIC] = ICBOX; /* IC type id */
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, formatIII, part->valueIC[part->countIC] + 0, 
-                    part->valueIC[part->countIC] + 1, part->valueIC[part->countIC] + 2); 
-            VerifyReadConversion(nscan, 3);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, formatIII, part->valueIC[part->countIC] + 3, 
-                    part->valueIC[part->countIC] + 4, part->valueIC[part->countIC] + 5); 
-            VerifyReadConversion(nscan, 3);
-            ReadConsecutiveRealData(filePointer, part->valueIC[part->countIC] + ENTRYIC - VARIC, VARIC);
-            ++part->countIC;
+            part->typeIC[part->nIC] = ICBOX;
+            Sread(fp, 3, fmtJ, part->posIC[part->nIC] + 0,
+                    part->posIC[part->nIC] + 1, part->posIC[part->nIC] + 2);
+            Sread(fp, 3, fmtJ, part->posIC[part->nIC] + 3,
+                    part->posIC[part->nIC] + 4, part->posIC[part->nIC] + 5);
+            ReadConsecutiveData(fp, VARIC, "%s", NULL, part->varIC[part->nIC]);
+            ++part->nIC;
             continue;
         }
-        if (0 == strncmp(currentLine, "cylinder initialization begin", sizeof currentLine)) {
+        if (0 == strncmp(str, "cylinder initialization begin", sizeof str)) {
             /* optional entry do not increase entry count */
-            part->typeIC[part->countIC] = ICCYLINDER; /* IC type id */
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, formatIII, part->valueIC[part->countIC] + 0, 
-                    part->valueIC[part->countIC] + 1, part->valueIC[part->countIC] + 2); 
-            VerifyReadConversion(nscan, 3);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, formatIII, part->valueIC[part->countIC] + 3, 
-                    part->valueIC[part->countIC] + 4, part->valueIC[part->countIC] + 5); 
-            VerifyReadConversion(nscan, 3);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, formatI, part->valueIC[part->countIC] + 6); 
-            VerifyReadConversion(nscan, 1);
-            ReadConsecutiveRealData(filePointer, part->valueIC[part->countIC] + ENTRYIC - VARIC, VARIC);
-            ++part->countIC;
+            part->typeIC[part->nIC] = ICCYLINDER;
+            Sread(fp, 3, fmtJ, part->posIC[part->nIC] + 0,
+                    part->posIC[part->nIC] + 1, part->posIC[part->nIC] + 2);
+            Sread(fp, 3, fmtJ, part->posIC[part->nIC] + 3,
+                    part->posIC[part->nIC] + 4, part->posIC[part->nIC] + 5);
+            Sread(fp, 1, fmtI, part->posIC[part->nIC] + 6);
+            ReadConsecutiveData(fp, VARIC, "%s", NULL, part->varIC[part->nIC]);
+            ++part->nIC;
             continue;
         }
-        if (0 == strncmp(currentLine, "probe count begin", sizeof currentLine)) {
+        if (0 == strncmp(str, "probe count begin", sizeof str)) {
             /* optional entry do not increase entry count */
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(time->pointProbeN)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(time->lineProbeN)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(time->curveProbeN)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(time->forceProbeN)); 
-            VerifyReadConversion(nscan, 1);
-            if (0 < time->pointProbeN) {
-                time->pp = AssignStorage(time->pointProbeN * sizeof(*time->pp));
+            Sread(fp, 1, "%d", &(time->dataN[PROPT]));
+            Sread(fp, 1, "%d", &(time->dataN[PROLN]));
+            Sread(fp, 1, "%d", &(time->dataN[PROCV]));
+            Sread(fp, 1, "%d", &(time->dataN[PROFC]));
+            if (0 < time->dataN[PROPT]) {
+                time->pp = AssignStorage(time->dataN[PROPT] * sizeof(*time->pp));
             }
-            if (0 < time->lineProbeN) {
-                time->lp = AssignStorage(time->lineProbeN * sizeof(*time->lp));
+            if (0 < time->dataN[PROLN]) {
+                time->lp = AssignStorage(time->dataN[PROLN] * sizeof(*time->lp));
             }
             continue;
         }
-        if (0 == strncmp(currentLine, "probe control begin", sizeof currentLine)) {
+        if (0 == strncmp(str, "probe control begin", sizeof str)) {
             /* optional entry do not increase entry count */
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(time->pointWriteN)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(time->lineWriteN)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(time->curveWriteN)); 
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(time->forceWriteN)); 
-            VerifyReadConversion(nscan, 1);
+            Sread(fp, 1, "%d", &(time->dataW[PROPT]));
+            Sread(fp, 1, "%d", &(time->dataW[PROLN]));
+            Sread(fp, 1, "%d", &(time->dataW[PROCV]));
+            Sread(fp, 1, "%d", &(time->dataW[PROFC]));
             continue;
         }
-        if (0 == strncmp(currentLine, "point probe begin", sizeof currentLine)) {
+        if (0 == strncmp(str, "point probe begin", sizeof str)) {
             /* optional entry do not increase entry count */
-            for (int n = 0; n < time->pointProbeN; ++n) {
-                Fgets(currentLine, sizeof currentLine, filePointer);
-                nscan = sscanf(currentLine, formatIII, time->pp[n] + 0, 
+            for (int n = 0; n < time->dataN[PROPT]; ++n) {
+                Sread(fp, 3, fmtJ, time->pp[n] + 0,
                         time->pp[n] + 1, time->pp[n] + 2);
-                VerifyReadConversion(nscan, 3);
             }
             continue;
         }
-        if (0 == strncmp(currentLine, "line probe begin", sizeof currentLine)) {
+        if (0 == strncmp(str, "line probe begin", sizeof str)) {
             /* optional entry do not increase entry count */
-            for (int n = 0; n < time->lineProbeN; ++n) {
-                Fgets(currentLine, sizeof currentLine, filePointer);
-                nscan = sscanf(currentLine, formatIII, time->lp[n] + 0, 
+            for (int n = 0; n < time->dataN[PROLN]; ++n) {
+                Sread(fp, 3, fmtJ, time->lp[n] + 0,
                         time->lp[n] + 1, time->lp[n] + 2);
-                VerifyReadConversion(nscan, 3);
-                Fgets(currentLine, sizeof currentLine, filePointer);
-                nscan = sscanf(currentLine, formatIII, time->lp[n] + 3, 
+                Sread(fp, 3, fmtJ, time->lp[n] + 3,
                         time->lp[n] + 4, time->lp[n] + 5);
-                VerifyReadConversion(nscan, 3);
-                Fgets(currentLine, sizeof currentLine, filePointer);
-                nscan = sscanf(currentLine, formatI, time->lp[n] + 6);
-                VerifyReadConversion(nscan, 1);
+                Sread(fp, 1, fmtI, time->lp[n] + 6);
             }
             continue;
         }
     }
-    fclose(filePointer); /* close current opened file */
-    /*
-     * Check missing information section in configuration
-     */
-    if (12 != entryCount) {
-        FatalError("missing or repeated sections in case file");
+    fclose(fp);
+    if (12 != nentry) {
+        ShowError("missing or repeated sections: %s, entry: %d", fname, nentry);
     }
-    return 0;
+    return;
 }
-static int ReadGeometrySettingData(Geometry *geo)
+static void ReadGeometrySettingData(Geometry *const geo)
 {
-    FILE *filePointer = fopen("artracfd.geo", "r");
-    if (NULL == filePointer) {
-        FatalError("failed to open file: artracfd.geo...");
-    }
-    /* read and process file line by line */
-    String currentLine = {'\0'}; /* store the current read line */
-    int nscan = 0; /* read conversion count */
-    int entryCount = 0; /* entry count */
-    while (NULL != fgets(currentLine, sizeof currentLine, filePointer)) {
-        CommandLineProcessor(currentLine); /* process current line */
-        if (0 == strncmp(currentLine, "count begin", sizeof currentLine)) {
-            ++entryCount;
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(geo->sphN));
-            VerifyReadConversion(nscan, 1);
-            Fgets(currentLine, sizeof currentLine, filePointer);
-            nscan = sscanf(currentLine, "%d", &(geo->stlN));
-            VerifyReadConversion(nscan, 1);
+    const char *fname = "artracfd.geo";
+    FILE *fp = Fopen(fname, "r");
+    String str = {'\0'}; /* store the current read line */
+    int nentry = 0; /* entry count */
+    while (NULL != fgets(str, sizeof str, fp)) {
+        ParseCommand(str);
+        if (0 == strncmp(str, "count begin", sizeof str)) {
+            ++nentry;
+            Sread(fp, 1, "%d", &(geo->sphN));
+            Sread(fp, 1, "%d", &(geo->stlN));
             break;
         }
     }
-    fclose(filePointer); /* close current opened file */
-    /* Check missing information section in configuration */
-    if (1 != entryCount) {
-        FatalError("missing or repeated sections in case file");
+    fclose(fp);
+    if (1 != nentry) {
+        ShowError("missing or repeated sections: %s, entry: %d", fname, nentry);
     }
-    return 0;
+    return;
 }
-static int ReadBoundaryData(FILE *filePointer, Space *space, const int n)
+static void ReadBoundaryData(FILE *fp, Space *space, const int n)
 {
-    Partition *part = &(space->part);
-    String currentLine = {'\0'}; /* store the current read line */
-    int nscan = 0; /* read conversion count */
-    char formatI[5] = "%lg"; /* default is double type */
-    if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
-        strncpy(formatI, "%g", sizeof formatI); /* float type */
-    }
-    Fgets(currentLine, sizeof currentLine, filePointer);
-    CommandLineProcessor(currentLine); /* process current line */
-    if (0 == strncmp(currentLine, "inflow", sizeof currentLine)) {
+    Partition *const part = &(space->part);
+    String str = {'\0'}; /* store the current read line */
+    const char *fmtI = ParseFormat("%lg");
+    ParseCommand(fgets(str, sizeof str, fp));
+    if (0 == strncmp(str, "inflow", sizeof str)) {
         part->typeBC[n] = INFLOW;
-        ReadConsecutiveRealData(filePointer, part->valueBC[n], VARBC);
-        return 0;
+        ReadConsecutiveData(fp, VARBC - 1, fmtI, part->varBC[n], NULL);
+        return;
     }
-    if (0 == strncmp(currentLine, "outflow", sizeof currentLine)) {
+    if (0 == strncmp(str, "outflow", sizeof str)) {
         part->typeBC[n] = OUTFLOW;
-        return 0;
+        return;
     }
-    if (0 == strncmp(currentLine, "slip wall", sizeof currentLine)) {
+    if (0 == strncmp(str, "slip wall", sizeof str)) {
         part->typeBC[n] = SLIPWALL;
-        Fgets(currentLine, sizeof currentLine, filePointer);
-        nscan = sscanf(currentLine, formatI, &(part->valueBC[n][ENTRYBC-1]));
-        VerifyReadConversion(nscan, 1);
-        return 0;
+        Sread(fp, 1, fmtI, &(part->varBC[n][VARBC-1]));
+        return;
     }
-    if (0 == strncmp(currentLine, "noslip wall", sizeof currentLine)) {
+    if (0 == strncmp(str, "noslip wall", sizeof str)) {
         part->typeBC[n] = NOSLIPWALL;
-        Fgets(currentLine, sizeof currentLine, filePointer);
-        nscan = sscanf(currentLine, formatI, &(part->valueBC[n][ENTRYBC-1]));
-        VerifyReadConversion(nscan, 1);
-        return 0;
+        Sread(fp, 1, fmtI, &(part->varBC[n][VARBC-1]));
+        return;
     }
-    if (0 == strncmp(currentLine, "periodic", sizeof currentLine)) {
+    if (0 == strncmp(str, "periodic", sizeof str)) {
         part->typeBC[n] = PERIODIC;
-        return 0;
+        return;
     }
-    FatalError("unidentified boundary type...");
-    return 0;
+    ShowError("unidentified boundary type: n: %d, type: %s", n, str);
+    return;
 }
-/*
- * Read n consecutive real data entries into the memory pointed by address from
- * file pointed by the file pointer, and update the file pointer.
- */
-static int ReadConsecutiveRealData(FILE *filePointer, Real *address, const int entryN)
+static void ReadConsecutiveData(FILE *fp, const int n, const char *fmt,
+        Real *preal, char pstr[][VARSTR])
 {
-    String currentLine = {'\0'}; /* store the current read line */
-    int nscan = 0; /* read conversion count */
-    char formatI[5] = "%lg"; /* default is double type */
-    if (sizeof(Real) == sizeof(float)) { /* if set Real as float */
-        strncpy(formatI, "%g", sizeof formatI); /* float type */
+    if (NULL != preal) {
+        for (int m = 0; m < n; ++m) {
+            Sread(fp, 1, fmt, preal + m);
+        }
+    } else {
+        String str = {'\0'};
+        for (int m = 0; m < n; ++m) {
+            ParseCommand(fgets(str, sizeof str, fp));
+            strncpy(pstr[m], str, sizeof pstr[m]);
+        }
     }
-    for (int n = 0; n < entryN; ++n) {
-        Fgets(currentLine, sizeof currentLine, filePointer);
-        nscan = sscanf(currentLine, formatI, address + n); 
-        VerifyReadConversion(nscan, 1);
-    }
-    return 0;
+    return;
 }
-static int WriteBoundaryData(FILE *filePointer, const Space *space, const int n)
+static void WriteBoundaryData(FILE *fp, const Space *space, const int n)
 {
-    const Partition *part = &(space->part);
+    const Partition *const part = &(space->part);
     switch (part->typeBC[n]) {
         case INFLOW:
-            fprintf(filePointer, "boundary type: inflow\n"); 
-            fprintf(filePointer, "density: %.6g\n", part->valueBC[n][0]);
-            fprintf(filePointer, "x velocity: %.6g\n", part->valueBC[n][1]);
-            fprintf(filePointer, "y velocity: %.6g\n", part->valueBC[n][2]);
-            fprintf(filePointer, "z velocity: %.6g\n", part->valueBC[n][3]);
-            fprintf(filePointer, "pressure: %.6g\n", part->valueBC[n][4]);
+            fprintf(fp, "boundary type: inflow\n");
+            fprintf(fp, "density: %.6g\n", part->varBC[n][0]);
+            fprintf(fp, "x velocity: %.6g\n", part->varBC[n][1]);
+            fprintf(fp, "y velocity: %.6g\n", part->varBC[n][2]);
+            fprintf(fp, "z velocity: %.6g\n", part->varBC[n][3]);
+            fprintf(fp, "pressure: %.6g\n", part->varBC[n][4]);
             break;
         case OUTFLOW:
-            fprintf(filePointer, "boundary type: outflow\n"); 
+            fprintf(fp, "boundary type: outflow\n");
             break;
         case SLIPWALL:
-            fprintf(filePointer, "boundary type: slip wall\n"); 
-            fprintf(filePointer, "temperature: %.6g\n", part->valueBC[n][ENTRYBC-1]);
+            fprintf(fp, "boundary type: slip wall\n");
+            fprintf(fp, "temperature: %.6g\n", part->varBC[n][VARBC-1]);
             break;
         case NOSLIPWALL:
-            fprintf(filePointer, "boundary type: noslip wall\n"); 
-            fprintf(filePointer, "temperature: %.6g\n", part->valueBC[n][ENTRYBC-1]);
+            fprintf(fp, "boundary type: noslip wall\n");
+            fprintf(fp, "temperature: %.6g\n", part->varBC[n][VARBC-1]);
             break;
         case PERIODIC:
-            fprintf(filePointer, "boundary type: periodic\n"); 
+            fprintf(fp, "boundary type: periodic\n");
             break;
         default:
-            FatalError("unidentified boundary type...");
+            ShowError("unidentified boundary type: n: %d, type: %d", n, part->typeBC[n]);
             break;
     }
-    return 0;
+    return;
 }
-static int WriteInitializerData(FILE *filePointer, const Space *space, const int n)
+static void WriteInitializerData(FILE *fp, const Space *space, const int n)
 {
-    const Partition *part = &(space->part);
+    const Partition *const part = &(space->part);
     switch (part->typeIC[n]) {
         case ICGLOBAL:
             break;
         case ICPLANE:
-            fprintf(filePointer, "regional initialization: plane\n"); 
-            fprintf(filePointer, "plane point x, y, z: %.6g, %.6g, %.6g\n", 
-                    part->valueIC[n][0], part->valueIC[n][1], part->valueIC[n][2]);
-            fprintf(filePointer, "plane normal nx, ny, nz: %.6g, %.6g, %.6g\n", 
-                    part->valueIC[n][3], part->valueIC[n][4], part->valueIC[n][5]);
+            fprintf(fp, "regional initialization: plane\n");
+            fprintf(fp, "plane point x, y, z: %.6g, %.6g, %.6g\n",
+                    part->posIC[n][0], part->posIC[n][1], part->posIC[n][2]);
+            fprintf(fp, "plane normal nx, ny, nz: %.6g, %.6g, %.6g\n",
+                    part->posIC[n][3], part->posIC[n][4], part->posIC[n][5]);
             break;
         case ICSPHERE:
-            fprintf(filePointer, "regional initialization: sphere\n"); 
-            fprintf(filePointer, "center point x, y, z: %.6g, %.6g, %.6g\n", 
-                    part->valueIC[n][0], part->valueIC[n][1], part->valueIC[n][2]);
-            fprintf(filePointer, "radius: %.6g\n", part->valueIC[n][6]);
+            fprintf(fp, "regional initialization: sphere\n");
+            fprintf(fp, "center point x, y, z: %.6g, %.6g, %.6g\n",
+                    part->posIC[n][0], part->posIC[n][1], part->posIC[n][2]);
+            fprintf(fp, "radius: %.6g\n", part->posIC[n][6]);
             break;
         case ICBOX:
-            fprintf(filePointer, "regional initialization: box\n"); 
-            fprintf(filePointer, "xmin, ymin, zmin: %.6g, %.6g, %.6g\n", 
-                    part->valueIC[n][0], part->valueIC[n][1], part->valueIC[n][2]);
-            fprintf(filePointer, "xmax, ymax, zmax: %.6g, %.6g, %.6g\n", 
-                    part->valueIC[n][3], part->valueIC[n][4], part->valueIC[n][5]);
+            fprintf(fp, "regional initialization: box\n");
+            fprintf(fp, "xmin, ymin, zmin: %.6g, %.6g, %.6g\n",
+                    part->posIC[n][0], part->posIC[n][1], part->posIC[n][2]);
+            fprintf(fp, "xmax, ymax, zmax: %.6g, %.6g, %.6g\n",
+                    part->posIC[n][3], part->posIC[n][4], part->posIC[n][5]);
             break;
         case ICCYLINDER:
-            fprintf(filePointer, "regional initialization: cylinder\n"); 
-            fprintf(filePointer, "xmin, ymin, zmin: %.6g, %.6g, %.6g\n", 
-                    part->valueIC[n][0], part->valueIC[n][1], part->valueIC[n][2]);
-            fprintf(filePointer, "xmax, ymax, zmax: %.6g, %.6g, %.6g\n", 
-                    part->valueIC[n][3], part->valueIC[n][4], part->valueIC[n][5]);
-            fprintf(filePointer, "radius: %.6g\n", part->valueIC[n][6]);
+            fprintf(fp, "regional initialization: cylinder\n");
+            fprintf(fp, "xmin, ymin, zmin: %.6g, %.6g, %.6g\n",
+                    part->posIC[n][0], part->posIC[n][1], part->posIC[n][2]);
+            fprintf(fp, "xmax, ymax, zmax: %.6g, %.6g, %.6g\n",
+                    part->posIC[n][3], part->posIC[n][4], part->posIC[n][5]);
+            fprintf(fp, "radius: %.6g\n", part->posIC[n][6]);
             break;
         default:
             break;
     }
-    fprintf(filePointer, "density: %.6g\n", part->valueIC[n][ENTRYIC-5]);
-    fprintf(filePointer, "x velocity: %.6g\n", part->valueIC[n][ENTRYIC-4]);
-    fprintf(filePointer, "y velocity: %.6g\n", part->valueIC[n][ENTRYIC-3]);
-    fprintf(filePointer, "z velocity: %.6g\n", part->valueIC[n][ENTRYIC-2]);
-    fprintf(filePointer, "pressure: %.6g\n", part->valueIC[n][ENTRYIC-1]);
-    return 0;
+    fprintf(fp, "density: %s\n", part->varIC[n][0]);
+    fprintf(fp, "x velocity: %s\n", part->varIC[n][1]);
+    fprintf(fp, "y velocity: %s\n", part->varIC[n][2]);
+    fprintf(fp, "z velocity: %s\n", part->varIC[n][3]);
+    fprintf(fp, "pressure: %s\n", part->varIC[n][4]);
+    return;
 }
-/*
- * This function outputs the case setting data to a file for verification.
- */
-static int WriteVerifyData(const Time *time, const Space *space, const Model *model)
+static void WriteVerifyData(const Time *time, const Space *space, const Model *model)
 {
-    const Partition *part = &(space->part);
-    FILE *filePointer = fopen("artracfd.verify", "w");
-    if (NULL == filePointer) {
-        FatalError("failed to write data to file: artracfd.verify");
+    const Partition *const part = &(space->part);
+    const char *fname = "artracfd.verify";
+    FILE *fp = Fopen(fname, "w");
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fprintf(fp, "#                                                                             -\n");
+    fprintf(fp, "#                     Case Verification for ArtraCFD                          -\n");
+    fprintf(fp, "#                                                                             -\n");
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fprintf(fp, "#\n");
+    fprintf(fp, "#                          >> Space Domain <<\n");
+    fprintf(fp, "#\n");
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fprintf(fp, "xmin, ymin, zmin: %.6g, %.6g, %.6g\n",
+            part->domain[X][MIN], part->domain[Y][MIN], part->domain[Z][MIN]);
+    fprintf(fp, "xmax, ymax, zmax: %.6g, %.6g, %.6g\n",
+            part->domain[X][MAX], part->domain[Y][MAX], part->domain[Z][MAX]);
+    fprintf(fp, "mx, my, mz: %d, %d, %d\n", part->m[X], part->m[Y], part->m[Z]);
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fprintf(fp, "#\n");
+    fprintf(fp, "#                          >> Time Domain <<\n");
+    fprintf(fp, "#\n");
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fprintf(fp, "restart number tag: %d\n", time->restart);
+    fprintf(fp, "termination time: %.6g\n", time->end);
+    fprintf(fp, "CFL condition number: %.6g\n", time->numCFL);
+    fprintf(fp, "maximum computing steps: %d\n", time->stepN);
+    fprintf(fp, "space data writing frequency: %d\n", time->dataW[PROSD]);
+    fprintf(fp, "data streamer: %d\n", time->dataStreamer);
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fprintf(fp, "#\n");
+    fprintf(fp, "#                        >> Numerical Method <<\n");
+    fprintf(fp, "#\n");
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fprintf(fp, "temporal scheme: %d\n", model->tScheme);
+    fprintf(fp, "spatial scheme: %d\n", model->sScheme);
+    fprintf(fp, "dimensional scheme: %d\n", model->multidim);
+    fprintf(fp, "Jacobian average: %d\n", model->jacobMean);
+    fprintf(fp, "flux splitting method: %d\n", model->fluxSplit);
+    fprintf(fp, "phase interaction: %d\n", model->psi);
+    fprintf(fp, "ibm reconstruction layers: %d\n", model->ibmLayer);
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fprintf(fp, "#\n");
+    fprintf(fp, "#                       >> Material Properties <<\n");
+    fprintf(fp, "#\n");
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fprintf(fp, "material: %d\n", model->mid);
+    fprintf(fp, "viscous level: %.6g\n", model->refMu);
+    fprintf(fp, "gravity state: %d\n", model->gState);
+    fprintf(fp, "gravity vector: %.6g, %.6g, %.6g\n", model->g[X], model->g[Y], model->g[Z]);
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fprintf(fp, "#\n");
+    fprintf(fp, "#                        >> Reference Values  <<\n");
+    fprintf(fp, "#\n");
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fprintf(fp, "length: %.6g\n", model->refL);
+    fprintf(fp, "density: %.6g\n", model->refRho);
+    fprintf(fp, "velocity: %.6g\n", model->refV);
+    fprintf(fp, "temperature: %.6g\n", model->refT);
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fprintf(fp, "#\n");
+    fprintf(fp, "#                     >> Initialization <<\n");
+    fprintf(fp, "#\n");
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    WriteInitializerData(fp, space, ICGLOBAL);
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fprintf(fp, "#\n");
+    fprintf(fp, "#                     >> Boundary Condition <<\n");
+    fprintf(fp, "#\n");
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fprintf(fp, "#\n");
+    fprintf(fp, "Domian West\n");
+    WriteBoundaryData(fp, space, PWB);
+    fprintf(fp, "#\n");
+    fprintf(fp, "Domian East\n");
+    WriteBoundaryData(fp, space, PEB);
+    fprintf(fp, "#\n");
+    fprintf(fp, "Domian South\n");
+    WriteBoundaryData(fp, space, PSB);
+    fprintf(fp, "#\n");
+    fprintf(fp, "Domian North\n");
+    WriteBoundaryData(fp, space, PNB);
+    fprintf(fp, "#\n");
+    fprintf(fp, "Domian Front\n");
+    WriteBoundaryData(fp, space, PFB);
+    fprintf(fp, "#\n");
+    fprintf(fp, "Domian Back\n");
+    WriteBoundaryData(fp, space, PBB);
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fprintf(fp, "#\n");
+    fprintf(fp, "#                  >> Regional Initialization <<\n");
+    fprintf(fp, "#\n");
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    for (int n = 1; n < part->nIC; ++n) {
+        fprintf(fp, "#\n");
+        WriteInitializerData(fp, space, n);
     }
-    /* output information to file */
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "#                                                                             -\n");
-    fprintf(filePointer, "#                     Case Verification for ArtraCFD                          -\n");
-    fprintf(filePointer, "#                                                                             -\n");
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#                          >> Space Domain <<\n");
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "domain xmin, ymin, zmin: %.6g, %.6g, %.6g\n", 
-            part->domain[X][MIN], part->domain[Y][MIN], part->domain[Z][MIN]); 
-    fprintf(filePointer, "domain xmax, ymax, zmax: %.6g, %.6g, %.6g\n", 
-            part->domain[X][MAX], part->domain[Y][MAX], part->domain[Z][MAX]); 
-    fprintf(filePointer, "x, y, z mesh number: %d, %d, %d\n", part->m[X], part->m[Y], part->m[Z]); 
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#                          >> Time Domain <<\n");
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "restart number tag: %d\n", time->restart); 
-    fprintf(filePointer, "termination time: %.6g\n", time->end); 
-    fprintf(filePointer, "CFL condition number: %.6g\n", time->numCFL); 
-    fprintf(filePointer, "maximum computing steps: %d\n", time->stepN); 
-    fprintf(filePointer, "field data writing frequency: %d\n", time->writeN); 
-    fprintf(filePointer, "data streamer: %d\n", time->dataStreamer); 
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#                        >> Numerical Method <<\n");
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "temporal scheme: %d\n", model->tScheme);
-    fprintf(filePointer, "spatial scheme: %d\n", model->sScheme);
-    fprintf(filePointer, "multidimensional method: %d\n", model->multidim);
-    fprintf(filePointer, "Jacobian average: %d\n", model->jacobMean);
-    fprintf(filePointer, "flux splitting method: %d\n", model->fluxSplit);
-    fprintf(filePointer, "phase interaction: %d\n", model->fsi);
-    fprintf(filePointer, "layers for reconstruction: %d\n", model->ibmLayer);
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#                       >> Material Properties <<\n");
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "material: %d\n", model->mid); 
-    fprintf(filePointer, "viscous level: %.6g\n", model->refMu); 
-    fprintf(filePointer, "gravity state: %d\n", model->gState); 
-    fprintf(filePointer, "gravity vector: %.6g, %.6g, %.6g\n", model->g[X], model->g[Y], model->g[Z]); 
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#                        >> Reference Values  <<\n");
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "length: %.6g\n", model->refL); 
-    fprintf(filePointer, "density: %.6g\n", model->refRho); 
-    fprintf(filePointer, "velocity: %.6g\n", model->refV); 
-    fprintf(filePointer, "temperature: %.6g\n", model->refT); 
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#                     >> Initialization <<\n");
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    WriteInitializerData(filePointer, space, ICGLOBAL);
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#                     >> Boundary Condition <<\n");
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "Domian West\n"); 
-    WriteBoundaryData(filePointer, space, PWB);
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "Domian East\n"); 
-    WriteBoundaryData(filePointer, space, PEB);
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "Domian South\n"); 
-    WriteBoundaryData(filePointer, space, PSB);
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "Domian North\n"); 
-    WriteBoundaryData(filePointer, space, PNB);
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "Domian Front\n"); 
-    WriteBoundaryData(filePointer, space, PFB);
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "Domian Back\n"); 
-    WriteBoundaryData(filePointer, space, PBB);
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#                  >> Regional Initialization <<\n");
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    for (int n = 1; n < part->countIC; ++n) {
-        fprintf(filePointer, "#\n");
-        WriteInitializerData(filePointer, space, n);
-    }
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#                    >> Field Data Probes <<\n");
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "point probe count: %d\n", time->pointProbeN);
-    fprintf(filePointer, "line probe count: %d\n", time->lineProbeN);
-    fprintf(filePointer, "curve probe count: %d\n", time->curveProbeN);
-    fprintf(filePointer, "force probe count: %d\n", time->forceProbeN);
-    fprintf(filePointer, "#\n");
-    fprintf(filePointer, "point probe writing frequency: %d\n", time->pointWriteN);
-    fprintf(filePointer, "line probe writing frequency: %d\n", time->lineWriteN);
-    fprintf(filePointer, "body-conformal probe writing frequency: %d\n", time->curveWriteN);
-    fprintf(filePointer, "surface force writing frequency: %d\n", time->forceWriteN);
-    fprintf(filePointer, "#\n");
-    for (int n = 0; n < time->pointProbeN; ++n) {
-        fprintf(filePointer, "x, y, z of the point: %.6g, %.6g, %.6g\n", 
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fprintf(fp, "#\n");
+    fprintf(fp, "#                    >> Field Data Probes <<\n");
+    fprintf(fp, "#\n");
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fprintf(fp, "point probe count: %d\n", time->dataN[PROPT]);
+    fprintf(fp, "line probe count: %d\n", time->dataN[PROLN]);
+    fprintf(fp, "curve probe count: %d\n", time->dataN[PROCV]);
+    fprintf(fp, "force probe count: %d\n", time->dataN[PROFC]);
+    fprintf(fp, "#\n");
+    fprintf(fp, "point probe writing frequency: %d\n", time->dataW[PROPT]);
+    fprintf(fp, "line probe writing frequency: %d\n", time->dataW[PROLN]);
+    fprintf(fp, "body-conformal probe writing frequency: %d\n", time->dataW[PROCV]);
+    fprintf(fp, "surface force writing frequency: %d\n", time->dataW[PROFC]);
+    fprintf(fp, "#\n");
+    for (int n = 0; n < time->dataN[PROPT]; ++n) {
+        fprintf(fp, "point probe x, y, z: %.6g, %.6g, %.6g\n",
                 time->pp[n][0], time->pp[n][1], time->pp[n][2]);
     }
-    fprintf(filePointer, "#\n");
-    for (int n = 0; n < time->lineProbeN; ++n) {
-        fprintf(filePointer, "x, y, z of the first end point: %.6g, %.6g, %.6g\n", 
+    fprintf(fp, "#\n");
+    for (int n = 0; n < time->dataN[PROLN]; ++n) {
+        fprintf(fp, "line probe x1, y1, z1: %.6g, %.6g, %.6g\n",
                 time->lp[n][0], time->lp[n][1], time->lp[n][2]);
-        fprintf(filePointer, "x, y, z of the second end point: %.6g, %.6g, %.6g\n", 
+        fprintf(fp, "line probe x2, y2, z2: %.6g, %.6g, %.6g\n",
                 time->lp[n][3], time->lp[n][4], time->lp[n][5]);
-        fprintf(filePointer, "resolution: %.6g\n", time->lp[n][6]);
+        fprintf(fp, "resolution: %.6g\n", time->lp[n][6]);
     }
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fprintf(filePointer, "#------------------------------------------------------------------------------\n");
-    fclose(filePointer); /* close current opened file */
-    return 0;
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fprintf(fp, "#------------------------------------------------------------------------------\n");
+    fclose(fp);
+    return;
 }
-/*
- * This function do some parameter checking
- */
-static int CheckCaseSettingData(const Time *time, const Space *space, const Model *model)
+static void CheckCaseSettingData(const Time *time, const Space *space, const Model *model)
 {
-    const Partition *part = &(space->part);
+    const Partition *const part = &(space->part);
     const Real zero = 0.0;
     /* space */
     if ((zero >= (part->domain[X][MAX] - part->domain[X][MIN])) ||
             (zero >= (part->domain[Y][MAX] - part->domain[Y][MIN])) ||
             (zero >= (part->domain[Z][MAX] - part->domain[Z][MIN]))) {
-        FatalError("wrong domian region values in case settings");
+        ShowError("domain region should have max > min");
     }
     if ((1 > part->m[X]) || (1 > part->m[Y]) || (1 > part->m[Z])) {
-        FatalError("too small mesh values in case settings");
+        ShowError("mesh number should be positive");
+    }
+    if ((1 > part->proc[X]) || (1 > part->proc[Y]) || (1 > part->proc[Z])) {
+        ShowError("processor number should be positive");
     }
     /* time */
     if ((0 > time->restart) || (zero >= time->end) || (zero >= time->numCFL)) {
-        FatalError("wrong values in time section of case settings");
+        ShowError("values in time section should not be negative");
     }
     /* numerical method */
-    if ((0 > model->tScheme) || (0 > model->sScheme) || (0 > model->multidim) || 
-            (0 > model->jacobMean) || (0 > model->fluxSplit) || (0 > model->fsi)) {
-        FatalError("wrong values in numerical method of case settings");
+    if ((0 > model->tScheme) || (0 > model->sScheme) || (0 > model->multidim) ||
+            (0 > model->jacobMean) || (0 > model->fluxSplit) || (0 > model->psi)) {
+        ShowError("values in numerical section should not be negative");
     }
     /* material */
     if ((0 > model->mid)) {
-        FatalError("wrong values in material section of case settings");
+        ShowError("material type should not be negative");
     }
     /* reference */
-    if ((zero >= model->refL) || (zero >= model->refRho) || 
+    if ((zero >= model->refL) || (zero >= model->refRho) ||
             (zero >= model->refV) || (zero >= model->refT)) {
-        FatalError("wrong values in reference section of case settings");
+        ShowError("reference values should be positive");
     }
-    return 0;
+    return;
 }
 /* a good practice: end file with a newline */
 

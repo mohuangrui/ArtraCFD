@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_INITIALIZATION_H_ /* if this is the first definition */
-#define ARTRACFD_INITIALIZATION_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_INITIALIZATION_H_ /* if undefined */
+#define ARTRACFD_INITIALIZATION_H_ /* set a unique marker */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -29,7 +29,7 @@
  * Function
  *      Initialize the computational domain.
  */
-extern int InitializeComputationalDomain(Time *, Space *, const Model *model);
+extern void InitializeComputeDomain(Time *, Space *, const Model *model);
 #endif
 /* a good practice: end file with a newline */
 

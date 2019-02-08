@@ -12,25 +12,26 @@
  * Required Header Files
  ****************************************************************************/
 #include "timer.h"
-#include <stdio.h> /* standard library for input and output */
+#include <stddef.h> /* standard library for macros */
 /****************************************************************************
  * Function definitions
  ****************************************************************************/
 /*
- * This function record the time at the calling moment into the argument
+ * Record the time at the calling moment into the argument
  */
-void TickTime(Timer *timer) {
-    gettimeofday(timer, NULL);
+void TickTime(Timer *tm)
+{
+    gettimeofday(tm, NULL);
 }
 /*
- * This function returns the time in seconds from now to time described by
- * the input argument
+ * Return the time in seconds from now to the time described by the argument
  */
-double TockTime(const Timer *timer) {
-    Timer now; /* store current time at now */
-    gettimeofday(&now, NULL);
-    return (double)(now.tv_sec - timer->tv_sec) + 
-        ((double)(now.tv_usec - timer->tv_usec) / 1000000.0);
+double TockTime(const Timer *tm)
+{
+    Timer tc; /* store current time at now */
+    gettimeofday(&tc, NULL);
+    return (double)(tc.tv_sec - tm->tv_sec) +
+        (double)(tc.tv_usec - tm->tv_usec) / 1000000.0;
 }
 /* a good practice: end file with a newline */
 

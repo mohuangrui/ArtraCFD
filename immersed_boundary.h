@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_IMMERSED_BOUNDARY_H_ /* if this is the first definition */
-#define ARTRACFD_IMMERSED_BOUNDARY_H_ /* a unique marker for this header file */
+#ifndef ARTRACFD_IMMERSED_BOUNDARY_H_ /* if undefined */
+#define ARTRACFD_IMMERSED_BOUNDARY_H_ /* set a unique marker */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -24,26 +24,20 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Compute geometry domain
+ * Compute geometric field
  *
  * Function
- *      Employ node flagging algorithm to handle complex geometry that locates in
- *      the computational domain.
+ *      Employ a multidomain node mapping algorithm to map the geometry set.
  */
-extern void ComputeGeometryDomain(Space *, const Model *);
-/*
- * Compute geometric data
- */
-extern void ComputeGeometricData(const int fid, const Polyhedron *, const Real pG[restrict],
-        Real pO[restrict], Real pI[restrict], Real N[restrict]);
+extern void ComputeGeometricField(Space *, const Model *);
 /*
  * Immersed boundary treatments
  *
  * Function
  *      Apply boundary conditions and treatments for immersed boundaries.
  */
-extern void ImmersedBoundaryTreatment(const int tn, Space *, const Model *);
-extern void MethodOfImage(const Real UoI[restrict], const Real UoO[restrict], Real UoG[restrict]);
+extern void TreatImmersedBoundary(const int tn, Space *, const Model *);
+extern void DoMethodOfImage(const Real UoI[restrict], const Real UoO[restrict], Real UoG[restrict]);
 #endif
 /* a good practice: end file with a newline */
 

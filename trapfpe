@@ -9,27 +9,33 @@
  * (at your option) any later version.                                      *
  ****************************************************************************/
 /****************************************************************************
- * Header File Guards to Avoid Interdependence
- ****************************************************************************/
-#ifndef ARTRACFD_FLUID_DYNAMICS_H_ /* if undefined */
-#define ARTRACFD_FLUID_DYNAMICS_H_ /* set a unique marker */
-/****************************************************************************
  * Required Header Files
  ****************************************************************************/
-#include "commons.h"
+#define _GNU_SOURCE 1 /* GNU C library for floating-point control */
+#include <fenv.h> /* floating-point control environment */
 /****************************************************************************
- * Data Structure Declarations
- ****************************************************************************/
-/****************************************************************************
- * Public Functions Declaration
+ * Function definitions
  ****************************************************************************/
 /*
- * Fluid Dynamics
+ * GNU floating-point exception handling
  *
- * Function
- *      Evolve fluid dynamics.
+ * This is to use a C-callable mechanism to provide general control over
+ * whether or not floating-point exceptions are trapped or ignored, which
+ * can be invoked at startup using gcc's constructor attribute. Compiling
+ * and linking this C code with your program will turn on exception
+ * trapping for the "common" exceptions on a GNU system.
+ *
+ * When an floating-point exception occurs, your program will be sent the
+ * SIGFPE signal. By default, when SIGFPE is delivered the program will
+ * terminate, and a core will be dumped. This allows you to debug the
+ * program at the point where the problem first occurs.
  */
-extern void EvolveFluidDynamics(const Real dt, Space *, const Model *);
-#endif
+static void __attribute__ ((constructor)) trapfpe (void)
+{
+    /*
+     * Trap floating point exceptions
+     */
+    feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+}
 /* a good practice: end file with a newline */
 

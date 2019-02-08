@@ -11,8 +11,8 @@
 /****************************************************************************
  * Header File Guards to Avoid Interdependence
  ****************************************************************************/
-#ifndef ARTRACFD_FLUID_DYNAMICS_H_ /* if undefined */
-#define ARTRACFD_FLUID_DYNAMICS_H_ /* set a unique marker */
+#ifndef ARTRACFD_CONVECTIVE_FLUX_H_ /* if undefined */
+#define ARTRACFD_CONVECTIVE_FLUX_H_ /* set a unique marker */
 /****************************************************************************
  * Required Header Files
  ****************************************************************************/
@@ -24,12 +24,14 @@
  * Public Functions Declaration
  ****************************************************************************/
 /*
- * Fluid Dynamics
+ * Convective flux
  *
  * Function
- *      Evolve fluid dynamics.
+ *      reconstruct the numerical convective flux.
  */
-extern void EvolveFluidDynamics(const Real dt, Space *, const Model *);
+extern void ComputeFhat(const int tn, const int s, const int k, const int j,
+        const int i, const int partn[restrict], const Node *const,
+        const Model *, Real Fhat[restrict]);
 #endif
 /* a good practice: end file with a newline */
 
