@@ -1,5 +1,7 @@
 # `ArtraCFD` A Computational Fluid Dynamics Solver
 
+### By [Huangrui Mo](https://orcid.org/0000-0001-8279-6329)
+
 ## Solver configuration
 
 ### Fluid-solid interaction:
@@ -21,4 +23,4 @@
 
 ### Reference:
 
-* Huangrui Mo. Mesoscale modeling and direct simulation of explosively dispersed granular materials. PhD thesis, University of Waterloo, 2019
+* [Huangrui Mo. Mesoscale modeling and direct simulation of explosively dispersed granular materials. PhD thesis, University of Waterloo, 2019](https://uwspace.uwaterloo.ca/handle/10012/14335)
