@@ -2,6 +2,40 @@
 
 ### By [Huangrui Mo](https://orcid.org/0000-0001-8279-6329)
 
+### How to compile
+
+1. Download the code
+2. Enter the code directory
+3. Compile to generate the C executable:
+```
+make
+```
+
+### How to run the program
+
+1. Run the program:
+```
+./artracfd
+```
+2. Check help guide: 
+```
+help
+```
+3. Check program manual:
+```
+manual
+```
+4. Generate a sample test case:
+```
+init
+```
+5. Solve the smaple case:
+```
+solve
+```
+
+For algorithms and more test cases, please check the `Reference` below.
+
 ## Solver configuration
 
 ### Fluid-solid interaction:
