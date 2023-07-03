@@ -1,6 +1,17 @@
-# `ArtraCFD` A Computational Fluid Dynamics Solver
+# `ArtraCFD` 
 
-### By [Huangrui Mo](https://orcid.org/0000-0001-8279-6329)
+### A Computational Fluid Dynamics Solver
+### by 
+### Huangrui Mo  ([Google Scholar](https://scholar.google.com/citations?user=zBjRJCgAAAAJ&hl=en)) ([ORCID](https://orcid.org/0000-0001-8279-6329))
+
+
+## Demo cases
+
+### Case 1: Re=100 flow over a cylinder
+
+<h1 align="center">
+<img width="80%" src="https://github.com/mohuangrui/mohuangrui/blob/main/gallery/1_cyn_vortex_re100.gif" alt="Vortex Shedding">
+</h1>
 
 ### How to compile
 
