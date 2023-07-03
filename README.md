@@ -7,11 +7,36 @@
 
 ## Demo cases
 
-### Case 1: Re=100 flow over a cylinder
+### Case 1: Re=100 flow over a cylinder (click to play animation)
 
 <h1 align="center">
-<img width="80%" src="https://github.com/mohuangrui/mohuangrui/blob/main/gallery/1_cyn_vortex_re100.gif" alt="Vortex Shedding">
+<img width="60%" src="https://github.com/mohuangrui/mohuangrui/blob/main/gallery/1_cyn_vortex_re100.gif" alt="Vortex Shedding">
 </h1>
+
+### Case 2: Ma=2.81 Shock diffracting over a cylinder (click to play animation)
+
+<h1 align="center">
+<img width="60%" src="https://github.com/mohuangrui/mohuangrui/blob/main/gallery/1_cyn_nomv_invis_m2400_schlieren.gif" alt="Shock Diffraction">
+</h1>
+
+### Case 3: Galilean transformation between a supersonic moving wedge and a supersonic incoming flow (click to play animation)
+
+<h1 align="center">
+<img width="60%" src="https://github.com/mohuangrui/mohuangrui/blob/main/gallery/1_wedge_deg15_mach2_m1200.gif" alt="Galilean Transformation">
+</h1>
+
+### Case 4: Ma=5 flow over a complex body (click to play animation)
+
+<h1 align="center">
+<img width="60%" src="https://github.com/mohuangrui/mohuangrui/blob/main/gallery/missile_short_schlieren_m192.gif" alt="Hypersonic Flow">
+</h1>
+
+### Case 5: Direct simulation of explosively dispersed particles  (click to play animation)
+
+<h1 align="center">
+<img width="60%" src="https://github.com/mohuangrui/mohuangrui/blob/main/gallery/jet_SL2_001_B2_C2_ani.gif" alt="Vortex Shedding">
+</h1>
+
 
 ### How to compile
 
