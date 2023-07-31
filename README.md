@@ -37,17 +37,35 @@
 <img width="60%" src="https://github.com/mohuangrui/mohuangrui/blob/main/gallery/jet_SL2_001_B2_C2_ani.gif" alt="Vortex Shedding">
 </h1>
 
+## Solver configuration
 
-### How to compile
+### Fluid-solid interaction:
 
-1. Download the code (An OpenMP parallelized version is available upon request)
+* Operator splitting
+
+### Fluid dynamics:
+
+* Governing equations: 3D Navier-Stokes equations (Cartesian, compressible, conservative)
+* Temporal discretization: RK2 and RK3
+* Spatial discretization: WENO3 and WENO5 (convective fluxes) + 2nd order central scheme (diffusive fluxes)
+* Boudary treatment: immersed boundary method
+
+### Solid dynamics:
+
+* Governing equations: Newton's second law (translation), Euler equations (rotation), multi-body contact and collision
+* Temporal integration: RK2
+* Interface description: triangulated facets with front tracking
+
+## How to compile
+
+1. Download the code
 2. Enter the code directory
 3. Compile to generate the C executable:
 ```
 make
 ```
 
-### How to run the program
+## How to run the program
 
 1. Run the program:
 ```
@@ -71,25 +89,6 @@ solve
 ```
 
 For algorithms and more test cases, please check the `Reference` below.
-
-## Solver configuration
-
-### Fluid-solid interaction:
-
-* Operator splitting
-
-### Fluid dynamics:
-
-* Governing equations: 3D Navier-Stokes equations (Cartesian, compressible, conservative)
-* Temporal discretization: RK2 and RK3
-* Spatial discretization: WENO3 and WENO5 (convective fluxes) + 2nd order central scheme (diffusive fluxes)
-* Boudary treatment: immersed boundary method
-
-### Solid dynamics:
-
-* Governing equations: Newton's second law (translation), Euler equations (rotation), multi-body contact and collision
-* Temporal integration: RK2
-* Interface description: triangulated facets with front tracking
 
 ### Reference:
 

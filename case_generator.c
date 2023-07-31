@@ -54,7 +54,7 @@ static void GenerateCaseSettingFile(void)
     fprintf(fp, "space begin\n");
     fprintf(fp, "-3, -3, -3         # xmin, ymin, zmin\n");
     fprintf(fp, "3, 3, 3            # xmax, ymax, zmax (max > min)\n");
-    fprintf(fp, "1200, 601, 1       # mx, my, mz (int; 1: dimension collapse)\n");
+    fprintf(fp, "250, 250, 1        # mx, my, mz (int; 1: dimension collapse)\n");
     fprintf(fp, "space end\n");
     fprintf(fp, "#------------------------------------------------------------------------------\n");
     fprintf(fp, "#\n");
